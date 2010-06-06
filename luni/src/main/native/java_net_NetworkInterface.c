@@ -27,6 +27,11 @@
 #include <net/if.h>
 #include <netinet/in.h>
 #include <sys/ioctl.h>
+#include <linux/netlink.h>
+#include <linux/rtnetlink.h>
+#include <arpa/inet.h>
+
+#define LOG_TAG "NetworkInterface"
 
 //--------------------------------------------------------------------
 // TODO copied from OSNetworkSystem. Might get into a separate .h file
@@ -234,19 +239,19 @@ static char * netLookupErrorString(int anErrorNum) {
 }
 
 /**
- * Converts a native address structure to a 4-byte array. Throws a
+ * Converts a native address structure to an array. Throws a
  * NullPointerException or an IOException in case of error. This is
  * signaled by a return value of -1. The normal return value is 0.
  */
 static int structInToJavaAddress(
-        JNIEnv *env, struct in_addr *address, jbyteArray java_address) {
+        JNIEnv *env, void *address, jbyteArray java_address, int length) {
 
     if(java_address == NULL) {
         throwNullPointerException(env);
         return -1;
     }
 
-    if((*env)->GetArrayLength(env, java_address) != sizeof(address->s_addr)) {
+    if((*env)->GetArrayLength(env, java_address) != length) {
         jniThrowIOException(env, errno);
         return -1;
     }
@@ -255,24 +260,30 @@ static int structInToJavaAddress(
 
     java_address_bytes = (*env)->GetByteArrayElements(env, java_address, NULL);
 
-    memcpy(java_address_bytes, &(address->s_addr), sizeof(address->s_addr));
+    memcpy(java_address_bytes, address, length);
 
     (*env)->ReleaseByteArrayElements(env, java_address, java_address_bytes, 0);
 
     return 0;
 }
 
-static jobject structInToInetAddress(JNIEnv *env, struct in_addr *address) {
+static jobject structInToInetAddress(JNIEnv *env, void *address, int fam) {
     jbyteArray bytes;
     int success;
+    int length = 0;
+    char addrchar[200];
 
-    bytes = (*env)->NewByteArray(env, 4);
+    LOGI("InToInetAddress: %s", inet_ntop(fam, address, addrchar, sizeof(addrchar)));
+
+    if (fam == AF_INET) length = sizeof(struct in_addr); else 
+                      if (fam == AF_INET6) length = sizeof(struct in6_addr);
+    bytes = (*env)->NewByteArray(env, length);
 
     if(bytes == NULL) {
         return NULL;
     }
 
-    success = structInToJavaAddress(env, address, bytes);
+    success = structInToJavaAddress(env, address, bytes, length);
 
     if(success < 0) {
         return NULL;
@@ -324,9 +335,12 @@ typedef struct ipAddress_struct {
     union {
         char bytes[sizeof(struct in_addr)];
         struct in_addr inAddr;
+        char bytes6[sizeof(struct in6_addr)];
+        struct in6_addr inAddr6;
     } addr;
-    unsigned int length;
+    unsigned int  family;
     unsigned int  scope;
+    struct ipAddress_struct *nextaddress;
 } ipAddress_struct;
 
 /* structure for returning network interface information */
@@ -335,348 +349,451 @@ typedef struct NetworkInterface_struct {
     char *displayName;
     unsigned int  numberAddresses;
     unsigned int  index;
+    unsigned int  flags;
     struct ipAddress_struct *addresses;
+    struct NetworkInterface_struct *nextinterface;
 } NetworkInterface_struct;
 
-/* array of network interface structures */
-typedef struct NetworkInterfaceArray_struct {
-    unsigned int  length;
-    struct NetworkInterface_struct *elements;
-} NetworkInterfaceArray_struct;
 
 
+static struct NetworkInterface_struct *network_interfaces = (struct NetworkInterface_struct *)NULL;
+static struct sockaddr_nl addr_nl;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * Frees the memory allocated for the hyNetworkInterface_struct array passed in
- *
- * @param[in] portLibrary The port library.
- * @param[in] handle Pointer to array of network interface structures to be freed
- *
- * @return 0 on success
-*/
-int sock_free_network_interface_struct (struct NetworkInterfaceArray_struct *array) {
-    unsigned int i = 0;
-
-    if((array != NULL) && (array->elements != NULL)) {
-
-        /* free the allocated memory in each of the structures */
-        for(i = 0; i < array->length; i++) {
-
-            /* free the name, displayName and addresses */
-            if(array->elements[i].name != NULL) {
-                free(array->elements[i].name);
-            }
-
-            if(array->elements[i].displayName != NULL) {
-                free(array->elements[i].displayName);
-            }
-
-            if(array->elements[i].addresses != NULL) {
-                free(array->elements[i].addresses);
-            }
+void free_network_interface() {
+    struct ipAddress_struct *addr, *atmp;
+    struct NetworkInterface_struct *itmp;
+    while (network_interfaces){
+        /* free addresses */
+        addr = network_interfaces->addresses;
+        while (addr != NULL){
+            atmp = addr;
+            addr = addr->nextaddress;
+            free(atmp);
         }
 
-        /* now free the array itself */
-        free(array->elements);
+        if (network_interfaces->name != NULL) {
+            free(network_interfaces->name);
+        }
+
+        if (network_interfaces->displayName != NULL) {
+            free(network_interfaces->displayName);
+        }
+        itmp = network_interfaces;
+        network_interfaces = network_interfaces->nextinterface;
+        free(itmp);
+    }
+}
+
+char *salloccopy(char *s) {
+   char *rs = NULL;
+   if (s != NULL) {
+       rs = malloc(strlen(s)+1);
+       if (rs != NULL) {
+          strncpy(rs, s, strlen(s));
+          rs[strlen(s)] = '\0';
+       }
+    } 
+    return rs;
+}
+      
+
+int insert_interface_address(unsigned int if_index, char *if_name, 
+                             void *if_addr, int addr_type, unsigned int flags) {
+    char *name, *dname;
+    struct ipAddress_struct *addr = NULL;
+    struct NetworkInterface_struct *interface, *primary_interface, *last;
+    struct in_addr *inp;
+    struct in_addr6 *inp6;
+    char addrchar[200];
+    unsigned int fl;
+  
+
+    LOGI ("%d: interface: %s %s", 
+         if_index, if_name, inet_ntop(addr_type, if_addr, addrchar, sizeof(addrchar)));
+ 
+    /* allocate interface and address entry */
+     
+    dname = salloccopy(if_name);
+    if ((dname == NULL) && (if_name != NULL)) {
+        LOGE("Insuffient memory");
+        return -1;
+    }
+    
+    if (if_addr != NULL) {
+        addr = malloc(sizeof(ipAddress_struct));
+        if (addr == NULL) {
+            free(dname);
+            return -1;
+        }
+        /* insert addr fields */
+ 
+        addr->nextaddress = NULL;
+        addr->family = addr_type;
+        if (addr_type == AF_INET) {
+            addr->addr.inAddr = *((struct in_addr *)if_addr);
+        } else if (addr_type == AF_INET6) {
+            addr->addr.inAddr6 = *((struct in6_addr *)if_addr);
+        }
     }
 
+    /* search for interface index */     
+    interface = network_interfaces;
+    fl = flags;
+    primary_interface = NULL;
+    last = NULL;
+    while (interface != NULL) {
+        last = interface;
+        if (interface->index == if_index) {
+           if (if_name == NULL) break;
+           if (strcmp(interface->name, if_name) == 0) {
+               /* found matching index and interface name */
+               break;
+           } else {
+               /* found interface with matching index, but different if_name */
+               /* insert new interface */
+               primary_interface = interface;
+           }
+       }
+       interface = interface->nextinterface;
+    }
+
+    if (interface == NULL) {  
+        /* create new interface struct */  
+        interface = malloc(sizeof(struct NetworkInterface_struct));
+        if (interface == NULL) {
+            free(addr);
+            free(dname);
+            return -1;
+        }
+
+        if (primary_interface != NULL) {
+            /* copy interfacename and flags from primary */
+            name = primary_interface->name;
+            fl = primary_interface->flags;
+        } else {
+            /* interface name = displayname */
+            name = dname;
+        }
+        interface->name = salloccopy(name);
+        if (interface->name == NULL) {
+            free(interface);
+            free(addr);
+            free(dname);
+            LOGE("Insufficient memory");
+            return -1;
+        }
+        interface->displayName = dname;
+        interface->index = if_index;
+        interface->flags = fl;
+        interface->addresses = NULL;
+        interface->nextinterface = NULL;
+        if (last == NULL) {
+            network_interfaces = interface;
+        } else {
+            last->nextinterface = interface;
+        }
+    }
+    if (addr != NULL) {
+        addr-> nextaddress = interface->addresses;
+        interface->addresses = addr;
+    }
     return 0;
 }
 
+void print_interfaces() {
+    struct ipAddress_struct *addr;
+    struct NetworkInterface_struct *interface;
+    char addrchar[200];
 
+    interface = network_interfaces;
+    while (interface != NULL) {
+        LOGI("%d: %s flags:%x",
+                interface->index, interface->displayName, interface->flags);
+        addr = interface->addresses;
+        while (addr != NULL) {
+            LOGI("%d: %s %s",
+                interface->index, interface->displayName,
+                inet_ntop(addr->family, &addr->addr.inAddr, addrchar, sizeof(addrchar)));
+            addr = addr->nextaddress;
+         }
+         interface = interface->nextinterface;
+      }
+}
 
+typedef enum { rtm_link, rtm_addr, rtm_rt } rtm_head_type;
+typedef struct rtm_header_universal {
+    union {
+        struct ifinfomsg ifinfo;
+        struct ifaddrmsg ifaddr;
+        struct rtmsg rt;
+    } rtm;
+    rtm_head_type rtmtype;
+} rtm_header_universal;
 
+void rtm_head_init(rtm_header_universal *header, int rtm_type) {
+    
+    memset(header, 0, sizeof(rtm_header_universal));
+    header->rtmtype = rtm_type;
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * Queries and returns the information for the network interfaces that are currently active within the system.
- * Applications are responsible for freeing the memory returned via the handle.
- *
- * @param[in] portLibrary The port library.
- * @param[in,out] array Pointer to structure with array of network interface entries
- * @param[in] boolean which indicates if we should prefer the IPv4 stack or not
- *
- * @return The number of elements in handle on success, negatvie portable error code on failure.
-                               -WSANO_RECOVERY if system calls required to get the info fail, -WSAENOBUFS if memory allocation fails
- * @note A return value of 0 indicates no interfaces exist
-*/
-int sockGetNetworkInterfaces(struct NetworkInterfaceArray_struct * array) {
-
-    struct NetworkInterface_struct *interfaces = NULL;
-    unsigned int nameLength = 0;
-    unsigned int currentAdapterIndex = 0;
-    unsigned int counter = 0;
-    unsigned int result = 0;
-    unsigned int numAddresses = 0;
-    unsigned int currentIPAddressIndex = 0;
-    unsigned int numAdapters = 0;
-    int err = 0;
-
-    struct ifconf ifc;
-    int len = 32 * sizeof(struct ifreq);
-    int socketP = 0;
-    unsigned int totalInterfaces = 0;
-    struct ifreq reqCopy;
-    unsigned int counter2 = 0;
-    char *lastName = NULL;
-
-    int ifconfCommand = SIOCGIFCONF;
-
-    /* this method is not guarranteed to return the IPV6 addresses.  Code is include so that if the platform returns IPV6 addresses
-       in reply to the SIOCGIFCONF they will be included.  Howerver, it is not guarranteed or even expected that many platforms will
-       include the IPV6 addresses.  For this reason there are other specific implementations that will return the IPV6 addresses */
-    /* first get the list of interfaces.  We do not know how long the buffer needs to be so we try with one that allows for
-       32 interfaces.  If this turns out not to be big enough then we expand the buffer to be able to support another
-       32 interfaces and try again.  We do this until the result indicates that the result fit into the buffer provided */
-    /* we need  socket to do the ioctl so create one */
-    socketP = socket(PF_INET, SOCK_DGRAM, 0);
-    if(socketP < 0) {
-        return socketP;
+int rtm_head_len(rtm_header_universal *header) {
+    switch (header->rtmtype) {
+    case rtm_link: return sizeof(struct ifinfomsg);
+    case rtm_addr: return sizeof(struct ifaddrmsg);
+    case rtm_rt: return sizeof(struct rtmsg);
+    default: return 0;
     }
-    for(;;) {
-        char *data = (char *)malloc(len * sizeof(char));
-        if(data == NULL) {
-          close(socketP);
-          return SOCKERR_NOBUFFERS;
+}
+
+
+int interface_from_rtm_newlink(struct nlmsghdr *nlmp) {
+
+    struct ifinfomsg *iftmp;
+    struct rtattr *rtatp;
+    int rtattrlen;
+    char *if_name;
+    char *oper;
+
+    iftmp = (struct ifinfomsg *)NLMSG_DATA(nlmp);
+    rtatp = (struct rtattr *)IFLA_RTA(iftmp);
+
+        /* Start displaying the index of the interface */
+
+    if_name = NULL;
+ 
+    if (iftmp->ifi_flags & IFF_UP) oper = "Up"; else oper = "Down";
+    LOGD("Index: %d, Type: %d flags: %x operational: %s", 
+            iftmp->ifi_index, iftmp->ifi_type, iftmp->ifi_flags, oper );
+
+    rtattrlen = IFLA_PAYLOAD(nlmp);
+
+    for (; RTA_OK(rtatp, rtattrlen); rtatp = RTA_NEXT(rtatp, rtattrlen)) {              
+
+        /* Routing attributes                                                 *
+         *    rta_type             value type         description             *
+         *    --------------------------------------------------------------  *
+         *    IFLA_UNSPEC          -                  unspecified.            *
+         *    IFLA_ADDRESS         hardware address   interface L2 address    *
+         *    IFLA_BROADCAST       hardware address   L2 broadcast address.   *
+         *    IFLA_IFNAME          asciiz string      Device name.            *
+ 
+         *    IFLA_MTU             unsigned int       MTU of the device.      *
+         *    IFLA_LINK            int                Link type.              *
+         *    IFLA_QDISC           asciiz string      Queueing discipline.    *
+         *    IFLA_STATS           see below          Interface Statistics.   *
+
+         *    The value type for IFLA_STATS is struct net_device_stats.       */
+
+
+
+        if (rtatp->rta_type == IFLA_IFNAME){
+            if_name = RTA_DATA(rtatp);
+            LOGD("ifname: %s", if_name);
         }
-        ifc.ifc_len = len;
-        ifc.ifc_buf = data;
-        errno = 0;
-        if(ioctl(socketP, ifconfCommand, &ifc) != 0) {
-          err = errno;
-          free(ifc.ifc_buf);
-          close(socketP);
-          return SOCKERR_NORECOVERY;
+    }
+    return insert_interface_address(iftmp->ifi_index, if_name, NULL, 0, iftmp->ifi_flags);
+
+}
+
+
+int interface_addresses_from_rtm_newaddr(struct nlmsghdr *nlmp) {
+
+    struct ifaddrmsg *rtmp;
+    struct rtattr *rtatp;
+    int rtattrlen;
+    struct ifa_cacheinfo *cache_info;
+    struct in6_addr *if_addr = NULL;
+    char *if_name;
+    char *fam;
+    char addrchar[200];
+
+
+    rtmp = (struct ifaddrmsg *)NLMSG_DATA(nlmp);
+    rtatp = (struct rtattr *)IFA_RTA(rtmp);
+
+        /* Start displaying the index of the interface */
+
+    if_name = NULL;
+              
+    if (rtmp->ifa_family == AF_INET6) {
+        fam = "AF_INET6";
+    } else if (rtmp->ifa_family == AF_INET) {
+        fam = "AF_INET";
+    } else {
+        fam = "AF prtotocol unknown";
+    }
+    LOGD("Index: %d Prefix: %d Family: %s", 
+                     rtmp->ifa_index, rtmp->ifa_prefixlen, fam);
+
+    rtattrlen = IFA_PAYLOAD(nlmp);
+
+    for (; RTA_OK(rtatp, rtattrlen); rtatp = RTA_NEXT(rtatp, rtattrlen)) {
+     
+        /* The table below is taken from man pages.                           *
+         * Attributes                                                         *
+         * rta_type        value type             description                 *
+         * -------------------------------------------------------------      *
+         * IFA_UNSPEC      -                      unspecified.                *
+         * IFA_ADDRESS     raw protocol address   interface address           *
+         * IFA_LOCAL       raw protocol address   local address               *
+         * IFA_LABEL       asciiz string          name of the interface       *
+         * IFA_BROADCAST   raw protocol address   broadcast address.          *
+         * IFA_ANYCAST     raw protocol address   anycast address             *
+         * IFA_CACHEINFO   struct ifa_cacheinfo   Address information.        */
+
+
+        if (rtatp->rta_type == IFA_ADDRESS){
+            if_addr = RTA_DATA(rtatp);
         }
-        if(ifc.ifc_len < len)
-        break;
-        /* the returned data was likely truncated, expand the buffer and try again */
-        free(ifc.ifc_buf);
-        len += 32 * sizeof(struct ifreq);
-    }
 
-    /* get the number of distinct interfaces */
-    if(ifc.ifc_len != 0) {
-        totalInterfaces = ifc.ifc_len / sizeof(struct ifreq);
-    }
-    lastName = NULL;
-    for(counter = 0; counter < totalInterfaces; counter++) {
-        if((NULL == lastName) || (strncmp(lastName, ifc.ifc_req[counter].ifr_name, IFNAMSIZ) != 0)) {
-            /* make sure the interface is up */
-            reqCopy = ifc.ifc_req[counter];
-            ioctl(socketP, SIOCGIFFLAGS, &reqCopy);
-            if((reqCopy.ifr_flags) & (IFF_UP == IFF_UP)) {
-                numAdapters++;
-            }
+        if (rtatp->rta_type == IFA_LABEL){
+            if_name = RTA_DATA(rtatp);
+            LOGD("label: %s", if_name);
         }
-        lastName = ifc.ifc_req[counter].ifr_name;
     }
+    return insert_interface_address(rtmp->ifa_index, if_name, if_addr, rtmp->ifa_family, 0);
 
-    /* now allocate the space for the hyNetworkInterface structs and fill it in */
-    interfaces = malloc(numAdapters * sizeof(NetworkInterface_struct));
-    if(NULL == interfaces) {
-        free(ifc.ifc_buf);
-        close(socketP);
-        return SOCKERR_NOBUFFERS;
-    }
+}
 
-    /* initialize the structure so that we can free allocated if a failure occurs */
-    for(counter = 0; counter < numAdapters; counter++) {
-        interfaces[counter].name = NULL;
-        interfaces[counter].displayName = NULL;
-        interfaces[counter].addresses = NULL;
-    }
+int get_interface_addresses(int netlink_socket, int netlink_oper, rtm_header_universal *head)
 
-    /* set up the return stucture */
-    array->elements = interfaces;
-    array->length = numAdapters;
-    lastName = NULL;
-    for(counter = 0; counter < totalInterfaces; counter++) {
-        /* make sure the interface is still up */
-        reqCopy = ifc.ifc_req[counter];
-        ioctl(socketP, SIOCGIFFLAGS, &reqCopy);
-        if((reqCopy.ifr_flags) & (IFF_UP == IFF_UP)) {
-            /* since this function can return multiple entries for the same name, only do it for the first one with any given name */
-            if((NULL == lastName) || (strncmp(lastName, ifc.ifc_req[counter].ifr_name, IFNAMSIZ) != 0)) {
+{
+      struct {
+              struct nlmsghdr n;
+              unsigned char buf[1024];                
+      } req;
 
-                /* get the index for the interface */
-                interfaces[currentAdapterIndex].index =
-                        ifc.ifc_req[counter].ifr_ifindex;
-                /* get the name and display name for the adapter */
-                /* there only seems to be one name so use it for both the name and the display name */
-                nameLength = strlen(ifc.ifc_req[counter].ifr_name);
-                interfaces[currentAdapterIndex].name = malloc(nameLength + 1);
+      struct rtattr *rta;
+      int status, len;
+      char buf[16384];
+      struct nlmsghdr *nlmp;
+      struct nlmsgerr *nlerr;
 
-                if(NULL == interfaces[currentAdapterIndex].name) {
-                    free(ifc.ifc_buf);
-                    sock_free_network_interface_struct(array);
-                    close(socketP);
-                    return SOCKERR_NOBUFFERS;
-                }
-                strncpy(interfaces[currentAdapterIndex].name, ifc.ifc_req[counter].ifr_name, nameLength);
-                interfaces[currentAdapterIndex].name[nameLength] = 0;
-                nameLength = strlen(ifc.ifc_req[counter].ifr_name);
-                interfaces[currentAdapterIndex].displayName = malloc(nameLength + 1);
-                if(NULL == interfaces[currentAdapterIndex].displayName) {
-                    free(ifc.ifc_buf);
-                    sock_free_network_interface_struct(array);
-                    close(socketP);
-                    return SOCKERR_NOBUFFERS;
-                }
-                strncpy(interfaces[currentAdapterIndex].displayName, ifc.ifc_req[counter].ifr_name, nameLength);
-                interfaces[currentAdapterIndex].displayName[nameLength] = 0;
+      memset(&req, 0, sizeof(req));
+      len = rtm_head_len(head);
+      req.n.nlmsg_len = NLMSG_LENGTH(len);
+      req.n.nlmsg_flags = NLM_F_REQUEST | NLM_F_ROOT;
+      req.n.nlmsg_type = netlink_oper;
+      /* copy header */
+      memcpy(req.buf, (char *) &head->rtm, len);
 
-                /* check how many addresses/aliases this adapter has.  aliases show up as adaptors with the same name */
-                numAddresses = 0;
-                for(counter2 = counter; counter2 < totalInterfaces; counter2++) {
-                    if(strncmp(ifc.ifc_req[counter].ifr_name, ifc.ifc_req[counter2].ifr_name, IFNAMSIZ) == 0) {
-                        if(ifc.ifc_req[counter2].ifr_addr.sa_family == AF_INET) {
-                            numAddresses++;
-                        }
-                    } else {
+      /* Time to send and recv the message from kernel */
+
+      status = send(netlink_socket, &req, req.n.nlmsg_len, 0);
+
+      if (status < 0) {
+              perror("send");
+              return 1;
+      }
+
+      for (;;) {
+        
+        status = recv(netlink_socket, buf, sizeof(buf), 0);
+
+        LOGI("netlink message received Length: %d", status);
+
+      	if (status < 0) {
+              perror("recv");
+              return 1;
+      	}
+
+      	if(status == 0){
+              return 1;
+      	}
+
+      /* Typically the message is stored in buf, so we need to parse the message to *
+        * get the required data for our display. */
+
+      	for(nlmp = (struct nlmsghdr *)buf; status > (int) sizeof(*nlmp);){
+              int len = nlmp->nlmsg_len;
+              int req_len = len - sizeof(*nlmp);
+              int res = 0;
+
+              LOGD("nlmsg_type: %d nlmsg_lgt: %d", nlmp->nlmsg_type, len);
+
+              if (req_len<0 || len>status) {
+                      LOGE("error");
+                      return -1;
+              }
+
+              if (!NLMSG_OK(nlmp, (unsigned int) status)) {
+                      LOGE("NLMSG not OK");
+                      return 1;
+              }
+
+              switch (nlmp->nlmsg_type) {
+              case NLMSG_DONE: {
+                       return 0;
+                  }
+              case NLMSG_ERROR: {
+                      nlerr = NLMSG_DATA(nlmp);
+                      LOGE("NLMSG error: %d", nlerr->error);
+                      return nlerr->error;
+                  }
+              case RTM_NEWLINK: {
+                      res = interface_from_rtm_newlink(nlmp);
                       break;
-                    }
-                }
+                  }
 
-                /* allocate space for the addresses */
-                interfaces[currentAdapterIndex].numberAddresses = numAddresses;
-                interfaces[currentAdapterIndex].addresses = malloc(numAddresses * sizeof(ipAddress_struct));
-                if(NULL == interfaces[currentAdapterIndex].addresses) {
-                    free(ifc.ifc_buf);
-                    sock_free_network_interface_struct(array);
-                    close(socketP);
-                    return SOCKERR_NOBUFFERS;
-                }
+              case RTM_NEWADDR: {
+                      res = interface_addresses_from_rtm_newaddr(nlmp);
+                      break;
+                  }
+              default: {
+                       LOGD("nlmsg_type unknown: %d", nlmp->nlmsg_type);
+                  }
+              }
+              
+              if (res != 0) {
+                  return res;
+              }
+              
+              status -= NLMSG_ALIGN(len);
+              nlmp = (struct nlmsghdr*)((char*)nlmp + NLMSG_ALIGN(len));
 
-                /* now get the addresses */
-                currentIPAddressIndex = 0;
-                lastName = ifc.ifc_req[counter].ifr_name;
+	}
+      } /* FOR next message */
 
-                for(;;) {
-                    if(ifc.ifc_req[counter].ifr_addr.sa_family == AF_INET) {
-                        interfaces[currentAdapterIndex].addresses[currentIPAddressIndex].addr.inAddr.s_addr = ((struct sockaddr_in *) (&ifc.ifc_req[counter].ifr_addr))->sin_addr.s_addr;
-                        interfaces[currentAdapterIndex].addresses[currentIPAddressIndex].length = sizeof(struct in_addr);
-                        interfaces[currentAdapterIndex].addresses[currentIPAddressIndex].scope = 0;
-                        currentIPAddressIndex++;
-                    }
-
-                    /* we mean to increment the outside counter here as we want to skip the next entry as it is for the same interface
-                                          as we are currently working on */
-                    if((counter + 1 < totalInterfaces) && (strncmp(ifc.ifc_req[counter + 1].ifr_name, lastName, IFNAMSIZ) == 0)) {
-                        counter++;
-                    } else {
-                        break;
-                    }
-
-                }
-                currentAdapterIndex++;
-            }
-        }
-    }          /* for over all interfaces */
-    /* now an interface might have been taken down since we first counted them */
-    array->length = currentAdapterIndex;
-    /* free the memory now that we are done with it */
-    free(ifc.ifc_buf);
-    close(socketP);
-
-    return 0;
 }
 
 
+int GetNetLinkInterfaces() {
+    int netlink_socket;
+    int res;
+    struct NetworkInterface_struct *ni;
+    struct ipAddress_struct *na, *address;
+    rtm_header_universal head;
+    int ii, ai, addresses, interfaces;
 
+    LOGI ("NetworkInterfaces");
+    memset(&addr_nl, 0, sizeof(struct sockaddr_nl));
+    addr_nl.nl_family = AF_NETLINK;
+    netlink_socket = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
+    if (netlink_socket <= 0) {
+        LOGE("Cannot create netlink socket");
+        return -1;
+    }
+    if (bind(netlink_socket, (struct sockaddr *)(&addr_nl), 
+             sizeof(struct sockaddr_nl))) {
+        LOGE("Cannot bind netlink socket");
+        return -1;
+    }
+    rtm_head_init(&head, rtm_link);
+    head.rtm.ifinfo.ifi_family = AF_UNSPEC;
+    res = get_interface_addresses(netlink_socket, RTM_GETLINK, &head);
+    LOGI ("NetworkInterfaces phase 1 finished: %d", res);
 
+    rtm_head_init(&head, rtm_addr);
+    head.rtm.ifaddr.ifa_family = AF_UNSPEC;
+    res = get_interface_addresses(netlink_socket, RTM_GETADDR, &head);
+    LOGI ("NetworkInterfaces phase 2 finished: %d", res);
+    close(netlink_socket);
+    print_interfaces();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /* caller must call free_network_interface() */
+    return 0;
+}
 
 
 
@@ -695,7 +812,6 @@ int sockGetNetworkInterfaces(struct NetworkInterfaceArray_struct * array) {
 static jobjectArray getNetworkInterfacesImpl(JNIEnv * env, jclass clazz) {
 
     /* variables to store network interfac edata returned by call to port library */
-    struct NetworkInterfaceArray_struct networkInterfaceArray;
     int result = 0;
 
     /* variables for class and method objects needed to create bridge to java */
@@ -720,6 +836,11 @@ static jobjectArray getNetworkInterfacesImpl(JNIEnv * env, jclass clazz) {
     unsigned int i = 0;
     unsigned int j = 0;
     unsigned int nameLength = 0;
+    unsigned int noofinterfaces;
+    unsigned int noofaddr;
+    struct NetworkInterface_struct *ni;
+    struct ipAddress_struct *na;
+
 
     /* get the classes and methods that we need for later calls */
     networkInterfaceClass = (*env)->FindClass(env, "java/net/NetworkInterface");
@@ -752,81 +873,98 @@ static jobjectArray getNetworkInterfacesImpl(JNIEnv * env, jclass clazz) {
         return NULL;
     }
 
-    result = sockGetNetworkInterfaces(&networkInterfaceArray);
-
+    result = GetNetLinkInterfaces();
     if(result < 0) {
-        /* this means an error occured.  The value returned is the socket error that should be returned */
+        /* this means an error occured. */
         throwSocketException(env, netLookupErrorString(result));
         return NULL;
     }
 
+    /* count interfaces */
+    noofinterfaces = 0;
+    for (ni = network_interfaces; ni != NULL; ni = ni->nextinterface) {
+         /* include only interfaces in state up */
+         if ((ni->flags & IFF_UP) != 0) {
+             noofinterfaces++;
+         }
+    } 
+
     /* now loop through the interfaces and extract the information to be returned */
-    for(j = 0; j < networkInterfaceArray.length; j++) {
-        /* set the name and display name and reset the addresses object array */
-        addresses = NULL;
-        name = NULL;
-        displayName = NULL;
+    j = 0;
+    for (ni = network_interfaces; ni != NULL; ni = ni->nextinterface) {
+         /* include only interfaces in state up */
+         if ((ni->flags & IFF_UP) != 0) {
+            /* set the name and display name and reset the addresses object array */
+            addresses = NULL;
+            name = NULL;
+            displayName = NULL;
 
-        if(networkInterfaceArray.elements[j].name != NULL) {
-            nameLength = strlen(networkInterfaceArray.elements[j].name);
-            bytearray = (*env)->NewByteArray(env, nameLength);
-            if(bytearray == NULL) {
-                /* NewByteArray should have thrown an exception */
-                return NULL;
+            if(ni->name != NULL) {
+                nameLength = strlen(ni->name);
+                bytearray = (*env)->NewByteArray(env, nameLength);
+                if(bytearray == NULL) {
+                    /* NewByteArray should have thrown an exception */
+                    return NULL;
+                }
+                (*env)->SetByteArrayRegion(env, bytearray, (jint) 0, nameLength, 
+                                           (jbyte *)ni->name);
+                name = (*env)->CallStaticObjectMethod(env, utilClass, utilMid,
+                                                      bytearray, (jint) 0, nameLength);
+                if((*env)->ExceptionCheck(env)) {
+                    return NULL;
+                }
             }
-            (*env)->SetByteArrayRegion(env, bytearray, (jint) 0, nameLength,
-                    (jbyte *)networkInterfaceArray.elements[j].name);
-            name = (*env)->CallStaticObjectMethod(env, utilClass, utilMid,
-                    bytearray, (jint) 0, nameLength);
-            if((*env)->ExceptionCheck(env)) {
-                return NULL;
-            }
-        }
 
-        if(networkInterfaceArray.elements[j].displayName != NULL) {
-            nameLength = strlen(networkInterfaceArray.elements[j].displayName);
-            bytearray = (*env)->NewByteArray(env, nameLength);
-            if(bytearray == NULL) {
-                /* NewByteArray should have thrown an exception */
-                return NULL;
+            if(ni->displayName != NULL) {
+                nameLength = strlen(ni->displayName);
+                bytearray = (*env)->NewByteArray(env, nameLength);
+                if(bytearray == NULL) {
+                    /* NewByteArray should have thrown an exception */
+                    return NULL;
+                }
+                (*env)->SetByteArrayRegion(env, bytearray, (jint) 0, nameLength, 
+                                           (jbyte *)ni->displayName);
+                displayName = (*env)->CallStaticObjectMethod(env, utilClass, utilMid,
+                                                             bytearray, (jint) 0, nameLength);
+                if((*env)->ExceptionCheck(env)) {
+                    return NULL;
+                }
             }
-            (*env)->SetByteArrayRegion(env, bytearray, (jint) 0, nameLength,
-                    (jbyte *)networkInterfaceArray.elements[j].displayName);
-            displayName = (*env)->CallStaticObjectMethod(env, utilClass, utilMid,
-                    bytearray, (jint) 0, nameLength);
-            if((*env)->ExceptionCheck(env)) {
-                return NULL;
-            }
-        }
 
-        /* generate the object with the inet addresses for the itnerface       */
-        for(i = 0; i < networkInterfaceArray.elements[j].numberAddresses; i++) {
-            element = structInToInetAddress(env, (struct in_addr *) &(networkInterfaceArray.elements[j].addresses[i].addr.inAddr));
-            if(i == 0) {
-                addresses = (*env)->NewObjectArray(env,
-                        networkInterfaceArray.elements[j].numberAddresses,
-                        inetAddressClass, element);
+            /* generate the object with the inet addresses for the interface       */
+            /* count addresses */
+            noofaddr = 0;
+            for (na = ni->addresses; na != NULL; na = na->nextaddress) {
+                noofaddr++;
+            }
+            na = ni->addresses;    
+            if (na != NULL) {
+                element = structInToInetAddress(env, (struct in_addr6 *) &na->addr, na->family);
+                addresses = (*env)->NewObjectArray(env, noofaddr, inetAddressClass, element);
+                i = 1;
+                for (na = na->nextaddress; na != NULL; na = na->nextaddress) {
+                    element = structInToInetAddress(env, (struct in_addr6 *) &na->addr, na->family);
+                    (*env)->SetObjectArrayElement(env, addresses, i, element);
+                    i++;
+                 }
+            }
+
+            /* now  create the NetworkInterface object for this interface and then add it it ot the array that will be returned */
+            currentInterface = (*env)->NewObject(env, networkInterfaceClass,
+                methodID, name, displayName, addresses, ni->index);
+            if(j == 0) {
+                networkInterfaces = (*env)->NewObjectArray(env,
+                        noofinterfaces, networkInterfaceClass,
+                        currentInterface);
             } else {
-                (*env)->SetObjectArrayElement(env, addresses, i, element);
+                (*env)->SetObjectArrayElement(env, networkInterfaces, j, currentInterface);
             }
-        }
-
-        /* now  create the NetworkInterface object for this interface and then add it it ot the arrary that will be returned */
-        currentInterface = (*env)->NewObject(env, networkInterfaceClass,
-                methodID, name, displayName, addresses,
-                networkInterfaceArray.elements[j].index);
-
-        if(j == 0) {
-            networkInterfaces = (*env)->NewObjectArray(env,
-                    networkInterfaceArray.length, networkInterfaceClass,
-                    currentInterface);
-        } else {
-            (*env)->SetObjectArrayElement(env, networkInterfaces, j, currentInterface);
+            j++;
         }
     }
 
     /* free the memory for the interfaces struct and return the new NetworkInterface List */
-    sock_free_network_interface_struct(&networkInterfaceArray);
+    free_network_interface();
     return networkInterfaces;
 }
 
