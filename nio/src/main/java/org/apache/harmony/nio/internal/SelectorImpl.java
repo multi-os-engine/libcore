@@ -281,6 +281,14 @@ final class SelectorImpl extends AbstractSelector {
         }
     }
 
+    private boolean isConnectionPending(SelectionKeyImpl key) {
+        java.nio.channels.SelectableChannel channel = key.channel();
+        if (channel instanceof java.nio.channels.SocketChannel) {
+            return ((java.nio.channels.SocketChannel)channel).isConnectionPending();
+        }
+        return true;
+    }
+
     /**
      * Prepare the readableFDs, writableFDs, readyKeys and flags arrays in
      * preparation for a call to {@code INetworkSystem#select()}. After they're
@@ -315,7 +323,7 @@ final class SelectorImpl extends AbstractSelector {
                 readyKeys[r] = key;
                 r++;
             }
-            if ((CONNECT_OR_WRITE & interestOps) != 0) {
+            if ((((isConnectionPending(key) ? OP_CONNECT : 0) | OP_WRITE) & interestOps) != 0) {
                 writableFDs[w] = ((FileDescriptorHandler) key.channel()).getFD();
                 readyKeys[w + numReadable] = key;
                 w++;
