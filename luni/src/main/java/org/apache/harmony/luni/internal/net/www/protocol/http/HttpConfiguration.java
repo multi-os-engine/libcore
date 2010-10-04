@@ -117,6 +117,15 @@ public class HttpConfiguration {
         return hostPort;
     }
 
+    // BEGIN android-added
+    /**
+     * Returns the URI for this configuration
+     */
+    public URI getURI() {
+        return uri;
+    }
+    // END android-added
+
     @Override
     public boolean equals(Object arg0) {
         if(!(arg0 instanceof HttpConfiguration)) {

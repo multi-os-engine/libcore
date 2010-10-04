@@ -365,11 +365,15 @@ public class HttpsURLConnectionImpl extends HttpsURLConnection {
             if (connected) {
                 return;
             }
+
+            // BEGIN android-changed
+            // Bugfix for connection through implicit (system-wide) proxy
+            // Call connect() before asking super.usingProxy()
+            super.connect();
             if (super.usingProxy() && !makingSSLTunnel) {
                 // SSL Tunnel through the proxy was not established yet, do so
                 makingSSLTunnel = true;
-                // first - make the connection
-                super.connect();
+                
                 // keep request method
                 String save_meth = method;
                 // make SSL Tunnel
@@ -391,10 +395,8 @@ public class HttpsURLConnectionImpl extends HttpsURLConnection {
                     is.read();
                 }
                 makingSSLTunnel = false;
-            } else {
-                // no need in SSL tunnel
-                super.connect();
             }
+            // END android-changed
             if (!makingSSLTunnel) {
                 sslSocket = connection.getSecureSocket(getSSLSocketFactory(), getHostnameVerifier());
                 setUpTransportIO(connection);

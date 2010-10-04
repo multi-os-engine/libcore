@@ -159,7 +159,9 @@ public class HttpConnection {
     
     public SSLSocket getSecureSocket(SSLSocketFactory sslSocketFactory, HostnameVerifier hostnameVerifier) throws IOException {
         if(!usingSecureSocket) {
-            String hostName = config.getHostName();
+            // BEGIN android-changed
+            String hostName = config.getURI().getHost();
+            // END android-changed
             int port = config.getHostPort();
             // create the wrapper over connected socket
             sslSocket = (SSLSocket) sslSocketFactory.createSocket(socket,
