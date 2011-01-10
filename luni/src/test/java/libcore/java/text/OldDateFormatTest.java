@@ -206,6 +206,12 @@ public class OldDateFormatTest extends junit.framework.TestCase {
     public void test_parseLString() {
         DateFormat format = DateFormat.getInstance();
 
+        Locale mDefaultLocale;
+        mDefaultLocale = Locale.getDefault();
+        if (!mDefaultLocale.equals(Locale.US)) {
+            return;
+        }
+
         try {
             format.parse("not a Date");
             fail("should throw ParseException first");
