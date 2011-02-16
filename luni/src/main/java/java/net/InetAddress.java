@@ -294,9 +294,9 @@ public class InetAddress implements Serializable {
         return lookupHostByName(host);
     }
 
-    private static native String byteArrayToIpString(byte[] address);
+    private static synchronized native String byteArrayToIpString(byte[] address);
 
-    static native byte[] ipStringToByteArray(String address) throws UnknownHostException;
+    static synchronized native byte[] ipStringToByteArray(String address) throws UnknownHostException;
 
     private static String wrongAddressLength() {
         return "Invalid IP Address is neither 4 or 16 bytes";
@@ -455,7 +455,7 @@ public class InetAddress implements Serializable {
         }
         return lookupHostByName(host)[0];
     }
-    private static native String gethostname();
+    private static synchronized native String gethostname();
 
     /**
      * Gets the hashcode of the represented IP address.
@@ -506,7 +506,7 @@ public class InetAddress implements Serializable {
             throw new UnknownHostException(host);
         }
     }
-    private static native byte[][] getaddrinfo(String name) throws UnknownHostException;
+    private static synchronized native byte[][] getaddrinfo(String name) throws UnknownHostException;
 
     /**
      * Query the IP stack for the host address. The host is in address form.
@@ -531,7 +531,7 @@ public class InetAddress implements Serializable {
     /**
      * Resolves an IP address to a hostname. Thread safe.
      */
-    private static native String getnameinfo(byte[] addr);
+    private static synchronized native String getnameinfo(byte[] addr);
 
     static String getHostNameInternal(String host, boolean isCheck) throws UnknownHostException {
         if (host == null || 0 == host.length()) {
