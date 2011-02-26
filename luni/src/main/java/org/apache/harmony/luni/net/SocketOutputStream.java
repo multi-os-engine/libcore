@@ -45,7 +45,7 @@ class SocketOutputStream extends OutputStream {
 
     @Override
     public void write(byte[] buffer) throws IOException {
-        socket.write(buffer, 0, buffer.length);
+        write(buffer, 0, buffer.length);
     }
 
     @Override
@@ -54,7 +54,13 @@ class SocketOutputStream extends OutputStream {
             throw new NullPointerException("buffer == null");
         }
         if (0 <= offset && offset <= buffer.length && 0 <= count && count <= buffer.length - offset) {
-            socket.write(buffer, offset, count);
+            while (count > 0) {
+                int written = socket.write(buffer, offset, count);
+                if (written <= 0)
+                    break;
+                offset += written;
+                count  -= written;
+            }
         } else {
             throw new ArrayIndexOutOfBoundsException();
         }
