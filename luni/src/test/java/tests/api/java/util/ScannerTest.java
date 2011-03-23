@@ -1877,6 +1877,12 @@ public class ScannerTest extends TestCase {
         args = {int.class}
     )
     public void test_nextBigIntegerI() throws IOException {
+        Locale[] requiredLocales = {Locale.GERMANY, Locale.CHINESE, Locale.ENGLISH};
+        if (!Support_Locale.areLocalesAvailable(requiredLocales)) {
+            // locale dependent test, bug 1943269
+            return;
+        }
+
         s = new Scanner("123 456");
         assertEquals(new BigInteger("123"), s.nextBigInteger(10));
         assertEquals(new BigInteger("456"), s.nextBigInteger(10));
@@ -1925,10 +1931,12 @@ public class ScannerTest extends TestCase {
         } catch (InputMismatchException e) {
             // Expected
         }
-        s.useLocale(new Locale("de", "CH"));
-        // If exception is thrown out, input will not be advanced.
-        assertEquals(new BigInteger("23456"), s.nextBigInteger(10));
-        assertEquals(new BigInteger("23456"), s.nextBigInteger(10));
+        if (Support_Locale.areLocalesAvailable(new Locale[] {new Locale("de", "CH")})) {
+            s.useLocale(new Locale("de", "CH"));
+            // If exception is thrown out, input will not be advanced.
+            assertEquals(new BigInteger("23456"), s.nextBigInteger(10));
+            assertEquals(new BigInteger("23456"), s.nextBigInteger(10));
+        }
 
         /*
          * The input string has Arabic-Indic digits.
@@ -1996,14 +2004,17 @@ public class ScannerTest extends TestCase {
         s.useLocale(Locale.CHINESE);
         assertEquals(new BigInteger("12300"), s.nextBigInteger(10));
 
-        s = new Scanner("-123");
-        s.useLocale(new Locale("ar", "AE"));
-        assertEquals(new BigInteger("-123"), s.nextBigInteger(10));
+        if (Support_Locale.areLocalesAvailable(new Locale[] {new Locale("ar", "AE")})) {
+            s = new Scanner("-123");
+            s.useLocale(new Locale("ar", "AE"));
+            assertEquals(new BigInteger("-123"), s.nextBigInteger(10));
+        }
 
-
-        s = new Scanner("-123");
-        s.useLocale(new Locale("mk", "MK"));
-        assertEquals(new BigInteger("-123"), s.nextBigInteger(10));
+        if (Support_Locale.areLocalesAvailable(new Locale[] {new Locale("mk", "MK")})) {
+            s = new Scanner("-123");
+            s.useLocale(new Locale("mk", "MK"));
+            assertEquals(new BigInteger("-123"), s.nextBigInteger(10));
+        }
 
         s.close();
         try {
@@ -2025,6 +2036,12 @@ public class ScannerTest extends TestCase {
         args = {}
     )
     public void test_nextBigInteger() throws IOException {
+        Locale[] requiredLocales = {Locale.GERMANY, Locale.CHINESE, Locale.ENGLISH};
+        if (!Support_Locale.areLocalesAvailable(requiredLocales)) {
+            // locale dependent test, bug 1943269
+            return;
+        }
+
         s = new Scanner("123 456");
         assertEquals(new BigInteger("123"), s.nextBigInteger());
         assertEquals(new BigInteger("456"), s.nextBigInteger());
@@ -2074,10 +2091,12 @@ public class ScannerTest extends TestCase {
         } catch (InputMismatchException e) {
             // Expected
         }
-        s.useLocale(new Locale("de", "CH"));
-        // If exception is thrown out, input will not be advanced.
-        assertEquals(new BigInteger("23456"), s.nextBigInteger());
-        assertEquals(new BigInteger("23456"), s.nextBigInteger());
+        if (Support_Locale.areLocalesAvailable(new Locale[] {new Locale("de", "CH")})) {
+            s.useLocale(new Locale("de", "CH"));
+            // If exception is thrown out, input will not be advanced.
+            assertEquals(new BigInteger("23456"), s.nextBigInteger());
+            assertEquals(new BigInteger("23456"), s.nextBigInteger());
+        }
 
         /*
          * The input string has Arabic-Indic digits.
@@ -2148,13 +2167,17 @@ public class ScannerTest extends TestCase {
         s.useLocale(Locale.CHINESE);
         assertEquals(new BigInteger("12300"), s.nextBigInteger());
 
-        s = new Scanner("-123");
-        s.useLocale(new Locale("ar", "AE"));
-        assertEquals(new BigInteger("-123"), s.nextBigInteger());
+        if (Support_Locale.areLocalesAvailable(new Locale[] {new Locale("ar", "AE")})) {
+            s = new Scanner("-123");
+            s.useLocale(new Locale("ar", "AE"));
+            assertEquals(new BigInteger("-123"), s.nextBigInteger());
+        }
 
-        s = new Scanner("-123");
-        s.useLocale(new Locale("mk", "MK"));
-        assertEquals(new BigInteger("-123"), s.nextBigInteger());
+        if (Support_Locale.areLocalesAvailable(new Locale[] {new Locale("mk", "MK")})) {
+            s = new Scanner("-123");
+            s.useLocale(new Locale("mk", "MK"));
+            assertEquals(new BigInteger("-123"), s.nextBigInteger());
+        }
 
         s.close();
         try {
@@ -3383,6 +3406,12 @@ public class ScannerTest extends TestCase {
         args = {int.class}
     )
     public void test_hasNextBigIntegerI() throws IOException {
+        Locale[] requiredLocales = {Locale.GERMANY, Locale.CHINESE, Locale.ENGLISH};
+        if (!Support_Locale.areLocalesAvailable(requiredLocales)) {
+            // locale dependent test, bug 1943269
+            return;
+        }
+
         s = new Scanner("123 456");
         assertTrue(s.hasNextBigInteger(10));
         assertEquals(new BigInteger("123"), s.nextBigInteger(10));
@@ -3440,12 +3469,14 @@ public class ScannerTest extends TestCase {
         } catch (InputMismatchException e) {
             // Expected
         }
-        s.useLocale(new Locale("de", "CH"));
-        // If exception is thrown out, input will not be advanced.
-        assertTrue(s.hasNextBigInteger(10));
-        assertEquals(new BigInteger("23456"), s.nextBigInteger(10));
-        assertTrue(s.hasNextBigInteger(10));
-        assertEquals(new BigInteger("23456"), s.nextBigInteger(10));
+        if (Support_Locale.areLocalesAvailable(new Locale("de", "CH"))) {
+            s.useLocale(new Locale("de", "CH"));
+            // If exception is thrown out, input will not be advanced.
+            assertTrue(s.hasNextBigInteger(10));
+            assertEquals(new BigInteger("23456"), s.nextBigInteger(10));
+            assertTrue(s.hasNextBigInteger(10));
+            assertEquals(new BigInteger("23456"), s.nextBigInteger(10));
+        }
 
         /*
          * The input string has Arabic-Indic digits.
@@ -3526,16 +3557,19 @@ public class ScannerTest extends TestCase {
         assertTrue(s.hasNextBigInteger(10));
         assertEquals(new BigInteger("12300"), s.nextBigInteger(10));
 
-        s = new Scanner("-123");
-        s.useLocale(new Locale("ar", "AE"));
-        assertTrue(s.hasNextBigInteger(10));
-        assertEquals(new BigInteger("-123"), s.nextBigInteger(10));
+        if (Support_Locale.areLocalesAvailable(new Locale("ar", "AE"))) {
+            s = new Scanner("-123");
+            s.useLocale(new Locale("ar", "AE"));
+            assertTrue(s.hasNextBigInteger(10));
+            assertEquals(new BigInteger("-123"), s.nextBigInteger(10));
+        }
 
-
-        s = new Scanner("-123");
-        s.useLocale(new Locale("mk", "MK"));
-        assertTrue(s.hasNextBigInteger(10));
-        assertEquals(new BigInteger("-123"), s.nextBigInteger(10));
+        if (Support_Locale.areLocalesAvailable(new Locale("mk", "MK"))) {
+            s = new Scanner("-123");
+            s.useLocale(new Locale("mk", "MK"));
+            assertTrue(s.hasNextBigInteger(10));
+            assertEquals(new BigInteger("-123"), s.nextBigInteger(10));
+        }
     }
 
     /**
@@ -3588,6 +3622,12 @@ public class ScannerTest extends TestCase {
         args = {}
     )
     public void test_hasNextBigInteger() throws IOException {
+        Locale[] requiredLocales = {Locale.GERMANY, Locale.CHINESE, Locale.ENGLISH};
+        if (!Support_Locale.areLocalesAvailable(requiredLocales)) {
+            // locale dependent test, bug 1943269
+            return;
+        }
+
         s = new Scanner("123 456");
         assertTrue(s.hasNextBigInteger());
         assertEquals(new BigInteger("123"), s.nextBigInteger());
@@ -3646,12 +3686,15 @@ public class ScannerTest extends TestCase {
         } catch (InputMismatchException e) {
             // Expected
         }
-        s.useLocale(new Locale("de", "CH"));
-        // If exception is thrown out, input will not be advanced.
-        assertTrue(s.hasNextBigInteger());
-        assertEquals(new BigInteger("23456"), s.nextBigInteger());
-        assertTrue(s.hasNextBigInteger());
-        assertEquals(new BigInteger("23456"), s.nextBigInteger());
+
+        if (Support_Locale.areLocalesAvailable(new Locale[] {new Locale("de", "CH")})) {
+            s.useLocale(new Locale("de", "CH"));
+            // If exception is thrown out, input will not be advanced.
+            assertTrue(s.hasNextBigInteger());
+            assertEquals(new BigInteger("23456"), s.nextBigInteger());
+            assertTrue(s.hasNextBigInteger());
+            assertEquals(new BigInteger("23456"), s.nextBigInteger());
+        }
 
         /*
          * The input string has Arabic-Indic digits.
@@ -3734,15 +3777,19 @@ public class ScannerTest extends TestCase {
         assertTrue(s.hasNextBigInteger());
         assertEquals(new BigInteger("12300"), s.nextBigInteger());
 
-        s = new Scanner("-123");
-        s.useLocale(new Locale("ar", "AE"));
-        assertTrue(s.hasNextBigInteger());
-        assertEquals(new BigInteger("-123"), s.nextBigInteger());
+        if (Support_Locale.areLocalesAvailable(new Locale[] {new Locale("ar", "AE")})) {
+            s = new Scanner("-123");
+            s.useLocale(new Locale("ar", "AE"));
+            assertTrue(s.hasNextBigInteger());
+            assertEquals(new BigInteger("-123"), s.nextBigInteger());
+        }
 
-        s = new Scanner("-123");
-        s.useLocale(new Locale("mk", "MK"));
-        assertTrue(s.hasNextBigInteger());
-        assertEquals(new BigInteger("-123"), s.nextBigInteger());
+        if (Support_Locale.areLocalesAvailable(new Locale[] {new Locale("mk", "MK")})) {
+            s = new Scanner("-123");
+            s.useLocale(new Locale("mk", "MK"));
+            assertTrue(s.hasNextBigInteger());
+            assertEquals(new BigInteger("-123"), s.nextBigInteger());
+        }
 
         s.close();
         try {
