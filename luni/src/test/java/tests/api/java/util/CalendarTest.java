@@ -647,18 +647,32 @@ public class CalendarTest extends junit.framework.TestCase {
         assertTrue(exist);
     }
 
+    private boolean isAvailableLocale(Locale locale) {
+        Locale[] availableLocales = Locale.getAvailableLocales();
+        for (Locale l : availableLocales) {
+            if (locale.equals(l)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * @tests java.util.Calendar#getInstance(Locale)
      * @tests java.util.Calendar#getInstance(TimeZone, Locale)
      */
     public void test_getInstance() {
         // test getInstance(Locale)
-        Calendar us_calendar = Calendar.getInstance(Locale.US);
-        Calendar ch_calendar = Calendar.getInstance(Locale.CHINESE);
-        assertEquals(Calendar.SUNDAY, us_calendar
-                .getFirstDayOfWeek());
-        assertEquals(Calendar.MONDAY, ch_calendar
-                .getFirstDayOfWeek());
+        if (isAvailableLocale(Locale.US)) {
+            Calendar calendar = Calendar.getInstance(Locale.US);
+            assertEquals(Calendar.SUNDAY, calendar
+                    .getFirstDayOfWeek());
+        }
+        if (isAvailableLocale(Locale.CHINESE)) {
+            Calendar calendar = Calendar.getInstance(Locale.CHINESE);
+            assertEquals(Calendar.MONDAY, calendar
+                    .getFirstDayOfWeek());
+        }
 
         // test getInstance(Locale, TimeZone)
         Calendar gmt_calendar = Calendar.getInstance(TimeZone
