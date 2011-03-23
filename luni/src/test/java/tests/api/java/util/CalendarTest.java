@@ -27,6 +27,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
+import tests.support.Support_Locale;
+
 import org.apache.harmony.testframework.serialization.SerializationTest;
 
 public class CalendarTest extends junit.framework.TestCase {
@@ -653,22 +655,28 @@ public class CalendarTest extends junit.framework.TestCase {
      */
     public void test_getInstance() {
         // test getInstance(Locale)
-        Calendar us_calendar = Calendar.getInstance(Locale.US);
-        Calendar ch_calendar = Calendar.getInstance(Locale.CHINESE);
-        assertEquals(Calendar.SUNDAY, us_calendar
-                .getFirstDayOfWeek());
-        assertEquals(Calendar.MONDAY, ch_calendar
-                .getFirstDayOfWeek());
+        if (Support_Locale.areLocalesAvailable(new Locale[] {Locale.ENGLISH})) {
+            Calendar us_calendar = Calendar.getInstance(Locale.US);
+            assertEquals(Calendar.SUNDAY, us_calendar
+                    .getFirstDayOfWeek());
+        }
+        if (Support_Locale.areLocalesAvailable(new Locale[] {Locale.CHINESE})) {
+            Calendar ch_calendar = Calendar.getInstance(Locale.CHINESE);
+            assertEquals(Calendar.MONDAY, ch_calendar
+                    .getFirstDayOfWeek());
+        }
 
         // test getInstance(Locale, TimeZone)
-        Calendar gmt_calendar = Calendar.getInstance(TimeZone
-                .getTimeZone("GMT"), Locale.US);
-        assertEquals(TimeZone.getTimeZone("GMT"),
-                gmt_calendar.getTimeZone());
-        Calendar est_calendar = Calendar.getInstance(TimeZone
-                .getTimeZone("EST"), Locale.US);
-        assertEquals(TimeZone.getTimeZone("EST")
-                .getID(), est_calendar.getTimeZone().getID());
+        if (Support_Locale.areLocalesAvailable(new Locale[] {Locale.US})) {
+            Calendar gmt_calendar = Calendar.getInstance(TimeZone
+                    .getTimeZone("GMT"), Locale.US);
+            assertEquals(TimeZone.getTimeZone("GMT"),
+                    gmt_calendar.getTimeZone());
+            Calendar est_calendar = Calendar.getInstance(TimeZone
+                    .getTimeZone("EST"), Locale.US);
+            assertEquals(TimeZone.getTimeZone("EST")
+                    .getID(), est_calendar.getTimeZone().getID());
+        }
     }
 
     /**
