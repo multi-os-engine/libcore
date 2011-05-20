@@ -1,0 +1,9 @@
+Change-Id: I8a724118ab19d272b65d1cce94fe317a4e3d6d3c
+Verified+1: Jean-Baptiste Queru <jbq@google.com>
+Code-Review+1: Johan Redestig <johan.redestig@sonyericsson.com>
+Code-Review+2: Elliott Hughes <enh@google.com>
+Submitted-by: Jean-Baptiste Queru <jbq@google.com>
+Submitted-at: Tue, 15 Jun 2010 12:17:50 -0700
+Reviewed-on: https://review.source.android.com/15268
+Project: platform/libcore
+Branch: refs/heads/master

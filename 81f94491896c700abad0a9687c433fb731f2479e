@@ -1,0 +1,9 @@
+Code-Review+2: Dan Bornstein <danfuzz@android.com>
+Verified+1: Jean-Baptiste Queru <jbq@google.com>
+Code-Review+1: Dan Morrill <morrildl@google.com>
+Code-Review+2: Jesse Wilson <jessewilson@google.com>
+Submitted-by: Jean-Baptiste Queru <jbq@google.com>
+Submitted-at: Fri, 14 Jan 2011 13:46:37 -0700
+Reviewed-on: https://review.source.android.com/20254
+Project: platform/libcore
+Branch: refs/heads/gingerbread
