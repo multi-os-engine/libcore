@@ -31,49 +31,108 @@
 #if defined(__arm__)
 // 32-bit ARM has load/store alignment restrictions for longs.
 #define LONG_ALIGNMENT_MASK 0x3
+#define INT_ALIGNMENT_MASK 0x0
+#define SHORT_ALIGNMENT_MASK 0x0
+#elif defined(__mips__)
+// MIPS has load/store alignment restrictions for longs.
+#define LONG_ALIGNMENT_MASK 0x7
+#define INT_ALIGNMENT_MASK 0x3
+#define SHORT_ALIGNMENT_MASK 0x1
 #elif defined(__i386__)
 // x86 can load anything at any alignment.
 #define LONG_ALIGNMENT_MASK 0x0
+#define INT_ALIGNMENT_MASK 0x0
+#define SHORT_ALIGNMENT_MASK 0x0
 #else
 #error unknown load/store alignment restrictions for this architecture
 #endif
+
+typedef struct __una_jshort { jshort x; } __attribute__ ((packed)) __una_short;
+typedef struct __una_jint { jint x; } __attribute__ ((packed)) __una_jint;
+typedef struct __una_jlong { jlong x;  } __attribute__ ((packed)) __una_jlong;
 
 template <typename T> static T cast(jint address) {
     return reinterpret_cast<T>(static_cast<uintptr_t>(address));
 }
 
 static inline void swapShorts(jshort* dstShorts, const jshort* srcShorts, size_t count) {
-    // Do 32-bit swaps as long as possible...
-    jint* dst = reinterpret_cast<jint*>(dstShorts);
-    const jint* src = reinterpret_cast<const jint*>(srcShorts);
-    for (size_t i = 0; i < count / 2; ++i) {
-        jint v = *src++;                            // v=ABCD
-        v = bswap_32(v);                            // v=DCBA
-        jint v2 = (v << 16) | ((v >> 16) & 0xffff); // v=BADC
-        *dst++ = v2;
+    if ((reinterpret_cast<const jint>(dstShorts) & INT_ALIGNMENT_MASK) == 0 &&
+        (reinterpret_cast<const jint>(srcShorts) & INT_ALIGNMENT_MASK) == 0) {
+        // Do 32-bit swaps as long as possible...
+        const jint* src = reinterpret_cast<const jint*>(srcShorts);
+        jint* dst = reinterpret_cast<jint*>(dstShorts);
+        for (size_t i = 0; i < count / 2; ++i) {
+          jint v = *src++;                            // v=ABCD
+          v = bswap_32(v);                            // v=DCBA
+          jint v2 = (v << 16) | ((v >> 16) & 0xffff); // v=BADC
+          *dst++ = v2;
+        }
+        // ...with one last 16-bit swap if necessary.
+        if ((count % 2) != 0) {
+            jshort v = *reinterpret_cast<const jshort*>(src);
+            *reinterpret_cast<jshort*>(dst) = bswap_16(v);
+        }
     }
-    // ...with one last 16-bit swap if necessary.
-    if ((count % 2) != 0) {
-        jshort v = *reinterpret_cast<const jshort*>(src);
-        *reinterpret_cast<jshort*>(dst) = bswap_16(v);
+    else {
+        const __una_jint* usrc = reinterpret_cast<const __una_jint*>(srcShorts);
+        __una_jint* udst = reinterpret_cast<__una_jint*>(dstShorts);
+        for (size_t i = 0; i < count / 2; ++i) {
+            jint v = (usrc++)->x;                       // v=ABCD
+#if defined(__mips__) && defined(__mips_isa_rev) && (__mips_isa_rev >= 2)
+            jint v2;
+            __asm__ volatile ("wsbh %0, %1" : "=r" (v2) : "r" (v)); // v=BADC
+#else
+            v = bswap_32(v);                            // v=DCBA
+            jint v2 = (v << 16) | ((v >> 16) & 0xffff); // v=BADC
+#endif
+            (udst++)->x = v2;
+        }
+        if ((count % 2) != 0) {
+            jshort v = reinterpret_cast<const __una_jshort *>(usrc)->x;
+            reinterpret_cast<__una_jshort*>(udst)->x = bswap_16(v);
+        }
     }
 }
 
 static inline void swapInts(jint* dstInts, const jint* srcInts, size_t count) {
-    for (size_t i = 0; i < count; ++i) {
-        jint v = *srcInts++;
-        *dstInts++ = bswap_32(v);
+    if ((reinterpret_cast<const jint>(dstInts) & INT_ALIGNMENT_MASK) == 0 &&
+        (reinterpret_cast<const jint>(srcInts) & INT_ALIGNMENT_MASK) == 0) {
+        for (size_t i = 0; i < count; ++i) {
+            jint v = *srcInts++;
+            *dstInts++ = bswap_32(v);
+        }
+    }
+    else {
+        const __una_jint* usrc = reinterpret_cast<const __una_jint*>(srcInts);
+        __una_jint* udst = reinterpret_cast<__una_jint*>(dstInts);
+        for (size_t i = 0; i < count; ++i) {
+            jint v = (usrc++)->x;
+            (udst++)->x = bswap_32(v);
+        }
     }
 }
 
 static inline void swapLongs(jlong* dstLongs, const jlong* srcLongs, size_t count) {
-    jint* dst = reinterpret_cast<jint*>(dstLongs);
-    const jint* src = reinterpret_cast<const jint*>(srcLongs);
-    for (size_t i = 0; i < count; ++i) {
-        jint v1 = *src++;
-        jint v2 = *src++;
-        *dst++ = bswap_32(v2);
-        *dst++ = bswap_32(v1);
+    if ((reinterpret_cast<const jint>(dstLongs) & INT_ALIGNMENT_MASK) == 0 &&
+        (reinterpret_cast<const jint>(dstLongs) & INT_ALIGNMENT_MASK) == 0) {
+        const jint* src = reinterpret_cast<const jint*>(srcLongs);
+        jint* dst = reinterpret_cast<jint*>(dstLongs);
+        for (size_t i = 0; i < count; ++i) {
+          jint v1 = *src++;
+          jint v2 = *src++;
+          *dst++ = bswap_32(v2);
+          *dst++ = bswap_32(v1);
+        }
+    }
+    else {
+        const __una_jint* usrc = reinterpret_cast<const __una_jint*>(srcLongs);
+        __una_jint* udst = reinterpret_cast<__una_jint*>(dstLongs);
+        for (size_t i = 0; i < count; ++i) {
+            jint v1 = (usrc++)->x;
+            jint v2 = (usrc++)->x;
+            (udst++)->x = bswap_32(v2);
+            (udst++)->x = bswap_32(v1);
+        }
     }
 }
 
