@@ -53,6 +53,7 @@
 #include <sys/vfs.h> // Bionic doesn't have <sys/statvfs.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <termios.h>
 
 #define TO_JAVA_STRING(NAME, EXP) \
         jstring NAME = env->NewStringUTF(EXP); \
@@ -533,7 +534,10 @@ static jobject Posix_fstatfs(JNIEnv* env, jobject, jobject javaFd) {
 
 static void Posix_fsync(JNIEnv* env, jobject, jobject javaFd) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
-    throwIfMinusOne(env, "fsync", TEMP_FAILURE_RETRY(fsync(fd)));
+    if (isatty(fd))
+        throwIfMinusOne(env, "fsync", TEMP_FAILURE_RETRY(tcdrain(fd)));
+    else
+        throwIfMinusOne(env, "fsync", TEMP_FAILURE_RETRY(fsync(fd)));
 }
 
 static void Posix_ftruncate(JNIEnv* env, jobject, jobject javaFd, jlong length) {
