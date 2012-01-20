@@ -602,6 +602,20 @@ public final class DiskLruCacheTest extends TestCase {
         assertAbsent("A");
     }
 
+    public void testAggressiveClearingHandledOnWrite() throws Exception {
+        IoUtils.deleteContents(cacheDir);
+        set("A", "a", "a");
+        assertValue("A", "a", "a");
+    }
+
+    /*public void testAggressiveClearingHandledOnEdit() throws Exception {
+        set("A", "a", "a");
+        DiskLruCache.Editor a = cache.get("A").edit();
+        IoUtils.deleteContents(cacheDir);
+        a.set(1, "a2");
+        a.commit();
+    }*/
+
     private void assertJournalEquals(String... expectedBodyLines) throws Exception {
         List<String> expectedLines = new ArrayList<String>();
         expectedLines.add(MAGIC);

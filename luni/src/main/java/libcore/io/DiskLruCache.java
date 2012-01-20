@@ -670,7 +670,15 @@ public final class DiskLruCache implements Closeable {
                 if (entry.currentEditor != this) {
                     throw new IllegalStateException();
                 }
-                return new FaultHidingOutputStream(new FileOutputStream(entry.getDirtyFile(index)));
+                File outFile = entry.getDirtyFile(index);
+                FileOutputStream out;
+                try {
+                    out = new FileOutputStream(outFile);
+                } catch (FileNotFoundException e) {
+                    directory.mkdirs();
+                    out = new FileOutputStream(outFile);
+                }
+                return new FaultHidingOutputStream(out);
             }
         }
 
