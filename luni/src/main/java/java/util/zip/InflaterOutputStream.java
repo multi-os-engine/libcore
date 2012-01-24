@@ -32,6 +32,7 @@ public class InflaterOutputStream extends FilterOutputStream {
     private static final int DEFAULT_BUFFER_SIZE = 1024;
 
     protected final Inflater inf;
+    private boolean usesPrivateInflater = false;
     protected final byte[] buf;
 
     private boolean closed = false;
@@ -45,6 +46,7 @@ public class InflaterOutputStream extends FilterOutputStream {
      */
     public InflaterOutputStream(OutputStream out) {
         this(out, new Inflater());
+        usesPrivateInflater = true;
     }
 
     /**
@@ -88,7 +90,8 @@ public class InflaterOutputStream extends FilterOutputStream {
     public void close() throws IOException {
         if (!closed) {
             finish();
-            inf.end();
+            if (usesPrivateInflater)
+                inf.end();
             out.close();
             closed = true;
         }

@@ -33,6 +33,7 @@ public class DeflaterInputStream extends FilterInputStream {
     private static final int DEFAULT_BUFFER_SIZE = 1024;
 
     protected final Deflater def;
+    private boolean usesPrivateDeflater = false;
     protected final byte[] buf;
 
     private boolean closed = false;
@@ -47,6 +48,7 @@ public class DeflaterInputStream extends FilterInputStream {
      */
     public DeflaterInputStream(InputStream in) {
         this(in, new Deflater(), DEFAULT_BUFFER_SIZE);
+        usesPrivateDeflater = true;
     }
 
     /**
@@ -89,7 +91,8 @@ public class DeflaterInputStream extends FilterInputStream {
     @Override
     public void close() throws IOException {
         closed = true;
-        def.end();
+        if (usesPrivateDeflater)
+            def.end();
         in.close();
     }
 
