@@ -43,6 +43,8 @@ public class DeflaterOutputStream extends FilterOutputStream {
      */
     protected Deflater def;
 
+    private boolean usesPrivateDeflater = false;
+
     boolean done = false;
 
     private final boolean syncFlush;
@@ -74,6 +76,7 @@ public class DeflaterOutputStream extends FilterOutputStream {
      */
     public DeflaterOutputStream(OutputStream os) {
         this(os, new Deflater(), BUF_SIZE, false);
+        usesPrivateDeflater = true;
     }
 
     /**
@@ -99,6 +102,7 @@ public class DeflaterOutputStream extends FilterOutputStream {
      */
     public DeflaterOutputStream(OutputStream os, boolean syncFlush) {
         this(os, new Deflater(), BUF_SIZE, syncFlush);
+        usesPrivateDeflater = true;
     }
 
     /**
@@ -155,7 +159,8 @@ public class DeflaterOutputStream extends FilterOutputStream {
         if (!def.finished()) {
             finish();
         }
-        def.end();
+        if (usesPrivateDeflater)
+            def.end();
         out.close();
     }
 

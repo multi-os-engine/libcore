@@ -41,6 +41,8 @@ public class InflaterInputStream extends FilterInputStream {
      */
     protected Inflater inf;
 
+    private boolean usesPrivateInflater = false;
+
     /**
      * The input buffer used for decompression.
      */
@@ -75,6 +77,7 @@ public class InflaterInputStream extends FilterInputStream {
      */
     public InflaterInputStream(InputStream is) {
         this(is, new Inflater(), BUF_SIZE);
+        usesPrivateInflater = true;
     }
 
     /**
@@ -250,7 +253,8 @@ public class InflaterInputStream extends FilterInputStream {
     @Override
     public void close() throws IOException {
         if (!closed) {
-            inf.end();
+            if (usesPrivateInflater)
+                inf.end();
             closed = true;
             eof = true;
             super.close();
