@@ -75,25 +75,50 @@ public class DecimalFormatTest extends junit.framework.TestCase {
         assertDecFmtWithMultiplierAndFraction("3333.33333333", 3, 4, "10,000");
         assertDecFmtWithMultiplierAndFraction("3333.33333333", -3, 4, "-10,000");
         assertDecFmtWithMultiplierAndFraction("0.00333333", 3, 4, "0.01");
-        assertDecFmtWithMultiplierAndFraction("3330000000000000000000000000000000", 3, 4,
-                "9,990,000,000,000,000,000,000,000,000,000,000");
+
+        // Check DecimalFormat.
+        DecimalFormat df = (DecimalFormat)NumberFormat.getInstance();
+        if (df.toPattern().equals("#,##,##0.###")) {
+            assertDecFmtWithMultiplierAndFraction("3330000000000000000000000000000000", 3, 4,
+                    "9,99,00,00,00,00,00,00,00,00,00,00,00,00,00,00,000");
+        } else if (df.toPattern().equals("#,##0.###")) {
+            assertDecFmtWithMultiplierAndFraction("3330000000000000000000000000000000", 3, 4,
+                    "9,990,000,000,000,000,000,000,000,000,000,000");
+        }
     }
 
     public void testBigDecimalTestBigIntWithMultiplier() {
         // Big integer tests.
-        assertDecFmtWithMultiplierAndFraction("123456789012345", 10, 0,
-                "1,234,567,890,123,450");
-        assertDecFmtWithMultiplierAndFraction("12345678901234567890", 10, 0,
-                "123,456,789,012,345,678,900");
-        assertDecFmtWithMultiplierAndFraction("98765432109876543210987654321", 10, 0,
-                "987,654,321,098,765,432,109,876,543,210");
+        DecimalFormat df = (DecimalFormat)NumberFormat.getInstance();
+        if (df.toPattern().equals("#,##,##0.###")) {
+            assertDecFmtWithMultiplierAndFraction("123456789012345", 10, 0,
+                    "1,23,45,67,89,01,23,450");
+            assertDecFmtWithMultiplierAndFraction("12345678901234567890", 10, 0,
+                    "12,34,56,78,90,12,34,56,78,900");
+            assertDecFmtWithMultiplierAndFraction("98765432109876543210987654321", 10, 0,
+                    "9,87,65,43,21,09,87,65,43,21,09,87,65,43,210");
 
-        assertDecFmtWithMultiplierAndFraction("123456789012345", -10, 0,
-                "-1,234,567,890,123,450");
-        assertDecFmtWithMultiplierAndFraction("12345678901234567890", -10, 0,
-                "-123,456,789,012,345,678,900");
-        assertDecFmtWithMultiplierAndFraction("98765432109876543210987654321", -10, 0,
-                "-987,654,321,098,765,432,109,876,543,210");
+            assertDecFmtWithMultiplierAndFraction("123456789012345", -10, 0,
+                    "-1,23,45,67,89,01,23,450");
+            assertDecFmtWithMultiplierAndFraction("12345678901234567890", -10, 0,
+                    "-12,34,56,78,90,12,34,56,78,900");
+            assertDecFmtWithMultiplierAndFraction("98765432109876543210987654321", -10, 0,
+                    "-9,87,65,43,21,09,87,65,43,21,09,87,65,43,210");
+        } else if (df.toPattern().equals("#,##0.###")) {
+            assertDecFmtWithMultiplierAndFraction("123456789012345", 10, 0,
+                    "1,234,567,890,123,450");
+            assertDecFmtWithMultiplierAndFraction("12345678901234567890", 10, 0,
+                    "123,456,789,012,345,678,900");
+            assertDecFmtWithMultiplierAndFraction("98765432109876543210987654321", 10, 0,
+                    "987,654,321,098,765,432,109,876,543,210");
+
+            assertDecFmtWithMultiplierAndFraction("123456789012345", -10, 0,
+                    "-1,234,567,890,123,450");
+            assertDecFmtWithMultiplierAndFraction("12345678901234567890", -10, 0,
+                    "-123,456,789,012,345,678,900");
+            assertDecFmtWithMultiplierAndFraction("98765432109876543210987654321", -10, 0,
+                    "-987,654,321,098,765,432,109,876,543,210");
+        }
     }
 
     public void testBigDecimalICUConsistency() {
