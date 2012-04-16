@@ -20,15 +20,25 @@ package java.lang.ref;
  * @hide
  */
 public final class FinalizerReference<T> extends Reference<T> {
+    // This queue contains those objects eligible for finalization.
     public static final ReferenceQueue<Object> queue = new ReferenceQueue<Object>();
 
+    // This list contains a FinalizerReference for every finalizable object in the heap.
+    // Objects in this list may or may not be eligible for finalization yet.
     private static FinalizerReference head = null;
+
+    // The links used to construct the list.
+    private FinalizerReference prev;
+    private FinalizerReference next;
 
     private T zombie;
 
-    private FinalizerReference prev;
-
-    private FinalizerReference next;
+    // Instances of Sentinel cause a FinalizerReference to be added to the list when they're
+    // created, by virtue of being finalizable. Because only the runtime itself (not the library)
+    // has access to that FinalizerReference, we add a *different* FinalizerReference to the
+    // queue straight away. When that FinalizerReference gets processed, we shouldn't try to
+    // remove it from the list because it isn't on the list. This field lets us detect that.
+    private boolean onList = true;
 
     public FinalizerReference(T r, ReferenceQueue<? super T> q) {
         super(r, q);
@@ -58,6 +68,10 @@ public final class FinalizerReference<T> extends Reference<T> {
 
     public static void remove(FinalizerReference reference) {
         synchronized (FinalizerReference.class) {
+            if (!reference.onList) {
+               return;
+            }
+
             FinalizerReference next = reference.next;
             FinalizerReference prev = reference.prev;
             reference.next = null;
@@ -80,6 +94,7 @@ public final class FinalizerReference<T> extends Reference<T> {
         Sentinel sentinel = new Sentinel();
         FinalizerReference<Object> reference = new FinalizerReference<Object>(null, queue);
         reference.zombie = sentinel;
+        reference.onList = false;
         reference.enqueueInternal();
         sentinel.awaitFinalization();
     }
