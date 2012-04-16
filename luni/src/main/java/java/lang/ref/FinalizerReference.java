@@ -30,6 +30,8 @@ public final class FinalizerReference<T> extends Reference<T> {
 
     private FinalizerReference next;
 
+    private boolean isSentinel = false;
+
     public FinalizerReference(T r, ReferenceQueue<? super T> q) {
         super(r, q);
     }
@@ -58,6 +60,11 @@ public final class FinalizerReference<T> extends Reference<T> {
 
     public static void remove(FinalizerReference reference) {
         synchronized (FinalizerReference.class) {
+            if (reference.isSentinel) {
+               // Don't try to remove a Sentinel reference, because it is not in the list.
+               return;
+            }
+
             FinalizerReference next = reference.next;
             FinalizerReference prev = reference.prev;
             reference.next = null;
@@ -80,6 +87,7 @@ public final class FinalizerReference<T> extends Reference<T> {
         Sentinel sentinel = new Sentinel();
         FinalizerReference<Object> reference = new FinalizerReference<Object>(null, queue);
         reference.zombie = sentinel;
+        reference.isSentinel = true;
         reference.enqueueInternal();
         sentinel.awaitFinalization();
     }

@@ -32,10 +32,28 @@ public final class FinalizeTest extends TestCase {
             fail();
         }
     }
+    /**
+     * Test verifies that runFinalization() does not mess up objects
+     * that should be finalized later on.
+     */
+    public void testInducedFinalization() throws Exception {
+        AtomicBoolean finalized = new AtomicBoolean();
+        X finalizable = createFinalizableObject(finalized);
+        FinalizationTester.induceFinalization();
+        if (finalized.get()) { // Finalizer should NOT have run yet.
+            fail();
+        }
+        finalizable = null;
+        FinalizationTester.induceFinalization();
+        if (!finalized.get()) { // It should be finalized now.
+            fail();
+        }
+    }
+
 
     /** Do not inline this method; that could break non-precise GCs. See FinalizationTester. */
-    private void createFinalizableObject(final AtomicBoolean finalized) {
-        new X() {
+    private X createFinalizableObject(final AtomicBoolean finalized) {
+        return new X() {
             @Override protected void finalize() throws Throwable {
                 super.finalize();
                 finalized.set(true);
