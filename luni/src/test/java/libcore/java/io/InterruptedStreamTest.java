@@ -93,7 +93,7 @@ public final class InterruptedStreamTest extends TestCase {
 
     public void testInterruptWritableSocketChannel() throws Exception {
         sockets = newSocketChannelPair();
-        testInterruptReadableChannel(sockets[0].getChannel());
+        testInterruptWritableChannel(sockets[0].getChannel());
     }
 
     /**
@@ -173,6 +173,10 @@ public final class InterruptedStreamTest extends TestCase {
         final Thread toInterrupt = Thread.currentThread();
         new Thread(new Runnable () {
             @Override public void run() {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                }
                 toInterrupt.interrupt();
             }
         }).start();
