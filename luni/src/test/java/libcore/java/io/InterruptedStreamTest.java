@@ -78,14 +78,6 @@ public final class InterruptedStreamTest extends TestCase {
         testInterruptWriter(writer);
     }
 
-    public void testInterruptReadablePipeChannel() throws Exception {
-        testInterruptReadableChannel(Pipe.open().source());
-    }
-
-    public void testInterruptWritablePipeChannel() throws Exception {
-        testInterruptWritableChannel(Pipe.open().sink());
-    }
-
     public void testInterruptReadableSocketChannel() throws Exception {
         sockets = newSocketChannelPair();
         testInterruptReadableChannel(sockets[0].getChannel());
@@ -93,7 +85,7 @@ public final class InterruptedStreamTest extends TestCase {
 
     public void testInterruptWritableSocketChannel() throws Exception {
         sockets = newSocketChannelPair();
-        testInterruptReadableChannel(sockets[0].getChannel());
+        testInterruptWritableChannel(sockets[0].getChannel());
     }
 
     /**
