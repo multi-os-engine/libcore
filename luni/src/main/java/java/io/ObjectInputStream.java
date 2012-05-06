@@ -533,9 +533,8 @@ public class ObjectInputStream extends InputStream implements ObjectInput, Objec
 
     /**
      * Reads at most {@code length} bytes from the source stream and stores them
-     * in byte array {@code buffer} starting at offset {@code count}. Blocks
-     * until {@code count} bytes have been read, the end of the source stream is
-     * detected or an exception is thrown.
+     * in byte array {@code buffer} starting at {@code offset}. In mose cases,
+     * @link(#readFully(byte[], int, int) is a more appropriate method to call.
      *
      * @param buffer
      *            the array in which to store the bytes read.
@@ -554,6 +553,8 @@ public class ObjectInputStream extends InputStream implements ObjectInput, Objec
      *             if an error occurs while reading from this stream.
      * @throws NullPointerException
      *             if {@code buffer} is {@code null}.
+     *
+     * @see #readFully(byte[], int, int)
      */
     @Override
     public int read(byte[] buffer, int offset, int length) throws IOException {
