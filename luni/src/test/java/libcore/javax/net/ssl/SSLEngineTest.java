@@ -345,6 +345,48 @@ public class SSLEngineTest extends TestCase {
         clientAuthContext.close();
         c.close();
     }
+    
+    public void test_SSLEngine_clientAuthWantedNoClientCert() throws Exception {
+        // TODO Fix KnownFailure "init - invalid private key"
+        TestSSLContext clientAuthContext
+                = TestSSLContext.create(TestKeyStore.getClient(),
+                                        TestKeyStore.getServer());
+        TestSSLEnginePair p = TestSSLEnginePair.create(clientAuthContext,
+                                                       new TestSSLEnginePair.Hooks() {
+            @Override
+                    void beforeBeginHandshake(SSLEngine client, SSLEngine server) {
+                server.setWantClientAuth(true);
+            }
+        });
+        assertConnected(p);
+        clientAuthContext.close();
+    }
+    
+    public void test_SSLEngine_clientAuthNeededNoClientCert() throws Exception {
+        // TODO Fix KnownFailure "init - invalid private key"
+    	boolean handshakeExceptionCaught = false;
+        TestSSLContext clientAuthContext
+                = TestSSLContext.create(TestKeyStore.getClient(),
+                                        TestKeyStore.getServer());
+        try {
+        	TestSSLEnginePair p = TestSSLEnginePair.create(clientAuthContext,
+                                                       new TestSSLEnginePair.Hooks() {
+        		@Override
+                void beforeBeginHandshake(SSLEngine client, SSLEngine server) {
+        			server.setNeedClientAuth(true);
+        		}
+        	});
+        }
+        catch (SSLHandshakeException e) {
+        	handshakeExceptionCaught = true;
+        }
+        finally {
+        	clientAuthContext.close();
+        }
+        if (!handshakeExceptionCaught) {
+        	fail();
+        }
+    }
 
     public void test_SSLEngine_getEnableSessionCreation() throws Exception {
         TestSSLContext c = TestSSLContext.create();
