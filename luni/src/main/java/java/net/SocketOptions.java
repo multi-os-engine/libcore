@@ -75,6 +75,12 @@ public interface SocketOptions {
     public static final int TCP_NODELAY = 1;
 
     /**
+    * This option specifies how large the maximum segment size is.
+    * @hide
+    */
+    public static final int TCP_MAXSEG = 2;
+
+    /**
      * This is an IPv4-only socket option whose functionality is subsumed by
      * {@link #IP_MULTICAST_IF2} and not implemented on Android.
      */

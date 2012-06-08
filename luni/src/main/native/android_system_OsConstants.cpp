@@ -513,6 +513,7 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "S_IXGRP", S_IXGRP);
     initConstant(env, c, "S_IXOTH", S_IXOTH);
     initConstant(env, c, "S_IXUSR", S_IXUSR);
+    initConstant(env, c, "TCP_MAXSEG", TCP_MAXSEG);
     initConstant(env, c, "TCP_NODELAY", TCP_NODELAY);
     initConstant(env, c, "WCONTINUED", WCONTINUED);
     initConstant(env, c, "WEXITED", WEXITED);
