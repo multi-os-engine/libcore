@@ -301,6 +301,8 @@ public final class IoBridge {
             return (int) Libcore.os.getsockoptTimeval(fd, SOL_SOCKET, SO_RCVTIMEO).toMillis();
         case SocketOptions.TCP_NODELAY:
             return booleanFromInt(Libcore.os.getsockoptInt(fd, IPPROTO_TCP, TCP_NODELAY));
+        case SocketOptions.TCP_MAXSEG:
+            return Libcore.os.getsockoptInt(fd, IPPROTO_TCP, TCP_MAXSEG);
         default:
             throw new SocketException("Unknown socket option: " + option);
         }
@@ -385,6 +387,9 @@ public final class IoBridge {
             return;
         case SocketOptions.TCP_NODELAY:
             Libcore.os.setsockoptInt(fd, IPPROTO_TCP, TCP_NODELAY, booleanToInt((Boolean) value));
+            return;
+        case SocketOptions.TCP_MAXSEG:
+            Libcore.os.setsockoptInt(fd, IPPROTO_TCP, TCP_MAXSEG, (Integer)value);
             return;
         case IoBridge.JAVA_MCAST_JOIN_GROUP:
         case IoBridge.JAVA_MCAST_LEAVE_GROUP:

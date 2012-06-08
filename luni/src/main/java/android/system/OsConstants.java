@@ -456,6 +456,8 @@ public final class OsConstants {
     public static final int S_IXGRP = placeholder();
     public static final int S_IXOTH = placeholder();
     public static final int S_IXUSR = placeholder();
+    /** @hide */
+    public static final int TCP_MAXSEG = placeholder();
     public static final int TCP_NODELAY = placeholder();
     public static final int WCONTINUED = placeholder();
     public static final int WEXITED = placeholder();

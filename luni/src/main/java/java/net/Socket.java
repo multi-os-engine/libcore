@@ -966,6 +966,21 @@ public class Socket implements Closeable {
     }
 
     /**
+    * Sets the {@see SocketOptions#TCP_MAXSEG} value for every packet sent by this socket.
+    *
+    * @throws SocketException
+    *             if if the socket is closed or the the option could not be set.
+    * @hide
+    */
+    public void setMaxSegmentSize(int value) throws SocketException {
+        checkOpenAndCreate(true);
+        if (value <= 0) {
+            throw new IllegalArgumentException();
+        }
+        impl.setOption(SocketOptions.TCP_MAXSEG, Integer.valueOf(value));
+    }
+
+    /**
      * Returns this socket's {@see SocketOptions#IP_TOS} setting.
      */
     public int getTrafficClass() throws SocketException {
