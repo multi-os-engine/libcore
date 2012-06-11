@@ -2968,7 +2968,7 @@ static void NativeCrypto_SSL_use_certificate(JNIEnv* env, jclass,
         return;
     }
 
-    Unique_X509 certificatesX509[length];
+    Unique_X509* certificatesX509 = static_cast<Unique_X509*>(alloca(sizeof(Unique_X509) * length));
     for (int i = 0; i < length; i++) {
         ScopedLocalRef<jbyteArray> certificate(env,
                 reinterpret_cast<jbyteArray>(env->GetObjectArrayElement(certificates, i)));
