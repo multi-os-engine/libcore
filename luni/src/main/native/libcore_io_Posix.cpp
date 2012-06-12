@@ -58,6 +58,12 @@
         jstring NAME = env->NewStringUTF(EXP); \
         if (NAME == NULL) return NULL;
 
+#ifdef __GNUC__
+#  define LIBCORE_UNUSED(x) x __attribute__((unused))
+#else // __GNUC__
+#  define LIBCORE_UNUSED(x) x
+#endif // __GNUC__
+
 struct addrinfo_deleter {
     void operator()(addrinfo* p) const {
         if (p != NULL) { // bionic's freeaddrinfo(3) crashes when passed NULL.
@@ -409,7 +415,7 @@ static void Posix_bind(JNIEnv* env, jobject, jobject javaFd, jobject javaAddress
     }
     int fd;
     const sockaddr* sa = reinterpret_cast<const sockaddr*>(&ss);
-    NET_FAILURE_RETRY("bind", bind(fd, sa, sizeof(sockaddr_storage)));
+    int LIBCORE_UNUSED(rc) = NET_FAILURE_RETRY("bind", bind(fd, sa, sizeof(sockaddr_storage)));
 }
 
 static void Posix_chmod(JNIEnv* env, jobject, jstring javaPath, jint mode) {
@@ -447,7 +453,7 @@ static void Posix_connect(JNIEnv* env, jobject, jobject javaFd, jobject javaAddr
     }
     int fd;
     const sockaddr* sa = reinterpret_cast<const sockaddr*>(&ss);
-    NET_FAILURE_RETRY("connect", connect(fd, sa, sizeof(sockaddr_storage)));
+    int LIBCORE_UNUSED(rc) = NET_FAILURE_RETRY("connect", connect(fd, sa, sizeof(sockaddr_storage)));
 }
 
 static jobject Posix_dup(JNIEnv* env, jobject, jobject javaOldFd) {
