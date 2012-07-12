@@ -855,15 +855,17 @@ public class File implements Serializable, Comparable<File> {
     }
 
     /**
-     * Creates the directory named by the trailing filename of this file. Does
-     * not create the complete path required to create this directory.
+     * Creates the directory named by this file, assuming its parents exist.
+     * Use {@link #mkdirs} if you also want to create missing parents.
      *
      * <p>Note that this method does <i>not</i> throw {@code IOException} on failure.
-     * Callers must check the return value.
+     * Callers must check the return value. Note also that this method returns
+     * false if the directory already existed. If you want to know whether the
+     * directory exists on return, either use {@code (f.mkdir() || f.isDirectory())}
+     * or simply ignore the return value from this method and simply call {@link #isDirectory}.
      *
-     * @return {@code true} if the directory has been created, {@code false}
-     *         otherwise.
-     * @see #mkdirs
+     * @return {@code true} if the directory was created,
+     *         {@code false} on failure or if the directory already existed.
      */
     public boolean mkdir() {
         try {
@@ -876,36 +878,42 @@ public class File implements Serializable, Comparable<File> {
     }
 
     /**
-     * Creates the directory named by the trailing filename of this file,
-     * including the complete directory path required to create this directory.
+     * Creates the directory named by this file, creating missing parent
+     * directories if necessary.
+     * Use {@link #mkdir} if you don't want to create missing parents.
      *
      * <p>Note that this method does <i>not</i> throw {@code IOException} on failure.
-     * Callers must check the return value.
+     * Callers must check the return value. Note also that this method returns
+     * false if the directory already existed. If you want to know whether the
+     * directory exists on return, either use {@code (f.mkdirs() || f.isDirectory())}
+     * or simply ignore the return value from this method and simply call {@link #isDirectory}.
      *
-     * @return {@code true} if the necessary directories have been created,
-     *         {@code false} if the target directory already exists or one of
-     *         the directories can not be created.
-     * @see #mkdir
+     * @return {@code true} if the directory was created,
+     *         {@code false} on failure or if the directory already existed.
      */
     public boolean mkdirs() {
-        /* If the terminal directory already exists, answer false */
+        // If the directory already exists, return false.
         if (exists()) {
             return false;
         }
 
-        /* If the receiver can be created, answer true */
+        // If the directory can be created directly, return true.
         if (mkdir()) {
             return true;
         }
 
-        String parentDir = getParent();
-        /* If there is no parent and we were not created, answer false */
-        if (parentDir == null) {
-            return false;
-        }
+        // Maybe the failure was because a parent didn't exist.
+        // Try to create all the parent directories and then try again...
+        makeParentDirectories();
+        return mkdir();
+    }
 
-        /* Otherwise, try to create a parent directory and then this directory */
-        return (new File(parentDir).mkdirs() && mkdir());
+    private void makeParentDirectories() {
+        File parent = getParentFile();
+        if (parent != null && !parent.exists()) {
+            parent.makeParentDirectories();
+            parent.mkdir();
+        }
     }
 
     /**
