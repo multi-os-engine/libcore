@@ -460,7 +460,13 @@ public final class DiskLruCache implements Closeable {
             for (int i = 0; i < valueCount; i++) {
                 if (!entry.getDirtyFile(i).exists()) {
                     editor.abort();
-                    throw new IllegalStateException("edit didn't create file " + i);
+                    // We report if this happens because usually it
+                    // indicates the caller is using the API
+                    // incorrectly. We log instead of throwing an
+                    // exception because this can also happen if the
+                    // cache directory is removed out from beneath us.
+                    System.logW("Newly created entry didn't create value for index " + i);
+                    return;
                 }
             }
         }

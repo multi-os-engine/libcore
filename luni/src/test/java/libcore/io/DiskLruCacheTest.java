@@ -331,11 +331,7 @@ public final class DiskLruCacheTest extends TestCase {
     public void testCreateNewEntryWithTooFewValuesFails() throws Exception {
         DiskLruCache.Editor creator = cache.edit("k1");
         creator.set(1, "A");
-        try {
-            creator.commit();
-            fail();
-        } catch (IllegalStateException expected) {
-        }
+        creator.commit();
 
         assertFalse(getCleanFile("k1", 0).exists());
         assertFalse(getCleanFile("k1", 1).exists());
