@@ -130,7 +130,7 @@ public final class NativeDecimalFormat {
         } catch (NullPointerException npe) {
             throw npe;
         } catch (RuntimeException re) {
-            throw new IllegalArgumentException("syntax error: " + re.getMessage() + ": " + pattern);
+            throw new IllegalArgumentException("syntax error: " + re.getMessage() + ": " + pattern, re);
         }
     }
 

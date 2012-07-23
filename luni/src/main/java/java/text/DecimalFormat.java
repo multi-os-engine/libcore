@@ -564,7 +564,7 @@ public class DecimalFormat extends NumberFormat {
         try {
             this.dform = new NativeDecimalFormat(pattern, symbols);
         } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException(pattern);
+            throw new IllegalArgumentException(pattern, ex);
         }
         super.setMaximumFractionDigits(dform.getMaximumFractionDigits());
         super.setMaximumIntegerDigits(dform.getMaximumIntegerDigits());
