@@ -36,6 +36,7 @@ import java.security.Permission;
 import java.util.List;
 import java.util.Map;
 import libcore.io.Base64;
+import libcore.io.IoUtils;
 
 /**
  * This implementation uses HttpEngine to send requests and receive responses.
@@ -87,6 +88,9 @@ class HttpURLConnectionImpl extends HttpURLConnection {
     @Override public final void disconnect() {
         // Calling disconnect() before a connection exists should have no effect.
         if (httpEngine != null) {
+            if (httpEngine.hasResponse()) {
+                IoUtils.closeQuietly(httpEngine.getResponseBody());
+            }
             httpEngine.release(false);
         }
     }
