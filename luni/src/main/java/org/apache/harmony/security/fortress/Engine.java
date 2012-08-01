@@ -134,7 +134,7 @@ public class Engine {
         if (algorithm == null) {
             throw new NoSuchAlgorithmException("Null algorithm name");
         }
-        Services.refresh();
+        Services.flushCachesAndRefreshServicesIfNeeded();
         Provider.Service service;
         ServiceCacheEntry cacheEntry = this.serviceCache;
         if (cacheEntry != null
