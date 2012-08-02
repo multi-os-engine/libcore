@@ -103,14 +103,6 @@ public final class Daemons {
                 }
             }
         }
-
-        /**
-         * Returns the current stack trace of the thread, or an empty stack trace
-         * if the thread is not currently running.
-         */
-        public synchronized StackTraceElement[] getStackTrace() {
-            return thread != null ? thread.getStackTrace() : EmptyArray.STACK_TRACE_ELEMENT;
-        }
     }
 
     /**
@@ -229,12 +221,10 @@ public final class Daemons {
                     }
 
                     // The current object has exceeded the finalization deadline; abort!
-                    Exception syntheticException = new TimeoutException();
-                    syntheticException.setStackTrace(FinalizerDaemon.INSTANCE.getStackTrace());
-                    System.logE(object.getClass().getName() + ".finalize() timed out after "
-                            + elapsedMillis + " ms; limit is " + MAX_FINALIZE_MILLIS + " ms",
-                            syntheticException);
-                    System.exit(2);
+                    String message = object.getClass().getName() + ".finalize() timed out after "
+                            + elapsedMillis + " ms; limit is " + MAX_FINALIZE_MILLIS + " ms";
+                    System.logE(message);
+                    throw new RuntimeException(message);
                 } catch (InterruptedException ignored) {
                 }
             }
