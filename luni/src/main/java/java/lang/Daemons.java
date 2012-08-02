@@ -229,12 +229,18 @@ public final class Daemons {
                     }
 
                     // The current object has exceeded the finalization deadline; abort!
-                    Exception syntheticException = new TimeoutException();
+                    String message = object.getClass().getName() + ".finalize() timed out after "
+                            + elapsedMillis + " ms; limit is " + MAX_FINALIZE_MILLIS + " ms";
+                    Exception syntheticException = new TimeoutException(message);
                     syntheticException.setStackTrace(FinalizerDaemon.INSTANCE.getStackTrace());
-                    System.logE(object.getClass().getName() + ".finalize() timed out after "
-                            + elapsedMillis + " ms; limit is " + MAX_FINALIZE_MILLIS + " ms",
-                            syntheticException);
-                    System.exit(2);
+                    Thread.UncaughtExceptionHandler h = Thread.getDefaultUncaughtExceptionHandler();
+                    if (h != null) {
+                        h.uncaughtException(Thread.currentThread(), syntheticException);
+                        return;
+                    } else {
+                        System.logE(message, syntheticException);
+                        System.exit(2);
+                    }
                 } catch (InterruptedException ignored) {
                 }
             }
