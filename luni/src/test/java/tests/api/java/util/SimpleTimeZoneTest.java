@@ -602,6 +602,7 @@ public class SimpleTimeZoneTest extends junit.framework.TestCase {
      * java.util.SimpleTimeZone#setStartRule(int, int, int)
      */
     public void test_setStartRuleIII() {
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         // Test for method void java.util.SimpleTimeZone.setStartRule(int, int,
         // int)
         SimpleTimeZone st = new SimpleTimeZone(1000, "Test_TZ");
