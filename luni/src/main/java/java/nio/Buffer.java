@@ -97,7 +97,7 @@ public abstract class Buffer {
     Buffer(int elementSizeShift, int capacity, MemoryBlock block) {
         this._elementSizeShift = elementSizeShift;
         if (capacity < 0) {
-            throw new IllegalArgumentException("capacity < 0: " + capacity);
+            throw new IllegalArgumentException("Capacity < 0: " + capacity);
         }
         this.capacity = this.limit = capacity;
         this.block = block;
@@ -271,7 +271,7 @@ public abstract class Buffer {
 
     final void checkWritable() {
         if (isReadOnly()) {
-            throw new IllegalArgumentException("read-only buffer");
+            throw new IllegalArgumentException("Read-only buffer");
         }
     }
 
