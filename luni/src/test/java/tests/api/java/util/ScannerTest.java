@@ -1964,6 +1964,7 @@ public class ScannerTest extends TestCase {
             }
         }
         if (Support_Locale.areLocalesAvailable(Locale.GERMANY)) {
+            s = new Scanner("23.45\u0666 23.456");
             s.useLocale(Locale.GERMANY);
             // If exception is thrown out, input will not be advanced.
             assertEquals(new BigInteger("23456"), s.nextBigInteger(10));
@@ -2131,6 +2132,7 @@ public class ScannerTest extends TestCase {
             }
         }
         if (Support_Locale.areLocalesAvailable(Locale.GERMANY)) {
+            s = new Scanner("23.45\u0666 23.456");
             s.useLocale(Locale.GERMANY);
             // If exception is thrown out, input will not be advanced.
             assertEquals(new BigInteger("23456"), s.nextBigInteger());
@@ -3517,6 +3519,7 @@ public class ScannerTest extends TestCase {
             }
         }
         if (Support_Locale.areLocalesAvailable(Locale.GERMANY)) {
+            s = new Scanner("23.45\u0666 23.456");
             s.useLocale(Locale.GERMANY);
             // If exception is thrown out, input will not be advanced.
             assertTrue(s.hasNextBigInteger(10));
@@ -3740,6 +3743,7 @@ public class ScannerTest extends TestCase {
             }
         }
         if (Support_Locale.areLocalesAvailable(Locale.GERMANY)) {
+            s = new Scanner("23.45\u0666 23.456");
             s.useLocale(Locale.GERMANY);
             // If exception is thrown out, input will not be advanced.
             assertTrue(s.hasNextBigInteger());
