@@ -18,8 +18,9 @@ package libcore.javax.crypto;
 
 import com.android.org.bouncycastle.asn1.x509.KeyUsage;
 import java.math.BigInteger;
+import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.InvalidParameterException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
@@ -28,6 +29,8 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.Certificate;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.EncodedKeySpec;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Arrays;
@@ -38,6 +41,12 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.ShortBufferException;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
 import junit.framework.TestCase;
 import libcore.java.security.TestKeyStore;
 
@@ -1352,5 +1361,161 @@ public final class CipherTest extends TestCase {
 
         Cipher c = Cipher.getInstance("RSA/ECB/NoPadding");
         assertNull("Parameters should be null", c.getParameters());
+    }
+
+    /*
+     * Test vector generation:
+     * openssl rand -hex 16
+     */
+    private static final byte[] AES_128_KEY = new byte[] {
+            (byte) 0x3d, (byte) 0x4f, (byte) 0x89, (byte) 0x70, (byte) 0xb1, (byte) 0xf2,
+            (byte) 0x75, (byte) 0x37, (byte) 0xf4, (byte) 0x0a, (byte) 0x39, (byte) 0x29,
+            (byte) 0x8a, (byte) 0x41, (byte) 0x55, (byte) 0x5f,
+    };
+
+    /*
+     * Test vector creation:
+     * echo -n 'Hello, world!' | recode ../x1 | sed 's/0x/(byte) 0x/g'
+     */
+    private static final byte[] AES_128_TestVector_1 = new byte[] {
+            (byte) 0x48, (byte) 0x65, (byte) 0x6C, (byte) 0x6C, (byte) 0x6F, (byte) 0x2C,
+            (byte) 0x20, (byte) 0x77, (byte) 0x6F, (byte) 0x72, (byte) 0x6C, (byte) 0x64,
+            (byte) 0x21,
+    };
+
+    /*
+     * Test vector creation:
+     * openssl enc -aes-128-ecb -K 3d4f8970b1f27537f40a39298a41555f -in blah|openssl enc -aes-128-ecb -K 3d4f8970b1f27537f40a39298a41555f -nopad -d|recode ../x1 | sed 's/0x/(byte) 0x/g'
+     */
+    private static final byte[] AES_128_TestVector_1_PKCS5Padded = new byte[] {
+            (byte) 0x48, (byte) 0x65, (byte) 0x6C, (byte) 0x6C, (byte) 0x6F, (byte) 0x2C,
+            (byte) 0x20, (byte) 0x77, (byte) 0x6F, (byte) 0x72, (byte) 0x6C, (byte) 0x64,
+            (byte) 0x21, (byte) 0x03, (byte) 0x03, (byte) 0x03
+    };
+
+    /*
+     * Test vector generation:
+     * openssl enc -aes-128-ecb -K 3d4f8970b1f27537f40a39298a41555f -in blah|recode ../x1 | sed 's/0x/(byte) 0x/g'
+     */
+    private static final byte[] AES_128_TestVector_1_PKCS5Padded_Encrypted = new byte[] {
+            (byte) 0x65, (byte) 0x3E, (byte) 0x86, (byte) 0xFB, (byte) 0x05, (byte) 0x5A,
+            (byte) 0x52, (byte) 0xEA, (byte) 0xDD, (byte) 0x08, (byte) 0xE7, (byte) 0x48,
+            (byte) 0x33, (byte) 0x01, (byte) 0xFC, (byte) 0x5A,
+    };
+
+    public void testAES_ECB_NoPadding_ShortBlock_Failure() throws Exception {
+        SecretKey key = new SecretKeySpec(AES_128_KEY, "AES");
+        Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
+        c.init(Cipher.ENCRYPT_MODE, key);
+        try {
+            c.doFinal(AES_128_TestVector_1);
+            fail("Should throw IllegalBlockSizeException on wrong-sized block");
+        } catch (IllegalBlockSizeException expected) {
+        }
+    }
+
+    public void testAES_ECB_PKCS5Padding_Success() throws Exception {
+        SecretKey key = new SecretKeySpec(AES_128_KEY, "AES");
+        Cipher c = Cipher.getInstance("AES/ECB/PKCS5Padding");
+        c.init(Cipher.ENCRYPT_MODE, key);
+
+        final byte[] actualCiphertext = c.doFinal(AES_128_TestVector_1);
+        assertTrue(Arrays.equals(AES_128_TestVector_1_PKCS5Padded_Encrypted, actualCiphertext));
+
+        c.init(Cipher.DECRYPT_MODE, key);
+
+        final byte[] actualPlaintext = c.doFinal(AES_128_TestVector_1_PKCS5Padded_Encrypted);
+        assertTrue(Arrays.equals(AES_128_TestVector_1, actualPlaintext));
+
+        Cipher cNoPad = Cipher.getInstance("AES/ECB/NoPadding");
+        cNoPad.init(Cipher.DECRYPT_MODE, key);
+
+        final byte[] actualPlaintextPadded = cNoPad
+                .doFinal(AES_128_TestVector_1_PKCS5Padded_Encrypted);
+        assertTrue(Arrays.equals(AES_128_TestVector_1_PKCS5Padded, actualPlaintextPadded));
+    }
+
+    public void testAES_ECB_PKCS5Padding_ShortBuffer_Failure() throws Exception {
+        SecretKey key = new SecretKeySpec(AES_128_KEY, "AES");
+        Cipher c = Cipher.getInstance("AES/ECB/PKCS5Padding");
+        c.init(Cipher.ENCRYPT_MODE, key);
+
+        final byte[] fragmentOutput = c.update(AES_128_TestVector_1);
+        assertNotNull(fragmentOutput);
+        assertEquals(0, fragmentOutput.length);
+
+        // Provide null buffer.
+        {
+            try {
+                c.doFinal(null, 0);
+                fail("Should throw NullPointerException on null output buffer");
+            } catch (NullPointerException expected) {
+            } catch (IllegalArgumentException expected) {
+            }
+        }
+
+        // Provide short buffer.
+        {
+            final byte[] output = new byte[c.getBlockSize() - 1];
+            try {
+                c.doFinal(output, 0);
+                fail("Should throw ShortBufferException on short output buffer");
+            } catch (ShortBufferException expected) {
+            }
+        }
+
+        // Start 1 byte into output buffer.
+        {
+            final byte[] output = new byte[c.getBlockSize()];
+            try {
+                c.doFinal(output, 1);
+                fail("Should throw ShortBufferException on short output buffer");
+            } catch (ShortBufferException expected) {
+            }
+        }
+
+        // Should keep data for real output buffer
+        {
+            final byte[] output = new byte[c.getBlockSize()];
+            assertEquals(AES_128_TestVector_1_PKCS5Padded_Encrypted.length, c.doFinal(output, 0));
+            assertTrue(Arrays.equals(AES_128_TestVector_1_PKCS5Padded_Encrypted, output));
+        }
+    }
+
+    public void testAES_ECB_NoPadding_IncrementalUpdate_Success() throws Exception {
+        SecretKey key = new SecretKeySpec(AES_128_KEY, "AES");
+        Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
+        c.init(Cipher.ENCRYPT_MODE, key);
+
+        for (int i = 0; i < AES_128_TestVector_1_PKCS5Padded.length - 1; i++) {
+            final byte[] outputFragment = c.update(AES_128_TestVector_1_PKCS5Padded, i, 1);
+            assertNotNull(outputFragment);
+            assertEquals(0, outputFragment.length);
+        }
+
+        final byte[] output = c.doFinal(AES_128_TestVector_1_PKCS5Padded,
+                AES_128_TestVector_1_PKCS5Padded.length - 1, 1);
+        assertNotNull(output);
+        assertEquals(AES_128_TestVector_1_PKCS5Padded.length, output.length);
+
+        assertTrue(Arrays.equals(AES_128_TestVector_1_PKCS5Padded_Encrypted, output));
+    }
+
+    private static final byte[] AES_IV_ZEROES = new byte[] {
+            (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
+            (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
+            (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
+    };
+
+    public void testAES_ECB_NoPadding_IvParameters_Failure() throws Exception {
+        SecretKey key = new SecretKeySpec(AES_128_KEY, "AES");
+        Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
+
+        AlgorithmParameterSpec spec = new IvParameterSpec(AES_IV_ZEROES);
+        try {
+            c.init(Cipher.ENCRYPT_MODE, key, spec);
+            fail("Should not accept an IV in ECB mode");
+        } catch (InvalidAlgorithmParameterException expected) {
+        }
     }
 }

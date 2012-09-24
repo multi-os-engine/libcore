@@ -125,5 +125,7 @@ public final class OpenSSLProvider extends Provider {
         put("Alg.Alias.Cipher.RSA/None/NoPadding", "RSA/ECB/NoPadding");
         put("Cipher.RSA/ECB/PKCS1Padding", OpenSSLCipherRSA.PKCS1.class.getName());
         put("Alg.Alias.Cipher.RSA/None/PKCS1Padding", "RSA/ECB/PKCS1Padding");
+
+        put("Cipher.AES", OpenSSLCipher.AES.class.getName());
     }
 }
