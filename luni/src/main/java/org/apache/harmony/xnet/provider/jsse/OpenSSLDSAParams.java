@@ -16,6 +16,10 @@
 
 package org.apache.harmony.xnet.provider.jsse;
 
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.security.interfaces.DSAParams;
 import java.security.spec.AlgorithmParameterSpec;
@@ -35,6 +39,10 @@ public class OpenSSLDSAParams implements DSAParams, AlgorithmParameterSpec {
     private BigInteger y;
 
     private BigInteger x;
+
+    @SuppressWarnings("unused")
+    private OpenSSLDSAParams() {
+    }
 
     OpenSSLDSAParams(OpenSSLKey key) {
         this.key = key;
