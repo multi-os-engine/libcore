@@ -101,6 +101,21 @@ public final class FinalizeTest extends TestCase {
         AtomicInteger count = new AtomicInteger();
         AtomicBoolean keepGoing = new AtomicBoolean(true);
         createChainedFinalizer(count, keepGoing);
+
+        System.gc();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            throw new AssertionError();
+        }
+        System.gc();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            throw new AssertionError();
+        }
+        System.gc();
+
         FinalizationTester.induceFinalization();
         keepGoing.set(false);
         assertTrue(count.get() > 0);
