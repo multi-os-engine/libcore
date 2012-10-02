@@ -1916,4 +1916,50 @@ public final class CipherTest extends TestCase {
         } catch (InvalidAlgorithmParameterException expected) {
         }
     }
+
+    public void testRC4_MultipleKeySizes() throws Exception {
+        final int SMALLEST_KEY_SIZE = 40;
+        final int LARGEST_KEY_SIZE = 1024;
+
+        SecretKey[] keys = new SecretKey[LARGEST_KEY_SIZE - SMALLEST_KEY_SIZE];
+        String[] expected = new String[LARGEST_KEY_SIZE - SMALLEST_KEY_SIZE];
+        String[] providerForExpected = new String[LARGEST_KEY_SIZE - SMALLEST_KEY_SIZE];
+
+        Map<String, String> filter = new HashMap<String, String>();
+        filter.put("Cipher.ARC4", "");
+        for (Provider p : Security.getProviders(filter)) {
+            Cipher c = Cipher.getInstance("ARC4", p);
+
+            KeyGenerator kg = KeyGenerator.getInstance("ARC4");
+            for (int keysize = SMALLEST_KEY_SIZE; keysize < LARGEST_KEY_SIZE; keysize++) {
+                final int index = keysize - SMALLEST_KEY_SIZE;
+
+                final SecretKey sk;
+                if (keys[index] == null) {
+                    kg.init(keysize);
+                    sk = kg.generateKey();
+                    keys[index] = sk;
+                } else {
+                    sk = keys[index];
+                }
+
+                c.init(Cipher.ENCRYPT_MODE, sk);
+                byte[] cipherText = c.doFinal(ORIGINAL_PLAIN_TEXT);
+                assertNotNull(cipherText);
+
+                if (expected[index] == null) {
+                    expected[index] = Arrays.toString(cipherText);
+                    providerForExpected[index] = p.getName();
+                } else {
+                    assertEquals(providerForExpected[index] + " compared to " + p.getName(),
+                            expected[index], Arrays.toString(cipherText));
+                }
+
+                c.init(Cipher.DECRYPT_MODE, sk);
+                byte[] actualPlaintext = c.doFinal(cipherText);
+                assertEquals("Key size: " + keysize, Arrays.toString(ORIGINAL_PLAIN_TEXT),
+                        Arrays.toString(actualPlaintext));
+            }
+        }
+    }
 }
