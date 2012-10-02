@@ -1916,4 +1916,23 @@ public final class CipherTest extends TestCase {
         } catch (InvalidAlgorithmParameterException expected) {
         }
     }
+
+    public void testRC4_MultipleKeySizes() throws Exception {
+        Cipher c = Cipher.getInstance("ARC4");
+
+        KeyGenerator kg = KeyGenerator.getInstance("ARC4");
+        for (int keysize = 40; keysize < 1024; keysize++) {
+            kg.init(keysize);
+            SecretKey sk = kg.generateKey();
+
+            c.init(Cipher.ENCRYPT_MODE, sk);
+            byte[] cipherText = c.doFinal(ORIGINAL_PLAIN_TEXT);
+            assertNotNull(cipherText);
+
+            c.init(Cipher.DECRYPT_MODE, sk);
+            byte[] actualPlaintext = c.doFinal(cipherText);
+            assertEquals("Key size: " + keysize, Arrays.toString(ORIGINAL_PLAIN_TEXT),
+                    Arrays.toString(actualPlaintext));
+        }
+    }
 }
