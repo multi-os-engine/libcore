@@ -1754,12 +1754,6 @@ public class NativeCryptoTest extends TestCase {
             fail("Null context should throw NullPointerException");
         } catch (NullPointerException expected) {
         }
-
-        try {
-            NativeCrypto.EVP_CipherInit_ex(context.getContext(), NULL, null, null, true);
-            fail("Null evpCipher should throw NullPointerException");
-        } catch (NullPointerException expected) {
-        }
     }
 
     public void test_EVP_CipherInit_ex_Success() throws Exception {
