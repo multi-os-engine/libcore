@@ -359,14 +359,22 @@ public abstract class OpenSSLCipher extends CipherSpi {
             output = EmptyArray.BYTE;
         }
 
+        final int bytesWritten;
         try {
-            updateInternal(input, inputOffset, inputLen, output, 0, totalLen, fullBlocksSize);
+            bytesWritten = updateInternal(input, inputOffset, inputLen, output, 0, totalLen,
+                    fullBlocksSize);
         } catch (ShortBufferException e) {
             /* This shouldn't happen. */
             throw new AssertionError("calculated buffer size was wrong: " + fullBlocksSize);
         }
 
-        return output;
+        if (output.length == bytesWritten) {
+            return output;
+        } else if (bytesWritten == 0) {
+            return EmptyArray.BYTE;
+        } else {
+            return Arrays.copyOfRange(output, 0, bytesWritten);
+        }
     }
 
     @Override
@@ -496,7 +504,7 @@ public abstract class OpenSSLCipher extends CipherSpi {
     }
 
     private int calculateMaximumPossibleSize(final int totalLen, final int trailingLen) {
-        if (encrypting && (modeBlockSize > 1) && (padding != Padding.NOPADDING)) {
+        if ((modeBlockSize > 1) && (padding != Padding.NOPADDING)) {
             return totalLen - trailingLen + modeBlockSize;
         } else {
             return totalLen;

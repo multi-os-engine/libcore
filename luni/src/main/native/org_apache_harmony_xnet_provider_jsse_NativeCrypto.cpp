@@ -1908,6 +1908,9 @@ static jint NativeCrypto_EVP_CipherUpdate(JNIEnv* env, jclass, jint ctxRef, jbyt
         return 0;
     }
 
+    JNI_TRACE("ctx=%p EVP_CipherUpdate in=%p in.length=%d inOffset=%d inLength=%d out=%p out.length=%d outOffset=%d",
+            ctx, inBytes.get(), inBytes.size(), inOffset, inLength, outBytes.get(), outBytes.size(), outOffset);
+
     unsigned char* out = reinterpret_cast<unsigned char*>(outBytes.get());
     const unsigned char* in = reinterpret_cast<const unsigned char*>(inBytes.get());
 
