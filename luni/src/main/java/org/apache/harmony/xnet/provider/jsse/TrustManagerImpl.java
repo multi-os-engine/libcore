@@ -52,6 +52,11 @@ public final class TrustManagerImpl implements X509TrustManager {
     private final KeyStore rootKeyStore;
 
     /**
+     * Checks the chain to make sure its sufficiently strong
+     */
+    private static final ChainAnalyzer chainAnalyzer = new ChainAnalyzer();
+
+    /**
      * The backing store for the AndroidCAStore if non-null. This will
      * be null when the rootKeyStore is null, implying we are not
      * using the AndroidCAStore.
@@ -192,6 +197,10 @@ public final class TrustManagerImpl implements X509TrustManager {
             throw new CertificateException(new CertPathValidatorException(
                     "Trust anchor for certification path not found.", null, certPath, -1));
         }
+
+        // there's no point in checking trust anchors here, and it will throw off the MD5 check,
+        // so we just hand it the chain sans anchors
+        chainAnalyzer.check(newChain);
 
         try {
             PKIXParameters params = new PKIXParameters(trustAnchors);
