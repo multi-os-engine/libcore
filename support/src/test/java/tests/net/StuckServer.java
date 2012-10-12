@@ -17,6 +17,7 @@
 package tests.net;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -26,17 +27,43 @@ import java.util.ArrayList;
  * A test ServerSocket that you can't connect to --- connects will time out.
  */
 public final class StuckServer {
+    private static final boolean DEBUG = false;
+
     private ServerSocket serverSocket;
+    private InetSocketAddress address;
     private ArrayList<Socket> clients = new ArrayList<Socket>();
 
     public StuckServer() throws IOException {
+        this(true);
+    }
+
+    public StuckServer(boolean useBacklog) throws IOException {
         // Set a backlog and use it up so that we can expect the
-        // connection to time out. According to Steven's
+        // connection to time out. According to Stevens
         // 4.5 "listen function", Linux adds 3 to the specified
         // backlog, so we need to connect 4 times before it will hang.
-        serverSocket = new ServerSocket(0, 1);
-        for (int i = 0; i < 4; i++) {
-            clients.add(new Socket(serverSocket.getInetAddress(), serverSocket.getLocalPort()));
+        if (useBacklog) {
+            this.serverSocket = new ServerSocket(0, 1);
+            this.address = (InetSocketAddress) serverSocket.getLocalSocketAddress();
+            if (DEBUG) {
+                System.err.println("StuckServer: " + serverSocket);
+            }
+            for (int i = 0; i < 4; ++i) {
+                Socket client = new Socket(serverSocket.getInetAddress(), serverSocket.getLocalPort());
+                clients.add(client);
+                if (DEBUG) {
+                    System.err.println("StuckServer client " + i + " - " + client);
+                }
+            }
+        } else {
+            // Note that we've had some trouble with backlog on >= 3.1 kernels: http://b/6971145.
+            // The root cause is unknown, but this works around the ConcurrentCloseTest flakiness.
+            // RFC 5737 implies this network will be unreachable. (There are two other networks
+            // to try if we have trouble with this one.)
+            // We've had trouble with 10.* in the past (because test labs running CTS often use
+            // net 10!) but hopefully this network will be better.
+            InetAddress testNet1 = InetAddress.getByAddress(new byte[] { (byte) 192, 0, 2, 0});
+            this.address = new InetSocketAddress(testNet1, 80);
         }
     }
 
@@ -59,15 +86,17 @@ public final class StuckServer {
     }
 
     public InetSocketAddress getLocalSocketAddress() {
-        return (InetSocketAddress) serverSocket.getLocalSocketAddress();
+        return address;
     }
 
     public int getLocalPort() {
-        return serverSocket.getLocalPort();
+        return address.getPort();
     }
 
     public void close() throws IOException {
-        serverSocket.close();
+        if (serverSocket != null) {
+            serverSocket.close();
+        }
         for (Socket client : clients) {
             client.close();
         }

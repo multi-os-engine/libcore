@@ -50,7 +50,7 @@ public class ConcurrentCloseTest extends junit.framework.TestCase {
     }
 
     public void test_connect() throws Exception {
-        StuckServer ss = new StuckServer();
+        StuckServer ss = new StuckServer(false);
         Socket s = new Socket();
         new Killer(s).start();
         try {
@@ -65,7 +65,7 @@ public class ConcurrentCloseTest extends junit.framework.TestCase {
     }
 
     public void test_connect_timeout() throws Exception {
-        StuckServer ss = new StuckServer();
+        StuckServer ss = new StuckServer(false);
         Socket s = new Socket();
         new Killer(s).start();
         try {
@@ -80,7 +80,7 @@ public class ConcurrentCloseTest extends junit.framework.TestCase {
     }
 
     public void test_connect_nonBlocking() throws Exception {
-        StuckServer ss = new StuckServer();
+        StuckServer ss = new StuckServer(false);
         SocketChannel s = SocketChannel.open();
         new Killer(s.socket()).start();
         try {
