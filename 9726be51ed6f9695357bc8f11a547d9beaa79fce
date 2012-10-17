@@ -1,0 +1,8 @@
+Code-Review+2: Elliott Hughes <enh@google.com>
+Verified+1: Brian Carlstrom <bdc@google.com>
+Code-Review+1: Jesse Wilson <jwilson@squareup.com>
+Submitted-by: Brian Carlstrom <bdc@google.com>
+Submitted-at: Wed, 17 Oct 2012 13:41:13 -0700
+Reviewed-on: https://android-review.googlesource.com/44847
+Project: platform/libcore
+Branch: refs/heads/master
