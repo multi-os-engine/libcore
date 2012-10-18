@@ -19,6 +19,7 @@ package libcore.java.net;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import junit.framework.TestCase;
 import libcore.util.SerializationTester;
@@ -692,6 +693,25 @@ public final class URLTest extends TestCase {
         assertEquals("a_b.c.d.net", url.getAuthority());
         // The RFC's don't permit underscores in hostnames, but URL accepts them (unlike URI).
         assertEquals("a_b.c.d.net", url.getHost());
+    }
+
+    // http://b/7369778
+    public void testToURILeniantThrowsURISyntaxExceptionWithPartialTrailingEscape()
+            throws Exception {
+        URL[] urls = new URL[] {
+            new URL("http://example.com/?foo=%%bar"),
+            new URL("http://example.com/?foo=%%bar%"),
+            new URL("http://example.com/?foo=%%bar%%"),
+            new URL("http://example.com/?foo=%%bar%%%"),
+            new URL("http://example.com/?foo=%%bar%%%%"),
+        };
+        for (URL url : urls) {
+            try {
+                url.toURILenient();
+                fail();
+            } catch (URISyntaxException expected) {
+            }
+        }
     }
 
     // Adding a new test? Consider adding an equivalent test to URITest.java
