@@ -82,7 +82,7 @@ LOCAL_NO_EMMA_INSTRUMENT := true
 LOCAL_NO_EMMA_COMPILE := true
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := core
-LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/JavaLibrary.mk
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/JavaLibrary.mk tzdata
 
 include $(BUILD_JAVA_LIBRARY)
 
@@ -142,7 +142,7 @@ ifeq ($(WITH_HOST_DALVIK),true)
 
     LOCAL_MODULE_TAGS := optional
     LOCAL_MODULE := core-hostdex
-    LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/JavaLibrary.mk
+    LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/JavaLibrary.mk tzdata-host
 
     include $(BUILD_HOST_JAVA_LIBRARY)
 
