@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import libcore.icu.ICU;
+import libcore.io.ErrnoException;
 import libcore.io.Libcore;
 import libcore.io.StructUtsname;
 import libcore.util.ZoneInfoDB;
@@ -444,6 +445,16 @@ public final class System {
         if (prop.isEmpty()) {
             throw new IllegalArgumentException();
         }
+
+        // Keep the C library $TMPDIR in sync with the Java java.io.tmpdir.
+        if (prop.equals("java.io.tmpdir")) {
+            try {
+                Libcore.os.setenv("TMPDIR", value, true);
+            } catch (ErrnoException unexpected) {
+                throw new AssertionError(unexpected);
+            }
+        }
+
         return (String) getProperties().setProperty(prop, value);
     }
 
