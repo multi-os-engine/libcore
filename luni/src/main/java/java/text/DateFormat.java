@@ -32,6 +32,9 @@ import libcore.icu.LocaleData;
  * <p>This class provides factories for obtaining instances configured for a specific locale.
  * The most common subclass is {@link SimpleDateFormat}.
  *
+ * <p>Use {@link android.text.format.DateFormat#getTimeFormat} to take the user's preference for
+ * the 12- or 24-hour clock into account.
+ *
  * <h4>Sample Code</h4>
  * <p>This code:
  * <pre>
@@ -300,10 +303,6 @@ public abstract class DateFormat extends Format {
 
     /**
      * Formats the specified date using the rules of this date format.
-     *
-     * @param date
-     *            the date to format.
-     * @return the formatted string.
      */
     public final String format(Date date) {
         return format(date, new StringBuffer(), new FieldPosition(0))
@@ -328,8 +327,7 @@ public abstract class DateFormat extends Format {
      *            of the alignment field in the formatted text.
      * @return the string buffer.
      */
-    public abstract StringBuffer format(Date date, StringBuffer buffer,
-            FieldPosition field);
+    public abstract StringBuffer format(Date date, StringBuffer buffer, FieldPosition field);
 
     /**
      * Returns an array of locales for which custom {@code DateFormat} instances
@@ -342,8 +340,6 @@ public abstract class DateFormat extends Format {
 
     /**
      * Returns the calendar used by this {@code DateFormat}.
-     *
-     * @return the calendar used by this date format.
      */
     public Calendar getCalendar() {
         return calendar;
@@ -352,8 +348,7 @@ public abstract class DateFormat extends Format {
     /**
      * Returns a {@code DateFormat} instance for formatting and parsing dates in
      * the DEFAULT style for the default locale.
-     *
-     * @return the {@code DateFormat} instance for the default style and locale.
+     * See "<a href="../util/Locale.html#default_locale">Be wary of the default locale</a>".
      */
     public static final DateFormat getDateInstance() {
         return getDateInstance(DEFAULT);
@@ -365,11 +360,8 @@ public abstract class DateFormat extends Format {
      * See "<a href="../util/Locale.html#default_locale">Be wary of the default locale</a>".
      * @param style
      *            one of SHORT, MEDIUM, LONG, FULL, or DEFAULT.
-     * @return the {@code DateFormat} instance for {@code style} and the default
-     *         locale.
      * @throws IllegalArgumentException
-     *             if {@code style} is not one of SHORT, MEDIUM, LONG, FULL, or
-     *             DEFAULT.
+     *             if {@code style} is not one of SHORT, MEDIUM, LONG, FULL, or DEFAULT.
      */
     public static final DateFormat getDateInstance(int style) {
         checkDateStyle(style);
@@ -379,7 +371,6 @@ public abstract class DateFormat extends Format {
     /**
      * Returns a {@code DateFormat} instance for formatting and parsing dates in
      * the specified style for the specified locale.
-     *
      * @param style
      *            one of SHORT, MEDIUM, LONG, FULL, or DEFAULT.
      * @param locale
@@ -387,8 +378,6 @@ public abstract class DateFormat extends Format {
      * @throws IllegalArgumentException
      *             if {@code style} is not one of SHORT, MEDIUM, LONG, FULL, or
      *             DEFAULT.
-     * @return the {@code DateFormat} instance for {@code style} and
-     *         {@code locale}.
      */
     public static final DateFormat getDateInstance(int style, Locale locale) {
         checkDateStyle(style);
@@ -398,23 +387,20 @@ public abstract class DateFormat extends Format {
     /**
      * Returns a {@code DateFormat} instance for formatting and parsing dates
      * and time values in the DEFAULT style for the default locale.
-     *
-     * @return the {@code DateFormat} instance for the default style and locale.
+     * See "<a href="../util/Locale.html#default_locale">Be wary of the default locale</a>".
      */
     public static final DateFormat getDateTimeInstance() {
         return getDateTimeInstance(DEFAULT, DEFAULT);
     }
 
     /**
-     * Returns a {@code DateFormat} instance for formatting and parsing of both
-     * dates and time values in the manner appropriate for the user's default locale.
+     * Returns a {@code DateFormat} instance for formatting and parsing
+     * dates and times in the manner appropriate for the user's default locale.
      * See "<a href="../util/Locale.html#default_locale">Be wary of the default locale</a>".
      * @param dateStyle
      *            one of SHORT, MEDIUM, LONG, FULL, or DEFAULT.
      * @param timeStyle
      *            one of SHORT, MEDIUM, LONG, FULL, or DEFAULT.
-     * @return the {@code DateFormat} instance for {@code dateStyle},
-     *         {@code timeStyle} and the default locale.
      * @throws IllegalArgumentException
      *             if {@code dateStyle} or {@code timeStyle} is not one of
      *             SHORT, MEDIUM, LONG, FULL, or DEFAULT.
@@ -426,8 +412,8 @@ public abstract class DateFormat extends Format {
     }
 
     /**
-     * Returns a {@code DateFormat} instance for formatting and parsing dates
-     * and time values in the specified styles for the specified locale.
+     * Returns a {@code DateFormat} instance for formatting and parsing
+     * dates and times in the specified styles for the specified locale.
      *
      * @param dateStyle
      *            one of SHORT, MEDIUM, LONG, FULL, or DEFAULT.
@@ -435,8 +421,6 @@ public abstract class DateFormat extends Format {
      *            one of SHORT, MEDIUM, LONG, FULL, or DEFAULT.
      * @param locale
      *            the locale.
-     * @return the {@code DateFormat} instance for {@code dateStyle},
-     *         {@code timeStyle} and {@code locale}.
      * @throws IllegalArgumentException
      *             if {@code dateStyle} or {@code timeStyle} is not one of
      *             SHORT, MEDIUM, LONG, FULL, or DEFAULT.
@@ -452,9 +436,7 @@ public abstract class DateFormat extends Format {
     /**
      * Returns a {@code DateFormat} instance for formatting and parsing dates
      * and times in the SHORT style for the default locale.
-     *
-     * @return the {@code DateFormat} instance for the SHORT style and default
-     *         locale.
+     * See "<a href="../util/Locale.html#default_locale">Be wary of the default locale</a>".
      */
     public static final DateFormat getInstance() {
         return getDateTimeInstance(SHORT, SHORT);
@@ -462,31 +444,30 @@ public abstract class DateFormat extends Format {
 
     /**
      * Returns the {@code NumberFormat} used by this {@code DateFormat}.
-     *
-     * @return the {@code NumberFormat} used by this date format.
      */
     public NumberFormat getNumberFormat() {
         return numberFormat;
     }
 
     /**
-     * Returns a {@code DateFormat} instance for formatting and parsing time
-     * values in the DEFAULT style for the default locale.
-     *
-     * @return the {@code DateFormat} instance for the default style and locale.
+     * Returns a {@code DateFormat} instance for formatting and parsing times
+     * in the DEFAULT style for the default locale.
+     * See "<a href="../util/Locale.html#default_locale">Be wary of the default locale</a>".
+     * See {@link android.text.format.DateFormat#getTimeFormat} for an equivalent method
+     * that takes the user's preference for the 12- or 24-hour clock into account.
      */
     public static final DateFormat getTimeInstance() {
         return getTimeInstance(DEFAULT);
     }
 
     /**
-     * Returns a {@code DateFormat} instance for formatting and parsing time
-     * values in the specified style for the user's default locale.
+     * Returns a {@code DateFormat} instance for formatting and parsing times
+     * in the specified style for the user's default locale.
      * See "<a href="../util/Locale.html#default_locale">Be wary of the default locale</a>".
+     * See {@link android.text.format.DateFormat#getTimeFormat} for an equivalent method
+     * that takes the user's preference for the 12- or 24-hour clock into account.
      * @param style
      *            one of SHORT, MEDIUM, LONG, FULL, or DEFAULT.
-     * @return the {@code DateFormat} instance for {@code style} and the default
-     *         locale.
      * @throws IllegalArgumentException
      *             if {@code style} is not one of SHORT, MEDIUM, LONG, FULL, or
      *             DEFAULT.
@@ -497,9 +478,10 @@ public abstract class DateFormat extends Format {
     }
 
     /**
-     * Returns a {@code DateFormat} instance for formatting and parsing time
-     * values in the specified style for the specified locale.
-     *
+     * Returns a {@code DateFormat} instance for formatting and parsing times
+     * in the specified style for the specified locale.
+     * See {@link android.text.format.DateFormat#getTimeFormat} for an equivalent method
+     * that takes the user's preference for the 12- or 24-hour clock into account.
      * @param style
      *            one of SHORT, MEDIUM, LONG, FULL, or DEFAULT.
      * @param locale
@@ -507,8 +489,6 @@ public abstract class DateFormat extends Format {
      * @throws IllegalArgumentException
      *             if {@code style} is not one of SHORT, MEDIUM, LONG, FULL, or
      *             DEFAULT.
-     * @return the {@code DateFormat} instance for {@code style} and
-     *         {@code locale}.
      */
     public static final DateFormat getTimeInstance(int style, Locale locale) {
         checkTimeStyle(style);
@@ -516,9 +496,7 @@ public abstract class DateFormat extends Format {
     }
 
     /**
-     * Returns the time zone of this date format's calendar.
-     *
-     * @return the time zone of the calendar used by this date format.
+     * Returns the {@code TimeZone} used by this date format's {@code Calendar}.
      */
     public TimeZone getTimeZone() {
         return calendar.getTimeZone();
@@ -534,9 +512,7 @@ public abstract class DateFormat extends Format {
     }
 
     /**
-     * Indicates whether the calendar used by this date format is lenient.
-     *
-     * @return {@code true} if the calendar is lenient; {@code false} otherwise.
+     * Returns {@code true} if this instance's calendar is lenient; {@code false} otherwise.
      */
     public boolean isLenient() {
         return calendar.isLenient();
@@ -790,8 +766,6 @@ public abstract class DateFormat extends Format {
 
         /**
          * Returns the Calendar field that this field represents.
-         *
-         * @return the calendar field.
          */
         public int getCalendarField() {
             return calendarField;
@@ -801,10 +775,6 @@ public abstract class DateFormat extends Format {
          * Returns the {@code DateFormat.Field} instance for the given calendar
          * field.
          *
-         * @param calendarField
-         *            a calendar field constant.
-         * @return the {@code DateFormat.Field} corresponding to
-         *         {@code calendarField}.
          * @throws IllegalArgumentException
          *             if {@code calendarField} is negative or greater than the
          *             field count of {@code Calendar}.

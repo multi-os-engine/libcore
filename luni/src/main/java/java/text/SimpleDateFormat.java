@@ -40,8 +40,10 @@ import libcore.icu.TimeZones;
  * <h4>Time Pattern Syntax</h4>
  * <p>You can supply a pattern describing what strings are produced/accepted, but almost all
  * callers should use {@link DateFormat#getDateInstance}, {@link DateFormat#getDateTimeInstance},
- * or {@link DateFormat#getTimeInstance} to get a ready-made instance suitable for the user's
- * locale.
+ * or {@link android.text.format.DateFormat#getTimeFormat} to get a ready-made instance suitable
+ * for the user's locale. (Note that {@code java.text.DateFormat.getDateTimeInstance} doesn't
+ * respect the user's preference for the 12- or 24-hour clock, but
+ * {@code android.text.format.DateFormat.getTimeFormat} does.)
  *
  * <p>The main reason you'd create an instance this class directly is because you need to
  * format/parse a specific machine-readable format, in which case you almost certainly want
