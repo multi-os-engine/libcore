@@ -281,7 +281,7 @@ public final class NativeDecimalFormat implements Cloneable {
 
     public AttributedCharacterIterator formatToCharacterIterator(Object object) {
         if (!(object instanceof Number)) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("object not a Number: " + object.getClass());
         }
         Number number = (Number) object;
         FieldPositionIterator fpIter = new FieldPositionIterator();

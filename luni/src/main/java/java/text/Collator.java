@@ -339,7 +339,7 @@ public abstract class Collator implements Comparator<Object>, Cloneable {
         case Collator.NO_DECOMPOSITION:
             return RuleBasedCollatorICU.VALUE_OFF;
         }
-        throw new IllegalArgumentException();
+        throw new AssertionError();
     }
 
     private int decompositionMode_ICU_Java(int mode) {
@@ -366,7 +366,7 @@ public abstract class Collator implements Comparator<Object>, Cloneable {
         case Collator.IDENTICAL:
             return RuleBasedCollatorICU.VALUE_IDENTICAL;
         }
-        throw new IllegalArgumentException();
+        throw new AssertionError();
     }
 
     private int strength_ICU_Java(int value) {

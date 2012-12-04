@@ -437,7 +437,7 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V> implements
             initialization((EnumMap<K, V>) map);
         } else {
             if (map.size() == 0) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("map empty");
             }
             Iterator<K> iter = map.keySet().iterator();
             K enumKey = iter.next();
