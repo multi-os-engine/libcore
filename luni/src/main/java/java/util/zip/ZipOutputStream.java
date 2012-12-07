@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.nio.charset.Charsets;
 import java.util.Arrays;
 import java.util.HashSet;
+import libcore.util.EmptyArray;
 
 /**
  * This class provides an implementation of {@code FilterOutputStream} that
@@ -76,13 +77,13 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
 
     private static final int ZIPLocalHeaderVersionNeeded = 20;
 
-    private String comment;
+    private byte[] commentBytes = EmptyArray.BYTE;
 
     private final HashSet<String> entries = new HashSet<String>();
 
-    private int compressMethod = DEFLATED;
+    private int defaultCompressionMethod = DEFLATED;
 
-    private int compressLevel = Deflater.DEFAULT_COMPRESSION;
+    private int compressionLevel = Deflater.DEFAULT_COMPRESSION;
 
     private ByteArrayOutputStream cDir = new ByteArrayOutputStream();
 
@@ -95,14 +96,11 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     private byte[] nameBytes;
 
     /**
-     * Constructs a new {@code ZipOutputStream} with the specified output
-     * stream.
-     *
-     * @param p1
-     *            the {@code OutputStream} to write the data to.
+     * Constructs a new {@code ZipOutputStream} that writes a zip file
+     * to the given {@code OutputStream}.
      */
-    public ZipOutputStream(OutputStream p1) {
-        super(p1, new Deflater(Deflater.DEFAULT_COMPRESSION, true));
+    public ZipOutputStream(OutputStream os) {
+        super(os, new Deflater(Deflater.DEFAULT_COMPRESSION, true));
     }
 
     /**
@@ -131,7 +129,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      *             If an error occurs closing the entry.
      */
     public void closeEntry() throws IOException {
-        checkClosed();
+        checkOpen();
         if (currentEntry == null) {
             return;
         }
@@ -186,12 +184,13 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         } else {
             writeShort(cDir, 0);
         }
-        String c;
-        if ((c = currentEntry.getComment()) != null) {
-            writeShort(cDir, c.length());
-        } else {
-            writeShort(cDir, 0);
+
+        String comment = currentEntry.getComment();
+        byte[] commentBytes = EmptyArray.BYTE;
+        if (comment != null) {
+            commentBytes = comment.getBytes(Charsets.UTF_8);
         }
+        writeShort(cDir, commentBytes.length); // Comment length.
         writeShort(cDir, 0); // Disk Start
         writeShort(cDir, 0); // Internal File Attributes
         writeLong(cDir, 0); // External File Attributes
@@ -202,8 +201,8 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
             cDir.write(currentEntry.extra);
         }
         offset += curOffset;
-        if (c != null) {
-            cDir.write(c.getBytes());
+        if (commentBytes.length > 0) {
+            cDir.write(commentBytes);
         }
         currentEntry = null;
         crc.reset();
@@ -220,7 +219,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      */
     @Override
     public void finish() throws IOException {
-        // TODO: is there a bug here? why not checkClosed?
+        // TODO: is there a bug here? why not checkOpen?
         if (out == null) {
             throw new IOException("Stream is closed");
         }
@@ -242,11 +241,9 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         writeShort(cDir, entries.size()); // Number of entries
         writeLong(cDir, cdirSize); // Size of central dir
         writeLong(cDir, offset); // Offset of central dir
-        if (comment != null) {
-            writeShort(cDir, comment.length());
-            cDir.write(comment.getBytes());
-        } else {
-            writeShort(cDir, 0);
+        writeShort(cDir, commentBytes.length);
+        if (commentBytes.length > 0) {
+            cDir.write(commentBytes);
         }
         // Write the central directory.
         cDir.writeTo(out);
@@ -269,18 +266,33 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         if (currentEntry != null) {
             closeEntry();
         }
-        if (ze.getMethod() == STORED || (compressMethod == STORED && ze.getMethod() == -1)) {
-            if (ze.crc == -1) {
-                throw new ZipException("CRC mismatch");
+
+        // Did this ZipEntry specify a method, or should we use the default?
+        int method = ze.getMethod();
+        if (method == -1) {
+            method = defaultCompressionMethod;
+        }
+
+        // If the method is STORED, check that the ZipEntry was configured appropriately.
+        if (method == STORED) {
+            if (ze.getCompressedSize() == -1) {
+                ze.setCompressedSize(ze.getSize());
+            } else if (ze.getSize() == -1) {
+                ze.setSize(ze.getCompressedSize());
             }
-            if (ze.size == -1 && ze.compressedSize == -1) {
-                throw new ZipException("Size mismatch");
+            if (ze.getCrc() == -1) {
+                throw new ZipException("STORED entry missing CRC");
             }
-            if (ze.size != ze.compressedSize && ze.compressedSize != -1 && ze.size != -1) {
-                throw new ZipException("Size mismatch");
+            if (ze.getSize() == -1) {
+                throw new ZipException("STORED entry missing size");
+            }
+            if (ze.size != ze.compressedSize) {
+                throw new ZipException("STORED entry size/compressed size mismatch");
             }
         }
-        checkClosed();
+
+        checkOpen();
+
         if (entries.contains(ze.name)) {
             throw new ZipException("Entry already exists: " + ze.name);
         }
@@ -294,16 +306,15 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
             throw new IllegalArgumentException("Name too long: " + nameLength + " UTF-8 bytes");
         }
 
-        def.setLevel(compressLevel);
+        def.setLevel(compressionLevel);
+        ze.setMethod(method);
+
         currentEntry = ze;
         entries.add(currentEntry.name);
-        if (currentEntry.getMethod() == -1) {
-            currentEntry.setMethod(compressMethod);
-        }
 
         // Local file header.
         // http://www.pkware.com/documents/casestudies/APPNOTE.TXT
-        int flags = currentEntry.getMethod() == STORED ? 0 : ZipFile.GPBF_DATA_DESCRIPTOR_FLAG;
+        int flags = (method == STORED) ? 0 : ZipFile.GPBF_DATA_DESCRIPTOR_FLAG;
         // Java always outputs UTF-8 filenames. (Before Java 7, the RI didn't set this flag and used
         // modified UTF-8. From Java 7, it sets this flag and uses normal UTF-8.)
         flags |= ZipFile.GPBF_UTF8_FLAG;
@@ -344,16 +355,20 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     }
 
     /**
-     * Sets the {@code ZipFile} comment associated with the file being written.
-     *
-     * @param comment
-     *            the comment associated with the file.
+     * Sets the comment associated with the file being written.
+     * @throws IllegalArgumentException if the comment is longer than 64 KiB.
      */
     public void setComment(String comment) {
-        if (comment.length() > 0xFFFF) {
-            throw new IllegalArgumentException("Comment too long: " + comment.length() + " characters");
+        if (comment == null) {
+            this.commentBytes = null;
+            return;
         }
-        this.comment = comment;
+
+        byte[] newCommentBytes = comment.getBytes(Charsets.UTF_8);
+        if (newCommentBytes.length > 0xffff) {
+            throw new IllegalArgumentException("Comment too long: " + newCommentBytes.length + " bytes");
+        }
+        this.commentBytes = newCommentBytes;
     }
 
     /**
@@ -369,7 +384,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         if (level < Deflater.DEFAULT_COMPRESSION || level > Deflater.BEST_COMPRESSION) {
             throw new IllegalArgumentException("Bad level: " + level);
         }
-        compressLevel = level;
+        compressionLevel = level;
     }
 
     /**
@@ -384,7 +399,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         if (method != STORED && method != DEFLATED) {
             throw new IllegalArgumentException("Bad method: " + method);
         }
-        compressMethod = method;
+        defaultCompressionMethod = method;
     }
 
     private long writeLong(OutputStream os, long i) throws IOException {
@@ -423,7 +438,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         crc.update(buffer, offset, byteCount);
     }
 
-    private void checkClosed() throws IOException {
+    private void checkOpen() throws IOException {
         if (cDir == null) {
             throw new IOException("Stream is closed");
         }
