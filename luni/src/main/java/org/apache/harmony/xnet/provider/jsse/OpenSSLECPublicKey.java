@@ -42,6 +42,11 @@ public final class OpenSSLECPublicKey implements ECPublicKey {
         this.key = key;
     }
 
+    public OpenSSLECPublicKey(OpenSSLKey key) {
+        this.group = new OpenSSLECGroupContext(NativeCrypto.EC_KEY_get0_group(key.getPkeyContext()));
+        this.key = key;
+    }
+
     public static OpenSSLKey getInstance(ECPublicKey ecPublicKey) throws InvalidKeyException {
         try {
             OpenSSLECGroupContext group = OpenSSLECGroupContext

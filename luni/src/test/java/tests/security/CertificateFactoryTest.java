@@ -16,6 +16,7 @@
 package tests.security;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -43,5 +44,85 @@ public abstract class CertificateFactoryTest extends TestCase {
         Certificate certificate = certificateFactory.generateCertificate(
                 new ByteArrayInputStream(certificateData));
         assertNotNull(certificate);
+    }
+
+    public void testCertificateFactory_InputStream_Offset_Correct() throws Exception {
+        CertificateFactory certificateFactory = CertificateFactory.getInstance(algorithmName);
+
+        byte[] doubleCertificateData = new byte[certificateData.length * 2];
+        MeasuredInputStream certStream = new MeasuredInputStream(new ByteArrayInputStream(doubleCertificateData));
+        Certificate certificate = certificateFactory.generateCertificate(certStream);
+        assertNotNull(certificate);
+        assertEquals(certificateData.length, certStream.getCount());
+    }
+
+    /**
+     * Proxy that counts the number of bytes read from an InputStream.
+     */
+    private static class MeasuredInputStream extends InputStream {
+        private long mCount = 0;
+
+        private InputStream mStream;
+
+        public MeasuredInputStream(InputStream is) {
+            mStream = is;
+        }
+
+        public long getCount() {
+            return mCount;
+        }
+
+        @Override
+        public int read() throws IOException {
+            int nextByte = mStream.read();
+            mCount++;
+            return nextByte;
+        }
+
+        @Override
+        public int read(byte[] buffer) throws IOException {
+            int count = mStream.read(buffer);
+            mCount += count;
+            return count;
+        }
+
+        @Override
+        public int read(byte[] buffer, int offset, int length) throws IOException {
+            int count = mStream.read(buffer, offset, length);
+            mCount += count;
+            return count;
+        }
+
+        @Override
+        public long skip(long byteCount) throws IOException {
+            long count = mStream.skip(byteCount);
+            mCount += count;
+            return count;
+        }
+
+        @Override
+        public int available() throws IOException {
+            return mStream.available();
+        }
+
+        @Override
+        public void close() throws IOException {
+            mStream.close();
+        }
+
+        @Override
+        public void mark(int readlimit) {
+            mStream.mark(readlimit);
+        }
+
+        @Override
+        public boolean markSupported() {
+            return mStream.markSupported();
+        }
+
+        @Override
+        public synchronized void reset() throws IOException {
+            mStream.reset();
+        }
     }
 }

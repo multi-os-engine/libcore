@@ -18,6 +18,8 @@ package org.apache.harmony.xnet.provider.jsse;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.SocketTimeoutException;
 import java.nio.ByteOrder;
 import java.security.MessageDigest;
@@ -28,6 +30,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -188,6 +191,8 @@ public final class NativeCrypto {
 
     public static native int EC_KEY_get_public_key(int keyRef);
 
+    public static native int EC_KEY_get0_group(int pkeyRef);
+
     // --- Message digest functions --------------
 
     public static native int EVP_get_digestbyname(String name);
@@ -297,6 +302,76 @@ public final class NativeCrypto {
             throw new AssertionError(e);
         }
     }
+
+    public static native String X509_NAME_print_ex(int x509nameCtx, long flags);
+
+    // --- X509 ----------------------------------------------------------------
+
+    public static native int d2i_X509_bio(int bioCtx);
+
+    public static native int PEM_read_bio_X509_AUX(int bioCtx);
+
+    public static native byte[] i2d_X509(int x509ctx);
+
+    /** Takes an X509 context not an X509_PUBKEY context. */
+    public static native byte[] i2d_X509_PUBKEY(int x509ctx);
+
+    public static native void X509_free(int x509ctx);
+
+    public static native void X509_print_ex(int bioCtx, int x509ctx, long nmflag, long certflag);
+
+    public static native byte[] X509_get_issuer_name(int x509ctx);
+
+    public static native byte[] X509_get_subject_name(int x509ctx);
+
+    public static native String get_X509_sig_alg_oid(int ctx);
+
+    public static native int X509_get_pubkey(int ctx) throws NoSuchAlgorithmException;
+
+    public static native String get_X509_pubkey_oid(int x509ctx);
+
+    public static native byte[] X509_get_ext_oid(int x509ctx, String oid);
+
+    public static native String[] get_X509_ext_oids(int x509ctx, int critical);
+
+    public static native Object[][] get_X509_GENERAL_NAME_stack(int x509ctx, int type);
+
+    public static native boolean[] get_X509_ex_kusage(int x509ctx);
+
+    public static native String[] get_X509_ex_xkusage(int x509ctx);
+
+    public static native int X509_check_ca(int x509ctx);
+
+    public static native int get_X509_ex_pathlen(int x509ctx);
+
+    public static native int X509_get_notBefore(int x509ctx);
+
+    public static native int X509_get_notAfter(int x509ctx);
+
+    public static native int X509_cmp_time(int asn1TimeCtx, long timeMillis);
+
+    public static native int X509_cmp_current_time(int asn1TimeCtx);
+
+    public static native long X509_get_version(int x509ctx);
+
+    public static native byte[] X509_get_serialNumber(int x509ctx);
+
+    // --- ASN1_TIME -----------------------------------------------------------
+
+    public static native void ASN1_TIME_to_Calendar(int asn1TimeCtx, Calendar cal);
+
+    // --- BIO stream creation -------------------------------------------------
+
+    public static native int create_BIO_InputStream(OpenSSLBIOInputStream is);
+
+    public static native int create_BIO_OutputStream(OutputStream os);
+
+    public static native int BIO_read(int bioRef, byte[] buffer);
+
+    public static native void BIO_write(int ctx, byte[] buffer, int offset, int length)
+            throws IOException;
+
+    public static native void BIO_free(int bioRef);
 
     // --- SSL handling --------------------------------------------------------
 

@@ -19,10 +19,12 @@ package libcore.java.security.cert;
 import tests.support.resource.Support_Resources;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.Principal;
@@ -165,40 +167,53 @@ public class X509CertificateTest extends TestCase {
     }
 
     public void test_Provider() throws Exception {
+        final ByteArrayOutputStream errBuffer = new ByteArrayOutputStream();
+        PrintStream out = new PrintStream(errBuffer);
+
         for (Provider p : mX509Providers) {
-            CertificateFactory f = CertificateFactory.getInstance("X.509", p);
-            getPublicKey(f);
-            getType(f);
-            verify(f);
-            check_equals(f);
-            check_toString(f);
-            check_hashCode(f);
-            checkValidity(f);
-            getVersion(f);
-            getSerialNumber(f);
-            getIssuerDN(f);
-            getIssuerX500Principal(f);
-            getSubjectDN(f);
-            getSubjectUniqueID(f);
-            getSubjectX500Principal(f);
-            getNotBeforeAndNotAfterDates(f);
-            getSigAlgName(f);
-            getSigAlgOID(f);
-            getSigAlgParams(f);
-            getIssuerUniqueID(f);
-            getSubjectUniqueID(f);
-            getKeyUsage(f);
-            getExtendedKeyUsage(f);
-            getBasicConstraints(f);
-            getSubjectAlternativeNames(f);
-            getSubjectAlternativeNames_IPV6(f);
-            getSubjectAlternativeNames_InvalidIP(f);
-            getSubjectAlternativeNames_Other(f);
-            getSubjectAlternativeNames_Email(f);
-            getSubjectAlternativeNames_DNS(f);
-            getSubjectAlternativeNames_DirName(f);
-            getSubjectAlternativeNames_URI(f);
-            getSubjectAlternativeNames_RID(f);
+            try {
+                CertificateFactory f = CertificateFactory.getInstance("X.509", p);
+                getPublicKey(f);
+                getType(f);
+                verify(f);
+                check_equals(f);
+                check_toString(f);
+                check_hashCode(f);
+                checkValidity(f);
+                getVersion(f);
+                getSerialNumber(f);
+                getIssuerDN(f);
+                getIssuerX500Principal(f);
+                getSubjectDN(f);
+                getSubjectUniqueID(f);
+                getSubjectX500Principal(f);
+                getNotBeforeAndNotAfterDates(f);
+                getSigAlgName(f);
+                getSigAlgOID(f);
+                getSigAlgParams(f);
+                getIssuerUniqueID(f);
+                getSubjectUniqueID(f);
+                getKeyUsage(f);
+                getExtendedKeyUsage(f);
+                getBasicConstraints(f);
+                getSubjectAlternativeNames(f);
+                getSubjectAlternativeNames_IPV6(f);
+                getSubjectAlternativeNames_InvalidIP(f);
+                getSubjectAlternativeNames_Other(f);
+                getSubjectAlternativeNames_Email(f);
+                getSubjectAlternativeNames_DNS(f);
+                getSubjectAlternativeNames_DirName(f);
+                getSubjectAlternativeNames_URI(f);
+                getSubjectAlternativeNames_RID(f);
+            } catch (Throwable e) {
+                out.append("Error encountered checking " + p.getName() + "\n");
+                e.printStackTrace(out);
+            }
+        }
+
+        out.flush();
+        if (errBuffer.size() > 0) {
+            throw new Exception("Errors encountered:\n\n" + errBuffer.toString() + "\n\n");
         }
     }
 
