@@ -16,6 +16,9 @@
 
 package org.apache.harmony.xnet.provider.jsse;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+
 class OpenSSLKey {
     private final int ctx;
 
@@ -49,6 +52,19 @@ class OpenSSLKey {
 
     String getAlias() {
         return alias;
+    }
+
+    public PublicKey getPublicKey() throws NoSuchAlgorithmException {
+        switch (NativeCrypto.EVP_PKEY_type(ctx)) {
+            case NativeCrypto.EVP_PKEY_RSA:
+                return new OpenSSLRSAPublicKey(this);
+            case NativeCrypto.EVP_PKEY_DSA:
+                return new OpenSSLDSAPublicKey(this);
+            case NativeCrypto.EVP_PKEY_EC:
+                return new OpenSSLECPublicKey(this);
+            default:
+                throw new NoSuchAlgorithmException("unknown PKEY type");
+        }
     }
 
     @Override

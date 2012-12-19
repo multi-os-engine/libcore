@@ -402,7 +402,7 @@ public class X509Certificate2Test extends junit.framework.TestCase {
         assertTrue(coll.size() < 10);
     }
 
-    public void testCerficateException() {
+    public void testCertificateException() {
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             ByteArrayInputStream bais = new ByteArrayInputStream(

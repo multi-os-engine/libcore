@@ -18,6 +18,8 @@ package org.apache.harmony.xnet.provider.jsse;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.SocketTimeoutException;
 import java.nio.ByteOrder;
 import java.security.MessageDigest;
@@ -188,6 +190,8 @@ public final class NativeCrypto {
 
     public static native int EC_KEY_get_public_key(int keyRef);
 
+    public static native int EC_KEY_get0_group(int pkeyRef);
+
     // --- Message digest functions --------------
 
     public static native int EVP_get_digestbyname(String name);
@@ -297,6 +301,34 @@ public final class NativeCrypto {
             throw new AssertionError(e);
         }
     }
+
+    // --- X509 ----------------------------------------------------------------
+
+    public static native int d2i_X509_bio(int bio);
+
+    public static native int PEM_read_bio_X509_AUX(int bio);
+
+    /** Takes an X509 context not an X509_PUBKEY context. */
+    public static native byte[] i2d_X509_PUBKEY(int ctx);
+
+    public static native void X509_print_ex(int bioCtx, int x509ctx, long nmflag, long certflag);
+
+    public static native int X509_get_pubkey(int ctx) throws NoSuchAlgorithmException;
+
+    public static native String get_X509_pubkey_oid(int ctx);
+
+    // --- BIO stream creation -------------------------------------------------
+
+    public static native int create_BIO_InputStream(OpenSSLBIOInputStream is);
+
+    public static native int create_BIO_OutputStream(OutputStream os);
+
+    public static native int BIO_read(int bioRef, byte[] buffer);
+
+    public static native void BIO_write(int ctx, byte[] buffer, int offset, int length)
+            throws IOException;
+
+    public static native void BIO_free(int bioRef);
 
     // --- SSL handling --------------------------------------------------------
 
