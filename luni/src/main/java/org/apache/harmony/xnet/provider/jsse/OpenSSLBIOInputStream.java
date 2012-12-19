@@ -43,9 +43,20 @@ public class OpenSSLBIOInputStream extends FilterInputStream {
             return 0;
         }
 
+        /*
+         * OpenSSL complains if your Base64 encoding is >= 80 columns yet it
+         * usually passes in a larger buffer, so just trim this line down.
+         */
+        final int maxOffset;
+        if (buffer.length < 64) {
+            maxOffset = buffer.length;
+        } else {
+            maxOffset = 64;
+        }
+
         int offset = 0;
         int inputByte = read();
-        while (offset < buffer.length && inputByte != '\n' && inputByte != -1) {
+        while (offset < maxOffset && inputByte != '\n' && inputByte != -1) {
             buffer[offset++] = (byte) inputByte;
             inputByte = read();
         }
