@@ -35,6 +35,7 @@ import java.util.TreeSet;
 import libcore.io.ErrnoException;
 import libcore.io.IoUtils;
 import libcore.io.Libcore;
+import libcore.io.OsConstants;
 import libcore.io.StructFlock;
 import libcore.util.MutableLong;
 import static libcore.io.OsConstants.*;
@@ -230,7 +231,7 @@ final class FileChannelImpl extends FileChannel {
         } else if (accessMode == O_WRONLY) {
             throw new NonReadableChannelException();
         }
-        if (position + size > size()) {
+        if (isRegularFile() && (position + size > size())) {
             // We can't defer to FileChannel.truncate because that will only make a file shorter,
             // and we only care about making our backing file longer here.
             try {
@@ -344,6 +345,14 @@ final class FileChannelImpl extends FileChannel {
         checkOpen();
         try {
             return Libcore.os.fstat(fd).st_size;
+        } catch (ErrnoException errnoException) {
+            throw errnoException.rethrowAsIOException();
+        }
+    }
+
+    private boolean isRegularFile() throws IOException {
+        try {
+            return OsConstants.S_ISREG(Libcore.os.fstat(fd).st_mode);
         } catch (ErrnoException errnoException) {
             throw errnoException.rethrowAsIOException();
         }
