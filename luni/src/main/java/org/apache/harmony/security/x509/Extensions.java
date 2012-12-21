@@ -225,11 +225,14 @@ public final class Extensions {
      * @return the value of pathLenConstraint field if extension presents,
      * and Integer.MAX_VALUE if does not.
      */
-    public int valueOfBasicConstrains() {
+    public int valueOfBasicConstraints() {
         Extension extension = getExtensionByOID("2.5.29.19");
-        BasicConstraints bc;
-        if ((extension == null) || ((bc = extension.getBasicConstraintsValue()) == null)) {
-            return Integer.MAX_VALUE;
+        if (extension == null) {
+            return -1;
+        }
+        BasicConstraints bc = extension.getBasicConstraintsValue();
+        if (bc == null || !bc.getCa()) {
+            return -1;
         }
         return bc.getPathLenConstraint();
     }
