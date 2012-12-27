@@ -21,19 +21,28 @@ import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Arrays;
 
 public class RSAPrivateKeyTest extends TestCase {
 
     /**
-     * java.security.interfaces.RSAPrivateKey
-     * #getPrivateExponent()
+     * @see java.security.interfaces.RSAPrivateKey#getPrivateExponent()
      */
     public void test_getPrivateExponent() throws Exception {
         KeyFactory gen = KeyFactory.getInstance("RSA");
         final BigInteger n = BigInteger.valueOf(3233);
         final BigInteger d = BigInteger.valueOf(2753);
-        RSAPrivateKey key = (RSAPrivateKey) gen.generatePrivate(new RSAPrivateKeySpec(
-                n, d));
+
+        RSAPrivateKey key = (RSAPrivateKey) gen.generatePrivate(new RSAPrivateKeySpec(n, d));
         assertEquals("invalid private exponent", d, key.getPrivateExponent());
+        assertEquals("invalid modulus", n, key.getModulus());
+
+        byte[] encoded = key.getEncoded();
+        RSAPrivateKey key2 = (RSAPrivateKey) gen.generatePrivate(new PKCS8EncodedKeySpec(encoded));
+        assertEquals("invalid private exponent", d, key2.getPrivateExponent());
+        assertEquals("invalid modulus", n, key2.getModulus());
+
+        assertEquals(Arrays.toString(encoded), Arrays.toString(key2.getEncoded()));
     }
 }
