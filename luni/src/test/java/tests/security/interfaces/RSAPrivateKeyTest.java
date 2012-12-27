@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
 
 public class RSAPrivateKeyTest extends TestCase {
 
@@ -35,5 +36,8 @@ public class RSAPrivateKeyTest extends TestCase {
         RSAPrivateKey key = (RSAPrivateKey) gen.generatePrivate(new RSAPrivateKeySpec(
                 n, d));
         assertEquals("invalid private exponent", d, key.getPrivateExponent());
+
+        byte[] encoded = key.getEncoded();
+        RSAPrivateKey key2 = (RSAPrivateKey) gen.generatePrivate(new PKCS8EncodedKeySpec(encoded));
     }
 }
