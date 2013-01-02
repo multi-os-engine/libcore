@@ -20,6 +20,7 @@ import tests.support.resource.Support_Resources;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -35,6 +36,8 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.SignatureException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateNotYetValidException;
@@ -96,6 +99,14 @@ public class X509CertificateTest extends TestCase {
     private static final String CERT_ALT_RID = "x509/cert-alt-rid.der";
 
     private static final String CERT_UNSUPPORTED = "x509/cert-unsupported.der";
+
+    private static final String CERTS_X509_PEM = "x509/certs.pem";
+
+    private static final String CERTS_X509_DER = "x509/certs.der";
+
+    private static final String CERTS_PKCS7_PEM = "x509/certs-pk7.pem";
+
+    private static final String CERTS_PKCS7_DER = "x509/certs-pk7.der";
 
     private final X509Certificate getCertificate(CertificateFactory f, String name)
             throws Exception {
@@ -243,6 +254,11 @@ public class X509CertificateTest extends TestCase {
                 hasUnsupportedCriticalExtension(f);
                 getEncoded(f);
                 verify(f);
+                generateCertificates_X509_PEM(f);
+                generateCertificates_X509_DER(f);
+                generateCertificates_PKCS7_PEM(f);
+                generateCertificates_PKCS7_DER(f);
+                generateCertificates_Empty(f);
             } catch (Throwable e) {
                 out.append("Error encountered checking " + p.getName() + "\n");
                 e.printStackTrace(out);
@@ -1070,6 +1086,67 @@ public class X509CertificateTest extends TestCase {
         byte[] cBytes = getResourceAsBytes(CERT_RSA);
 
         assertEquals(Arrays.toString(cBytes), Arrays.toString(c.getEncoded()));
+    }
+
+    private void generateCertificates_X509_DER(CertificateFactory f) throws Exception {
+        /* DER-encoded list of certificates */
+        final InputStream ris = Support_Resources.getStream(CERTS_X509_DER);
+
+        Collection<? extends Certificate> certs = f.generateCertificates(ris);
+        assertNotNull(certs);
+        assertEquals(2, certs.size());
+    }
+
+    private void generateCertificates_X509_PEM(CertificateFactory f) throws Exception {
+        /* PEM-encoded list of certificates */
+        final InputStream ris = Support_Resources.getStream(CERTS_X509_PEM);
+
+        Collection<? extends Certificate> certs = f.generateCertificates(ris);
+        assertNotNull(certs);
+        assertEquals(2, certs.size());
+    }
+
+    private void generateCertificates_PKCS7_PEM(CertificateFactory f) throws Exception {
+        /* PEM-encoded PKCS7 bag of certificates */
+        final InputStream ris = Support_Resources.getStream(CERTS_PKCS7_PEM);
+
+        Collection<? extends Certificate> certs = f.generateCertificates(ris);
+        assertNotNull(certs);
+        if ("BC".equals(f.getProvider().getName())) {
+            // Bouncycastle is broken
+            assertEquals(0, certs.size());
+        } else {
+            assertEquals(2, certs.size());
+        }
+    }
+
+    private void generateCertificates_PKCS7_DER(CertificateFactory f) throws Exception {
+        /* DER-encoded PKCS7 bag of certificates */
+        final InputStream ris = Support_Resources.getStream(CERTS_PKCS7_DER);
+
+        Collection<? extends Certificate> certs = f.generateCertificates(ris);
+        assertNotNull(certs);
+        assertEquals(2, certs.size());
+    }
+
+    private void generateCertificates_Empty(CertificateFactory f) throws Exception {
+        final InputStream is = new ByteArrayInputStream(new byte[0]);
+
+        final Collection<? extends Certificate> certs;
+        try {
+            certs = f.generateCertificates(is);
+            // DRLCertFactory is broken
+            if ("DRLCertFactory".equals(f.getProvider().getName())) {
+                fail("should throw when no certificates present");
+            }
+        } catch (CertificateException e) {
+            if ("DRLCertFactory".equals(f.getProvider().getName())) {
+                return;
+            }
+            throw e;
+        }
+        assertNotNull(certs);
+        assertEquals(0, certs.size());
     }
 
     @Override
