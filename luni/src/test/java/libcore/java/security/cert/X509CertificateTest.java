@@ -26,6 +26,8 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.security.KeyFactory;
@@ -279,6 +281,7 @@ public class X509CertificateTest extends TestCase {
                 generateCertificates_X509_DER_TrailingData(f);
                 generateCertificates_PKCS7_PEM_TrailingData(f);
                 generateCertificates_PKCS7_DER_TrailingData(f);
+                test_Serialization(f);
             } catch (Throwable e) {
                 out.append("Error encountered checking " + p.getName() + "\n");
                 e.printStackTrace(out);
@@ -1281,6 +1284,31 @@ public class X509CertificateTest extends TestCase {
             assertEquals(0, bais.available());
         } else {
             assertEquals(4096, bais.available());
+        }
+    }
+
+    private void test_Serialization(CertificateFactory f) throws Exception {
+        X509Certificate expected = getCertificate(f, CERT_RSA);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        try {
+            oos.writeObject(expected);
+        } finally {
+            oos.close();
+        }
+
+        byte[] certBytes = baos.toByteArray();
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(certBytes);
+        try {
+            ObjectInputStream ois = new ObjectInputStream(bais);
+
+            X509Certificate actual = (X509Certificate) ois.readObject();
+
+            assertEquals(expected, actual);
+        } finally {
+            bais.close();
         }
     }
 
