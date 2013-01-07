@@ -803,12 +803,6 @@ public class X509CertificateTest extends TestCase {
             return;
         }
 
-        // BouncyCastle is broken
-        if ("BC".equals(f.getProvider().getName())) {
-            assertNull(col);
-            return;
-        }
-
         checkAlternativeNames(col);
     }
 
@@ -878,12 +872,6 @@ public class X509CertificateTest extends TestCase {
         X509Certificate c = getCertificate(f, CERT_IPV6);
         Collection<List<?>> col = c.getSubjectAlternativeNames();
 
-        // BouncyCastle is broken
-        if ("BC".equals(f.getProvider().getName())) {
-            assertNull(col);
-            return;
-        }
-
         assertNotNull(f.getProvider().getName(), col);
 
         assertEquals(1, col.size());
@@ -911,12 +899,6 @@ public class X509CertificateTest extends TestCase {
         X509Certificate c = getCertificate(f, CERT_ALT_OTHER);
         Collection<List<?>> col = c.getSubjectAlternativeNames();
 
-        // BouncyCastle is broken
-        if ("BC".equals(f.getProvider().getName())) {
-            assertNull(col);
-            return;
-        }
-
         assertNotNull(f.getProvider().getName(), col);
 
         assertEquals(1, col.size());
@@ -934,12 +916,6 @@ public class X509CertificateTest extends TestCase {
         X509Certificate c = getCertificate(f, CERT_ALT_EMAIL);
         Collection<List<?>> col = c.getSubjectAlternativeNames();
 
-        // BouncyCastle is broken
-        if ("BC".equals(f.getProvider().getName())) {
-            assertNull(col);
-            return;
-        }
-
         assertNotNull(f.getProvider().getName(), col);
 
         assertEquals(1, col.size());
@@ -955,12 +931,6 @@ public class X509CertificateTest extends TestCase {
     private void getSubjectAlternativeNames_DNS(CertificateFactory f) throws Exception {
         X509Certificate c = getCertificate(f, CERT_ALT_DNS);
         Collection<List<?>> col = c.getSubjectAlternativeNames();
-
-        // BouncyCastle is broken
-        if ("BC".equals(f.getProvider().getName())) {
-            assertNull(col);
-            return;
-        }
 
         assertNotNull(f.getProvider().getName(), col);
 
@@ -990,12 +960,6 @@ public class X509CertificateTest extends TestCase {
             return;
         }
 
-        // BouncyCastle is broken
-        if ("BC".equals(f.getProvider().getName())) {
-            assertNull(col);
-            return;
-        }
-
         assertNotNull(f.getProvider().getName(), col);
 
         assertEquals(1, col.size());
@@ -1012,12 +976,6 @@ public class X509CertificateTest extends TestCase {
         X509Certificate c = getCertificate(f, CERT_ALT_URI);
         Collection<List<?>> col = c.getSubjectAlternativeNames();
 
-        // BouncyCastle is broken
-        if ("BC".equals(f.getProvider().getName())) {
-            assertNull(col);
-            return;
-        }
-
         assertNotNull(f.getProvider().getName(), col);
 
         assertEquals(1, col.size());
@@ -1033,12 +991,6 @@ public class X509CertificateTest extends TestCase {
     private void getSubjectAlternativeNames_RID(CertificateFactory f) throws Exception {
         X509Certificate c = getCertificate(f, CERT_ALT_RID);
         Collection<List<?>> col = c.getSubjectAlternativeNames();
-
-        // BouncyCastle is broken
-        if ("BC".equals(f.getProvider().getName())) {
-            assertNull(col);
-            return;
-        }
 
         assertNotNull(f.getProvider().getName(), col);
 
@@ -1064,12 +1016,6 @@ public class X509CertificateTest extends TestCase {
             if (!"DRLCertFactory".equals(f.getProvider().getName())) {
                 throw new Exception("Non-Harmony shouldn't throw", e);
             }
-            return;
-        }
-
-        // BouncyCastle is broken
-        if ("BC".equals(f.getProvider().getName())) {
-            assertNull(col);
             return;
         }
 
