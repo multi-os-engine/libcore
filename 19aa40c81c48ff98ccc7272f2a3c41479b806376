@@ -1,0 +1,8 @@
+Code-Review+2: Elliott Hughes <enh@google.com>
+Verified+1: Deckard Autoverifier <deckard@android.com>
+Code-Review+1: Jesse Wilson <jwilson@squareup.com>
+Submitted-by: Elliott Hughes <enh@google.com>
+Submitted-at: Tue, 08 Jan 2013 13:14:38 -0800
+Reviewed-on: https://android-review.googlesource.com/48107
+Project: platform/libcore
+Branch: refs/heads/master
