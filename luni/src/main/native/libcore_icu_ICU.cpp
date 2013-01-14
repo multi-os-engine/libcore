@@ -125,47 +125,49 @@ static jint ICU_getCurrencyFractionDigits(JNIEnv* env, jclass, jstring javaCurre
     return ucurr_getDefaultFractionDigits(icuCurrencyCode.getTerminatedBuffer(), &status);
 }
 
-// TODO: rewrite this with int32_t ucurr_forLocale(const char* locale, UChar* buff, int32_t buffCapacity, UErrorCode* ec)...
-static jstring ICU_getCurrencyCode(JNIEnv* env, jclass, jstring javaCountryCode) {
-    UErrorCode status = U_ZERO_ERROR;
-    ScopedResourceBundle supplData(ures_openDirect(U_ICUDATA_CURR, "supplementalData", &status));
-    if (U_FAILURE(status)) {
-        return NULL;
-    }
+static jstring ICU_getCurrencyCode(JNIEnv* env, jclass, jstring javaLocaleName) {
+  ScopedUtfChars localeName(env, javaLocaleName);
 
-    ScopedResourceBundle currencyMap(ures_getByKey(supplData.get(), "CurrencyMap", NULL, &status));
-    if (U_FAILURE(status)) {
-        return NULL;
-    }
+  // Is this a valid locale?
+  Locale locale(Locale::createFromName(localeName.c_str()));
+  if (strlen(locale.getISO3Country()) == 0) {
+    jniThrowExceptionFmt(env, "java/lang/IllegalArgumentException", "Unsupported locale: %s",
+                         localeName.c_str());
+    return NULL;
+  }
 
-    ScopedUtfChars countryCode(env, javaCountryCode);
-    ScopedResourceBundle currency(ures_getByKey(currencyMap.get(), countryCode.c_str(), NULL, &status));
-    if (U_FAILURE(status)) {
-        return NULL;
-    }
+  UErrorCode status = U_ZERO_ERROR;
+  UChar chars[4];
+  int32_t char_count = ucurr_forLocale(localeName.c_str(), &chars[0], 4, &status);
+  if (char_count == 0) {
+    ALOGE("%s char_count == 0", localeName.c_str());
+    return NULL;
+  }
 
-    ScopedResourceBundle currencyElem(ures_getByIndex(currency.get(), 0, NULL, &status));
-    if (U_FAILURE(status)) {
-        return env->NewStringUTF("XXX");
-    }
+  status = U_ZERO_ERROR;
+  UDate now = time(NULL) * 1000;//Calendar::getNow();
+  if (!ucurr_isAvailable(chars, now, now, &status)) {
+    ALOGE("%s (%c%c%c) not available %g %ld", localeName.c_str(), (char)chars[0], (char)chars[1], (char)chars[2], now, time(NULL)*1000);
+    return NULL;
+  }
 
-    // Check if there's a 'to' date. If there is, the currency isn't used anymore.
-    ScopedResourceBundle currencyTo(ures_getByKey(currencyElem.get(), "to", NULL, &status));
-    if (!U_FAILURE(status)) {
-        return NULL;
-    }
-    // Ignore the failure to find a 'to' date.
-    status = U_ZERO_ERROR;
+  /*
+  UErrorCode status = U_ZERO_ERROR;
+  UDate now = Calendar::getNow();
+  int32_t currency_count = ucurr_countCurrencies(localeName.c_str(), now, &status);
+  if (currency_count == 0) {
+    return NULL;
+  }
 
-    ScopedResourceBundle currencyId(ures_getByKey(currencyElem.get(), "id", NULL, &status));
-    if (U_FAILURE(status)) {
-        // No id defined for this country
-        return env->NewStringUTF("XXX");
-    }
+  status = U_ZERO_ERROR;
+  UChar chars[4];
+  int32_t char_count = ucurr_forLocaleAndDate(localeName.c_str(), now, currency_count, &chars[0], 4, &status);
+  if (char_count == 0) {
+    return NULL;
+  }
+  */
 
-    int32_t charCount;
-    const jchar* chars = ures_getString(currencyId.get(), &charCount, &status);
-    return (charCount == 0) ? env->NewStringUTF("XXX") : env->NewString(chars, charCount);
+  return env->NewString(chars, char_count);
 }
 
 static jstring getCurrencyName(JNIEnv* env, jstring javaLocaleName, jstring javaCurrencyCode, UCurrNameStyle nameStyle) {
@@ -573,6 +575,7 @@ static jboolean ICU_initLocaleDataImpl(JNIEnv* env, jclass, jstring javaLocaleNa
 
     jstring countryCode = env->NewStringUTF(Locale::createFromName(localeName.c_str()).getCountry());
     jstring internationalCurrencySymbol = ICU_getCurrencyCode(env, NULL, countryCode);
+    env->ExceptionClear(); // In case ICU_getCurrencyCode threw.
     env->DeleteLocalRef(countryCode);
     countryCode = NULL;
 

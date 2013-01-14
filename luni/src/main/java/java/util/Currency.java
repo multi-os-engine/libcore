@@ -59,7 +59,8 @@ public final class Currency implements Serializable {
     }
 
     /**
-     * Returns the {@code Currency} instance for this {@code Locale}'s country.
+     * Returns the {@code Currency} instance for this {@code Locale}'s country, or null if the
+     * locale does not have a currency.
      * @throws IllegalArgumentException
      *             if the locale's country is not a supported ISO 3166 country.
      */
@@ -69,19 +70,17 @@ public final class Currency implements Serializable {
             if (currency != null) {
                 return currency;
             }
-            String country = locale.getCountry();
-            String variant = locale.getVariant();
-            if (!variant.isEmpty() && (variant.equals("EURO") || variant.equals("HK") ||
-                    variant.equals("PREEURO"))) {
-                country = country + "_" + variant;
-            }
-
-            String currencyCode = ICU.getCurrencyCode(country);
+            String currencyCode = ICU.getCurrencyCode(locale.toString());
             if (currencyCode == null) {
-                throw new IllegalArgumentException("Unsupported ISO 3166 country: " + locale);
-            } else if (currencyCode.equals("XXX")) {
                 return null;
             }
+//            if (currencyCode == null) {
+//                throw new IllegalArgumentException("Unsupported ISO 3166 country: " + locale);
+//            } else if (currencyCode.equals("XXX")) {
+//                // icu4c returns XXX for country codes like AQ that don't have a currency,
+//                // but Java returns null.
+//                return null;
+//            }
             Currency result = getInstance(currencyCode);
             localesToCurrencies.put(locale, result);
             return result;
