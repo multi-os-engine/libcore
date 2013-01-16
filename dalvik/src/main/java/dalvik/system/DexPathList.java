@@ -56,6 +56,8 @@ import static libcore.io.OsConstants.*;
 
     /** list of dex/resource (class path) elements */
     private final Element[] pathElements;
+    /** Backwards-compatible synonym for 'pathElements' to keep Facebook running (http://b/7726934). */
+    private final Element[] dexElements;
 
     /** list of native library directory elements */
     private final File[] nativeLibraryDirectories;
@@ -100,6 +102,7 @@ import static libcore.io.OsConstants.*;
 
         this.definingContext = definingContext;
         this.pathElements = makeDexElements(splitDexPath(dexPath), optimizedDirectory);
+        this.dexElements = this.pathElements; // http://b/7726934
         this.nativeLibraryDirectories = splitLibraryPath(libraryPath);
     }
 
