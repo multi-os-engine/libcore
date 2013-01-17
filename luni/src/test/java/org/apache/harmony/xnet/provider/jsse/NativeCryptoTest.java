@@ -22,14 +22,22 @@ import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.KeyStore.PrivateKeyEntry;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPrivateKey;
+import java.security.spec.ECField;
+import java.security.spec.ECFieldFp;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPrivateKeySpec;
+import java.security.spec.EllipticCurve;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -63,6 +71,8 @@ public class NativeCryptoTest extends TestCase {
     private static byte[] CLIENT_PRIVATE_KEY;
     private static byte[][] CLIENT_CERTIFICATES;
     private static byte[][] CA_PRINCIPALS;
+    private static ECPrivateKey CHANNEL_ID_PRIVATE_KEY;
+    private static byte[] CHANNEL_ID;
 
     @Override
     protected void tearDown() throws Exception {
@@ -120,8 +130,93 @@ public class NativeCryptoTest extends TestCase {
             X509Certificate certificate = (X509Certificate) ks.getCertificate(caCertAlias);
             X500Principal principal = certificate.getIssuerX500Principal();
             CA_PRINCIPALS = new byte[][] { principal.getEncoded() };
+            initChannelIdKey();
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private static synchronized void initChannelIdKey() throws Exception {
+        ECParameterSpec spec = getNistP256CurveParameters();
+        BigInteger s = new BigInteger(
+                "229cdbbf489aea584828a261a23f9ff8b0f66f7ccac98bf2096ab3aee41497c5", 16);
+        KeyFactory keyFactory = KeyFactory.getInstance("EC");
+        CHANNEL_ID_PRIVATE_KEY = (ECPrivateKey) keyFactory.generatePrivate(
+                new ECPrivateKeySpec(s, spec));
+        // Since OpenSSL-backed EC KeyFactory is not yet implemented, we manually convert
+        // the priavte key (most likely BouncyCastle one) to an OpenSSL-backed one.
+        OpenSSLECGroupContext openSslSpec = OpenSSLECGroupContext.getInstance(spec);
+        CHANNEL_ID_PRIVATE_KEY = new OpenSSLECPrivateKey(
+                openSslSpec, OpenSSLECPrivateKey.getInstance(CHANNEL_ID_PRIVATE_KEY));
+
+        // Channel ID is the concatenation of the X and Y coordinates of the public key.
+        CHANNEL_ID = hexDecode("702b07871fd7955c320b26f15e244e47eed60272124c92b9ebecf0b42f90069b" +
+                "ab53592ebfeb4f167dbf3ce61513afb0e354c479b1c1b69874fa471293494f77");
+    }
+
+    private static ECParameterSpec getNistP256CurveParameters() {
+        // Based on http://www.nsa.gov/ia/_files/nist-routines.pdf
+
+        // Prime number "p" for the finite field
+        BigInteger p = new BigInteger(
+                "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff", 16);
+        // Curve coefficient "a"
+        BigInteger a = new BigInteger(
+                "ffffffff00000001000000000000000000000000fffffffffffffffffffffffc", 16);
+        // Curve coefficient "b"
+        BigInteger b = new BigInteger(
+                "5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b", 16);
+        // Generator "G"
+        ECPoint g = new ECPoint(
+                new BigInteger(
+                     "6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296", 16),
+                new BigInteger(
+                     "4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5", 16));
+        // Order "n" of "G"
+        BigInteger n = new BigInteger(
+                "ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551", 16);
+        // Cofactor
+        int h = 1;
+        ECField field = new ECFieldFp(p);
+        EllipticCurve curve = new EllipticCurve(field, a, b);
+        return new ECParameterSpec(curve, g, n, h);
+    }
+
+    /**
+     * Decodes the provided hexadecimal string into an array of bytes.
+     */
+    private static byte[] hexDecode(String encoded) {
+        // IMPLEMENTATION NOTE: Special care is taken to permit odd number of hexadecimal digits.
+        int resultLengthBytes = (encoded.length() + 1) / 2;
+        byte[] result = new byte[resultLengthBytes];
+        int resultOffset = 0;
+        int encodedCharOffset = 0;
+        if ((encoded.length() % 2) != 0) {
+            // Odd number of digits -- the first digit is the lower 4 bits of the first result
+            // byte.
+            result[resultOffset++] =
+                    (byte) getHexadecimalDigitValue(encoded.charAt(encodedCharOffset));
+            encodedCharOffset++;
+        }
+        for (int len = encoded.length(); encodedCharOffset < len; encodedCharOffset += 2) {
+            result[resultOffset++] = (byte)
+                    ((getHexadecimalDigitValue(encoded.charAt(encodedCharOffset)) << 4)
+                    | getHexadecimalDigitValue(encoded.charAt(encodedCharOffset + 1)));
+        }
+        return result;
+    }
+
+    private static int getHexadecimalDigitValue(char c) {
+        if ((c >= 'a') && (c <= 'f')) {
+            return (c - 'a') + 0x0a;
+        } else if ((c >= 'A') && (c <= 'F')) {
+            return (c - 'A') + 0x0a;
+        } else if ((c >= '0') && (c <= '9')) {
+            return c - '0';
+        } else {
+            throw new IllegalArgumentException(
+                    "Invalid hexadecimal digit at position : '" + c + "' (0x" +
+                    Integer.toHexString(c) + ")");
         }
     }
 
@@ -301,6 +396,41 @@ public class NativeCryptoTest extends TestCase {
         }
 
         NativeCrypto.SSL_use_certificate(s, getServerCertificates());
+
+        NativeCrypto.SSL_free(s);
+        NativeCrypto.SSL_CTX_free(c);
+    }
+
+    public void test_SSL_use_PrivateKey_for_tls_channel_id() throws Exception {
+        try {
+            NativeCrypto.SSL_set1_tls_channel_id(NULL, null);
+            fail();
+        } catch (NullPointerException expected) {
+        }
+
+        int c = NativeCrypto.SSL_CTX_new();
+        int s = NativeCrypto.SSL_new(c);
+
+        try {
+            NativeCrypto.SSL_set1_tls_channel_id(s, null);
+            fail();
+        } catch (NullPointerException expected) {
+        }
+
+        // Use the key via the wrapper that decides whether to use PKCS#8 or native OpenSSL.
+        NativeCrypto.SSL_set1_tls_channel_id(s, CHANNEL_ID_PRIVATE_KEY);
+
+        // Use the key via its PKCS#8 representation.
+        assertEquals("PKCS#8", CHANNEL_ID_PRIVATE_KEY.getFormat());
+        byte[] pkcs8EncodedKeyBytes = CHANNEL_ID_PRIVATE_KEY.getEncoded();
+        assertNotNull(pkcs8EncodedKeyBytes);
+        NativeCrypto.SSL_use_PKCS8_PrivateKey_for_tls_channel_id(s, pkcs8EncodedKeyBytes);
+
+        // Use the key natively. This works because the initChannelIdKey method ensures that the
+        // key is backed by OpenSSL.
+        NativeCrypto.SSL_use_OpenSSL_PrivateKey_for_tls_channel_id(
+                s,
+                ((OpenSSLECPrivateKey) CHANNEL_ID_PRIVATE_KEY).getOpenSSLKey().getPkeyContext());
 
         NativeCrypto.SSL_free(s);
         NativeCrypto.SSL_CTX_free(c);
@@ -547,6 +677,8 @@ public class NativeCryptoTest extends TestCase {
     private static final boolean DEBUG = false;
 
     public static class Hooks {
+        private ECPrivateKey channelIdPrivateKey;
+
         public int getContext() throws SSLException {
             return NativeCrypto.SSL_CTX_new();
         }
@@ -556,6 +688,10 @@ public class NativeCryptoTest extends TestCase {
             // negotiating DHE-RSA-AES256-SHA by default which had
             // very slow ephemeral RSA key generation
             NativeCrypto.SSL_set_cipher_lists(s, new String[] { "RC4-MD5" });
+
+            if (channelIdPrivateKey != null) {
+                NativeCrypto.SSL_set1_tls_channel_id(s, channelIdPrivateKey);
+            }
             return s;
         }
         public void clientCertificateRequested(int s) {}
@@ -651,6 +787,10 @@ public class NativeCryptoTest extends TestCase {
     public static class ServerHooks extends Hooks {
         private final byte[] privateKey;
         private final byte[][] certificates;
+        private boolean channelIdEnabled;
+        private byte[] channelIdAfterHandshake;
+        private Throwable channelIdAfterHandshakeException;
+
         public ServerHooks(byte[] privateKey, byte[][] certificates) {
             this.privateKey = privateKey;
             this.certificates = certificates;
@@ -665,8 +805,27 @@ public class NativeCryptoTest extends TestCase {
             if (certificates != null) {
                 NativeCrypto.SSL_use_certificate(s, certificates);
             }
+            if (channelIdEnabled) {
+                NativeCrypto.SSL_enable_tls_channel_id(s);
+            }
             return s;
         }
+
+        @Override
+        public void afterHandshake(int session, int ssl, int context,
+                                   Socket socket, FileDescriptor fd,
+                                   SSLHandshakeCallbacks callback)
+                throws Exception {
+          if (channelIdEnabled) {
+            try {
+              channelIdAfterHandshake = NativeCrypto.SSL_get_tls_channel_id(ssl);
+            } catch (Exception e) {
+              channelIdAfterHandshakeException = e;
+            }
+          }
+          super.afterHandshake(session, ssl, context, socket, fd, callback);
+        }
+
         public void clientCertificateRequested(int s) {
             fail("Server asked for client certificates");
         }
@@ -949,6 +1108,78 @@ public class NativeCryptoTest extends TestCase {
             // Manually close peer socket when testing timeout
             IoUtils.closeQuietly(clientSocket);
         }
+    }
+
+    public void test_SSL_do_handshake_with_channel_id_normal() throws Exception {
+        // Normal handshake with TLS Channel ID.
+        final ServerSocket listener = new ServerSocket(0);
+        Hooks cHooks = new Hooks();
+        cHooks.channelIdPrivateKey = CHANNEL_ID_PRIVATE_KEY;
+        ServerHooks sHooks = new ServerHooks(getServerPrivateKey(), getServerCertificates());
+        sHooks.channelIdEnabled = true;
+        Future<TestSSLHandshakeCallbacks> client = handshake(listener, 0, true, cHooks, null);
+        Future<TestSSLHandshakeCallbacks> server = handshake(listener, 0, false, sHooks, null);
+        TestSSLHandshakeCallbacks clientCallback = client.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        TestSSLHandshakeCallbacks serverCallback = server.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        assertTrue(clientCallback.verifyCertificateChainCalled);
+        assertEqualCertificateChains(getServerCertificates(),
+                                     clientCallback.asn1DerEncodedCertificateChain);
+        assertEquals("RSA", clientCallback.authMethod);
+        assertFalse(serverCallback.verifyCertificateChainCalled);
+        assertFalse(clientCallback.clientCertificateRequestedCalled);
+        assertFalse(serverCallback.clientCertificateRequestedCalled);
+        assertTrue(clientCallback.handshakeCompletedCalled);
+        assertTrue(serverCallback.handshakeCompletedCalled);
+        assertNull(sHooks.channelIdAfterHandshakeException);
+        assertEqualByteArrays(CHANNEL_ID, sHooks.channelIdAfterHandshake);
+    }
+
+    public void test_SSL_do_handshake_with_channel_id_not_supported_by_server() throws Exception {
+        // Client tries to use TLS Channel ID but the server does not enable/offer the extension.
+        final ServerSocket listener = new ServerSocket(0);
+        Hooks cHooks = new Hooks();
+        cHooks.channelIdPrivateKey = CHANNEL_ID_PRIVATE_KEY;
+        ServerHooks sHooks = new ServerHooks(getServerPrivateKey(), getServerCertificates());
+        sHooks.channelIdEnabled = false;
+        Future<TestSSLHandshakeCallbacks> client = handshake(listener, 0, true, cHooks, null);
+        Future<TestSSLHandshakeCallbacks> server = handshake(listener, 0, false, sHooks, null);
+        TestSSLHandshakeCallbacks clientCallback = client.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        TestSSLHandshakeCallbacks serverCallback = server.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        assertTrue(clientCallback.verifyCertificateChainCalled);
+        assertEqualCertificateChains(getServerCertificates(),
+                                     clientCallback.asn1DerEncodedCertificateChain);
+        assertEquals("RSA", clientCallback.authMethod);
+        assertFalse(serverCallback.verifyCertificateChainCalled);
+        assertFalse(clientCallback.clientCertificateRequestedCalled);
+        assertFalse(serverCallback.clientCertificateRequestedCalled);
+        assertTrue(clientCallback.handshakeCompletedCalled);
+        assertTrue(serverCallback.handshakeCompletedCalled);
+        assertNull(sHooks.channelIdAfterHandshakeException);
+        assertNull(sHooks.channelIdAfterHandshake);
+    }
+
+    public void test_SSL_do_handshake_with_channel_id_not_enabled_by_client() throws Exception {
+        // Client does not use TLS Channel ID when the server has the extension enabled/offered.
+        final ServerSocket listener = new ServerSocket(0);
+        Hooks cHooks = new Hooks();
+        cHooks.channelIdPrivateKey = null;
+        ServerHooks sHooks = new ServerHooks(getServerPrivateKey(), getServerCertificates());
+        sHooks.channelIdEnabled = true;
+        Future<TestSSLHandshakeCallbacks> client = handshake(listener, 0, true, cHooks, null);
+        Future<TestSSLHandshakeCallbacks> server = handshake(listener, 0, false, sHooks, null);
+        TestSSLHandshakeCallbacks clientCallback = client.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        TestSSLHandshakeCallbacks serverCallback = server.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        assertTrue(clientCallback.verifyCertificateChainCalled);
+        assertEqualCertificateChains(getServerCertificates(),
+                                     clientCallback.asn1DerEncodedCertificateChain);
+        assertEquals("RSA", clientCallback.authMethod);
+        assertFalse(serverCallback.verifyCertificateChainCalled);
+        assertFalse(clientCallback.clientCertificateRequestedCalled);
+        assertFalse(serverCallback.clientCertificateRequestedCalled);
+        assertTrue(clientCallback.handshakeCompletedCalled);
+        assertTrue(serverCallback.handshakeCompletedCalled);
+        assertNull(sHooks.channelIdAfterHandshakeException);
+        assertNull(sHooks.channelIdAfterHandshake);
     }
 
     public void test_SSL_set_session() throws Exception {
