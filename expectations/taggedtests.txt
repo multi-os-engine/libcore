@@ -7,12 +7,12 @@
   description: "large tests",
   result: SUCCESS,
   names: [
-    "java.util.EnumSet.EnumSetBash",
-    "org.apache.harmony.tests.java.util.regex.MatcherTest#testAllCodePoints",
-    "libcore.javax.net.ssl.SSLSocketTest",
+    /* libcore tests over 15 minutes on target due to use of DHParametersHelper.generateSafePrimes */
     "org.apache.harmony.crypto.tests.javax.crypto.func.KeyAgreementFunctionalTest",
     "org.apache.harmony.crypto.tests.javax.crypto.interfaces.DHPrivateKeyTest",
     "org.apache.harmony.crypto.tests.javax.crypto.interfaces.DHPublicKeyTest",
+    /* non-AOSP tests */
+    "java.util.EnumSet.EnumSetBash",
     "java.io.PipedInputStream.CloseAndAvailableRC",
     "java.io.PrintStream.OversynchronizedTest",
     "java.io.PrintWriter.OversynchronizedTest",
