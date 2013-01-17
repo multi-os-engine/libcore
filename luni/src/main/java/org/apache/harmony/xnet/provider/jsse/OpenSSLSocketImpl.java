@@ -75,6 +75,7 @@ public class OpenSSLSocketImpl
     private String[] enabledCipherSuites;
     private boolean useSessionTickets;
     private String hostname;
+    private PrivateKey channelIdPrivateKey;
     private OpenSSLSessionImpl sslSession;
     private final Socket socket;
     private boolean autoClose;
@@ -371,6 +372,23 @@ public class OpenSSLSocketImpl
             if (handshakeTimeoutMilliseconds >= 0) {
                 setSoTimeout(handshakeTimeoutMilliseconds);
                 setSoWriteTimeout(handshakeTimeoutMilliseconds);
+            }
+
+            if ((client) && (channelIdPrivateKey != null)) {
+                PrivateKey privateKey = channelIdPrivateKey;
+                if (privateKey instanceof OpenSSLECPrivateKey) {
+                    OpenSSLKey openSslPrivateKey =
+                            ((OpenSSLECPrivateKey) privateKey).getOpenSSLKey();
+                    NativeCrypto.SSL_use_OpenSSL_PrivateKey_for_tls_channel_id(
+                            sslNativePointer, openSslPrivateKey.getPkeyContext());
+                } else if ("PKCS#8".equals(channelIdPrivateKey.getFormat())) {
+                    byte[] privateKeyBytes = privateKey.getEncoded();
+                    NativeCrypto.SSL_use_PrivateKey_for_tls_channel_id(
+                            sslNativePointer, privateKeyBytes);
+                } else {
+                    throw new SSLException("Unsupported Channel ID private key format: "
+                        + privateKey.getFormat() + ", class: " + privateKey.getClass());
+                }
             }
 
             int sslSessionNativePointer;
@@ -795,6 +813,24 @@ public class OpenSSLSocketImpl
      */
     public void setHostname(String hostname) {
         this.hostname = hostname;
+    }
+
+    /**
+     * Sets the {@link PrivateKey} to be used for TLS Channel ID by this client socket.
+     * This has no effect on server sockets.
+     *
+     * <p>This method needs to be invoked before the handshake starts.
+     *
+     * @param privateKey private key (enables TLS Channel ID) or {@code null} for no key (disables
+     *        TLS Channel ID).
+     */
+    public void setChannelIdPrivateKey(PrivateKey privateKey) {
+        if (handshakeStarted) {
+            throw new IllegalArgumentException(
+                    "Could not change Channel ID private key after the initial handshake has"
+                    + " begun.");
+        }
+        this.channelIdPrivateKey = privateKey;
     }
 
     @Override public boolean getUseClientMode() {

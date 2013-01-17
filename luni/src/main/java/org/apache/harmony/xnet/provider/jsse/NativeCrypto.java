@@ -511,6 +511,11 @@ public final class NativeCrypto {
 
     public static native int SSL_new(int ssl_ctx) throws SSLException;
 
+    public static native void SSL_use_OpenSSL_PrivateKey_for_tls_channel_id(int ssl, int pkey);
+
+    public static native void SSL_use_PrivateKey_for_tls_channel_id(
+            int ssl, byte[] pkcs8EncodedPrivateKey);
+
     public static byte[][] encodeCertificates(Certificate[] certificates)
             throws CertificateEncodingException {
         byte[][] certificateBytes = new byte[certificates.length][];
