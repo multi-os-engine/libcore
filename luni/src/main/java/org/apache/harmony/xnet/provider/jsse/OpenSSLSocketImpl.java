@@ -75,6 +75,8 @@ public class OpenSSLSocketImpl
     private String[] enabledCipherSuites;
     private boolean useSessionTickets;
     private String hostname;
+    private boolean channelIdEnabled;
+    private PrivateKey channelIdPrivateKey;
     private OpenSSLSessionImpl sslSession;
     private final Socket socket;
     private boolean autoClose;
@@ -371,6 +373,19 @@ public class OpenSSLSocketImpl
             if (handshakeTimeoutMilliseconds >= 0) {
                 setSoTimeout(handshakeTimeoutMilliseconds);
                 setSoWriteTimeout(handshakeTimeoutMilliseconds);
+            }
+
+            // TLS Channel ID
+            if (client) {
+                // Client-side TLS Channel ID
+                if (channelIdPrivateKey != null) {
+                    NativeCrypto.SSL_set1_tls_channel_id(sslNativePointer, channelIdPrivateKey);
+                }
+            } else {
+                // Server-side TLS Channel ID
+                if (channelIdEnabled) {
+                    NativeCrypto.SSL_enable_tls_channel_id(sslNativePointer);
+                }
             }
 
             int sslSessionNativePointer;
@@ -795,6 +810,59 @@ public class OpenSSLSocketImpl
      */
     public void setHostname(String hostname) {
         this.hostname = hostname;
+    }
+
+    /**
+     * Enables/disables TLS Channel ID by this server socket. This has no effect on client sockets.
+     *
+     * <p>This method needs to be invoked before the handshake starts.
+     *
+     * @throws IllegalStateException if the handshake has already started.
+     */
+    public void setChannelIdEnabled(boolean enabled) {
+        if (handshakeStarted) {
+            throw new IllegalStateException(
+                    "Could not enable/disable Channel ID after the initial handshake has"
+                    + " begun.");
+        }
+        this.channelIdEnabled = enabled;
+    }
+
+    /**
+     * Gets the TLS Channel ID for this server socket. Channel ID is only available once the
+     * handshake completes.
+     *
+     * @return channel ID or {@code null} if not available.
+     *
+     * @throws IllegalStateException if the handshake has not yet completed.
+     * @throws SSLException if channel ID is available but could not be obtained.
+     */
+    public byte[] getChannelId() throws SSLException {
+      if (!handshakeCompleted) {
+          throw new IllegalStateException(
+                    "Channel ID is only available after handshake completes");
+      }
+      return NativeCrypto.SSL_get_tls_channel_id(sslNativePointer);
+    }
+
+    /**
+     * Sets the {@link PrivateKey} to be used for TLS Channel ID by this client socket.
+     * This has no effect on server sockets.
+     *
+     * <p>This method needs to be invoked before the handshake starts.
+     *
+     * @param privateKey private key (enables TLS Channel ID) or {@code null} for no key (disables
+     *        TLS Channel ID).
+     *
+     * @throws IllegalStateException if the handshake has already started.
+     */
+    public void setChannelIdPrivateKey(PrivateKey privateKey) {
+        if (handshakeStarted) {
+            throw new IllegalStateException(
+                    "Could not change Channel ID private key after the initial handshake has"
+                    + " begun.");
+        }
+        this.channelIdPrivateKey = privateKey;
     }
 
     @Override public boolean getUseClientMode() {

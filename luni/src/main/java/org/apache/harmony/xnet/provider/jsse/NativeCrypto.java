@@ -22,6 +22,7 @@ import java.net.SocketTimeoutException;
 import java.nio.ByteOrder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -510,6 +511,32 @@ public final class NativeCrypto {
     public static native void SSL_CTX_set_session_id_context(int ssl_ctx, byte[] sid_ctx);
 
     public static native int SSL_new(int ssl_ctx) throws SSLException;
+
+    public static native void SSL_enable_tls_channel_id(int ssl) throws SSLException;
+
+    public static native byte[] SSL_get_tls_channel_id(int ssl) throws SSLException;
+
+    public static native void SSL_use_OpenSSL_PrivateKey_for_tls_channel_id(int ssl, int pkey)
+            throws SSLException;
+
+    public static native void SSL_use_PKCS8_PrivateKey_for_tls_channel_id(
+            int ssl, byte[] pkcs8EncodedPrivateKey) throws SSLException;
+
+    public static void SSL_set1_tls_channel_id(int ssl, PrivateKey privateKey)
+            throws SSLException {
+        if (privateKey == null) {
+            throw new NullPointerException("privateKey == null");
+        } else if (privateKey instanceof OpenSSLECPrivateKey) {
+            OpenSSLKey openSslPrivateKey = ((OpenSSLECPrivateKey) privateKey).getOpenSSLKey();
+            SSL_use_OpenSSL_PrivateKey_for_tls_channel_id(ssl, openSslPrivateKey.getPkeyContext());
+        } else if ("PKCS#8".equals(privateKey.getFormat())) {
+            byte[] pkcs8EncodedKey = privateKey.getEncoded();
+            SSL_use_PKCS8_PrivateKey_for_tls_channel_id(ssl, pkcs8EncodedKey);
+        } else {
+            throw new SSLException("Unsupported Channel ID private key type:" +
+                    " class: " + privateKey.getClass() + ", format: " + privateKey.getFormat());
+        }
+    }
 
     public static byte[][] encodeCertificates(Certificate[] certificates)
             throws CertificateEncodingException {
