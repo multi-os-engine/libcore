@@ -795,6 +795,23 @@ static jint NativeCrypto_ENGINE_load_private_key(JNIEnv* env, jclass, jint engin
     return static_cast<jint>(reinterpret_cast<uintptr_t>(pkey.release()));
 }
 
+static jstring NativeCrypto_ENGINE_get_id(JNIEnv* env, jclass, jint engineRef)
+{
+    ENGINE* e = reinterpret_cast<ENGINE*>(static_cast<uintptr_t>(engineRef));
+    JNI_TRACE("ENGINE_get_id(%p)", e);
+
+    if (e == NULL) {
+        jniThrowNullPointerException(env, "engine == null");
+        return NULL;
+    }
+
+    const char *id = ENGINE_get_id(e);
+    ScopedLocalRef<jstring> idJava(env, env->NewStringUTF(id));
+
+    JNI_TRACE("ENGINE_get_id(%p) => \"%s\"", e, id);
+    return idJava.release();
+}
+
 /**
  * public static native int EVP_PKEY_new_DSA(byte[] p, byte[] q, byte[] g,
  *                                           byte[] pub_key, byte[] priv_key);
@@ -2156,8 +2173,8 @@ static jint NativeCrypto_EC_KEY_generate_key(JNIEnv* env, jclass, jint groupRef)
 
     if (EC_KEY_generate_key(eckey.get()) != 1) {
         JNI_TRACE("EC_KEY_generate_key(%p) => EC_KEY_generate_key error", group);
-         throwExceptionIfNecessary(env, "EC_KEY_set_group");
-         return 0;
+        throwExceptionIfNecessary(env, "EC_KEY_set_group");
+        return 0;
     }
 
     Unique_EVP_PKEY pkey(EVP_PKEY_new());
@@ -5647,6 +5664,7 @@ static JNINativeMethod sNativeCryptoMethods[] = {
     NATIVE_METHOD(NativeCrypto, ENGINE_finish, "(I)I"),
     NATIVE_METHOD(NativeCrypto, ENGINE_free, "(I)I"),
     NATIVE_METHOD(NativeCrypto, ENGINE_load_private_key, "(ILjava/lang/String;)I"),
+    NATIVE_METHOD(NativeCrypto, ENGINE_get_id, "(I)Ljava/lang/String;"),
     NATIVE_METHOD(NativeCrypto, EVP_PKEY_new_DSA, "([B[B[B[B[B)I"),
     NATIVE_METHOD(NativeCrypto, EVP_PKEY_new_RSA, "([B[B[B[B[B[B[B[B)I"),
     NATIVE_METHOD(NativeCrypto, EVP_PKEY_new_EC_KEY, "(II[B)I"),
