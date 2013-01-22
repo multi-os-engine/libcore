@@ -25,7 +25,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
 
-public class OpenSSLRSAPublicKey implements RSAPublicKey {
+public class OpenSSLRSAPublicKey implements RSAPublicKey, OpenSSLKeyHolder {
     private static final long serialVersionUID = 123125005824688292L;
 
     private transient OpenSSLKey key;
@@ -40,7 +40,7 @@ public class OpenSSLRSAPublicKey implements RSAPublicKey {
         this.key = key;
     }
 
-    OpenSSLKey getOpenSSLKey() {
+    public OpenSSLKey getOpenSSLKey() {
         return key;
     }
 

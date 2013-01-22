@@ -66,6 +66,8 @@ public final class NativeCrypto {
 
     public static native int ENGINE_load_private_key(int e, String key_id);
 
+    public static native String ENGINE_get_id(int engineRef);
+
     // --- DSA/RSA public/private key handling functions -----------------------
 
     public static native int EVP_PKEY_new_DSA(byte[] p, byte[] q, byte[] g,
