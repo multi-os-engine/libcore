@@ -16,6 +16,8 @@
 
 package org.apache.harmony.xnet.provider.jsse;
 
+import dalvik.system.BaseDexClassLoader;
+
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -2017,7 +2019,14 @@ public class NativeCryptoTest extends TestCase {
         NativeCrypto.ENGINE_load_dynamic();
         int dynEngine = NativeCrypto.ENGINE_by_id("dynamic");
         try {
-            String libraryPaths = System.getProperty("java.library.path");
+            ClassLoader loader = NativeCryptoTest.class.getClassLoader();
+
+            final String libraryPaths;
+            if (loader instanceof BaseDexClassLoader) {
+                libraryPaths = ((BaseDexClassLoader) loader).getLdLibraryPath();
+            } else {
+                libraryPaths = System.getProperty("java.library.path");
+            }
             assertNotNull(libraryPaths);
 
             String[] libraryPathArray = libraryPaths.split(":");
