@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2013 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef JNI_EXCEPTION_H_included
-#define JNI_EXCEPTION_H_included
+package libcore.icu;
 
-#include "jni.h"
+public final class Transliterator {
+    public static native String[] getAvailableIDs();
 
-void jniThrowExceptionWithErrno(JNIEnv* env, const char* exceptionClassName, int error);
+    public static native String transliterate(String id, String s);
 
-void jniThrowOutOfMemoryError(JNIEnv* env, const char* message);
-void jniThrowSocketException(JNIEnv* env, int error);
-
-#endif  // JNI_EXCEPTION_H_included
+    private Transliterator() {}
+}

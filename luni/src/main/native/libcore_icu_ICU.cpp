@@ -16,6 +16,7 @@
 
 #define LOG_TAG "ICU"
 
+#include "IcuUtilities.h"
 #include "JNIHelp.h"
 #include "JniConstants.h"
 #include "JniException.h"
@@ -91,10 +92,6 @@ class ScopedResourceBundle {
   UResourceBundle* bundle_;
   DISALLOW_COPY_AND_ASSIGN(ScopedResourceBundle);
 };
-
-Locale getLocale(JNIEnv* env, jstring localeName) {
-    return Locale::createFromName(ScopedUtfChars(env, localeName).c_str());
-}
 
 static jstring ICU_addLikelySubtags(JNIEnv* env, jclass, jstring javaLocale) {
     UErrorCode status = U_ZERO_ERROR;
