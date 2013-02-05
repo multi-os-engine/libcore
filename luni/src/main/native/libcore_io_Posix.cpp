@@ -466,6 +466,23 @@ static jobjectArray Posix_environ(JNIEnv* env, jobject) {
     return toStringArray(env, environ);
 }
 
+static void Posix_execve(JNIEnv* env, jobject, jstring j_filename, jobjectArray j_argv, jobjectArray j_envp) {
+    ScopedUtfChars path(env, j_filename);
+    if (path.c_str() == NULL) {
+        jniThrowNullPointerException(env, NULL);
+        return;
+    }
+
+    char** argv = convertStrings(env, j_argv);
+    char** envp = convertStrings(env, j_envp);
+    execve(path.c_str(), argv, envp);
+
+    freeStrings(env, j_argv, argv);
+    freeStrings(env, j_envp, envp);
+    throwErrnoException(env, "execve");
+}
+
+
 static void Posix_fchmod(JNIEnv* env, jobject, jobject javaFd, jint mode) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     throwIfMinusOne(env, "fchmod", TEMP_FAILURE_RETRY(fchmod(fd, mode)));
@@ -1318,6 +1335,7 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(Posix, dup, "(Ljava/io/FileDescriptor;)Ljava/io/FileDescriptor;"),
     NATIVE_METHOD(Posix, dup2, "(Ljava/io/FileDescriptor;I)Ljava/io/FileDescriptor;"),
     NATIVE_METHOD(Posix, environ, "()[Ljava/lang/String;"),
+    NATIVE_METHOD(Posix, execve, "(Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V"),
     NATIVE_METHOD(Posix, fchmod, "(Ljava/io/FileDescriptor;I)V"),
     NATIVE_METHOD(Posix, fchown, "(Ljava/io/FileDescriptor;II)V"),
     NATIVE_METHOD(Posix, fcntlVoid, "(Ljava/io/FileDescriptor;I)I"),
