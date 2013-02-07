@@ -1129,7 +1129,7 @@ public class SSLSocketTest extends TestCase {
 
         // Reflection is used so this can compile on the RI
         String expectedClassName = "org.apache.harmony.xnet.provider.jsse.OpenSSLSocketImpl";
-        Class actualClass = client.getClass();
+        Class<? extends SSLSocket> actualClass = client.getClass();
         assertEquals(expectedClassName, actualClass.getName());
         Method setSoWriteTimeout = actualClass.getMethod("setSoWriteTimeout",
                                                          new Class[] { Integer.TYPE });
@@ -1137,7 +1137,9 @@ public class SSLSocketTest extends TestCase {
 
         // Try to make the size smaller (it can be 512k or even megabytes).
         // Note that it may not respect your request, so read back the actual value.
-        int sendBufferSize = 1024;
+        // OpenSSL sets a size of about 16384 for non-blocking I/O, so make it
+        // larger.
+        int sendBufferSize = 16384 * 8;
         client.setSendBufferSize(sendBufferSize);
         sendBufferSize = client.getSendBufferSize();
 

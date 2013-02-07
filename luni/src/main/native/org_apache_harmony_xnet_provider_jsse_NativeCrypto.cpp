@@ -1851,7 +1851,7 @@ static jstring NativeCrypto_EC_GROUP_get_curve_name(JNIEnv* env, jclass, jint gr
 
     int nid = EC_GROUP_get_curve_name(group);
     if (nid == NID_undef) {
-        JNI_TRACE("EC_GROUP_get_curve_name(%p) => unnamed curve", group, nid);
+        JNI_TRACE("EC_GROUP_get_curve_name(%p) => unnamed curve", group);
         return NULL;
     }
 
