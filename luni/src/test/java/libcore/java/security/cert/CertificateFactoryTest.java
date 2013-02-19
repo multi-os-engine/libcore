@@ -16,14 +16,42 @@
 
 package libcore.java.security.cert;
 
+import com.android.org.bouncycastle.asn1.x509.BasicConstraints;
+import com.android.org.bouncycastle.asn1.x509.X509Extensions;
+import com.android.org.bouncycastle.x509.X509V3CertificateGenerator;
+import com.android.org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
+import com.android.org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
+
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OptionalDataException;
+import java.io.StreamCorruptedException;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.Security;
+import java.security.cert.CertPath;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Iterator;
+import java.util.List;
+import java.util.TimeZone;
+
+import javax.security.auth.x500.X500Principal;
+
 import junit.framework.TestCase;
 
 public class CertificateFactoryTest extends TestCase {
@@ -214,5 +242,157 @@ public class CertificateFactoryTest extends TestCase {
             mCount = mMarked;
             mStream.reset();
         }
+    }
+
+    /* CertPath tests */
+    public void testGenerateCertPath() throws Exception {
+        KeyHolder ca = generateCertificate(true, null);
+        KeyHolder cert1 = generateCertificate(true, ca);
+        KeyHolder cert2 = generateCertificate(false, cert1);
+        KeyHolder cert3 = generateCertificate(false, cert2);
+
+        List<X509Certificate> certs = new ArrayList<X509Certificate>();
+        certs.add(cert3.certificate);
+        certs.add(cert2.certificate);
+        certs.add(cert1.certificate);
+
+        final CertPath expectedPath;
+        {
+            final CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            expectedPath = cf.generateCertPath(certs);
+        }
+
+        Provider[] providers = Security.getProviders("CertificateFactory.X509");
+        for (Provider p : providers) {
+            final CertificateFactory cf = CertificateFactory.getInstance("X.509", p);
+
+            testCertPathEncoding(cf, expectedPath, certs, cf.getCertPathEncodings());
+            testCertPathEncoding(cf, expectedPath, certs, cf.generateCertPath(certs).getEncodings());
+        }
+    }
+
+    private void testCertPathEncoding(CertificateFactory cf, final CertPath expectedPath,
+            List<X509Certificate> certs, Iterator<String> it) throws Exception {
+        final String providerName = cf.getProvider().getName();
+
+        final CertPath pathFromList = cf.generateCertPath(certs);
+
+        {
+            byte[] encoded = pathFromList.getEncoded();
+            final CertPath actualPath = cf.generateCertPath(new ByteArrayInputStream(encoded));
+            assertEquals(providerName, expectedPath, actualPath);
+        }
+
+        assertNotNull(it);
+        while (it.hasNext()) {
+            String encoding = it.next();
+            try {
+                it.remove();
+                fail("Should not be able to remove from iterator");
+            } catch (UnsupportedOperationException expected) {
+            }
+
+            assertNotNull(providerName, encoding);
+
+            byte[] encoded = pathFromList.getEncoded(encoding);
+            assertNotNull(providerName, encoded);
+
+            CertPath actualPath = cf.generateCertPath(new ByteArrayInputStream(encoded), encoding);
+
+            List<? extends Certificate> expectedCerts = expectedPath.getCertificates();
+            List<? extends Certificate> actualCerts = actualPath.getCertificates();
+            assertEquals(providerName, expectedCerts, actualCerts);
+
+            try {
+                actualCerts.remove(0);
+                fail("List of certificate should be immutable");
+            } catch (UnsupportedOperationException expected) {
+            }
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
+            oos.writeObject(actualPath);
+            oos.close();
+
+            byte[] serialized = baos.toByteArray();
+            ByteArrayInputStream bais = new ByteArrayInputStream(serialized);
+            ObjectInputStream ois = new ObjectInputStream(bais);
+            Object output = ois.readObject();
+            assertTrue(providerName, output instanceof CertPath);
+
+            assertEquals(providerName, actualPath, (CertPath) output);
+        }
+    }
+
+    public static class KeyHolder {
+        public X509Certificate certificate;
+
+        public PrivateKey privateKey;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static KeyHolder generateCertificate(boolean isCa, KeyHolder issuer) throws Exception {
+        Date startDate = new Date();
+
+        GregorianCalendar cal = new GregorianCalendar();
+        cal.setTimeZone(TimeZone.getTimeZone("UTC"));
+        cal.set(2100, 0, 1, 0, 0, 0); // Jan 1, 2100 UTC
+        Date expiryDate = cal.getTime();
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+        KeyPair keyPair = kpg.generateKeyPair();
+
+        BigInteger serial;
+        X500Principal issuerPrincipal;
+        X500Principal subjectPrincipal;
+        PrivateKey caKey;
+        if (issuer != null) {
+            serial = issuer.certificate.getSerialNumber().add(BigInteger.ONE);
+            subjectPrincipal = new X500Principal("CN=Test Certificate Serial #" + serial.toString());
+            issuerPrincipal = issuer.certificate.getSubjectX500Principal();
+            caKey = issuer.privateKey;
+        } else {
+            serial = BigInteger.ONE;
+            subjectPrincipal = new X500Principal("CN=Test CA, O=Tests, C=US");
+            issuerPrincipal = subjectPrincipal;
+            caKey = keyPair.getPrivate();
+        }
+
+        BasicConstraints basicConstraints;
+        if (isCa) {
+            basicConstraints = new BasicConstraints(10 - serial.intValue());
+        } else {
+            basicConstraints = new BasicConstraints(false);
+        }
+
+        X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
+
+        certGen.setSerialNumber(serial);
+        certGen.setIssuerDN(issuerPrincipal);
+        certGen.setNotBefore(startDate);
+        certGen.setNotAfter(expiryDate);
+        certGen.setSubjectDN(subjectPrincipal);
+        certGen.setPublicKey(keyPair.getPublic());
+        certGen.setSignatureAlgorithm("SHA1withRSA");
+
+        if (issuer != null) {
+            certGen.addExtension(X509Extensions.AuthorityKeyIdentifier, false,
+                    new AuthorityKeyIdentifierStructure(issuer.certificate));
+        } else {
+            certGen.addExtension(X509Extensions.AuthorityKeyIdentifier, false,
+                    new AuthorityKeyIdentifierStructure(keyPair.getPublic()));
+        }
+
+        certGen.addExtension(X509Extensions.SubjectKeyIdentifier, false,
+                new SubjectKeyIdentifierStructure(keyPair.getPublic()));
+        certGen.addExtension(X509Extensions.BasicConstraints, true, basicConstraints);
+
+        X509Certificate cert = certGen.generate(caKey);
+
+        KeyHolder holder = new KeyHolder();
+        holder.certificate = cert;
+        holder.privateKey = keyPair.getPrivate();
+
+        return holder;
     }
 }
