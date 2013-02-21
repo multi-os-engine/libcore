@@ -2333,6 +2333,60 @@ static jint NativeCrypto_EC_KEY_get_public_key(JNIEnv* env, jclass, jint pkeyRef
     return static_cast<jint>(reinterpret_cast<uintptr_t>(dup.release()));
 }
 
+static jint NativeCrypto_ECDH_compute_key(JNIEnv* env, jclass,
+     jbyteArray outArray, jint outOffset, jint pubkeyRef, jint privkeyRef)
+{
+    EVP_PKEY* pubPkey = reinterpret_cast<EVP_PKEY*>(pubkeyRef);
+    EVP_PKEY* privPkey = reinterpret_cast<EVP_PKEY*>(privkeyRef);
+    JNI_TRACE("ECDH_compute_key(%p, %d, %p, %p)", outArray, outOffset, pubPkey, privPkey);
+
+    ScopedByteArrayRW out(env, outArray);
+    if (out.get() == NULL) {
+        JNI_TRACE("ECDH_compute_key(%p, %d, %p, %p) can't get output buffer",
+                outArray, outOffset, pubPkey, privPkey);
+        return -1;
+    }
+
+    if ((outOffset < 0) || ((size_t) outOffset >= out.size())) {
+        jniThrowException(env, "java/lang/ArrayIndexOutOfBoundsException", NULL);
+        return -1;
+    }
+
+    Unique_EC_KEY pubkey(EVP_PKEY_get1_EC_KEY(pubPkey));
+    if (pubkey.get() == NULL) {
+        JNI_TRACE("ECDH_compute_key(%p) => can't get public key", pubPkey);
+        throwExceptionIfNecessary(env, "EVP_PKEY_get1_EC_KEY public");
+        return -1;
+    }
+
+    const EC_POINT* pubkeyPoint = EC_KEY_get0_public_key(pubkey.get());
+    if (pubkeyPoint == NULL) {
+        JNI_TRACE("ECDH_compute_key(%p) => can't get public key point", pubPkey);
+        throwExceptionIfNecessary(env, "EVP_PKEY_get1_EC_KEY public");
+        return -1;
+    }
+
+    Unique_EC_KEY privkey(EVP_PKEY_get1_EC_KEY(privPkey));
+    if (privkey.get() == NULL) {
+        throwExceptionIfNecessary(env, "EVP_PKEY_get1_EC_KEY private");
+        return -1;
+    }
+
+    int outputLength = ECDH_compute_key(
+            &out[outOffset],
+            out.size() - outOffset,
+            pubkeyPoint,
+            privkey.get(),
+            NULL // No KDF
+            );
+    if (outputLength == -1) {
+        throwExceptionIfNecessary(env, "ECDH_compute_key");
+        return -1;
+    }
+
+    return outputLength;
+}
+
 static jint NativeCrypto_EVP_MD_CTX_create(JNIEnv* env, jclass) {
     JNI_TRACE("EVP_MD_CTX_create()");
 
@@ -5784,6 +5838,7 @@ static JNINativeMethod sNativeCryptoMethods[] = {
     NATIVE_METHOD(NativeCrypto, EC_KEY_get0_group, "(I)I"),
     NATIVE_METHOD(NativeCrypto, EC_KEY_get_private_key, "(I)[B"),
     NATIVE_METHOD(NativeCrypto, EC_KEY_get_public_key, "(I)I"),
+    NATIVE_METHOD(NativeCrypto, ECDH_compute_key, "([BIII)I"),
     NATIVE_METHOD(NativeCrypto, EVP_MD_CTX_create, "()I"),
     NATIVE_METHOD(NativeCrypto, EVP_MD_CTX_init, "(I)V"),
     NATIVE_METHOD(NativeCrypto, EVP_MD_CTX_destroy, "(I)V"),
