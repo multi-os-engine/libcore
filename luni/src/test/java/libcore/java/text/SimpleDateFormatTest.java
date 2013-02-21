@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
+import tests.support.Support_Locale;
 
 public class SimpleDateFormatTest extends junit.framework.TestCase {
 
@@ -330,6 +331,9 @@ public class SimpleDateFormatTest extends junit.framework.TestCase {
 
     // http://code.google.com/p/android/issues/detail?id=36689
     public void testParseArabic() throws Exception {
+        if (!Support_Locale.isLocaleAvailable(new Locale("ar"))) {
+            return;
+        }
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", new Locale("ar", "EG"));
         sdf.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
 
