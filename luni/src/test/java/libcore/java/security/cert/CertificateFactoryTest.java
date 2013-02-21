@@ -313,7 +313,7 @@ public class CertificateFactoryTest extends TestCase {
 
     private void testCertPathEncoding(CertificateFactory cf, List<X509Certificate> expectedCerts,
             String encoding) throws Exception {
-        final String providerName = cf.getProvider().getName();
+        final String providerName = cf.getProvider().getName() + "[" + encoding + "]";
 
         final CertPath pathFromList = cf.generateCertPath(expectedCerts);
 
@@ -367,8 +367,14 @@ public class CertificateFactoryTest extends TestCase {
             actualPath = cf.generateCertPath(new ByteArrayInputStream(encoded), encoding);
         }
 
-        List<? extends Certificate> actualCerts = actualPath.getCertificates();
-        assertEquals(providerName, expectedCerts, actualCerts);
+        // PKCS7 certificate bags are not guaranteed to be in order.
+        final List<? extends Certificate> actualCerts;
+        if (!"PKCS7".equals(encoding)) {
+            actualCerts = actualPath.getCertificates();
+            assertEquals(providerName, expectedCerts, actualCerts);
+        } else {
+            actualCerts = pathFromList.getCertificates();
+        }
 
         try {
             actualCerts.remove(0);
