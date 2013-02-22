@@ -290,11 +290,6 @@ public class Runtime {
     }
 
     /**
-     * Returns the amount of free memory available to the running program, in bytes.
-     */
-    public native long freeMemory();
-
-    /**
      * Indicates to the VM that it would be a good time to run the
      * garbage collector. Note that this is a hint only. There is no guarantee
      * that the garbage collector will actually be run.
@@ -454,12 +449,6 @@ public class Runtime {
     public static void runFinalizersOnExit(boolean run) {
         finalizeOnExit = run;
     }
-
-    /**
-     * Returns the total amount of memory which is available to the running
-     * program, in bytes.
-     */
-    public native long totalMemory();
 
     /**
      * Switches the output of debug information for instructions on or off.
@@ -626,11 +615,19 @@ public class Runtime {
     }
 
     /**
-     * Returns the maximum amount of memory that may be used by the virtual
-     * machine, or {@code Long.MAX_VALUE} if there is no such limit.
-     *
-     * @return the maximum amount of memory that the VM will try to
-     *         allocate, measured in bytes.
+     * Returns, in bytes, the amount of memory free for the heap of the running program to expand
+     * into without requiring more memory from the system.
+     */
+    public native long freeMemory();
+
+    /**
+     * Returns, in bytes, the amount of memory the heap of the running program is using.
+     */
+    public native long totalMemory();
+
+    /**
+     * Returns, in bytes, the maximum amount of memory the heap of the running program can expand
+     * to, or {@code Long.MAX_VALUE} if there is no such limit.
      */
     public native long maxMemory();
 }
