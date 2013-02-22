@@ -33,6 +33,7 @@
 package java.lang.reflect;
 
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
 import java.util.Comparator;
 import libcore.util.EmptyArray;
 import org.apache.harmony.kernel.vm.StringUtils;
@@ -379,7 +380,19 @@ public final class Method extends AccessibleObject implements GenericDeclaration
      */
     @Override
     public boolean equals(Object object) {
-        return object instanceof Method && toString().equals(object.toString());
+        if (this == object) {
+            return true;
+        }
+        if (!(object instanceof Method)) {
+            return false;
+        }
+        Method rhs = (Method) object;
+        return name.equals(rhs.name) &&
+            getModifiers() == rhs.getModifiers() &&
+            returnType.equals(rhs.returnType) &&
+            declaringClass.equals(rhs.declaringClass) &&
+            Arrays.equals(parameterTypes, rhs.parameterTypes) &&
+            Arrays.equals(exceptionTypes, rhs.exceptionTypes);
     }
 
     /**
