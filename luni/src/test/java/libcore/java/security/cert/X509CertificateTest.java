@@ -16,9 +16,15 @@
 
 package libcore.java.security.cert;
 
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+
 import tests.support.resource.Support_Resources;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -28,7 +34,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintStream;
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -39,7 +44,6 @@ import java.security.PublicKey;
 import java.security.Security;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateNotYetValidException;
@@ -59,11 +63,13 @@ import java.util.Set;
 
 import javax.security.auth.x500.X500Principal;
 
-import junit.framework.TestCase;
 import libcore.java.security.StandardNames;
 
-public class X509CertificateTest extends TestCase {
-    private Provider[] mX509Providers;
+@RunWith(Parameterized.class)
+public class X509CertificateTest {
+    private final CertificateFactory mFactory;
+
+    private final String mProviderName;
 
     private static final String CERT_RSA = "x509/cert-rsa.der";
 
@@ -118,12 +124,25 @@ public class X509CertificateTest extends TestCase {
             CERT_RSA, CERT_DSA, CERT_EC,
     };
 
-    private final X509Certificate getCertificate(CertificateFactory f, String name)
-            throws Exception {
+    @Parameters
+    public static List<Object[]> data() {
+        List<Object[]> providerArgs = new ArrayList<Object[]>();
+        for (Provider p : Security.getProviders("CertificateFactory.X509")) {
+            providerArgs.add(new Object[] { p });
+        }
+        return providerArgs;
+    }
+
+    public X509CertificateTest(Provider provider) throws Exception {
+        mFactory = CertificateFactory.getInstance("X.509", provider);
+        mProviderName = provider.getName();
+    }
+
+    private final X509Certificate getCertificate(String name) throws Exception {
         final InputStream is = Support_Resources.getStream(name);
         assertNotNull("File does not exist: " + name, is);
         try {
-            return (X509Certificate) f.generateCertificate(is);
+            return (X509Certificate) mFactory.generateCertificate(is);
         } finally {
             try {
                 is.close();
@@ -132,12 +151,13 @@ public class X509CertificateTest extends TestCase {
         }
     }
 
-    private final Collection<? extends X509Certificate> getCertificates(CertificateFactory f, String name)
+    @SuppressWarnings("unchecked")
+    private final Collection<? extends X509Certificate> getCertificates(String name)
             throws Exception {
         final InputStream is = Support_Resources.getStream(name);
         assertNotNull("File does not exist: " + name, is);
         try {
-            return (Collection<? extends X509Certificate>) f.generateCertificates(is);
+            return (Collection<? extends X509Certificate>) mFactory.generateCertificates(is);
         } finally {
             try {
                 is.close();
@@ -234,77 +254,9 @@ public class X509CertificateTest extends TestCase {
         return getResourceAsBytes(CERT_RSA_TBS);
     }
 
-    public void test_Provider() throws Exception {
-        final ByteArrayOutputStream errBuffer = new ByteArrayOutputStream();
-        PrintStream out = new PrintStream(errBuffer);
-
-        for (Provider p : mX509Providers) {
-            try {
-                CertificateFactory f = CertificateFactory.getInstance("X.509", p);
-                getPublicKey(f);
-                getType(f);
-                check_equals(f);
-                check_toString(f);
-                check_hashCode(f);
-                checkValidity(f);
-                getVersion(f);
-                getSerialNumber(f);
-                getIssuerDN(f);
-                getIssuerX500Principal(f);
-                getSubjectDN(f);
-                getSubjectUniqueID(f);
-                getSubjectX500Principal(f);
-                getNotBeforeAndNotAfterDates(f);
-                getSigAlgName(f);
-                getSigAlgOID(f);
-                getSigAlgParams(f);
-                getIssuerUniqueID(f);
-                getSubjectUniqueID(f);
-                getKeyUsage(f);
-                getExtendedKeyUsage(f);
-                getBasicConstraints(f);
-                getSubjectAlternativeNames(f);
-                getSubjectAlternativeNames_IPV6(f);
-                getSubjectAlternativeNames_InvalidIP(f);
-                getSubjectAlternativeNames_Other(f);
-                getSubjectAlternativeNames_Email(f);
-                getSubjectAlternativeNames_DNS(f);
-                getSubjectAlternativeNames_DirName(f);
-                getSubjectAlternativeNames_URI(f);
-                getSubjectAlternativeNames_RID(f);
-                getSubjectAlternativeNames_None(f);
-                getIssuerAlternativeNames(f);
-                getTBSCertificate(f);
-                getSignature(f);
-                hasUnsupportedCriticalExtension(f);
-                getEncoded(f);
-                verify(f);
-                generateCertificate_PEM_TrailingData(f);
-                generateCertificate_DER_TrailingData(f);
-                generateCertificates_X509_PEM(f);
-                generateCertificates_X509_DER(f);
-                generateCertificates_PKCS7_PEM(f);
-                generateCertificates_PKCS7_DER(f);
-                generateCertificates_Empty(f);
-                generateCertificates_X509_PEM_TrailingData(f);
-                generateCertificates_X509_DER_TrailingData(f);
-                generateCertificates_PKCS7_PEM_TrailingData(f);
-                generateCertificates_PKCS7_DER_TrailingData(f);
-                test_Serialization(f);
-            } catch (Throwable e) {
-                out.append("Error encountered checking " + p.getName() + "\n");
-                e.printStackTrace(out);
-            }
-        }
-
-        out.flush();
-        if (errBuffer.size() > 0) {
-            throw new Exception("Errors encountered:\n\n" + errBuffer.toString() + "\n\n");
-        }
-    }
-
-    private void getPublicKey(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void getPublicKey() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
         PublicKey expected = getRsaCertificatePublicKey();
 
         PublicKey actual = c.getPublicKey();
@@ -313,13 +265,15 @@ public class X509CertificateTest extends TestCase {
                      Arrays.toString(actual.getEncoded()));
     }
 
-    private void getType(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void getType() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
         assertEquals("X.509", c.getType());
     }
 
-    private void verify(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void verify() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
         PublicKey signer = getRsaCertificatePublicKey();
 
         c.verify(signer);
@@ -346,43 +300,47 @@ public class X509CertificateTest extends TestCase {
         }
     }
 
-    private void check_equals(CertificateFactory f) throws Exception {
-        X509Certificate c1 = getCertificate(f, CERT_RSA);
-        X509Certificate c2 = getCertificate(f, CERT_RSA);
+    @Test
+    public void check_equals() throws Exception {
+        X509Certificate c1 = getCertificate(CERT_RSA);
+        X509Certificate c2 = getCertificate(CERT_RSA);
 
         assertEquals(c1, c2);
 
-        X509Certificate c3 = getCertificate(f, CERT_DSA);
+        X509Certificate c3 = getCertificate(CERT_DSA);
         assertFalse(c1.equals(c3));
         assertFalse(c3.equals(c1));
     }
 
-    private void check_toString(CertificateFactory f) throws Exception {
-        X509Certificate c1 = getCertificate(f, CERT_RSA);
+    @Test
+    public void check_toString() throws Exception {
+        X509Certificate c1 = getCertificate(CERT_RSA);
 
         String output1 = c1.toString();
         assertNotNull(output1);
         assertTrue(output1.length() > 0);
 
-        X509Certificate c2 = getCertificate(f, CERT_RSA);
+        X509Certificate c2 = getCertificate(CERT_RSA);
         assertEquals(c1.toString(), c2.toString());
 
-        X509Certificate c3 = getCertificate(f, CERT_DSA);
+        X509Certificate c3 = getCertificate(CERT_DSA);
         assertFalse(c3.toString().equals(c1.toString()));
     }
 
-    private void check_hashCode(CertificateFactory f) throws Exception {
-        X509Certificate c1 = getCertificate(f, CERT_RSA);
-        X509Certificate c2 = getCertificate(f, CERT_RSA);
+    @Test
+    public void check_hashCode() throws Exception {
+        X509Certificate c1 = getCertificate(CERT_RSA);
+        X509Certificate c2 = getCertificate(CERT_RSA);
 
         assertEquals(c1.hashCode(), c2.hashCode());
 
-        X509Certificate c3 = getCertificate(f, CERT_DSA);
+        X509Certificate c3 = getCertificate(CERT_DSA);
         assertFalse(c3.hashCode() == c1.hashCode());
     }
 
-    private void checkValidity(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void checkValidity() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
         Calendar cal = Calendar.getInstance();
         Date[] dates = getRsaCertificateDates();
 
@@ -441,29 +399,32 @@ public class X509CertificateTest extends TestCase {
         }
     }
 
-    private void getVersion(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void getVersion() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
         assertEquals(3, c.getVersion());
     }
 
-    private void getSerialNumber(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void getSerialNumber() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
         BigInteger actual = getRsaCertificateSerial();
 
         assertEquals(actual, c.getSerialNumber());
     }
 
-    private void getIssuerDN(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void getIssuerDN() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
 
         Principal princ = c.getIssuerDN();
         if (StandardNames.IS_RI) {
             assertEquals("OU=NetOps, O=Genius.com Inc, L=San Mateo, ST=California, C=US",
                          princ.getName());
         } else {
-            if ("BC".equals(f.getProvider().getName())) {
+            if ("BC".equals(mProviderName)) {
                 // TODO: is it acceptable to have this in reverse order?
-                assertEquals(f.getProvider().getName(),
+                assertEquals(mProviderName,
                              "C=US,ST=California,L=San Mateo,O=Genius.com Inc,OU=NetOps",
                              princ.getName());
             } else {
@@ -472,12 +433,13 @@ public class X509CertificateTest extends TestCase {
             }
         }
 
-        X509Certificate c2 = getCertificate(f, CERT_RSA);
+        X509Certificate c2 = getCertificate(CERT_RSA);
         assertEquals(princ, c2.getIssuerDN());
     }
 
-    private void getIssuerX500Principal(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void getIssuerX500Principal() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
 
         final byte[] expected = new byte[] {
                 0x30, 0x60, 0x31, 0x0b, 0x30, 0x09, 0x06, 0x03, 0x55, 0x04, 0x06, 0x13,
@@ -502,21 +464,22 @@ public class X509CertificateTest extends TestCase {
         assertEquals("OU=NetOps,O=Genius.com Inc,L=San Mateo,ST=California,C=US",
                      princ.getName(X500Principal.RFC2253));
 
-        X509Certificate c2 = getCertificate(f, CERT_RSA);
+        X509Certificate c2 = getCertificate(CERT_RSA);
         assertEquals(princ, c2.getIssuerX500Principal());
     }
 
-    private void getSubjectDN(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void getSubjectDN() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
 
         Principal princ = c.getSubjectDN();
         if (StandardNames.IS_RI) {
             assertEquals("OU=NetOps, O=Genius.com Inc, L=San Mateo, ST=California, C=US",
                          princ.getName());
         } else {
-            if ("BC".equals(f.getProvider().getName())) {
+            if ("BC".equals(mProviderName)) {
                 // TODO: is it acceptable to have this in reverse order?
-                assertEquals(f.getProvider().getName(),
+                assertEquals(mProviderName,
                              "C=US,ST=California,L=San Mateo,O=Genius.com Inc,OU=NetOps",
                              princ.getName());
             } else {
@@ -525,28 +488,31 @@ public class X509CertificateTest extends TestCase {
             }
         }
 
-        X509Certificate c2 = getCertificate(f, CERT_RSA);
+        X509Certificate c2 = getCertificate(CERT_RSA);
         assertEquals(princ, c2.getSubjectDN());
     }
 
-    private void getSubjectUniqueID(CertificateFactory f) throws Exception {
+    @Test
+    public void getSubjectUniqueID() throws Exception {
         /* This certificate has no unique ID. */
-        X509Certificate c = getCertificate(f, CERT_RSA);
+        X509Certificate c = getCertificate(CERT_RSA);
         assertNull(c.getSubjectUniqueID());
 
         // TODO: generate certificate that has a SubjectUniqueID field.
     }
 
-    private void getIssuerUniqueID(CertificateFactory f) throws Exception {
+    @Test
+    public void getIssuerUniqueID() throws Exception {
         /* This certificate has no unique ID. */
-        X509Certificate c = getCertificate(f, CERT_RSA);
+        X509Certificate c = getCertificate(CERT_RSA);
         assertNull(c.getIssuerUniqueID());
 
         // TODO: generate certificate that has a IssuerUniqueID field.
     }
 
-    private void getSubjectX500Principal(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void getSubjectX500Principal() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
 
         final byte[] expected = new byte[] {
                 0x30, 0x60, 0x31, 0x0b, 0x30, 0x09, 0x06, 0x03, 0x55, 0x04, 0x06, 0x13,
@@ -571,7 +537,7 @@ public class X509CertificateTest extends TestCase {
         assertEquals("OU=NetOps,O=Genius.com Inc,L=San Mateo,ST=California,C=US",
                      princ.getName(X500Principal.RFC2253));
 
-        X509Certificate c2 = getCertificate(f, CERT_RSA);
+        X509Certificate c2 = getCertificate(CERT_RSA);
         assertEquals(princ, c2.getSubjectX500Principal());
     }
 
@@ -584,30 +550,32 @@ public class X509CertificateTest extends TestCase {
         assertEquals(result1, result2);
     }
 
-    private void getNotBeforeAndNotAfterDates(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void getNotBeforeAndNotAfterDates() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
         Date[] dates = getRsaCertificateDates();
 
         assertDateEquals(dates[0], c.getNotBefore());
         assertDateEquals(dates[1], c.getNotAfter());
     }
 
-    private void getSigAlgName(CertificateFactory f) throws Exception {
+    @Test
+    public void getSigAlgName() throws Exception {
         {
             /* The test certificate is sha1WithRSAEncryption */
-            X509Certificate c = getCertificate(f, CERT_RSA);
+            X509Certificate c = getCertificate(CERT_RSA);
             assertEquals("SHA1WITHRSA", c.getSigAlgName().toUpperCase(Locale.US));
         }
 
         {
             /* The test certificate is sha1WithRSAEncryption */
-            X509Certificate c = getCertificate(f, CERT_DSA);
+            X509Certificate c = getCertificate(CERT_DSA);
             assertEquals("SHA1WITHDSA", c.getSigAlgName().toUpperCase(Locale.US));
         }
 
         {
             /* The test certificate is sha1WithRSAEncryption */
-            X509Certificate c = getCertificate(f, CERT_EC);
+            X509Certificate c = getCertificate(CERT_EC);
             if (StandardNames.IS_RI) {
                 assertEquals("SHA1WITHECDSA", c.getSigAlgName().toUpperCase(Locale.US));
             } else {
@@ -616,53 +584,56 @@ public class X509CertificateTest extends TestCase {
         }
     }
 
-    private void getSigAlgOID(CertificateFactory f) throws Exception {
+    @Test
+    public void getSigAlgOID() throws Exception {
         {
             /* The test certificate is sha1WithRSAEncryption */
-            X509Certificate c = getCertificate(f, CERT_RSA);
+            X509Certificate c = getCertificate(CERT_RSA);
             assertEquals("1.2.840.113549.1.1.5", c.getSigAlgOID());
         }
 
         {
             /* The test certificate is sha1WithRSAEncryption */
-            X509Certificate c = getCertificate(f, CERT_DSA);
+            X509Certificate c = getCertificate(CERT_DSA);
             assertEquals("1.2.840.10040.4.3", c.getSigAlgOID());
         }
 
         {
             /* The test certificate is sha1WithRSAEncryption */
-            X509Certificate c = getCertificate(f, CERT_EC);
+            X509Certificate c = getCertificate(CERT_EC);
             assertEquals("1.2.840.10045.4.1", c.getSigAlgOID());
         }
     }
 
-    private void getSigAlgParams(CertificateFactory f) throws Exception {
+    @Test
+    public void getSigAlgParams() throws Exception {
         {
-            X509Certificate c = getCertificate(f, CERT_RSA);
+            X509Certificate c = getCertificate(CERT_RSA);
             // Harmony and BC are broken?
-            String provider = f.getProvider().getName();
+            String provider = mProviderName;
             if ("DRLCertFactory".equals(provider) || "BC".equals(provider)) {
                 assertNotNull(c.getSigAlgParams());
             } else {
-                assertNull(f.getProvider().getName(), c.getSigAlgParams());
+                assertNull(mProviderName, c.getSigAlgParams());
             }
         }
 
         {
-            X509Certificate c = getCertificate(f, CERT_DSA);
-            assertNull(f.getProvider().getName(), c.getSigAlgParams());
+            X509Certificate c = getCertificate(CERT_DSA);
+            assertNull(mProviderName, c.getSigAlgParams());
         }
 
         {
-            X509Certificate c = getCertificate(f, CERT_EC);
-            assertNull(f.getProvider().getName(), c.getSigAlgParams());
+            X509Certificate c = getCertificate(CERT_EC);
+            assertNull(mProviderName, c.getSigAlgParams());
         }
     }
 
-    private void getKeyUsage(CertificateFactory f) throws Exception {
+    @Test
+    public void getKeyUsage() throws Exception {
         {
             /* The test certificate is sha1WithRSAEncryption */
-            X509Certificate c = getCertificate(f, CERT_RSA);
+            X509Certificate c = getCertificate(CERT_RSA);
             boolean[] expected = new boolean[] {
                     true,  /* digitalSignature (0) */
                     true,  /* nonRepudiation   (1) */
@@ -679,7 +650,7 @@ public class X509CertificateTest extends TestCase {
 
         {
             /* The test certificate is sha1WithRSAEncryption */
-            X509Certificate c = getCertificate(f, CERT_DSA);
+            X509Certificate c = getCertificate(CERT_DSA);
             boolean[] expected = new boolean[] {
                     false, /* digitalSignature (0) */
                     false, /* nonRepudiation   (1) */
@@ -698,7 +669,7 @@ public class X509CertificateTest extends TestCase {
 
         {
             /* The test certificate is sha1WithRSAEncryption */
-            X509Certificate c = getCertificate(f, CERT_EC);
+            X509Certificate c = getCertificate(CERT_EC);
             boolean[] expected = new boolean[] {
                     false, /* digitalSignature (0) */
                     false, /* nonRepudiation   (1) */
@@ -717,7 +688,7 @@ public class X509CertificateTest extends TestCase {
 
         {
             /* All the bits are set in addition to some extra ones. */
-            X509Certificate c = getCertificate(f, CERT_KEYUSAGE_EXTRALONG);
+            X509Certificate c = getCertificate(CERT_KEYUSAGE_EXTRALONG);
             boolean[] expected = new boolean[] {
                     true,  /* digitalSignature (0) */
                     true,  /* nonRepudiation   (1) */
@@ -737,17 +708,18 @@ public class X509CertificateTest extends TestCase {
         }
     }
 
-    private void getExtendedKeyUsage(CertificateFactory f) throws Exception {
+    @Test
+    public void getExtendedKeyUsage() throws Exception {
         {
             /* No ExtendedKeyUsage section */
-            final X509Certificate c = getCertificate(f, CERT_RSA);
+            final X509Certificate c = getCertificate(CERT_RSA);
             List<String> actual = c.getExtendedKeyUsage();
             assertNull(actual);
         }
 
         {
             /* ExtendedKeyUsage section with one entry of OID 1.2.3.4 */
-            final X509Certificate c = getCertificate(f, CERT_EXTENDEDKEYUSAGE);
+            final X509Certificate c = getCertificate(CERT_EXTENDEDKEYUSAGE);
             List<String> actual = c.getExtendedKeyUsage();
             assertNotNull(actual);
             assertEquals(1, actual.size());
@@ -755,29 +727,30 @@ public class X509CertificateTest extends TestCase {
         }
     }
 
-    private void getBasicConstraints(CertificateFactory f) throws Exception {
+    @Test
+    public void getBasicConstraints() throws Exception {
         /* Non-CA cert with no pathLenConstraint */
         {
-            final X509Certificate c = getCertificate(f, CERT_RSA);
-            assertEquals(f.getProvider().getName(), -1, c.getBasicConstraints());
+            final X509Certificate c = getCertificate(CERT_RSA);
+            assertEquals(mProviderName, -1, c.getBasicConstraints());
         }
 
         /* Non-CA cert with pathLenConstraint */
         {
-            final X509Certificate c = getCertificate(f, CERT_USERWITHPATHLEN);
-            assertEquals(f.getProvider().getName(), -1, c.getBasicConstraints());
+            final X509Certificate c = getCertificate(CERT_USERWITHPATHLEN);
+            assertEquals(mProviderName, -1, c.getBasicConstraints());
         }
 
         /* CA cert with no pathLenConstraint */
         {
-            final X509Certificate c = getCertificate(f, CERT_CA);
-            assertEquals(f.getProvider().getName(), Integer.MAX_VALUE, c.getBasicConstraints());
+            final X509Certificate c = getCertificate(CERT_CA);
+            assertEquals(mProviderName, Integer.MAX_VALUE, c.getBasicConstraints());
         }
 
         /* CA cert with pathLenConstraint=10 */
         {
-            final X509Certificate c = getCertificate(f, CERT_CAWITHPATHLEN);
-            assertEquals(f.getProvider().getName(), 10, c.getBasicConstraints());
+            final X509Certificate c = getCertificate(CERT_CAWITHPATHLEN);
+            assertEquals(mProviderName, 10, c.getBasicConstraints());
         }
     }
 
@@ -792,14 +765,15 @@ public class X509CertificateTest extends TestCase {
         }
     }
 
-    private void getSubjectAlternativeNames(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void getSubjectAlternativeNames() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
         Collection<List<?>> col = c.getSubjectAlternativeNames();
 
         checkAlternativeNames(col);
     }
 
-    private void checkAlternativeNames(Collection<List<?>> col) {
+    private static void checkAlternativeNames(Collection<List<?>> col) {
         assertNotNull(col);
 
         /* Check to see that the Collection is unmodifiable. */
@@ -879,11 +853,12 @@ public class X509CertificateTest extends TestCase {
         }
     }
 
-    private void getSubjectAlternativeNames_IPV6(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_IPV6);
+    @Test
+    public void getSubjectAlternativeNames_IPV6() throws Exception {
+        X509Certificate c = getCertificate(CERT_IPV6);
         Collection<List<?>> col = c.getSubjectAlternativeNames();
 
-        assertNotNull(f.getProvider().getName(), col);
+        assertNotNull(mProviderName, col);
 
         assertEquals(1, col.size());
         List<?> item = col.iterator().next();
@@ -900,17 +875,19 @@ public class X509CertificateTest extends TestCase {
         }
     }
 
-    private void getSubjectAlternativeNames_InvalidIP(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_INVALIDIP);
+    @Test
+    public void getSubjectAlternativeNames_InvalidIP() throws Exception {
+        X509Certificate c = getCertificate(CERT_INVALIDIP);
         Collection<List<?>> col = c.getSubjectAlternativeNames();
         assertNull(col);
     }
 
-    private void getSubjectAlternativeNames_Other(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_ALT_OTHER);
+    @Test
+    public void getSubjectAlternativeNames_Other() throws Exception {
+        X509Certificate c = getCertificate(CERT_ALT_OTHER);
         Collection<List<?>> col = c.getSubjectAlternativeNames();
 
-        assertNotNull(f.getProvider().getName(), col);
+        assertNotNull(mProviderName, col);
 
         assertEquals(1, col.size());
         List<?> item = col.iterator().next();
@@ -937,11 +914,12 @@ public class X509CertificateTest extends TestCase {
         }
     }
 
-    private void getSubjectAlternativeNames_Email(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_ALT_EMAIL);
+    @Test
+    public void getSubjectAlternativeNames_Email() throws Exception {
+        X509Certificate c = getCertificate(CERT_ALT_EMAIL);
         Collection<List<?>> col = c.getSubjectAlternativeNames();
 
-        assertNotNull(f.getProvider().getName(), col);
+        assertNotNull(mProviderName, col);
 
         assertEquals(1, col.size());
         List<?> item = col.iterator().next();
@@ -953,11 +931,12 @@ public class X509CertificateTest extends TestCase {
         assertEquals("x509@example.com", (String) item.get(1));
     }
 
-    private void getSubjectAlternativeNames_DNS(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_ALT_DNS);
+    @Test
+    public void getSubjectAlternativeNames_DNS() throws Exception {
+        X509Certificate c = getCertificate(CERT_ALT_DNS);
         Collection<List<?>> col = c.getSubjectAlternativeNames();
 
-        assertNotNull(f.getProvider().getName(), col);
+        assertNotNull(mProviderName, col);
 
         assertEquals(1, col.size());
         List<?> item = col.iterator().next();
@@ -969,11 +948,12 @@ public class X509CertificateTest extends TestCase {
         assertEquals("x509.example.com", (String) item.get(1));
     }
 
-    private void getSubjectAlternativeNames_DirName(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_ALT_DIRNAME);
+    @Test
+    public void getSubjectAlternativeNames_DirName() throws Exception {
+        X509Certificate c = getCertificate(CERT_ALT_DIRNAME);
         Collection<List<?>> col = c.getSubjectAlternativeNames();
 
-        assertNotNull(f.getProvider().getName(), col);
+        assertNotNull(mProviderName, col);
 
         assertEquals(1, col.size());
         List<?> item = col.iterator().next();
@@ -985,11 +965,12 @@ public class X509CertificateTest extends TestCase {
         assertEquals("CN=∆ƒ,OU=Über Frîends,O=Awesome Dudes,C=US", (String) item.get(1));
     }
 
-    private void getSubjectAlternativeNames_URI(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_ALT_URI);
+    @Test
+    public void getSubjectAlternativeNames_URI() throws Exception {
+        X509Certificate c = getCertificate(CERT_ALT_URI);
         Collection<List<?>> col = c.getSubjectAlternativeNames();
 
-        assertNotNull(f.getProvider().getName(), col);
+        assertNotNull(mProviderName, col);
 
         assertEquals(1, col.size());
         List<?> item = col.iterator().next();
@@ -1001,11 +982,12 @@ public class X509CertificateTest extends TestCase {
         assertEquals("http://www.example.com/?q=awesomeness", (String) item.get(1));
     }
 
-    private void getSubjectAlternativeNames_RID(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_ALT_RID);
+    @Test
+    public void getSubjectAlternativeNames_RID() throws Exception {
+        X509Certificate c = getCertificate(CERT_ALT_RID);
         Collection<List<?>> col = c.getSubjectAlternativeNames();
 
-        assertNotNull(f.getProvider().getName(), col);
+        assertNotNull(mProviderName, col);
 
         assertEquals(1, col.size());
         List<?> item = col.iterator().next();
@@ -1017,50 +999,57 @@ public class X509CertificateTest extends TestCase {
         assertEquals("1.2.3.4", (String) item.get(1));
     }
 
-    private void getSubjectAlternativeNames_None(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_ALT_NONE);
+    @Test
+    public void getSubjectAlternativeNames_None() throws Exception {
+        X509Certificate c = getCertificate(CERT_ALT_NONE);
         Collection<List<?>> col = c.getSubjectAlternativeNames();
         assertNull(col);
     }
 
-    private void getIssuerAlternativeNames(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void getIssuerAlternativeNames() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
         Collection<List<?>> col = c.getIssuerAlternativeNames();
 
         checkAlternativeNames(col);
     }
 
-    private void getSignature(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void getSignature() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
 
         assertEquals(Arrays.toString(getRsaCertificateSignature()),
                      Arrays.toString(c.getSignature()));
     }
 
-    private void getTBSCertificate(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void getTBSCertificate() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
 
         assertEquals(Arrays.toString(getRsaCertificateTbs()),
                      Arrays.toString(c.getTBSCertificate()));
     }
 
-    private void hasUnsupportedCriticalExtension(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void hasUnsupportedCriticalExtension() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
         assertFalse(c.hasUnsupportedCriticalExtension());
 
-        X509Certificate unsupported = getCertificate(f, CERT_UNSUPPORTED);
+        X509Certificate unsupported = getCertificate(CERT_UNSUPPORTED);
         assertTrue(unsupported.hasUnsupportedCriticalExtension());
     }
 
-    private void getEncoded(CertificateFactory f) throws Exception {
-        X509Certificate c = getCertificate(f, CERT_RSA);
+    @Test
+    public void getEncoded() throws Exception {
+        X509Certificate c = getCertificate(CERT_RSA);
 
         byte[] cBytes = getResourceAsBytes(CERT_RSA);
 
         assertEquals(Arrays.toString(cBytes), Arrays.toString(c.getEncoded()));
     }
 
-    private void generateCertificate_PEM_TrailingData(CertificateFactory f) throws Exception {
+    @Test
+    public void generateCertificate_PEM_TrailingData() throws Exception {
         byte[] certsBytes = getResourceAsBytes(CERTS_X509_PEM);
         byte[] certsTwice = new byte[certsBytes.length * 2];
         System.arraycopy(certsBytes, 0, certsTwice, 0, certsBytes.length);
@@ -1068,12 +1057,14 @@ public class X509CertificateTest extends TestCase {
         ByteArrayInputStream bais = new ByteArrayInputStream(certsTwice);
 
         assertEquals(certsBytes.length * 2, bais.available());
-        X509Certificate cert1 = (X509Certificate) f.generateCertificate(bais);
+        @SuppressWarnings("unused")
+        X509Certificate cert1 = (X509Certificate) mFactory.generateCertificate(bais);
         // TODO: If we had a single PEM certificate, we could know exact bytes.
         assertTrue(certsBytes.length < bais.available());
     }
 
-    private void generateCertificate_DER_TrailingData(CertificateFactory f) throws Exception {
+    @Test
+    public void generateCertificate_DER_TrailingData() throws Exception {
         byte[] cert1Bytes = getResourceAsBytes(CERT_RSA);
         byte[] cert1WithTrailing = new byte[cert1Bytes.length * 2];
         System.arraycopy(cert1Bytes, 0, cert1WithTrailing, 0, cert1Bytes.length);
@@ -1081,29 +1072,33 @@ public class X509CertificateTest extends TestCase {
         ByteArrayInputStream bais = new ByteArrayInputStream(cert1WithTrailing);
 
         assertEquals(cert1Bytes.length * 2, bais.available());
-        X509Certificate cert1 = (X509Certificate) f.generateCertificate(bais);
+        @SuppressWarnings("unused")
+        X509Certificate cert1 = (X509Certificate) mFactory.generateCertificate(bais);
         assertEquals(cert1Bytes.length, bais.available());
     }
 
-    private void generateCertificates_X509_DER(CertificateFactory f) throws Exception {
+    @Test
+    public void generateCertificates_X509_DER() throws Exception {
         /* DER-encoded list of certificates */
-        Collection<? extends X509Certificate> certs = getCertificates(f, CERTS_X509_DER);
+        Collection<? extends X509Certificate> certs = getCertificates(CERTS_X509_DER);
         assertNotNull(certs);
         assertEquals(2, certs.size());
     }
 
-    private void generateCertificates_X509_PEM(CertificateFactory f) throws Exception {
+    @Test
+    public void generateCertificates_X509_PEM() throws Exception {
         /* PEM-encoded list of certificates */
-        Collection<? extends X509Certificate> certs = getCertificates(f, CERTS_X509_PEM);
+        Collection<? extends X509Certificate> certs = getCertificates(CERTS_X509_PEM);
         assertNotNull(certs);
         assertEquals(2, certs.size());
     }
 
-    private void generateCertificates_PKCS7_PEM(CertificateFactory f) throws Exception {
+    @Test
+    public void generateCertificates_PKCS7_PEM() throws Exception {
         /* PEM-encoded PKCS7 bag of certificates */
-        Collection<? extends X509Certificate> certs = getCertificates(f, CERTS_PKCS7_PEM);
+        Collection<? extends X509Certificate> certs = getCertificates(CERTS_PKCS7_PEM);
         assertNotNull(certs);
-        if ("BC".equals(f.getProvider().getName())) {
+        if ("BC".equals(mProviderName)) {
             // Bouncycastle is broken
             assertEquals(0, certs.size());
         } else {
@@ -1111,23 +1106,26 @@ public class X509CertificateTest extends TestCase {
         }
     }
 
-    private void generateCertificates_PKCS7_DER(CertificateFactory f) throws Exception {
+    @Test
+    public void generateCertificates_PKCS7_DER() throws Exception {
         /* DER-encoded PKCS7 bag of certificates */
-        Collection<? extends X509Certificate> certs = getCertificates(f, CERTS_PKCS7_DER);
+        Collection<? extends X509Certificate> certs = getCertificates(CERTS_PKCS7_DER);
         assertNotNull(certs);
         assertEquals(2, certs.size());
     }
 
-    private void generateCertificates_Empty(CertificateFactory f) throws Exception {
+    @Test
+    public void generateCertificates_Empty() throws Exception {
         final InputStream is = new ByteArrayInputStream(new byte[0]);
 
-        final Collection<? extends Certificate> certs = f.generateCertificates(is);
+        final Collection<? extends Certificate> certs = mFactory.generateCertificates(is);
 
         assertNotNull(certs);
         assertEquals(0, certs.size());
     }
 
-    private void generateCertificates_X509_PEM_TrailingData(CertificateFactory f) throws Exception {
+    @Test
+    public void generateCertificates_X509_PEM_TrailingData() throws Exception {
         byte[] certBytes = getResourceAsBytes(CERTS_X509_PEM);
         byte[] certsPlusExtra = new byte[certBytes.length + 4096];
         System.arraycopy(certBytes, 0, certsPlusExtra, 0, certBytes.length);
@@ -1137,8 +1135,9 @@ public class X509CertificateTest extends TestCase {
 
         // RI is broken
         try {
+            @SuppressWarnings({"unused", "unchecked"})
             Collection<? extends X509Certificate> certs = (Collection<? extends X509Certificate>)
-                    f.generateCertificates(bais);
+                    mFactory.generateCertificates(bais);
             if (StandardNames.IS_RI) {
                 fail("RI fails on this test.");
             }
@@ -1150,14 +1149,15 @@ public class X509CertificateTest extends TestCase {
         }
 
         // Bouncycastle is broken
-        if ("BC".equals(f.getProvider().getName())) {
+        if ("BC".equals(mProviderName)) {
             assertEquals(0, bais.available());
         } else {
             assertEquals(4096, bais.available());
         }
     }
 
-    private void generateCertificates_X509_DER_TrailingData(CertificateFactory f) throws Exception {
+    @Test
+    public void generateCertificates_X509_DER_TrailingData() throws Exception {
         byte[] certBytes = getResourceAsBytes(CERTS_X509_DER);
         byte[] certsPlusExtra = new byte[certBytes.length + 4096];
         System.arraycopy(certBytes, 0, certsPlusExtra, 0, certBytes.length);
@@ -1167,8 +1167,9 @@ public class X509CertificateTest extends TestCase {
 
         // RI is broken
         try {
+            @SuppressWarnings({"unused", "unchecked"})
             Collection<? extends X509Certificate> certs = (Collection<? extends X509Certificate>)
-                    f.generateCertificates(bais);
+                    mFactory.generateCertificates(bais);
             if (StandardNames.IS_RI) {
                 fail("RI fails on this test.");
             }
@@ -1180,40 +1181,46 @@ public class X509CertificateTest extends TestCase {
         }
 
         // Bouncycastle is broken
-        if ("BC".equals(f.getProvider().getName())) {
+        if ("BC".equals(mProviderName)) {
             assertEquals(0, bais.available());
         } else {
             assertEquals(4096, bais.available());
         }
     }
 
-    private void generateCertificates_PKCS7_PEM_TrailingData(CertificateFactory f) throws Exception {
+    @Test
+    public void generateCertificates_PKCS7_PEM_TrailingData() throws Exception {
         byte[] certBytes = getResourceAsBytes(CERTS_PKCS7_PEM);
         byte[] certsPlusExtra = new byte[certBytes.length + 4096];
         System.arraycopy(certBytes, 0, certsPlusExtra, 0, certBytes.length);
         ByteArrayInputStream bais = new ByteArrayInputStream(certsPlusExtra);
 
         assertEquals(certsPlusExtra.length, bais.available());
+
+        @SuppressWarnings({"unused", "unchecked"})
         Collection<? extends X509Certificate> certs = (Collection<? extends X509Certificate>)
-                f.generateCertificates(bais);
+                mFactory.generateCertificates(bais);
 
         // Bouncycastle is broken
-        if ("BC".equals(f.getProvider().getName())) {
+        if ("BC".equals(mProviderName)) {
             assertEquals(0, bais.available());
         } else {
             assertEquals(4096, bais.available());
         }
     }
 
-    private void generateCertificates_PKCS7_DER_TrailingData(CertificateFactory f) throws Exception {
+    @Test
+    public void generateCertificates_PKCS7_DER_TrailingData() throws Exception {
         byte[] certBytes = getResourceAsBytes(CERTS_PKCS7_DER);
         byte[] certsPlusExtra = new byte[certBytes.length + 4096];
         System.arraycopy(certBytes, 0, certsPlusExtra, 0, certBytes.length);
         ByteArrayInputStream bais = new ByteArrayInputStream(certsPlusExtra);
 
         assertEquals(certsPlusExtra.length, bais.available());
+
+        @SuppressWarnings({"unused", "unchecked"})
         Collection<? extends X509Certificate> certs = (Collection<? extends X509Certificate>)
-                f.generateCertificates(bais);
+                mFactory.generateCertificates(bais);
 
         // RI is broken
         if (StandardNames.IS_RI) {
@@ -1223,9 +1230,10 @@ public class X509CertificateTest extends TestCase {
         }
     }
 
-    private void test_Serialization(CertificateFactory f) throws Exception {
+    @Test
+    public void serialization() throws Exception {
         for (String certName : VARIOUS_CERTS) {
-            X509Certificate expected = getCertificate(f, certName);
+            X509Certificate expected = getCertificate(certName);
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -1248,12 +1256,5 @@ public class X509CertificateTest extends TestCase {
                 bais.close();
             }
         }
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-
-        mX509Providers = Security.getProviders("CertificateFactory.X509");
     }
 }
