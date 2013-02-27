@@ -41,7 +41,7 @@ public final class NioUtils {
      * @return the address of the buffer given, or zero if the buffer is not a
      *         direct Buffer.
      */
-    public static int getDirectBufferAddress(Buffer buffer) {
+    public static long getDirectBufferAddress(Buffer buffer) {
         return buffer.effectiveDirectAddress;
     }
 
