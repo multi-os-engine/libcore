@@ -67,7 +67,7 @@ public abstract class MappedByteBuffer extends ByteBuffer {
      * a strong guarantee since this is only a snapshot of a dynamic situation.
      */
     public final boolean isLoaded() {
-        long address = block.toInt();
+        long address = block.toLong();
         long size = block.getSize();
         if (size == 0) {
             return true;
@@ -98,8 +98,8 @@ public abstract class MappedByteBuffer extends ByteBuffer {
      */
     public final MappedByteBuffer load() {
         try {
-            Libcore.os.mlock(block.toInt(), block.getSize());
-            Libcore.os.munlock(block.toInt(), block.getSize());
+            Libcore.os.mlock(block.toLong(), block.getSize());
+            Libcore.os.munlock(block.toLong(), block.getSize());
         } catch (ErrnoException ignored) {
         }
         return this;
@@ -116,7 +116,7 @@ public abstract class MappedByteBuffer extends ByteBuffer {
     public final MappedByteBuffer force() {
         if (mapMode == MapMode.READ_WRITE) {
             try {
-                Libcore.os.msync(block.toInt(), block.getSize(), MS_SYNC);
+                Libcore.os.msync(block.toLong(), block.getSize(), MS_SYNC);
             } catch (ErrnoException errnoException) {
                 // The RI doesn't throw, presumably on the assumption that you can't get into
                 // a state where msync(2) could return an error.

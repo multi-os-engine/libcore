@@ -33,7 +33,7 @@ abstract class DirectByteBuffer extends BaseByteBuffer {
         }
 
         this.offset = offset;
-        this.effectiveDirectAddress = block.toInt() + offset;
+        this.effectiveDirectAddress = block.toLong() + offset;
     }
 
     @Override
