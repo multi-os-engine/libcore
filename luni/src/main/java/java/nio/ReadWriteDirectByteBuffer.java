@@ -47,7 +47,7 @@ final class ReadWriteDirectByteBuffer extends DirectByteBuffer {
     }
 
     // Used by the JNI NewDirectByteBuffer function.
-    ReadWriteDirectByteBuffer(int address, int capacity) {
+    ReadWriteDirectByteBuffer(long address, int capacity) {
         super(MemoryBlock.wrapFromJni(address, capacity), capacity, 0);
     }
 
