@@ -145,6 +145,16 @@ public abstract class Collator implements Comparator<Object>, Cloneable {
      */
     public static final int IDENTICAL = 3;
 
+    /**
+     * Constant used to specify the collation numeric.
+     */
+    public static final int NUMERIC_OFF = 0;
+
+    /**
+     * Constant used to specify the collation numeric.
+     */
+    public static final int NUMERIC_ON = 1;
+
     RuleBasedCollatorICU icuColl;
 
     Collator(RuleBasedCollatorICU icuColl) {
@@ -301,6 +311,15 @@ public abstract class Collator implements Comparator<Object>, Cloneable {
         return strength_ICU_Java(icuColl.getStrength());
     }
 
+    /**
+     * Returns the numeric value for this collator.
+     *
+     * @return the numeric value, either NUMERIC_OFF or NUMERIC_ON.
+     */
+    public int getNumeric() {
+        return numeric_ICU_Java(icuColl.getNumeric());
+    }
+
     @Override
     public abstract int hashCode();
 
@@ -330,6 +349,18 @@ public abstract class Collator implements Comparator<Object>, Cloneable {
      */
     public void setStrength(int value) {
         icuColl.setStrength(strength_Java_ICU(value));
+    }
+
+    /**
+     * Sets the numeric value for this collator.
+     *
+     * @param value
+     *            the numeric value, either ON or OFF
+     * @throws IllegalArgumentException
+     *            if the provided numeric value is not valid.
+     */
+    public void setNumeric(int value) {
+        icuColl.setNumeric(numeric_Java_ICU(value));
     }
 
     private int decompositionMode_Java_ICU(int mode) {
@@ -386,5 +417,28 @@ public abstract class Collator implements Comparator<Object>, Cloneable {
             break;
         }
         return javaValue;
+    }
+
+    private int numeric_Java_ICU(int mode) {
+        switch (mode) {
+        case Collator.NUMERIC_ON:
+            return RuleBasedCollatorICU.VALUE_ON;
+        case Collator.NUMERIC_OFF:
+            return RuleBasedCollatorICU.VALUE_OFF;
+        }
+        throw new IllegalArgumentException("Bad mode: " + mode);
+    }
+
+    private int numeric_ICU_Java(int mode) {
+        int javaMode = mode;
+        switch (mode) {
+        case RuleBasedCollatorICU.VALUE_OFF:
+            javaMode = Collator.NUMERIC_OFF;
+            break;
+        case RuleBasedCollatorICU.VALUE_ON:
+            javaMode = Collator.NUMERIC_ON;
+            break;
+        }
+        return javaMode;
     }
 }

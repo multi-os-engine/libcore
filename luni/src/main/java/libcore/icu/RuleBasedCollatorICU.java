@@ -40,6 +40,7 @@ public final class RuleBasedCollatorICU implements Cloneable {
     public static final int CASE_LEVEL = 3;
     public static final int DECOMPOSITION_MODE = 4;
     public static final int STRENGTH = 5;
+    public static final int NUMERIC = 7;
 
     // The address of the ICU4C native peer.
     private int address;
@@ -81,6 +82,14 @@ public final class RuleBasedCollatorICU implements Cloneable {
 
     public void setStrength(int strength) {
         NativeCollation.setAttribute(address, STRENGTH, strength);
+    }
+
+    public int getNumeric() {
+        return NativeCollation.getAttribute(address, NUMERIC);
+    }
+
+    public void setNumeric(int mode) {
+        NativeCollation.setAttribute(address, NUMERIC, mode);
     }
 
     public void setAttribute(int type, int value) {
