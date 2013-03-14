@@ -36,6 +36,10 @@ public class OpenSSLDSAKeyFactory extends KeyFactorySpi {
 
     @Override
     protected PublicKey engineGeneratePublic(KeySpec keySpec) throws InvalidKeySpecException {
+        if (keySpec == null) {
+            throw new InvalidKeySpecException("keySpec == null");
+        }
+
         if (keySpec instanceof DSAPublicKeySpec) {
             DSAPublicKeySpec dsaKeySpec = (DSAPublicKeySpec) keySpec;
 
@@ -57,6 +61,10 @@ public class OpenSSLDSAKeyFactory extends KeyFactorySpi {
 
     @Override
     protected PrivateKey engineGeneratePrivate(KeySpec keySpec) throws InvalidKeySpecException {
+        if (keySpec == null) {
+            throw new InvalidKeySpecException("keySpec == null");
+        }
+
         if (keySpec instanceof DSAPrivateKeySpec) {
             DSAPrivateKeySpec dsaKeySpec = (DSAPrivateKeySpec) keySpec;
 
@@ -87,46 +95,44 @@ public class OpenSSLDSAKeyFactory extends KeyFactorySpi {
             throw new InvalidKeySpecException("keySpec == null");
         }
 
-        if (key instanceof DSAPublicKey) {
+        if (key instanceof DSAPublicKey && DSAPublicKeySpec.class.isAssignableFrom(keySpec)) {
             DSAPublicKey dsaKey = (DSAPublicKey) key;
 
-            if (DSAPublicKeySpec.class.isAssignableFrom(keySpec)) {
-                BigInteger y = dsaKey.getY();
+            BigInteger y = dsaKey.getY();
 
-                DSAParams params = dsaKey.getParams();
-                BigInteger p = params.getP();
-                BigInteger q = params.getQ();
-                BigInteger g = params.getG();
+            DSAParams params = dsaKey.getParams();
+            BigInteger p = params.getP();
+            BigInteger q = params.getQ();
+            BigInteger g = params.getG();
 
-                return (T) new DSAPublicKeySpec(y, p, q, g);
-            } else if (X509EncodedKeySpec.class.isAssignableFrom(keySpec)) {
-                return (T) new X509EncodedKeySpec(key.getEncoded());
-            } else {
-                throw new InvalidKeySpecException(
-                        "Must be DSAPublicKeySpec or X509EncodedKeySpec; was " + keySpec.getName());
-            }
-        } else if (key instanceof DSAPrivateKey) {
+            return (T) new DSAPublicKeySpec(y, p, q, g);
+        } else if (key instanceof DSAPrivateKey
+                && DSAPrivateKeySpec.class.isAssignableFrom(keySpec)) {
             DSAPrivateKey dsaKey = (DSAPrivateKey) key;
 
-            if (DSAPrivateKeySpec.class.isAssignableFrom(keySpec)) {
-                BigInteger x = dsaKey.getX();
+            BigInteger x = dsaKey.getX();
 
-                DSAParams params = dsaKey.getParams();
-                BigInteger p = params.getP();
-                BigInteger q = params.getQ();
-                BigInteger g = params.getG();
+            DSAParams params = dsaKey.getParams();
+            BigInteger p = params.getP();
+            BigInteger q = params.getQ();
+            BigInteger g = params.getG();
 
-                return (T) new DSAPrivateKeySpec(x, p, q, g);
-            } else if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec)) {
-                return (T) new PKCS8EncodedKeySpec(dsaKey.getEncoded());
-            } else {
-                throw new InvalidKeySpecException(
-                        "Must be DSAPrivateKeySpec or PKCS8EncodedKeySpec; was "
-                                + keySpec.getName());
+            return (T) new DSAPrivateKeySpec(x, p, q, g);
+        } else if (key instanceof PrivateKey && PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec)) {
+            final byte[] encoded = key.getEncoded();
+            if (!"PKCS#8".equals(key.getFormat()) || encoded == null) {
+                throw new InvalidKeySpecException("Not a valid PKCS#8 encoding");
             }
+            return (T) new PKCS8EncodedKeySpec(encoded);
+        } else if (key instanceof PublicKey && X509EncodedKeySpec.class.isAssignableFrom(keySpec)) {
+            final byte[] encoded = key.getEncoded();
+            if (!"X.509".equals(key.getFormat()) || encoded == null) {
+                throw new InvalidKeySpecException("Not a valid X.509 encoding");
+            }
+            return (T) new X509EncodedKeySpec(encoded);
         } else {
-            throw new InvalidKeySpecException("Must be DSAPublicKey or DSAPrivateKey; was "
-                    + key.getClass().getName());
+            throw new InvalidKeySpecException("Unknown key type and key spec combination; key="
+                    + key.getClass().getName() + ", keySpec=" + keySpec.getName());
         }
     }
 
@@ -166,8 +172,20 @@ public class OpenSSLDSAKeyFactory extends KeyFactorySpi {
             } catch (InvalidKeySpecException e) {
                 throw new InvalidKeyException(e);
             }
+        } else if ("PKCS#8".equals(key.getFormat())) {
+            try {
+                return engineGeneratePrivate(new PKCS8EncodedKeySpec(key.getEncoded()));
+            } catch (InvalidKeySpecException e) {
+                throw new InvalidKeyException(e);
+            }
+        } else if ("X.509".equals(key.getFormat())) {
+            try {
+                return engineGeneratePublic(new X509EncodedKeySpec(key.getEncoded()));
+            } catch (InvalidKeySpecException e) {
+                throw new InvalidKeyException(e);
+            }
         } else {
-            throw new InvalidKeyException("Key must be DSAPublicKey or DSAPrivateKey; was "
+            throw new InvalidKeyException("Key must be DSA public or private key; was "
                     + key.getClass().getName());
         }
     }

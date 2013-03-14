@@ -37,6 +37,10 @@ public class OpenSSLECKeyFactory extends KeyFactorySpi {
 
     @Override
     protected PublicKey engineGeneratePublic(KeySpec keySpec) throws InvalidKeySpecException {
+        if (keySpec == null) {
+            throw new InvalidKeySpecException("keySpec == null");
+        }
+
         if (keySpec instanceof ECPublicKeySpec) {
             ECPublicKeySpec ecKeySpec = (ECPublicKeySpec) keySpec;
 
@@ -58,6 +62,10 @@ public class OpenSSLECKeyFactory extends KeyFactorySpi {
 
     @Override
     protected PrivateKey engineGeneratePrivate(KeySpec keySpec) throws InvalidKeySpecException {
+        if (keySpec == null) {
+            throw new InvalidKeySpecException("keySpec == null");
+        }
+
         if (keySpec instanceof ECPrivateKeySpec) {
             ECPrivateKeySpec ecKeySpec = (ECPrivateKeySpec) keySpec;
 
@@ -88,39 +96,51 @@ public class OpenSSLECKeyFactory extends KeyFactorySpi {
             throw new InvalidKeySpecException("keySpec == null");
         }
 
-        if (key instanceof ECPublicKey) {
+        if (key instanceof ECPublicKey && ECPublicKeySpec.class.isAssignableFrom(keySpec)) {
             ECPublicKey ecKey = (ECPublicKey) key;
-
-            if (ECPublicKeySpec.class.isAssignableFrom(keySpec)) {
-                ECParameterSpec params = ecKey.getParams();
-
-                ECPoint w = ecKey.getW();
-
-                return (T) new ECPublicKeySpec(w, params);
-            } else if (X509EncodedKeySpec.class.isAssignableFrom(keySpec)) {
-                return (T) new X509EncodedKeySpec(key.getEncoded());
-            } else {
-                throw new InvalidKeySpecException(
-                        "Must be ECPublicKeySpec or X509EncodedKeySpec; was " + keySpec.getName());
+            ECParameterSpec params = ecKey.getParams();
+            ECPoint w = ecKey.getW();
+            return (T) new ECPublicKeySpec(w, params);
+        } else if (key instanceof PublicKey && ECPublicKeySpec.class.isAssignableFrom(keySpec)) {
+            final byte[] encoded = key.getEncoded();
+            if (!"X.509".equals(key.getFormat()) || encoded == null) {
+                throw new InvalidKeySpecException("Not a valid X.509 encoding");
             }
-        } else if (key instanceof ECPrivateKey) {
+            ECPublicKey ecKey = (ECPublicKey) engineGeneratePublic(new X509EncodedKeySpec(encoded));
+            ECParameterSpec params = ecKey.getParams();
+            ECPoint w = ecKey.getW();
+            return (T) new ECPublicKeySpec(w, params);
+        } else if (key instanceof ECPrivateKey && ECPrivateKeySpec.class.isAssignableFrom(keySpec)) {
             ECPrivateKey ecKey = (ECPrivateKey) key;
-
-            if (ECPrivateKeySpec.class.isAssignableFrom(keySpec)) {
-                ECParameterSpec params = ecKey.getParams();
-
-                BigInteger s = ecKey.getS();
-
-                return (T) new ECPrivateKeySpec(s, params);
-            } else if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec)) {
-                return (T) new PKCS8EncodedKeySpec(ecKey.getEncoded());
-            } else {
-                throw new InvalidKeySpecException(
-                        "Must be ECPrivateKeySpec or PKCS8EncodedKeySpec; was " + keySpec.getName());
+            ECParameterSpec params = ecKey.getParams();
+            BigInteger s = ecKey.getS();
+            return (T) new ECPrivateKeySpec(s, params);
+        } else if (key instanceof PrivateKey && ECPrivateKeySpec.class.isAssignableFrom(keySpec)) {
+            final byte[] encoded = key.getEncoded();
+            if (!"PKCS#8".equals(key.getFormat()) || encoded == null) {
+                throw new InvalidKeySpecException("Not a valid PKCS#8 encoding");
             }
+            ECPrivateKey ecKey =
+                    (ECPrivateKey) engineGeneratePrivate(new PKCS8EncodedKeySpec(encoded));
+            ECParameterSpec params = ecKey.getParams();
+            BigInteger s = ecKey.getS();
+            return (T) new ECPrivateKeySpec(s, params);
+        } else if (key instanceof PrivateKey
+                && PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec)) {
+            final byte[] encoded = key.getEncoded();
+            if (!"PKCS#8".equals(key.getFormat()) || encoded == null) {
+                throw new InvalidKeySpecException("Not a valid PKCS#8 encoding");
+            }
+            return (T) new PKCS8EncodedKeySpec(encoded);
+        } else if (key instanceof PublicKey && X509EncodedKeySpec.class.isAssignableFrom(keySpec)) {
+            final byte[] encoded = key.getEncoded();
+            if (!"X.509".equals(key.getFormat()) || encoded == null) {
+                throw new InvalidKeySpecException("Not a valid X.509 encoding");
+            }
+            return (T) new X509EncodedKeySpec(encoded);
         } else {
-            throw new InvalidKeySpecException("Must be ECPublicKey or ECPrivateKey; was "
-                    + key.getClass().getName());
+            throw new InvalidKeySpecException("Unknown key type and key spec combination; key="
+                    + key.getClass().getName() + ", keySpec=" + keySpec.getName());
         }
     }
 
@@ -154,8 +174,20 @@ public class OpenSSLECKeyFactory extends KeyFactorySpi {
             } catch (InvalidKeySpecException e) {
                 throw new InvalidKeyException(e);
             }
+        } else if ("PKCS#8".equals(key.getFormat())) {
+            try {
+                return engineGeneratePrivate(new PKCS8EncodedKeySpec(key.getEncoded()));
+            } catch (InvalidKeySpecException e) {
+                throw new InvalidKeyException(e);
+            }
+        } else if ("X.509".equals(key.getFormat())) {
+            try {
+                return engineGeneratePublic(new X509EncodedKeySpec(key.getEncoded()));
+            } catch (InvalidKeySpecException e) {
+                throw new InvalidKeyException(e);
+            }
         } else {
-            throw new InvalidKeyException("Key must be ECPublicKey or ECPrivateKey; was "
+            throw new InvalidKeyException("Key must be EC public or private key; was "
                     + key.getClass().getName());
         }
     }
