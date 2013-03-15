@@ -3825,7 +3825,13 @@ static jobject GENERAL_NAME_to_jobject(JNIEnv* env, GENERAL_NAME* gen) {
     case GEN_EMAIL:
     case GEN_DNS:
     case GEN_URI:
-        return env->NewStringUTF(reinterpret_cast<char*>(ASN1_STRING_data(gen->d.ia5)));
+        // This must be an IA5String and must not contain NULLs.
+        if ((ASN1_STRING_type(gen->d.ia5) == V_ASN1_IA5STRING)
+                && (ASN1_STRING_length(gen->d.ia5) == strlen(gen->d.ia5))) {
+            return env->NewStringUTF(reinterpret_cast<char*>(ASN1_STRING_data(gen->d.ia5)));
+        } else {
+            return NULL;
+        }
     case GEN_DIRNAME:
         /* Write in RFC 2253 format */
         return X509_NAME_to_jstring(env, gen->d.directoryName, XN_FLAG_RFC2253);
