@@ -166,7 +166,7 @@ public class Deflater {
      * {@link #Deflater(int, boolean)} if you need to omit the header.
      *
      * @param level
-     *            the compression level in the range between 0 and 9.
+     *            the compression level in the range between -1 and 9.
      */
     public Deflater(int level) {
         this(level, false);
@@ -179,7 +179,7 @@ public class Deflater {
      * header. The strategy can be specified using {@link #setStrategy}.
      *
      * @param level
-     *            the compression level in the range between 0 and 9.
+     *            the compression level in the range between -1 and 9.
      * @param noHeader
      *            {@code true} indicates that no ZLIB header should be written.
      */
@@ -415,7 +415,7 @@ public class Deflater {
 
     /**
      * Sets the compression level to be used when compressing data. The
-     * compression level must be a value between 0 and 9. This value must be set
+     * compression level must be a value between -1 and 9. This value must be set
      * prior to calling {@link #setInput setInput}.
      * @exception IllegalArgumentException
      *                If the compression level is invalid.
