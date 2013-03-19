@@ -178,17 +178,21 @@ public class ConcurrentCloseTest extends junit.framework.TestCase {
     public void test_write() throws Exception {
         final SilentServer ss = new SilentServer();
         Socket s = new Socket();
+
+        // Set the send buffer size really small, to ensure we block.
+        int sendBufferSize = 1024;
+        s.setSendBufferSize(sendBufferSize);
+
         s.connect(ss.getLocalSocketAddress());
         new Killer(s).start();
         try {
             System.err.println("write...");
-            // We just keep writing here until all the buffers are full and we block,
-            // waiting for the server to read (which it never will). If the asynchronous close
-            // fails, we'll see a test timeout here.
-            while (true) {
-                byte[] buf = new byte[256*1024];
-                s.getOutputStream().write(buf);
-            }
+            // Write too much so the buffer is full and we block,
+            // waiting for the server to read (which it never will).
+            // If the asynchronous close fails, we'll see a test timeout here.
+            byte[] buf = new byte[256*1024];
+            s.getOutputStream().write(buf);
+            fail();
         } catch (SocketException expected) {
             // We throw "Connection reset by peer", which I don't _think_ is a problem.
             // assertEquals("Socket closed", expected.getMessage());
