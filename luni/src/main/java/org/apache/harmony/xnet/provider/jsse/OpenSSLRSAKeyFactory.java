@@ -202,13 +202,13 @@ public class OpenSSLRSAKeyFactory extends KeyFactorySpi {
             } catch (InvalidKeySpecException e) {
                 throw new InvalidKeyException(e);
             }
-        } else if ("PKCS#8".equals(key.getFormat())) {
+        } else if ((key instanceof PrivateKey) && ("PKCS#8".equals(key.getFormat()))) {
             try {
                 return engineGeneratePrivate(new PKCS8EncodedKeySpec(key.getEncoded()));
             } catch (InvalidKeySpecException e) {
                 throw new InvalidKeyException(e);
             }
-        } else if ("X.509".equals(key.getFormat())) {
+        } else if ((key instanceof PublicKey) && ("X.509".equals(key.getFormat()))) {
             try {
                 return engineGeneratePublic(new X509EncodedKeySpec(key.getEncoded()));
             } catch (InvalidKeySpecException e) {
