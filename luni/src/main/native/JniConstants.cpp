@@ -63,6 +63,7 @@ jclass JniConstants::structPollfdClass;
 jclass JniConstants::structStatClass;
 jclass JniConstants::structStatFsClass;
 jclass JniConstants::structTimevalClass;
+jclass JniConstants::structUcredClass;
 jclass JniConstants::structUtsnameClass;
 
 static jclass findClass(JNIEnv* env, const char* name) {
@@ -120,5 +121,6 @@ void JniConstants::init(JNIEnv* env) {
     structStatClass = findClass(env, "libcore/io/StructStat");
     structStatFsClass = findClass(env, "libcore/io/StructStatFs");
     structTimevalClass = findClass(env, "libcore/io/StructTimeval");
+    structUcredClass = findClass(env, "libcore/io/StructUcred");
     structUtsnameClass = findClass(env, "libcore/io/StructUtsname");
 }

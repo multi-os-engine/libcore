@@ -84,6 +84,7 @@ struct JniConstants {
     static jclass structStatClass;
     static jclass structStatFsClass;
     static jclass structTimevalClass;
+    static jclass structUcredClass;
     static jclass structUtsnameClass;
 };
 
