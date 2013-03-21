@@ -174,11 +174,10 @@ public class Manifest implements Cloneable {
     }
 
     /**
-     * Writes out the attribute information of the receiver to the specified
-     * {@code OutputStream}.
+     * Writes this {@code Manifest}'s name/attributes pairs to the given {@code OutputStream}.
+     * The {@code MANIFEST_VERSION} attribute must be set before calling this method, or no
+     * attributes will be written.
      *
-     * @param os
-     *            The {@code OutputStream} to write to.
      * @throws IOException
      *             If an error occurs writing the {@code Manifest}.
      */
@@ -214,9 +213,7 @@ public class Manifest implements Cloneable {
             buf[buf.length - 1] = '\n';
         }
 
-        // Attributes.Name.MANIFEST_VERSION is not used for
-        // the second parameter for RI compatibility
-        InitManifest im = new InitManifest(buf, mainAttributes, null);
+        InitManifest im = new InitManifest(buf, mainAttributes);
         mainEnd = im.getPos();
         im.initEntries(entries, chunks);
     }
