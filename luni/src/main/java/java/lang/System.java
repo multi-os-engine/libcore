@@ -278,7 +278,7 @@ public final class System {
         // None of these four are meaningful on Android, but these keys are guaranteed
         // to be present for System.getProperty. For java.class.version, we use the maximum
         // class file version that dx currently supports.
-        p.put("java.class.version", "50.0");
+        p.put("java.class.version", "51.0");
         p.put("java.compiler", "");
         p.put("java.ext.dirs", "");
         p.put("java.version", "0");
