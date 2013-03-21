@@ -141,4 +141,25 @@ public class OldManifestTest extends TestCase {
         assertTrue(manifest1.equals(manifest2));
     }
 
+    public void test_write_no_version() throws Exception {
+        // If you write a manifest with no MANIFEST_VERSION, your attributes don't get written out.
+        assertEquals(null, doRoundTrip(false));
+        // But they do if you supply a MANIFEST_VERSION.
+        assertEquals("image/pr0n", doRoundTrip(true));
+    }
+
+    private String doRoundTrip(boolean includeVersion) throws Exception {
+        Manifest m1 = new Manifest();
+        m1.getMainAttributes().put(Attributes.Name.CONTENT_TYPE, "image/pr0n");
+        if (includeVersion) {
+            m1.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.2.3");
+        }
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        m1.write(os);
+
+        ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
+        Manifest m2 = new Manifest();
+        m2.read(is);
+        return (String) m2.getMainAttributes().get(Attributes.Name.CONTENT_TYPE);
+    }
 }
