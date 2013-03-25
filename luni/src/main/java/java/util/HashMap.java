@@ -228,7 +228,7 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Cloneable, Seria
      * @return a shallow copy of this map.
      */
     @SuppressWarnings("unchecked")
-    @Override public Object clone() {
+    @Override public Object clone() throws CloneNotSupportedException {
         /*
          * This could be made more efficient. It unnecessarily hashes all of
          * the elements in the map.
