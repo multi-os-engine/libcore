@@ -139,8 +139,8 @@ public final class MimeUtils {
         add("application/x-gnumeric", "gnumeric");
         add("application/x-go-sgf", "sgf");
         add("application/x-graphing-calculator", "gcf");
-        add("application/x-gtar", "gtar");
         add("application/x-gtar", "tgz");
+        add("application/x-gtar", "gtar");
         add("application/x-gtar", "taz");
         add("application/x-hdf", "hdf");
         add("application/x-ica", "ica");
@@ -212,10 +212,10 @@ public final class MimeUtils {
         add("audio/midi", "kar");
         add("audio/midi", "xmf");
         add("audio/mobile-xmf", "mxmf");
+        add("audio/mpeg", "mp3");
         add("audio/mpeg", "mpga");
         add("audio/mpeg", "mpega");
         add("audio/mpeg", "mp2");
-        add("audio/mpeg", "mp3");
         add("audio/mpeg", "m4a");
         add("audio/mpegurl", "m3u");
         add("audio/prs.sid", "sid");
@@ -296,12 +296,13 @@ public final class MimeUtils {
         add("text/xml", "xml");
         add("text/x-bibtex", "bib");
         add("text/x-boo", "boo");
-        add("text/x-c++hdr", "h++");
         add("text/x-c++hdr", "hpp");
+        add("text/x-c++hdr", "h++");
         add("text/x-c++hdr", "hxx");
         add("text/x-c++hdr", "hh");
-        add("text/x-c++src", "c++");
         add("text/x-c++src", "cpp");
+        add("text/x-c++src", "c++");
+        add("text/x-c++src", "cc");
         add("text/x-c++src", "cxx");
         add("text/x-chdr", "h");
         add("text/x-component", "htc");
