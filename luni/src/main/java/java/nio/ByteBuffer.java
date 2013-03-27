@@ -35,6 +35,10 @@ import libcore.io.Memory;
  *
  */
 public abstract class ByteBuffer extends Buffer implements Comparable<ByteBuffer> {
+    /**
+     * The byte order of this buffer, default is {@code BIG_ENDIAN}.
+     */
+    ByteOrder order = ByteOrder.BIG_ENDIAN;
 
     /**
      * Creates a byte buffer based on a newly allocated byte array.
@@ -107,11 +111,6 @@ public abstract class ByteBuffer extends Buffer implements Comparable<ByteBuffer
         buf.limit = start + byteCount;
         return buf;
     }
-
-    /**
-     * The byte order of this buffer, default is {@code BIG_ENDIAN}.
-     */
-    ByteOrder order = ByteOrder.BIG_ENDIAN;
 
     ByteBuffer(int capacity, MemoryBlock block) {
         super(0, capacity, block);
