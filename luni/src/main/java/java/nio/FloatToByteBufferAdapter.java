@@ -103,7 +103,7 @@ final class FloatToByteBufferAdapter extends FloatBuffer {
         if (byteBuffer instanceof DirectByteBuffer) {
             ((DirectByteBuffer) byteBuffer).get(dst, dstOffset, floatCount);
         } else {
-            ((HeapByteBuffer) byteBuffer).get(dst, dstOffset, floatCount);
+            ((ByteArrayBuffer) byteBuffer).get(dst, dstOffset, floatCount);
         }
         this.position += floatCount;
         return this;
@@ -159,7 +159,7 @@ final class FloatToByteBufferAdapter extends FloatBuffer {
         if (byteBuffer instanceof ReadWriteDirectByteBuffer) {
             ((ReadWriteDirectByteBuffer) byteBuffer).put(src, srcOffset, floatCount);
         } else {
-            ((ReadWriteHeapByteBuffer) byteBuffer).put(src, srcOffset, floatCount);
+            ((ByteArrayBuffer) byteBuffer).put(src, srcOffset, floatCount);
         }
         this.position += floatCount;
         return this;

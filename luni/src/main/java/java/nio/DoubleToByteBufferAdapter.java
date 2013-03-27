@@ -104,7 +104,7 @@ final class DoubleToByteBufferAdapter extends DoubleBuffer {
         if (byteBuffer instanceof DirectByteBuffer) {
             ((DirectByteBuffer) byteBuffer).get(dst, dstOffset, doubleCount);
         } else {
-            ((HeapByteBuffer) byteBuffer).get(dst, dstOffset, doubleCount);
+            ((ByteArrayBuffer) byteBuffer).get(dst, dstOffset, doubleCount);
         }
         this.position += doubleCount;
         return this;
@@ -160,7 +160,7 @@ final class DoubleToByteBufferAdapter extends DoubleBuffer {
         if (byteBuffer instanceof ReadWriteDirectByteBuffer) {
             ((ReadWriteDirectByteBuffer) byteBuffer).put(src, srcOffset, doubleCount);
         } else {
-            ((ReadWriteHeapByteBuffer) byteBuffer).put(src, srcOffset, doubleCount);
+            ((ByteArrayBuffer) byteBuffer).put(src, srcOffset, doubleCount);
         }
         this.position += doubleCount;
         return this;

@@ -77,7 +77,7 @@ public final class NioUtils {
      * Normally, attempting to access the array backing a read-only buffer throws.
      */
     public static byte[] unsafeArray(ByteBuffer b) {
-        return ((HeapByteBuffer) b).backingArray;
+        return ((ByteArrayBuffer) b).backingArray;
     }
 
     /**
@@ -85,6 +85,6 @@ public final class NioUtils {
      * even if the ByteBuffer is read-only.
      */
     public static int unsafeArrayOffset(ByteBuffer b) {
-        return ((HeapByteBuffer) b).offset;
+        return ((ByteArrayBuffer) b).arrayOffset;
     }
 }

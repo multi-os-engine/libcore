@@ -104,7 +104,7 @@ final class LongToByteBufferAdapter extends LongBuffer {
         if (byteBuffer instanceof DirectByteBuffer) {
             ((DirectByteBuffer) byteBuffer).get(dst, dstOffset, longCount);
         } else {
-            ((HeapByteBuffer) byteBuffer).get(dst, dstOffset, longCount);
+            ((ByteArrayBuffer) byteBuffer).get(dst, dstOffset, longCount);
         }
         this.position += longCount;
         return this;
@@ -160,7 +160,7 @@ final class LongToByteBufferAdapter extends LongBuffer {
         if (byteBuffer instanceof ReadWriteDirectByteBuffer) {
             ((ReadWriteDirectByteBuffer) byteBuffer).put(src, srcOffset, longCount);
         } else {
-            ((ReadWriteHeapByteBuffer) byteBuffer).put(src, srcOffset, longCount);
+            ((ByteArrayBuffer) byteBuffer).put(src, srcOffset, longCount);
         }
         this.position += longCount;
         return this;

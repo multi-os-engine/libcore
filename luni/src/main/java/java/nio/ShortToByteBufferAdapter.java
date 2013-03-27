@@ -103,7 +103,7 @@ final class ShortToByteBufferAdapter extends ShortBuffer {
         if (byteBuffer instanceof DirectByteBuffer) {
             ((DirectByteBuffer) byteBuffer).get(dst, dstOffset, shortCount);
         } else {
-            ((HeapByteBuffer) byteBuffer).get(dst, dstOffset, shortCount);
+            ((ByteArrayBuffer) byteBuffer).get(dst, dstOffset, shortCount);
         }
         this.position += shortCount;
         return this;
@@ -159,7 +159,7 @@ final class ShortToByteBufferAdapter extends ShortBuffer {
         if (byteBuffer instanceof ReadWriteDirectByteBuffer) {
             ((ReadWriteDirectByteBuffer) byteBuffer).put(src, srcOffset, shortCount);
         } else {
-            ((ReadWriteHeapByteBuffer) byteBuffer).put(src, srcOffset, shortCount);
+            ((ByteArrayBuffer) byteBuffer).put(src, srcOffset, shortCount);
         }
         this.position += shortCount;
         return this;
