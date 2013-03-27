@@ -160,7 +160,7 @@ final class IntToByteBufferAdapter extends IntBuffer {
         if (byteBuffer instanceof ReadWriteDirectByteBuffer) {
             ((ReadWriteDirectByteBuffer) byteBuffer).put(src, srcOffset, intCount);
         } else {
-            ((ReadWriteHeapByteBuffer) byteBuffer).put(src, srcOffset, intCount);
+            ((HeapByteBuffer) byteBuffer).put(src, srcOffset, intCount);
         }
         this.position += intCount;
         return this;

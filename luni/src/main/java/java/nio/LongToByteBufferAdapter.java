@@ -160,7 +160,7 @@ final class LongToByteBufferAdapter extends LongBuffer {
         if (byteBuffer instanceof ReadWriteDirectByteBuffer) {
             ((ReadWriteDirectByteBuffer) byteBuffer).put(src, srcOffset, longCount);
         } else {
-            ((ReadWriteHeapByteBuffer) byteBuffer).put(src, srcOffset, longCount);
+            ((HeapByteBuffer) byteBuffer).put(src, srcOffset, longCount);
         }
         this.position += longCount;
         return this;

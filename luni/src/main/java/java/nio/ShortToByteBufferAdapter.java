@@ -159,7 +159,7 @@ final class ShortToByteBufferAdapter extends ShortBuffer {
         if (byteBuffer instanceof ReadWriteDirectByteBuffer) {
             ((ReadWriteDirectByteBuffer) byteBuffer).put(src, srcOffset, shortCount);
         } else {
-            ((ReadWriteHeapByteBuffer) byteBuffer).put(src, srcOffset, shortCount);
+            ((HeapByteBuffer) byteBuffer).put(src, srcOffset, shortCount);
         }
         this.position += shortCount;
         return this;

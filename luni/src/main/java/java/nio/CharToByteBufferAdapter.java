@@ -160,7 +160,7 @@ final class CharToByteBufferAdapter extends CharBuffer {
         if (byteBuffer instanceof ReadWriteDirectByteBuffer) {
             ((ReadWriteDirectByteBuffer) byteBuffer).put(src, srcOffset, charCount);
         } else {
-            ((ReadWriteHeapByteBuffer) byteBuffer).put(src, srcOffset, charCount);
+            ((HeapByteBuffer) byteBuffer).put(src, srcOffset, charCount);
         }
         this.position += charCount;
         return this;

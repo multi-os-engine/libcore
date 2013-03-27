@@ -85,6 +85,6 @@ public final class NioUtils {
      * even if the ByteBuffer is read-only.
      */
     public static int unsafeArrayOffset(ByteBuffer b) {
-        return ((HeapByteBuffer) b).offset;
+        return ((HeapByteBuffer) b).arrayOffset;
     }
 }
