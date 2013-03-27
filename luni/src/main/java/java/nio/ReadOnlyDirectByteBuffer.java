@@ -18,9 +18,6 @@
 package java.nio;
 
 /**
- * DirectByteBuffer, ReadWriteDirectByteBuffer and ReadOnlyDirectByteBuffer
- * compose the implementation of platform memory based byte buffers.
- * <p>
  * ReadOnlyDirectByteBuffer extends DirectByteBuffer with all the write methods
  * throwing read only exception.
  * </p>
@@ -114,6 +111,14 @@ final class ReadOnlyDirectByteBuffer extends DirectByteBuffer {
     @Override
     public ByteBuffer putLong(long value) {
         throw new ReadOnlyBufferException();
+    }
+
+    @Override public ByteBuffer putChar(int index, char value) {
+      throw new ReadOnlyBufferException();
+    }
+
+    @Override public ByteBuffer putChar(char value) {
+      throw new ReadOnlyBufferException();
     }
 
     @Override

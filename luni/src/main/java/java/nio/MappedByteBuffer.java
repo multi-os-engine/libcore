@@ -57,7 +57,7 @@ public abstract class MappedByteBuffer extends ByteBuffer {
         if (mapMode == MapMode.READ_ONLY) {
             wrapped = new ReadOnlyDirectByteBuffer(block, capacity, offset);
         } else {
-            wrapped = new ReadWriteDirectByteBuffer(block, capacity, offset);
+            wrapped = new DirectByteBuffer(block, capacity, offset);
         }
     }
 
