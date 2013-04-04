@@ -179,16 +179,17 @@ public final class IoBridge {
             // Socket.close doesn't throw if you try to close an already-closed socket.
             return;
         }
-        int intFd = fd.getInt$();
-        fd.setInt$(-1);
         FileDescriptor oldFd = new FileDescriptor();
-        oldFd.setInt$(intFd);
-        AsynchronousCloseMonitor.signalBlockedThreads(oldFd);
+        oldFd.setInt$(fd.getInt$());
         try {
-            Libcore.os.close(oldFd);
+            Libcore.os.close(fd);
         } catch (ErrnoException errnoException) {
             // TODO: are there any cases in which we should throw?
+        } finally {
+            // Be sure that original fd has been invalidated
+            fd.setInt$(-1);
         }
+        AsynchronousCloseMonitor.signalBlockedThreads(oldFd);
     }
 
     public static boolean isConnected(FileDescriptor fd, InetAddress inetAddress, int port, int timeoutMs, int remainingTimeoutMs) throws IOException {
