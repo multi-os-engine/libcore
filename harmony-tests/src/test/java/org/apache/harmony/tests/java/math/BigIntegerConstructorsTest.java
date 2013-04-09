@@ -745,25 +745,43 @@ public class BigIntegerConstructorsTest extends TestCase {
         assertTrue("incorrect bitLength", aNumber.bitLength() <= bitLen);
     }
 
-    /**
-     * Create a prime number of 25 bits length.
-     */
-    public void testConstructorPrime() {
-        int bitLen = 25;
-        Random rnd = new Random();
-        BigInteger aNumber = new BigInteger(bitLen, 80, rnd);
-        assertTrue("incorrect bitLength", aNumber.bitLength() == bitLen);
-    }
+  public void testConstructorPrime() {
+    for (int rep = 0; rep < 1024; ++rep) {
+      Random rnd = new Random();
+      BigInteger b;
+      int bits;
 
-    /**
-     * Create a prime number of 2 bits length.
-     */
-    public void testConstructorPrime2() {
-        int bitLen = 2;
-        Random rnd = new Random();
-        BigInteger aNumber = new BigInteger(bitLen, 80, rnd);
-        assertTrue("incorrect bitLength", aNumber.bitLength() == bitLen);
-        int num = aNumber.intValue();
-        assertTrue("incorrect value", num == 2 || num == 3);
+      // Create a 128-bit prime number.
+      bits = 128;
+      b = new BigInteger(bits, 80, rnd);
+      assertEquals(b.toString(), bits, b.bitLength());
+
+      // Create a prime number of 25 bits length.
+      bits = 25;
+      b = new BigInteger(bits, 80, rnd);
+      assertEquals(b.toString(), bits, b.bitLength());
+
+      // Create a prime number of 18 bits length.
+      bits = 18;
+      b = new BigInteger(bits, 80, rnd);
+      assertEquals(b.toString(), bits, b.bitLength());
+
+      // On Android, anything less than 18 bits will be at least 16
+      // bits; if you ask for 16 or 17 bits, you may get what you
+      // asked for, or you may get an extra bit for free...
+      bits = 2;
+      b = new BigInteger(bits, 80, rnd);
+      assertTrue(b.toString(), b.bitLength() == 16 || b.bitLength() == 17);
+
+      // ...unless you use the 2-arg constructor, which doesn't use OpenSSL.
+      bits = 2;
+      b = new BigInteger(bits, rnd);
+      assertTrue(b.toString(), b.bitLength() <= bits);
+      assertTrue(b.toString(), b.intValue() <= 3);
+
+      bits = 16;
+      b = new BigInteger(bits, rnd);
+      assertTrue(b.toString(), b.bitLength() <= bits);
     }
+  }
 }
