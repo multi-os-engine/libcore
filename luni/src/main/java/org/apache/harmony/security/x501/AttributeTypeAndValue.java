@@ -179,6 +179,32 @@ public final class AttributeTypeAndValue {
         KNOWN_NAMES.putAll(RFC2459_NAMES);
     }
 
+    /**
+     * Parses OID string representation.
+     *
+     * @param sOid
+     *            string representation of OID
+     *
+     * @throws IOException
+     *             if OID can not be created from its string representation
+     */
+    public static ObjectIdentifier getObjectIdentifier(String sOid) throws IOException {
+        if (sOid.charAt(0) >= '0' && sOid.charAt(0) <= '9') {
+            int[] array = org.apache.harmony.security.asn1.ObjectIdentifier.toIntArray(sOid);
+            ObjectIdentifier thisOid = getOID(array);
+            if (thisOid == null) {
+                thisOid = new ObjectIdentifier(array);
+            }
+            return thisOid;
+
+        }
+        ObjectIdentifier thisOid = KNOWN_NAMES.get(sOid.toUpperCase(Locale.US));
+        if (thisOid == null) {
+            throw new IOException("Unrecognizable attribute name: " + sOid);
+        }
+        return thisOid;
+    }
+
     /** Attribute type */
     private final ObjectIdentifier oid;
 
@@ -196,31 +222,15 @@ public final class AttributeTypeAndValue {
     }
 
     /**
-     * Creates AttributeTypeAndValue with OID and AttributeValue. Parses OID
-     * string representation
+     * Creates AttributeTypeAndValue with OID and AttributeValue.
      *
-     * @param sOid
-     *            string representation of OID
+     * @param oid
+     *            object identifier
      * @param value
      *            attribute value
-     * @throws IOException
-     *             if OID can not be created from its string representation
      */
-    public AttributeTypeAndValue(String sOid, AttributeValue value) throws IOException {
-        if (sOid.charAt(0) >= '0' && sOid.charAt(0) <= '9') {
-            int[] array = org.apache.harmony.security.asn1.ObjectIdentifier.toIntArray(sOid);
-            ObjectIdentifier thisOid = getOID(array);
-            if (thisOid == null) {
-                thisOid = new ObjectIdentifier(array);
-            }
-            this.oid = thisOid;
-
-        } else {
-            this.oid = KNOWN_NAMES.get(sOid.toUpperCase(Locale.US));
-            if (this.oid == null) {
-                throw new IOException("Unrecognizable attribute name: " + sOid);
-            }
-        }
+    public AttributeTypeAndValue(ObjectIdentifier oid, AttributeValue value) throws IOException {
+        this.oid = oid;
         this.value = value;
     }
 

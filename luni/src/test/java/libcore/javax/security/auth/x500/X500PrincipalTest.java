@@ -19,9 +19,11 @@ package libcore.javax.security.auth.x500;
 import java.io.ByteArrayInputStream;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import javax.security.auth.x500.X500Principal;
 import junit.framework.TestCase;
 import libcore.util.SerializationTester;
+
 
 public class X500PrincipalTest extends TestCase {
 
@@ -89,5 +91,18 @@ public class X500PrincipalTest extends TestCase {
         assertEquals(expected,
                      certBC.getSubjectX500Principal().getName(X500Principal.CANONICAL));
 
+    }
+
+    // http://code.google.com/p/android/issues/detail?id=21531
+    // http://b/5580664
+    public void testEmailAddressEncodedAsIA5String() {
+        X500Principal original = new X500Principal("emailAddress=root@android.com");
+
+        byte[] actualEncoded = original.getEncoded();
+        byte[] expectedEncoded = new byte[] { 48, 33, 49, 31, 48, 29, 6, 9, 42, -122, 72, -122, -9, 13, 1, 9, 1, 22, 16, 114, 111, 111, 116, 64, 97, 110, 100, 114, 111, 105, 100, 46, 99, 111, 109 };
+        assertEquals(Arrays.toString(expectedEncoded), Arrays.toString(actualEncoded));
+
+        X500Principal decoded = new X500Principal(actualEncoded);
+        assertEquals(original, decoded);
     }
 }
