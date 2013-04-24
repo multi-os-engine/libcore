@@ -18,11 +18,15 @@
 
 package org.apache.harmony.security.provider.crypto;
 
+import dalvik.system.BlockGuard;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.security.InvalidParameterException;
+import java.security.ProviderException;
 import java.security.SecureRandomSpi;
 import libcore.io.Streams;
 import libcore.util.EmptyArray;
@@ -40,6 +44,15 @@ import libcore.util.EmptyArray;
 public class SHA1PRNG_SecureRandomImpl extends SecureRandomSpi implements Serializable, SHA1_Data {
 
     private static final long serialVersionUID = 283736797212159675L;
+
+    private static FileInputStream devURandom;
+    static {
+        try {
+            devURandom = new FileInputStream(new File("/dev/urandom"));
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
 
     // constants to use in expressions operating on bytes in int and long variables:
     // END_FLAGS - final bytes in words to append to message;
@@ -241,7 +254,7 @@ public class SHA1PRNG_SecureRandomImpl extends SecureRandomSpi implements Serial
 
         if (myRandom == null) {
             myRandom = new SHA1PRNG_SecureRandomImpl();
-            myRandom.engineSetSeed(RandomBitsSupplier.getRandomBits(DIGEST_LENGTH));
+            myRandom.engineSetSeed(getRandomBytes(DIGEST_LENGTH));
         }
 
         myBytes = new byte[numBytes];
@@ -285,7 +298,7 @@ public class SHA1PRNG_SecureRandomImpl extends SecureRandomSpi implements Serial
         if (state == UNDEFINED) {
 
             // no seed supplied by user, hence it is generated thus randomizing internal state
-            updateSeed(RandomBitsSupplier.getRandomBits(DIGEST_LENGTH));
+            updateSeed(getRandomBytes(DIGEST_LENGTH));
             nextBIndex = HASHBYTES_TO_USE;
 
         } else if (state == SET_SEED) {
@@ -525,5 +538,23 @@ public class SHA1PRNG_SecureRandomImpl extends SecureRandomSpi implements Serial
 
         nextBIndex = ois.readInt();
         Streams.readFully(ois, nextBytes, nextBIndex, HASHBYTES_TO_USE - nextBIndex);
+    }
+
+    private static byte[] getRandomBytes(int byteCount) {
+        if (byteCount <= 0) {
+            throw new IllegalArgumentException("Too few bytes requested: " + byteCount);
+        }
+
+        BlockGuard.Policy originalPolicy = BlockGuard.getThreadPolicy();
+        try {
+            BlockGuard.setThreadPolicy(BlockGuard.LAX_POLICY);
+            byte[] result = new byte[byteCount];
+            Streams.readFully(devURandom, result, 0, byteCount);
+            return result;
+        } catch (Exception ex) {
+            throw new ProviderException("Couldn't read " + byteCount + " random bytes", ex);
+        } finally {
+            BlockGuard.setThreadPolicy(originalPolicy);
+        }
     }
 }
