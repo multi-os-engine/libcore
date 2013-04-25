@@ -24,6 +24,9 @@ import java.util.regex.Pattern;
 import libcore.icu.TimeZoneNames;
 import libcore.util.ZoneInfoDB;
 
+// TODO: repackage this class, used by frameworks/base.
+import org.apache.harmony.luni.internal.util.TimezoneGetter;
+
 /**
  * {@code TimeZone} represents a time zone, primarily used for configuring a {@link Calendar} or
  * {@link java.text.SimpleDateFormat} instance.
@@ -105,7 +108,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * instance.
      */
     public static synchronized String[] getAvailableIDs() {
-        return ZoneInfoDB.getAvailableIDs();
+        return ZoneInfoDB.getInstance().getAvailableIDs();
     }
 
     /**
@@ -116,7 +119,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * @return a possibly-empty array.
      */
     public static synchronized String[] getAvailableIDs(int offsetMillis) {
-        return ZoneInfoDB.getAvailableIDs(offsetMillis);
+        return ZoneInfoDB.getInstance().getAvailableIDs(offsetMillis);
     }
 
     /**
@@ -128,7 +131,17 @@ public abstract class TimeZone implements Serializable, Cloneable {
      */
     public static synchronized TimeZone getDefault() {
         if (defaultTimeZone == null) {
-            defaultTimeZone = ZoneInfoDB.getSystemDefault();
+            TimezoneGetter tzGetter = TimezoneGetter.getInstance();
+            String zoneName = (tzGetter != null) ? tzGetter.getId() : null;
+            if (zoneName != null) {
+                zoneName = zoneName.trim();
+            }
+            if (zoneName == null || zoneName.isEmpty()) {
+                // use localtime for the simulator
+                // TODO: what does that correspond to?
+                zoneName = "localtime";
+            }
+            defaultTimeZone = TimeZone.getTimeZone(zoneName);
         }
         return (TimeZone) defaultTimeZone.clone();
     }
@@ -323,7 +336,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
         // In the database?
         TimeZone zone = null;
         try {
-            zone = ZoneInfoDB.makeTimeZone(id);
+            zone = ZoneInfoDB.getInstance().makeTimeZone(id);
         } catch (IOException ignored) {
         }
 
