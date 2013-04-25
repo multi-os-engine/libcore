@@ -66,19 +66,15 @@ public final class ZoneInfoDB {
     private static int[] byteOffsets;
     private static int[] rawUtcOffsets;
 
-    static {
-        readHeader();
-    }
-
     private ZoneInfoDB() {
     }
 
-    private static void readHeader() {
+    private static void readHeader(MemoryMappedFile data) {
         // byte[12] tzdata_version  -- "tzdata2012f\0"
         // int index_offset
         // int data_offset
         // int zonetab_offset
-        BufferIterator it = TZDATA.bigEndianIterator();
+        BufferIterator it = data.bigEndianIterator();
 
         byte[] tzdata_version = new byte[12];
         it.readByteArray(tzdata_version, 0, tzdata_version.length);
@@ -93,7 +89,7 @@ public final class ZoneInfoDB {
         int zonetab_offset = it.readInt();
 
         readIndex(it, index_offset, data_offset);
-        readZoneTab(it, zonetab_offset);
+        readZoneTab(it, zonetab_offset, (int) data.size() - zonetab_offset);
     }
 
     private static MemoryMappedFile mapData() {
@@ -108,15 +104,26 @@ public final class ZoneInfoDB {
     }
 
     private static MemoryMappedFile mapData(String directory) {
+        MemoryMappedFile result = null;
+        String path = directory + "tzdata";
         try {
-            return MemoryMappedFile.mmapRO(directory + "tzdata");
+            result = MemoryMappedFile.mmapRO(path);
         } catch (ErrnoException errnoException) {
             return null;
         }
-    }
+        try {
+            readHeader(result);
+            return result;
+        } catch (Exception ex) {
+            // Something's wrong with the file.
+            // Log the problem and return null so we try the next choice.
+            System.logE("Couldn't use \"" + path + "\"", ex);
+            return null;
+        }
+      }
 
-    private static void readZoneTab(BufferIterator it, int zoneTabOffset) {
-        byte[] bytes = new byte[(int) TZDATA.size() - zoneTabOffset];
+    private static void readZoneTab(BufferIterator it, int zoneTabOffset, int zoneTabSize) {
+        byte[] bytes = new byte[zoneTabSize];
         it.seek(zoneTabOffset);
         it.readByteArray(bytes, 0, bytes.length);
         zoneTab = new String(bytes, 0, bytes.length, Charsets.US_ASCII);
