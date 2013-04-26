@@ -1,0 +1,7 @@
+Code-Review+2: Kenny Root <kroot@android.com>
+Verified+1: Deckard Autoverifier <deckard@android.com>
+Submitted-by: Brian Carlstrom <bdc@google.com>
+Submitted-at: Fri, 26 Apr 2013 17:02:18 +0000
+Reviewed-on: https://android-review.googlesource.com/57601
+Project: platform/libcore
+Branch: refs/heads/master
