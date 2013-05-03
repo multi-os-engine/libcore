@@ -129,6 +129,8 @@ public final class ICU {
 
     public static native String getBestDateTimePattern(String skeleton, String localeName);
 
+    public static native String formatDateInterval(String skeleton, String localeName, long fromDate, long toDate);
+
     public static char[] getDateFormatOrder(String pattern) {
       char[] result = new char[3];
       int resultIndex = 0;

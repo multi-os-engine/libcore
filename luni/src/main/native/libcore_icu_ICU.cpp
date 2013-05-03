@@ -32,6 +32,7 @@
 #include "unicode/dcfmtsym.h"
 #include "unicode/decimfmt.h"
 #include "unicode/dtfmtsym.h"
+#include "unicode/dtitvfmt.h"
 #include "unicode/dtptngen.h"
 #include "unicode/gregocal.h"
 #include "unicode/locid.h"
@@ -699,7 +700,7 @@ static jobject ICU_getAvailableCurrencyCodes(JNIEnv* env, jclass) {
     return result;
 }
 
-static jstring ICU_getBestDateTimePattern(JNIEnv* env, jclass, jstring javaPattern, jstring javaLocaleName) {
+static jstring ICU_getBestDateTimePattern(JNIEnv* env, jclass, jstring javaSkeleton, jstring javaLocaleName) {
   Locale locale = getLocale(env, javaLocaleName);
   UErrorCode status = U_ZERO_ERROR;
   DateTimePatternGenerator* generator = DateTimePatternGenerator::createInstance(locale, status);
@@ -707,11 +708,11 @@ static jstring ICU_getBestDateTimePattern(JNIEnv* env, jclass, jstring javaPatte
     return NULL;
   }
 
-  ScopedJavaUnicodeString patternHolder(env, javaPattern);
-  if (!patternHolder.valid()) {
+  ScopedJavaUnicodeString skeletonHolder(env, javaSkeleton);
+  if (!skeletonHolder.valid()) {
     return NULL;
   }
-  UnicodeString result(generator->getBestPattern(patternHolder.unicodeString(), status));
+  UnicodeString result(generator->getBestPattern(skeletonHolder.unicodeString(), status));
   if (maybeThrowIcuException(env, "DateTimePatternGenerator::getBestPattern", status)) {
     return NULL;
   }
@@ -719,8 +720,29 @@ static jstring ICU_getBestDateTimePattern(JNIEnv* env, jclass, jstring javaPatte
   return env->NewString(result.getBuffer(), result.length());
 }
 
+static jstring ICU_formatDateInterval(JNIEnv* env, jclass, jstring javaSkeleton, jstring javaLocaleName, jlong fromDate, jlong toDate) {
+  Locale locale = getLocale(env, javaLocaleName);
+
+  ScopedJavaUnicodeString skeletonHolder(env, javaSkeleton);
+  if (!skeletonHolder.valid()) {
+    return NULL;
+  }
+
+  UErrorCode status = U_ZERO_ERROR;
+  UniquePtr<DateIntervalFormat> formatter(DateIntervalFormat::createInstance(skeletonHolder.unicodeString(), locale, status));
+
+  DateInterval date_interval(fromDate, toDate);
+
+  UnicodeString result;
+  FieldPosition pos = 0;
+  formatter->format(&date_interval, result, pos, status);
+
+  return env->NewString(result.getBuffer(), result.length());
+}
+
 static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(ICU, addLikelySubtags, "(Ljava/lang/String;)Ljava/lang/String;"),
+    NATIVE_METHOD(ICU, formatDateInterval, "(Ljava/lang/String;Ljava/lang/String;JJ)Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getAvailableBreakIteratorLocalesNative, "()[Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getAvailableCalendarLocalesNative, "()[Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getAvailableCollatorLocalesNative, "()[Ljava/lang/String;"),
