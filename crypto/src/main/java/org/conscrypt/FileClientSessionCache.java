@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.net.ssl.SSLSession;
-import libcore.io.IoUtils;
+import org.conscrypt.util.IoUtils;
 
 /**
  * File-based cache implementation. Only one process should access the

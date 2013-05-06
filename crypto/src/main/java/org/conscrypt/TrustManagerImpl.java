@@ -40,7 +40,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.net.ssl.X509TrustManager;
-import libcore.io.EventLogger;
 
 /**
  *

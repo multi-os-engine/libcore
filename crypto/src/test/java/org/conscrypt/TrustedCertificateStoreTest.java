@@ -22,18 +22,15 @@ import java.io.OutputStream;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import javax.security.auth.x500.X500Principal;
 import junit.framework.TestCase;
 import libcore.java.security.TestKeyStore;
+import org.conscrypt.util.IntegralToString;
 
 public class TrustedCertificateStoreTest extends TestCase {
 

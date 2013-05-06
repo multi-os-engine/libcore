@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import junit.framework.TestCase;
 import libcore.java.security.TestKeyStore;
+import org.conscrypt.util.IntegralToString;
 
 public class CertPinManagerTest extends TestCase {
 

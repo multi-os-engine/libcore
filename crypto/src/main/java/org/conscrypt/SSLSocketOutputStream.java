@@ -19,7 +19,7 @@ package org.conscrypt;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import libcore.io.Streams;
+import org.conscrypt.util.Streams;
 
 /**
  * This is a application data output stream used in SSLSocket

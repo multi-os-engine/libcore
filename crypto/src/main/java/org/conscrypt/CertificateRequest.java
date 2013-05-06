@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import javax.security.auth.x500.X500Principal;
-import libcore.io.Streams;
+import org.conscrypt.util.Streams;
 
 /**
  *
