@@ -39,7 +39,6 @@ import javax.net.ssl.HandshakeCompletedEvent;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLProtocolException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509TrustManager;
@@ -47,8 +46,8 @@ import javax.security.auth.x500.X500Principal;
 import static libcore.io.OsConstants.*;
 import libcore.io.ErrnoException;
 import libcore.io.Libcore;
-import libcore.io.Streams;
 import libcore.io.StructTimeval;
+import org.conscrypt.util.Streams;
 
 /**
  * Implementation of the class OpenSSLSocketImpl based on OpenSSL.

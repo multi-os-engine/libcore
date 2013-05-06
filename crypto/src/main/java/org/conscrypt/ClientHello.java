@@ -20,8 +20,8 @@ package org.conscrypt;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Arrays;
-import libcore.io.Streams;
 import org.conscrypt.util.EmptyArray;
+import org.conscrypt.util.Streams;
 
 /**
  * Represents Client Hello message

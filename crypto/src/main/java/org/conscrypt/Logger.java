@@ -18,8 +18,8 @@
 package org.conscrypt;
 
 import java.io.PrintStream;
-import java.util.Locale;
 import org.conscrypt.util.EmptyArray;
+import org.conscrypt.util.IntegralToString;
 
 /**
  * This class provides debug logging for JSSE provider implementation
@@ -75,7 +75,7 @@ public class Logger {
             StringBuilder line = new StringBuilder();
             for (int i = 0; i < len; i++) {
                 line.append(prefix);
-                line.append(Byte.toHexString(data[i+offset], false));
+                line.append(IntegralToString.byteToHexString(data[i + offset], false));
                 line.append(delimiter);
 
                 if (((i+1)%perLine) == 0) {

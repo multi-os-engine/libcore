@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import libcore.io.EventLogger;
+import org.conscrypt.util.IntegralToString;
 
 /**
  * This class represents a single entry in the pin file.

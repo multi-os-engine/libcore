@@ -19,8 +19,8 @@ package org.conscrypt;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import libcore.io.Streams;
 import org.conscrypt.util.EmptyArray;
+import org.conscrypt.util.Streams;
 
 /**
  * Represents client key exchange message

@@ -24,8 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import libcore.io.IoUtils;
 import libcore.util.BasicLruCache;
+import org.conscrypt.util.IoUtils;
 
 /**
  * This class provides a simple interface for cert pinning.

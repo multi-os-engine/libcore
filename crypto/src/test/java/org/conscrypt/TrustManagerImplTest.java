@@ -25,11 +25,11 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import junit.framework.TestCase;
 import libcore.java.security.TestKeyStore;
+import org.conscrypt.util.IntegralToString;
 
 public class TrustManagerImplTest extends TestCase {
 
