@@ -286,7 +286,7 @@ public final class System {
         p.put("java.home", getenv("JAVA_HOME", "/system"));
 
         p.put("java.io.tmpdir", "/tmp");
-        p.put("java.library.path", getenv("LD_LIBRARY_PATH"));
+        p.put("java.library.path", getenv("LD_LIBRARY_PATH", ""));
 
         p.put("java.specification.name", "Dalvik Core Library");
         p.put("java.specification.vendor", projectName);
