@@ -30,8 +30,6 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.Certificate;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
@@ -51,6 +49,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.ShortBufferException;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
@@ -58,7 +57,6 @@ import javax.crypto.spec.SecretKeySpec;
 import junit.framework.TestCase;
 import libcore.java.security.StandardNames;
 import libcore.java.security.TestKeyStore;
-import libcore.util.EmptyArray;
 
 public final class CipherTest extends TestCase {
 
@@ -1949,6 +1947,62 @@ public final class CipherTest extends TestCase {
             (byte) 0xD1, (byte) 0xB9, (byte) 0x00, (byte) 0x3E
     };
 
+    /*
+     * From test vectors file.
+     */
+    private static final byte[] AES_128_GCM_NoPadding_TestVector_1_Key = new byte[] {
+            (byte) 0x81, (byte) 0x6e, (byte) 0x39, (byte) 0x07, (byte) 0x04, (byte) 0x10,
+            (byte) 0xcf, (byte) 0x21, (byte) 0x84, (byte) 0x90, (byte) 0x4d, (byte) 0xa0,
+            (byte) 0x3e, (byte) 0xa5, (byte) 0x07, (byte) 0x5a
+    };
+
+    /*
+     * From test vectors file.
+     */
+    private static final byte[] AES_128_GCM_NoPadding_TestVector_1_IV = new byte[] {
+            (byte) 0x32, (byte) 0xc3, (byte) 0x67, (byte) 0xa3, (byte) 0x36, (byte) 0x26,
+            (byte) 0x13, (byte) 0xb2, (byte) 0x7f, (byte) 0xc3, (byte) 0xe6, (byte) 0x7e
+    };
+
+    /*
+     * From test vectors file.
+     */
+    private static final byte[] AES_128_GCM_NoPadding_TestVector_1_Plaintext = new byte[] {
+            (byte) 0xec, (byte) 0xaf, (byte) 0xe9, (byte) 0x6c, (byte) 0x67, (byte) 0xa1,
+            (byte) 0x64, (byte) 0x67, (byte) 0x44, (byte) 0xf1, (byte) 0xc8, (byte) 0x91,
+            (byte) 0xf5, (byte) 0xe6, (byte) 0x94, (byte) 0x27
+    };
+
+
+    /*
+     * From test vectors file.
+     */
+    private static final byte[] AES_128_GCM_NoPadding_TestVector_1_Ciphertext = new byte[] {
+            (byte) 0x55, (byte) 0x2e, (byte) 0xbe, (byte) 0x01, (byte) 0x2e, (byte) 0x7b,
+            (byte) 0xcf, (byte) 0x90, (byte) 0xfc, (byte) 0xef, (byte) 0x71, (byte) 0x2f,
+            (byte) 0x83, (byte) 0x44, (byte) 0xe8, (byte) 0xf1
+    };
+
+    /*
+     * From test vectors file.
+     */
+    private static final byte[] AES_128_GCM_NoPadding_TestVector_1_AAD = new byte[] {
+            (byte) 0xf2, (byte) 0xa3, (byte) 0x07, (byte) 0x28, (byte) 0xed, (byte) 0x87,
+            (byte) 0x4e, (byte) 0xe0, (byte) 0x29, (byte) 0x83, (byte) 0xc2, (byte) 0x94,
+            (byte) 0x43, (byte) 0x5d, (byte) 0x3c, (byte) 0x16
+    };
+
+    /*
+     * From test vectors file.
+     */
+    private static final byte[] AES_128_GCM_NoPadding_TestVector_1_Tag = new byte[] {
+            (byte) 0xec, (byte) 0xaa, (byte) 0xe9, (byte) 0xfc, (byte) 0x68, (byte) 0x27,
+            (byte) 0x6a, (byte) 0x45, (byte) 0xab, (byte) 0x0c, (byte) 0xa3, (byte) 0xcb,
+            (byte) 0x9d, (byte) 0xd9, (byte) 0x53, (byte) 0x9f
+    };
+
+    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
     private static class CipherTestParam {
         public final String mode;
 
@@ -1956,20 +2010,26 @@ public final class CipherTest extends TestCase {
 
         public final byte[] iv;
 
+        public final byte[] aad;
+
         public final byte[] plaintext;
 
         public final byte[] ciphertext;
 
+        public final byte[] tag;
+
         public final byte[] plaintextPadded;
 
-        public CipherTestParam(String mode, byte[] key, byte[] iv, byte[] plaintext,
-                byte[] plaintextPadded, byte[] ciphertext) {
+        public CipherTestParam(String mode, byte[] key, byte[] iv, byte[] aad, byte[] plaintext,
+                byte[] plaintextPadded, byte[] ciphertext, byte[] tag) {
             this.mode = mode;
             this.key = key;
             this.iv = iv;
+            this.aad = aad;
             this.plaintext = plaintext;
             this.plaintextPadded = plaintextPadded;
             this.ciphertext = ciphertext;
+            this.tag = tag;
         }
     }
 
@@ -1977,15 +2037,27 @@ public final class CipherTest extends TestCase {
     static {
         CIPHER_TEST_PARAMS.add(new CipherTestParam("AES/ECB", AES_128_KEY,
                 null,
+                null,
                 AES_128_ECB_PKCS5Padding_TestVector_1_Plaintext,
                 AES_128_ECB_PKCS5Padding_TestVector_1_Plaintext_Padded,
-                AES_128_ECB_PKCS5Padding_TestVector_1_Encrypted));
+                AES_128_ECB_PKCS5Padding_TestVector_1_Encrypted,
+                null));
         if (IS_UNLIMITED) {
             CIPHER_TEST_PARAMS.add(new CipherTestParam("AES/CBC", AES_256_KEY,
                     AES_256_CBC_PKCS5Padding_TestVector_1_IV,
+                    null,
                     AES_256_CBC_PKCS5Padding_TestVector_1_Plaintext,
                     AES_256_CBC_PKCS5Padding_TestVector_1_Plaintext_Padded,
-                    AES_256_CBC_PKCS5Padding_TestVector_1_Ciphertext));
+                    AES_256_CBC_PKCS5Padding_TestVector_1_Ciphertext,
+                    null));
+            CIPHER_TEST_PARAMS.add(new CipherTestParam("AES/GCM",
+                    AES_128_GCM_NoPadding_TestVector_1_Key,
+                    AES_128_GCM_NoPadding_TestVector_1_IV,
+                    AES_128_GCM_NoPadding_TestVector_1_AAD,
+                    AES_128_GCM_NoPadding_TestVector_1_Plaintext,
+                    null,
+                    AES_128_GCM_NoPadding_TestVector_1_Ciphertext,
+                    AES_128_GCM_NoPadding_TestVector_1_Tag));
         }
     }
 
@@ -2019,12 +2091,22 @@ public final class CipherTest extends TestCase {
         SecretKey key = new SecretKeySpec(p.key, "AES");
         Cipher c = Cipher.getInstance(p.mode + "/PKCS5Padding", provider);
         AlgorithmParameterSpec spec = null;
-        if (p.iv != null) {
+        if (p.tag != null) {
+            assertNotNull(p.iv);
+            spec = new GCMParameterSpec(p.tag.length * 8, p.iv);
+        } else if (p.iv != null) {
             spec = new IvParameterSpec(p.iv);
         }
         c.init(Cipher.ENCRYPT_MODE, key, spec);
 
-        final byte[] actualCiphertext = c.doFinal(p.plaintext);
+        final byte[] actualCiphertext;
+        if (p.aad != null) {
+            c.updateAAD(p.aad);
+            c.update(p.plaintext);
+            actualCiphertext = c.doFinal(p.tag);
+        } else {
+            actualCiphertext = c.doFinal(p.plaintext);
+        }
         assertEquals(Arrays.toString(p.ciphertext), Arrays.toString(actualCiphertext));
 
         byte[] emptyCipherText = c.doFinal();
@@ -2033,16 +2115,16 @@ public final class CipherTest extends TestCase {
         c.init(Cipher.DECRYPT_MODE, key, spec);
 
         byte[] emptyPlainText = c.doFinal(emptyCipherText);
-        assertEquals(Arrays.toString(EmptyArray.BYTE), Arrays.toString(emptyPlainText));
+        assertEquals(Arrays.toString(EMPTY_BYTE_ARRAY), Arrays.toString(emptyPlainText));
 
         // empty decrypt
         {
             if (StandardNames.IS_RI) {
-                assertEquals(Arrays.toString(EmptyArray.BYTE),
+                assertEquals(Arrays.toString(EMPTY_BYTE_ARRAY),
                              Arrays.toString(c.doFinal()));
 
-                c.update(EmptyArray.BYTE);
-                assertEquals(Arrays.toString(EmptyArray.BYTE),
+                c.update(EMPTY_BYTE_ARRAY);
+                assertEquals(Arrays.toString(EMPTY_BYTE_ARRAY),
                              Arrays.toString(c.doFinal()));
             } else if (provider.equals("BC")) {
                 try {
@@ -2051,7 +2133,7 @@ public final class CipherTest extends TestCase {
                 } catch (IllegalBlockSizeException expected) {
                 }
                 try {
-                    c.update(EmptyArray.BYTE);
+                    c.update(EMPTY_BYTE_ARRAY);
                     c.doFinal();
                     fail();
                 } catch (IllegalBlockSizeException expected) {
@@ -2059,7 +2141,7 @@ public final class CipherTest extends TestCase {
             } else if (provider.equals("AndroidOpenSSL")) {
                 assertNull(c.doFinal());
 
-                c.update(EmptyArray.BYTE);
+                c.update(EMPTY_BYTE_ARRAY);
                 assertNull(c.doFinal());
             } else {
                 throw new AssertionError("Define your behavior here for " + provider);
