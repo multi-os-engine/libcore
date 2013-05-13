@@ -89,7 +89,7 @@ public class Modifier {
     public static final int ABSTRACT = 0x400;
 
     /**
-     * The {@code int} value representing the {@code strict} modifier.
+     * The {@code int} value representing the {@code strictfp} modifier.
      */
     public static final int STRICT = 0x800;
 
