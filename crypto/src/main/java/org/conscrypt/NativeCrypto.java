@@ -289,6 +289,19 @@ public final class NativeCrypto {
                                              int offset, int length, long key);
 
 
+    // --- GCM parameters ------------------------------------------------------
+
+    public static native Object[] d2i_GCM_PARAMS(byte[] encoded);
+
+    public static native byte[] i2d_GCM_PARAMS(byte[] nonce, int icvlen);
+
+    /* Used with EVP_CIPHER_CTX_ctrl */
+    public static final int EVP_CTRL_GCM_SET_IVLEN = 0x9;
+
+    public static final int EVP_CTRL_GCM_GET_TAG = 0x10;
+
+    public static final int EVP_CTRL_GCM_SET_TAG = 0x11;
+
     // --- Block ciphers -------------------------------------------------------
 
     public static native long EVP_get_cipherbyname(String string);
@@ -313,6 +326,8 @@ public final class NativeCrypto {
     public static native void EVP_CIPHER_CTX_set_padding(long ctx, boolean enablePadding);
 
     public static native void EVP_CIPHER_CTX_set_key_length(long ctx, int keyBitSize);
+
+    public static native int EVP_CIPHER_CTX_ctrl(long ctx, int cmd, int arg0, byte[] arg1);
 
     public static native void EVP_CIPHER_CTX_cleanup(long ctx);
 

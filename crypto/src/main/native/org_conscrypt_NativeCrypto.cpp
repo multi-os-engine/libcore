@@ -3382,6 +3382,74 @@ static jint NativeCrypto_EVP_VerifyFinal(JNIEnv* env, jclass, jlong ctxRef, jbyt
     return ok;
 }
 
+
+typedef struct {
+    ASN1_OCTET_STRING* nonce;
+    ASN1_INTEGER *icvlen;
+} GCM_PARAMS;
+
+ASN1_SEQUENCE(GCM_PARAMS) = {
+        ASN1_SIMPLE(GCM_PARAMS, nonce,  ASN1_OCTET_STRING),
+        ASN1_SIMPLE(GCM_PARAMS, icvlen, ASN1_INTEGER)
+} ASN1_SEQUENCE_END(GCM_PARAMS)
+
+IMPLEMENT_ASN1_FUNCTIONS(GCM_PARAMS)
+
+struct GCM_PARAMS_Delete {
+    void operator()(GCM_PARAMS* p) const {
+        GCM_PARAMS_free(p);
+    }
+};
+typedef UniquePtr<GCM_PARAMS, GCM_PARAMS_Delete> Unique_GCM_PARAMS;
+
+static jbyteArray NativeCrypto_i2d_GCM_PARAMS(JNIEnv* env, jclass, jbyteArray nonceArray, jint icvlen) {
+    JNI_TRACE("i2d_GCM_PARAMS(%p, %d)", nonceArray, icvlen);
+
+    ScopedByteArrayRO nonceBytes(env, nonceArray);
+    if (nonceBytes.get() == NULL) {
+        JNI_TRACE("i2d_GCM_PARAMS(%p, %d) => nonceArray == NULL", nonceArray, icvlen);
+        return NULL;
+    }
+
+    Unique_GCM_PARAMS gcm(GCM_PARAMS_new());
+
+    gcm->nonce = ASN1_OCTET_STRING_new();
+    const unsigned char* tmp = reinterpret_cast<const unsigned char*>(nonceBytes.get());
+    if (ASN1_OCTET_STRING_set(gcm->nonce, tmp, nonceBytes.size()) != 1) {
+        JNI_TRACE("i2d_GCM_PARAMS(%p, %d) => could not convert nonce", nonceArray, icvlen);
+        jniThrowException(env, "java/io/IOException", "i2d_GCM_PARAMS nonce");
+        return NULL;
+    }
+
+    gcm->icvlen = ASN1_INTEGER_new();
+    if (ASN1_INTEGER_set(gcm->icvlen, icvlen) != 1) {
+        JNI_TRACE("i2d_GCM_PARAMS(%p, %d) => could not convert icvlen", nonceArray, icvlen);
+        jniThrowException(env, "java/io/IOException", "i2d_GCM_PARAMS icvlen");
+        return NULL;
+    }
+
+    return ASN1ToByteArray<GCM_PARAMS, i2d_GCM_PARAMS>(env, gcm.get());
+}
+
+static jobjectArray NativeCrypto_d2i_GCM_PARAMS(JNIEnv* env, jclass, jbyteArray gcmBytes) {
+    JNI_TRACE("d2i_GCM_PARAMS(%p)", gcmBytes);
+
+    Unique_GCM_PARAMS gcm(ByteArrayToASN1<GCM_PARAMS, d2i_GCM_PARAMS>(env, gcmBytes));
+    if (gcm.get() == NULL) {
+        JNI_TRACE("d2i_GCM_PARAMS(%p) => gcmBytes == NULL", gcmArray);
+        return NULL;
+    }
+
+    ScopedLocalRef<jobjectArray> gcmJava(env, env->NewObjectArray(2, objectArrayClass, NULL));
+    env->SetObjectArrayElement(gcmJava.get(), 0,
+            ASN1ToByteArray<ASN1_OCTET_STRING, i2d_ASN1_OCTET_STRING>(env, gcm->nonce));
+    env->SetObjectArrayElement(gcmJava.get(), 1,
+            env->CallStaticObjectMethod(integerClass, integer_valueOfMethod, gcm->icvlen));
+
+    JNI_TRACE("d2i_GCM_PARAMS(%p) => %p", gcmBytes, gcmJava.get());
+    return gcmJava.release();
+}
+
 static jlong NativeCrypto_EVP_get_cipherbyname(JNIEnv* env, jclass, jstring algorithm) {
     JNI_TRACE("EVP_get_cipherbyname(%p)", algorithm);
     if (algorithm == NULL) {
@@ -3478,15 +3546,19 @@ static jint NativeCrypto_EVP_CipherUpdate(JNIEnv* env, jclass, jlong ctxRef, jby
         return 0;
     }
 
-    ScopedByteArrayRW outBytes(env, outArray);
-    if (outBytes.get() == NULL) {
-        return 0;
-    }
-    const size_t outSize = outBytes.size();
-    if (size_t(outOffset + inLength) > outSize) {
-        jniThrowException(env, "java/lang/IndexOutOfBoundsException",
-                "out.length < inSize + outOffset + blockSize - 1");
-        return 0;
+    // outBytes can be null if we're updating authenticated data.
+    ScopedByteArrayRW outBytes(env);
+    size_t outSize;
+    if (outArray != NULL) {
+        outBytes.reset(outArray);
+        outSize = outBytes.size();
+        if (size_t(outOffset + inLength) > outSize) {
+            jniThrowException(env, "java/lang/IndexOutOfBoundsException",
+                    "out.length < inSize + outOffset + blockSize - 1");
+            return 0;
+        }
+    } else {
+        outOffset = 0;
     }
 
     JNI_TRACE("ctx=%p EVP_CipherUpdate in=%p in.length=%d inOffset=%d inLength=%d out=%p out.length=%d outOffset=%d",
@@ -7815,6 +7887,8 @@ static JNINativeMethod sNativeCryptoMethods[] = {
     NATIVE_METHOD(NativeCrypto, EVP_DigestSignInit, "(JJJ)V"),
     NATIVE_METHOD(NativeCrypto, EVP_DigestSignUpdate, "(J[B)V"),
     NATIVE_METHOD(NativeCrypto, EVP_DigestSignFinal, "(J)[B"),
+    NATIVE_METHOD(NativeCrypto, d2i_GCM_PARAMS, "([B)[Ljava/lang/Object;"),
+    NATIVE_METHOD(NativeCrypto, i2d_GCM_PARAMS, "([BI)[B"),
     NATIVE_METHOD(NativeCrypto, EVP_get_cipherbyname, "(Ljava/lang/String;)J"),
     NATIVE_METHOD(NativeCrypto, EVP_CipherInit_ex, "(JJ[B[BZ)V"),
     NATIVE_METHOD(NativeCrypto, EVP_CipherUpdate, "(J[BI[BII)I"),

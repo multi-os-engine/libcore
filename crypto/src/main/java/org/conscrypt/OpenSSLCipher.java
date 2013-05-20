@@ -16,6 +16,7 @@
 
 package org.conscrypt;
 
+import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -38,6 +39,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import org.conscrypt.util.EmptyArray;
@@ -55,6 +57,7 @@ public abstract class OpenSSLCipher extends CipherSpi {
         ECB,
         OFB, OFB64, OFB128,
         PCBC,
+        GCM,
     }
 
     /**
@@ -147,6 +150,14 @@ public abstract class OpenSSLCipher extends CipherSpi {
         return false;
     }
 
+    protected boolean supportsVariableSizeIv() {
+        return false;
+    }
+
+    protected boolean supportsTag() {
+        return false;
+    }
+
     @Override
     protected void engineSetMode(String modeStr) throws NoSuchAlgorithmException {
         final Mode mode;
@@ -217,7 +228,8 @@ public abstract class OpenSSLCipher extends CipherSpi {
         return null;
     }
 
-    private void engineInitInternal(int opmode, Key key, byte[] iv) throws InvalidKeyException, InvalidAlgorithmParameterException {
+    private void engineInitInternal(int opmode, Key key, byte[] iv, int tagLen)
+            throws InvalidKeyException, InvalidAlgorithmParameterException {
         if (opmode == Cipher.ENCRYPT_MODE || opmode == Cipher.WRAP_MODE) {
             encrypting = true;
         } else if (opmode == Cipher.DECRYPT_MODE || opmode == Cipher.UNWRAP_MODE) {
@@ -244,14 +256,28 @@ public abstract class OpenSSLCipher extends CipherSpi {
                     + (encodedKey.length * 8) + " and mode = " + mode);
         }
 
-        final int ivLength = NativeCrypto.EVP_CIPHER_iv_length(cipherType);
-        if (iv == null) {
-            iv = new byte[ivLength];
-        } else if (iv.length != ivLength) {
-            throw new InvalidAlgorithmParameterException("expected IV length of " + ivLength);
+        final int ivLength;
+        if (supportsVariableSizeIv()) {
+            ivLength = iv == null ? 0 : iv.length;
+            NativeCrypto.EVP_CIPHER_CTX_ctrl(cipherCtx.getContext(),
+                    NativeCrypto.EVP_CTRL_GCM_SET_IVLEN, ivLength, null);
+        } else {
+            ivLength = NativeCrypto.EVP_CIPHER_iv_length(cipherType);
+            if (iv.length != ivLength) {
+                throw new InvalidAlgorithmParameterException("expected IV length of " + ivLength);
+            }
         }
 
-        this.iv = iv;
+        if (supportsTag() && tagLen != -1) {
+            NativeCrypto.EVP_CIPHER_CTX_ctrl(cipherCtx.getContext(),
+                    NativeCrypto.EVP_CTRL_GCM_SET_TAG, tagLen, tag);
+        }
+
+        if (iv == null) {
+            this.iv = new byte[ivLength];
+        } else {
+            this.iv = iv;
+        }
 
         if (supportsVariableSizeKey()) {
             NativeCrypto.EVP_CipherInit_ex(cipherCtx.getContext(), cipherType, null, null,
@@ -273,7 +299,7 @@ public abstract class OpenSSLCipher extends CipherSpi {
     @Override
     protected void engineInit(int opmode, Key key, SecureRandom random) throws InvalidKeyException {
         try {
-            engineInitInternal(opmode, key, null);
+            engineInitInternal(opmode, key, null, -1);
         } catch (InvalidAlgorithmParameterException e) {
             throw new RuntimeException(e);
         }
@@ -283,14 +309,21 @@ public abstract class OpenSSLCipher extends CipherSpi {
     protected void engineInit(int opmode, Key key, AlgorithmParameterSpec params,
             SecureRandom random) throws InvalidKeyException, InvalidAlgorithmParameterException {
         final byte[] iv;
-        if (params instanceof IvParameterSpec) {
+        final int tagLen;
+        if (params instanceof GCMParameterSpec) {
+            GCMParameterSpec gcmParams = (GCMParameterSpec) params;
+            iv = gcmParams.getIV();
+            tagLen = gcmParams.getTLen();
+        } else if (params instanceof IvParameterSpec) {
             IvParameterSpec ivParams = (IvParameterSpec) params;
             iv = ivParams.getIV();
+            tagLen = -1;
         } else {
             iv = null;
+            tagLen = -1;
         }
 
-        engineInitInternal(opmode, key, iv);
+        engineInitInternal(opmode, key, iv, tagLen);
     }
 
     @Override
@@ -358,6 +391,18 @@ public abstract class OpenSSLCipher extends CipherSpi {
             int outputOffset) throws ShortBufferException {
         final int maximumLen = getOutputSize(inputLen);
         return updateInternal(input, inputOffset, inputLen, output, outputOffset, maximumLen);
+    }
+
+    @Override
+    protected void engineUpdateAAD(byte[] input, int inputOffset, int inputLen) {
+        // TODO Auto-generated method stub
+        super.engineUpdateAAD(input, inputOffset, inputLen);
+    }
+
+    @Override
+    protected void engineUpdateAAD(ByteBuffer input) {
+        // TODO Auto-generated method stub
+        super.engineUpdateAAD(input);
     }
 
     /**
@@ -590,6 +635,22 @@ public abstract class OpenSSLCipher extends CipherSpi {
             }
         }
 
+        public static class GCM extends AES {
+            public GCM() {
+                super(Mode.GCM, Padding.NOPADDING);
+            }
+
+            @Override
+            protected boolean supportsVariableSizeIv() {
+                return true;
+            }
+
+            @Override
+            protected boolean supportsTag() {
+                return true;
+            }
+        }
+
         @Override
         protected void checkSupportedKeySize(int keyLength) throws InvalidKeyException {
             switch (keyLength) {
@@ -613,6 +674,7 @@ public abstract class OpenSSLCipher extends CipherSpi {
                 case CTR:
                 case ECB:
                 case OFB:
+                case GCM:
                     return;
                 default:
                     throw new NoSuchAlgorithmException("Unsupported mode " + mode.toString());

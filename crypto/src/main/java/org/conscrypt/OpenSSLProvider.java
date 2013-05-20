@@ -187,6 +187,7 @@ public final class OpenSSLProvider extends Provider {
         put("Cipher.AES/CTR/PKCS5Padding", prefix + "OpenSSLCipher$AES$CTR$PKCS5Padding");
         put("Cipher.AES/OFB/NoPadding", prefix + "OpenSSLCipher$AES$OFB$NoPadding");
         put("Cipher.AES/OFB/PKCS5Padding", prefix + "OpenSSLCipher$AES$OFB$PKCS5Padding");
+        put("Cipher.AES/GCM/NoPadding", prefix + "OpenSSLCipher$AES$GCM");
 
         put("Cipher.DESEDE/CBC/NoPadding", prefix + "OpenSSLCipher$DESEDE$CBC$NoPadding");
         put("Cipher.DESEDE/CBC/PKCS5Padding", prefix + "OpenSSLCipher$DESEDE$CBC$PKCS5Padding");
