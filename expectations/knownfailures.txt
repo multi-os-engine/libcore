@@ -1691,5 +1691,10 @@
     "libcore.java.security.cert.X509CertificateNistPkitsTest#testVerifyingPathswithSelfIssuedCertificates_ValidBasicSelfIssuedCRLSigningKeyTest6",
     "libcore.java.security.cert.X509CertificateNistPkitsTest#testVerifyingPathswithSelfIssuedCertificates_ValidBasicSelfIssuedNewWithOldTest4"
   ]
+},
+{
+  description: "Added as part of 'Add classes for AEAD encryption' but is not yet passing",
+  bug: 9197439,
+  name: "libcore.javax.crypto.CipherTest#testCipher_updateAAD_BeforeInit_Failure"
 }
 ]
