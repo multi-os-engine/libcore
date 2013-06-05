@@ -769,7 +769,7 @@ static jbyteArray bignumToArray(JNIEnv* env, const BIGNUM* source, const char* s
         *tmp = 0x00;
     }
 
-    if (BN_bn2bin(source, tmp + 1) <= 0) {
+    if (len > 1 && BN_bn2bin(source, tmp + 1) <= 0) {
         throwExceptionIfNecessary(env, "bignumToArray");
         return NULL;
     }
