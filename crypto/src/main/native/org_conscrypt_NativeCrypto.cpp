@@ -5939,13 +5939,17 @@ static int client_cert_cb(SSL* ssl, X509** x509Out, EVP_PKEY** pkeyOut) {
     }
 
     // Check for values set from Java
-    X509*     certificate = SSL_get_certificate(ssl);
-    EVP_PKEY* privatekey  = SSL_get_privatekey(ssl);
     int result = 0;
-    if (certificate != NULL && privatekey != NULL) {
+    X509* certificate;
+    EVP_PKEY* privatekey;
+    if ((certificate = SSL_get_certificate(ssl)) != NULL
+            && (privatekey = SSL_get_privatekey(ssl)) != NULL) {
         *x509Out = certificate;
         *pkeyOut = privatekey;
         result = 1;
+    } else {
+        // Some error conditions return NULL, so make sure it doesn't linger.
+        freeOpenSslErrorState();
     }
     JNI_TRACE("ssl=%p client_cert_cb => *x509=%p *pkey=%p %d", ssl, *x509Out, *pkeyOut, result);
     return result;
@@ -7102,6 +7106,8 @@ static jobjectArray NativeCrypto_SSL_get_certificate(JNIEnv* env, jclass, jlong 
     X509* certificate = SSL_get_certificate(ssl);
     if (certificate == NULL) {
         JNI_TRACE("ssl=%p NativeCrypto_SSL_get_certificate => NULL", ssl);
+        // SSL_get_certificate can return NULL during an error as well.
+        freeOpenSslErrorState();
         return NULL;
     }
 
