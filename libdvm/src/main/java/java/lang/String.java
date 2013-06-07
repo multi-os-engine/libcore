@@ -1469,9 +1469,10 @@ outer:
     }
 
     /**
-     * Copies the characters in this string to a character array.
-     *
-     * @return a character array containing the characters of this string.
+     * Returns a new {@code char} array containing the characters in this string.
+     * This is mainly useful if you're going to transform the characters in the string
+     * in a length-preserving way. If you just want to iterate over the characters in
+     * the string, use {@link #charAt} instead.
      */
     public char[] toCharArray() {
         char[] buffer = new char[count];
