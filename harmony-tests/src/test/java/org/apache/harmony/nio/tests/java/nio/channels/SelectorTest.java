@@ -290,11 +290,10 @@ public class SelectorTest extends TestCase {
 
         final long SELECT_TIMEOUT = 2000;
 
-        long time1 = System.currentTimeMillis();
+        long t0 = System.nanoTime();
         selector.select(SELECT_TIMEOUT);
-        long time2 = System.currentTimeMillis();
-        assertEquals("elapsed time", SELECT_TIMEOUT, (time2 - time1),
-                     SELECT_TIMEOUT * 0.05); // 5% accuracy
+        long t1 = System.nanoTime();
+        assertTrue((t1 - t0) > SELECT_TIMEOUT * 1000);
     }
 
     /**
