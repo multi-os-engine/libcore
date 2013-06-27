@@ -742,8 +742,38 @@ public abstract class PullParserTest extends TestCase {
         assertEquals("foo", parser.getName());
     }
 
+    public void testEofInElementSpecRelaxed() throws Exception {
+        assertRelaxedParseFailure("<!ELEMENT foo (unterminated");
+    }
+
+    public void testEofInAttributeValue() throws Exception {
+        assertParseFailure("<!ATTLIST foo x \"unterminated");
+    }
+
+    public void testEofInEntityValue() throws Exception {
+        assertParseFailure("<!ENTITY aaa \"unterminated");
+    }
+
+    public void testEofInStartTagAttributeValue() throws Exception {
+        assertParseFailure("<long foo=\"unterminated");
+    }
+
+    public void testEofInReadChar() throws Exception {
+        assertRelaxedParseFailure("<!ELEMENT foo EMPTY"); // EOF in read('>')
+    }
+
     private void assertParseFailure(String xml) throws Exception {
         XmlPullParser parser = newPullParser();
+        assertParseFailure(xml, parser);
+    }
+
+    private void assertRelaxedParseFailure(String xml) throws Exception {
+        XmlPullParser parser = newPullParser();
+        parser.setFeature("http://xmlpull.org/v1/doc/features.html#relaxed", true);
+        assertParseFailure(xml, parser);
+    }
+
+    private void assertParseFailure(String xml, XmlPullParser parser) throws Exception {
         parser.setInput(new StringReader(xml));
         try {
             while (parser.next() != XmlPullParser.END_DOCUMENT) {
