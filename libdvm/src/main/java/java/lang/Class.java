@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import libcore.util.CollectionUtils;
 import libcore.util.EmptyArray;
 import org.apache.harmony.kernel.vm.StringUtils;
@@ -750,9 +751,17 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
      * void} then an empty array is returned.
      */
     public Type[] getGenericInterfaces() {
-        GenericSignatureParser parser = new GenericSignatureParser(getClassLoader());
-        parser.parseForClass(this, getSignatureAttribute());
-        return Types.getClonedTypeArray(parser.interfaceTypes);
+        Type[] result;
+        synchronized (Caches.genericInterfaces) {
+            result = Caches.genericInterfaces.get(this);
+            if (result == null) {
+                GenericSignatureParser parser = new GenericSignatureParser(getClassLoader());
+                parser.parseForClass(this, getSignatureAttribute());
+                result = Types.getClonedTypeArray(parser.interfaceTypes);
+                Caches.genericInterfaces.put(this, result);
+            }
+       }
+       return result;
     }
 
     /**
@@ -1220,4 +1229,9 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
         System.arraycopy(tail, 0, result, head.length, tail.length);
         return result;
     }
+
+    private static class Caches {
+        private static final Map<Class, Type[]> genericInterfaces = new HashMap<Class, Type[]>();
+    }
+
 }
