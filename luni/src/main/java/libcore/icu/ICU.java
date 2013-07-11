@@ -135,10 +135,11 @@ public final class ICU {
       boolean sawDay = false;
       boolean sawMonth = false;
       boolean sawYear = false;
+      boolean sawEra = false;
 
       for (int i = 0; i < pattern.length(); ++i) {
         char ch = pattern.charAt(i);
-        if (ch == 'd' || ch == 'L' || ch == 'M' || ch == 'y') {
+        if (ch == 'd' || ch == 'L' || ch == 'M' || ch == 'y' || ch == 'G') {
           if (ch == 'd' && !sawDay) {
             result[resultIndex++] = 'd';
             sawDay = true;
@@ -148,6 +149,9 @@ public final class ICU {
           } else if ((ch == 'y') && !sawYear) {
             result[resultIndex++] = 'y';
             sawYear = true;
+          } else if (ch == 'G' && !sawEra) {
+            // Do not add 'G' to result since it is not used elsewhere.
+            sawEra = true;
           }
         } else if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
           throw new IllegalArgumentException("Bad pattern character '" + ch + "' in " + pattern);
