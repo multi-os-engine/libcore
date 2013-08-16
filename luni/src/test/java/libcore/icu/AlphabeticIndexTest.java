@@ -152,11 +152,11 @@ public class AlphabeticIndexTest extends junit.framework.TestCase {
     // Traditional Chinese
     // …, [1-33, 35, 36, 39, 48]劃, …
     // Shen/Chen
-    AlphabeticIndex.ImmutableIndex zh_TW = createIndex(new Locale("zh", "TW"));
-    assertHasLabel(zh_TW, "\u6c88", "7\u5283");
-    assertHasLabel(zh_TW, "\u700b", "18\u5283");
+    AlphabeticIndex.ImmutableIndex zh_HK = createIndex(new Locale("zh", "HK"));
+    assertHasLabel(zh_HK, "\u6c88", "7\u5283");
+    assertHasLabel(zh_HK, "\u700b", "18\u5283");
     // Jia/Gu
-    assertHasLabel(zh_TW, "\u8d3e", "10\u5283");
+    assertHasLabel(zh_HK, "\u8d3e", "10\u5283");
   }
 
   public void test_constructor_NPE() throws Exception {
