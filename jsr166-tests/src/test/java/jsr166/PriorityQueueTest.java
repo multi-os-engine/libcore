@@ -489,4 +489,20 @@ public class PriorityQueueTest extends JSR166TestCase {
         }
         assertTrue(y.isEmpty());
     }
+
+    /**
+     * removeAt(.) must sometimes perform siftUp(.).
+     */
+    public void testRemoveAtSiftUp() {
+        PriorityQueue<Integer> q = new PriorityQueue<Integer>();
+        // Adding a valid heap will keep elements in the same order
+        for (int i : new int[] { 0, 3, 1, 4, 5, 6, 2 }) {
+            q.add(i);
+        }
+        q.remove(4);  // 2 replaces 4 but parent is 3, siftUp(.) is needed
+        for (int i : new int[] { 0, 1, 2, 3, 5, 6 }) {
+            assertEquals(i, q.poll());
+        }
+        assertNull(q.poll());
+    }
 }
