@@ -25,9 +25,12 @@
 #include "zlib.h"
 #include "zutil.h" // For DEF_WBITS and DEF_MEM_LEVEL.
 
-static void throwExceptionForZlibError(JNIEnv* env, const char* exceptionClassName, int error) {
+static void throwExceptionForZlibError(JNIEnv* env, const char* exceptionClassName, int error,
+        const char *msg) {
     if (error == Z_MEM_ERROR) {
         jniThrowOutOfMemoryError(env, NULL);
+    } else if (msg != NULL) {
+        jniThrowException(env, exceptionClassName, msg);
     } else {
         jniThrowException(env, exceptionClassName, zError(error));
     }
@@ -64,7 +67,7 @@ public:
             err = deflateSetDictionary(&stream, dictionary, len);
         }
         if (err != Z_OK) {
-            throwExceptionForZlibError(env, "java/lang/IllegalArgumentException", err);
+            throwExceptionForZlibError(env, "java/lang/IllegalArgumentException", err, NULL);
             return;
         }
         mDict.reset(dictionaryBytes.release());
