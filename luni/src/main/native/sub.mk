@@ -9,6 +9,7 @@ LOCAL_SRC_FILES := \
 	IcuUtilities.cpp \
 	JniException.cpp \
 	NetworkUtilities.cpp \
+	ZipUtilities.cpp \
 	Register.cpp \
 	cbigint.cpp \
 	java_io_Console.cpp \
