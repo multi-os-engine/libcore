@@ -25,13 +25,9 @@
 #include "zlib.h"
 #include "zutil.h" // For DEF_WBITS and DEF_MEM_LEVEL.
 
-static void throwExceptionForZlibError(JNIEnv* env, const char* exceptionClassName, int error) {
-    if (error == Z_MEM_ERROR) {
-        jniThrowOutOfMemoryError(env, NULL);
-    } else {
-        jniThrowException(env, exceptionClassName, zError(error));
-    }
-}
+class NativeZipStream;
+static void throwExceptionForZlibError(JNIEnv* env, const char* exceptionClassName, int error,
+        NativeZipStream* stream);
 
 class NativeZipStream {
 public:
@@ -64,7 +60,7 @@ public:
             err = deflateSetDictionary(&stream, dictionary, len);
         }
         if (err != Z_OK) {
-            throwExceptionForZlibError(env, "java/lang/IllegalArgumentException", err);
+            throwExceptionForZlibError(env, "java/lang/IllegalArgumentException", err, NULL);
             return;
         }
         mDict.reset(dictionaryBytes.release());
@@ -95,6 +91,17 @@ private:
 
 static NativeZipStream* toNativeZipStream(jlong address) {
     return reinterpret_cast<NativeZipStream*>(static_cast<uintptr_t>(address));
+}
+
+static void throwExceptionForZlibError(JNIEnv* env, const char* exceptionClassName, int error,
+        NativeZipStream* stream) {
+    if (error == Z_MEM_ERROR) {
+        jniThrowOutOfMemoryError(env, NULL);
+    } else if (stream != NULL && stream->stream.msg != NULL) {
+        jniThrowException(env, exceptionClassName, stream->stream.msg);
+    } else {
+        jniThrowException(env, exceptionClassName, zError(error));
+    }
 }
 
 #endif  // ZIP_UTILITIES_H_included

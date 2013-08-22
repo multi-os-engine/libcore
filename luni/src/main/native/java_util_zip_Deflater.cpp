@@ -56,7 +56,7 @@ static jlong Deflater_createStream(JNIEnv * env, jobject, jint level, jint strat
     int memLevel = DEF_MEM_LEVEL;
     int err = deflateInit2(&jstream->stream, level, Z_DEFLATED, windowBits, memLevel, strategy);
     if (err != Z_OK) {
-        throwExceptionForZlibError(env, "java/lang/IllegalArgumentException", err);
+        throwExceptionForZlibError(env, "java/lang/IllegalArgumentException", err, jstream.get());
         return -1;
     }
     return reinterpret_cast<uintptr_t>(jstream.release());
@@ -92,7 +92,7 @@ static jint Deflater_deflateImpl(JNIEnv* env, jobject recv, jbyteArray buf, int 
         // input and more output space to continue compressing".
         break;
     default:
-        throwExceptionForZlibError(env, "java/util/zip/DataFormatException", err);
+        throwExceptionForZlibError(env, "java/util/zip/DataFormatException", err, stream);
         return -1;
     }
 
@@ -116,7 +116,7 @@ static void Deflater_resetImpl(JNIEnv* env, jobject, jlong handle) {
     NativeZipStream* stream = toNativeZipStream(handle);
     int err = deflateReset(&stream->stream);
     if (err != Z_OK) {
-        throwExceptionForZlibError(env, "java/lang/IllegalArgumentException", err);
+        throwExceptionForZlibError(env, "java/lang/IllegalArgumentException", err, stream);
     }
 }
 
@@ -130,7 +130,7 @@ static void Deflater_setLevelsImpl(JNIEnv* env, jobject, int level, int strategy
     stream->stream.avail_out = 0;
     int err = deflateParams(&stream->stream, level, strategy);
     if (err != Z_OK) {
-        throwExceptionForZlibError(env, "java/lang/IllegalStateException", err);
+        throwExceptionForZlibError(env, "java/lang/IllegalStateException", err, stream);
     }
 }
 
