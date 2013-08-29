@@ -211,6 +211,23 @@ public final class NativeDecimalFormat implements Cloneable {
                 obj.isGroupingUsed() == this.isGroupingUsed();
     }
 
+    public String toString() {
+      return getClass().getName() + "[\"" + toPattern() + "\"" +
+          ",isDecimalSeparatorAlwaysShown=" + isDecimalSeparatorAlwaysShown() +
+          ",groupingSize=" + getGroupingSize() +
+          ",multiplier=" + getMultiplier() +
+          ",negativePrefix=" + getNegativePrefix() +
+          ",negativeSuffix=" + getNegativeSuffix() +
+          ",positivePrefix=" + getPositivePrefix() +
+          ",positiveSuffix=" + getPositiveSuffix() +
+          ",maxIntegerDigits=" + getMaximumIntegerDigits() +
+          ",maxFractionDigits=" + getMaximumFractionDigits() +
+          ",minIntegerDigits=" + getMinimumIntegerDigits() +
+          ",minFractionDigits=" + getMinimumFractionDigits() +
+          ",grouping=" + isGroupingUsed() +
+          "]";
+    }
+
     /**
      * Copies the DecimalFormatSymbols settings into our native peer in bulk.
      */
@@ -595,7 +612,7 @@ public final class NativeDecimalFormat implements Cloneable {
             return data[pos + 2];
         }
 
-        private static Format.Field fields[] = {
+        private static final Format.Field[] fields = {
             // The old java field values were 0 for integer and 1 for fraction.
             // The new java field attributes are all objects.  ICU assigns the values
             // starting from 0 in the following order; note that integer and

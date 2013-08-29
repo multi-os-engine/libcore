@@ -574,6 +574,7 @@ public class DecimalFormat extends NumberFormat {
      */
     public void applyLocalizedPattern(String pattern) {
         ndf.applyLocalizedPattern(pattern);
+        updateFieldsFromNative();
     }
 
     /**
@@ -587,6 +588,14 @@ public class DecimalFormat extends NumberFormat {
      */
     public void applyPattern(String pattern) {
         ndf.applyPattern(pattern);
+        updateFieldsFromNative();
+    }
+
+    private void updateFieldsFromNative() {
+        maximumIntegerDigits = ndf.getMaximumIntegerDigits();
+        minimumIntegerDigits = ndf.getMinimumIntegerDigits();
+        maximumFractionDigits = ndf.getMaximumFractionDigits();
+        minimumFractionDigits = ndf.getMinimumFractionDigits();
     }
 
     /**
@@ -644,6 +653,9 @@ public class DecimalFormat extends NumberFormat {
         if (object == null) {
             throw new NullPointerException("object == null");
         }
+        if (roundingMode == RoundingMode.UNNECESSARY && (object instanceof Float || object instanceof Double)) {
+            checkRoundingUnnecessary(((Number) object).doubleValue());
+        }
         return ndf.formatToCharacterIterator(object);
     }
 
@@ -656,23 +668,30 @@ public class DecimalFormat extends NumberFormat {
         }
     }
 
+    private void checkRoundingUnnecessary(Object value) {
+        // ICU4C doesn't support this rounding mode, so we have to fake it.
+        // This implementation reduces code duplication, but adds boxing
+        // overhead and sends you all the way back through. But since we
+        // have to format your string multiple times in this mode, you're already
+        // screwed performance-wise.
+        try {
+            setRoundingMode(RoundingMode.UP);
+            String upResult = format(value, new StringBuffer(), new FieldPosition(0)).toString();
+            setRoundingMode(RoundingMode.DOWN);
+            String downResult = format(value, new StringBuffer(), new FieldPosition(0)).toString();
+            if (!upResult.equals(downResult)) {
+                throw new ArithmeticException("rounding mode UNNECESSARY but rounding required");
+            }
+        } finally {
+            setRoundingMode(RoundingMode.UNNECESSARY);
+        }
+    }
+
     @Override
     public StringBuffer format(double value, StringBuffer buffer, FieldPosition position) {
         checkBufferAndFieldPosition(buffer, position);
-        // All float/double/Float/Double formatting ends up here...
         if (roundingMode == RoundingMode.UNNECESSARY) {
-            // ICU4C doesn't support this rounding mode, so we have to fake it.
-            try {
-                setRoundingMode(RoundingMode.UP);
-                String upResult = format(value, new StringBuffer(), new FieldPosition(0)).toString();
-                setRoundingMode(RoundingMode.DOWN);
-                String downResult = format(value, new StringBuffer(), new FieldPosition(0)).toString();
-                if (!upResult.equals(downResult)) {
-                    throw new ArithmeticException("rounding mode UNNECESSARY but rounding required");
-                }
-            } finally {
-                setRoundingMode(RoundingMode.UNNECESSARY);
-            }
+            checkRoundingUnnecessary(value);
         }
         buffer.append(ndf.formatDouble(value, position));
         return buffer;
@@ -681,6 +700,9 @@ public class DecimalFormat extends NumberFormat {
     @Override
     public StringBuffer format(long value, StringBuffer buffer, FieldPosition position) {
         checkBufferAndFieldPosition(buffer, position);
+        if (roundingMode == RoundingMode.UNNECESSARY) {
+            checkRoundingUnnecessary(value);
+        }
         buffer.append(ndf.formatLong(value, position));
         return buffer;
     }
@@ -826,16 +848,10 @@ public class DecimalFormat extends NumberFormat {
         // In this implementation, NativeDecimalFormat is wrapped to
         // fulfill most of the format and parse feature. And this method is
         // delegated to the wrapped instance of NativeDecimalFormat.
+        super.setParseIntegerOnly(value);
         ndf.setParseIntegerOnly(value);
     }
 
-    /**
-     * Indicates whether parsing with this decimal format will only
-     * return numbers of type {@code java.lang.Integer}.
-     *
-     * @return {@code true} if this {@code DecimalFormat}'s parse method only
-     *         returns {@code java.lang.Integer}; {@code false} otherwise.
-     */
     @Override
     public boolean isParseIntegerOnly() {
         return ndf.isParseIntegerOnly();
@@ -1244,4 +1260,6 @@ public class DecimalFormat extends NumberFormat {
             ndf.setRoundingMode(roundingMode, roundingIncrement);
         }
     }
+
+    public String toString() { return ndf.toString(); }
 }

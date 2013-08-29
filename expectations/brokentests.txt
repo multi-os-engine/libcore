@@ -757,24 +757,6 @@
   substring: "junit.framework.AssertionFailedError: expected:<3> but was:<2>"
 },
 {
-  description: "ICU doesn't provide localized pattern characters, and these tests assume the locale they're using has them.",
-  result: EXEC_FAILED,
-  name: "org.apache.harmony.text.tests.java.text.SimpleDateFormatTest#test_applyLocalizedPatternLjava_lang_String",
-  substring: "java.lang.IllegalArgumentException: Invalid pattern character 'u' in 'GuMtkHmsSEDFwWahKz'"
-},
-{
-  description: "ICU doesn't provide localized pattern characters, and these tests assume the locale they're using has them.",
-  result: EXEC_FAILED,
-  name: "org.apache.harmony.text.tests.java.text.SimpleDateFormatTest#test_toLocalizedPattern",
-  substring: "junit.framework.AssertionFailedError: Wrong pattern: GyMdkHmsSEDFwWahKz"
-},
-{
-  description: "ICU doesn't provide localized pattern characters, and these tests assume the locale they're using has them.",
-  result: EXEC_FAILED,
-  name: "org.apache.harmony.text.tests.java.text.DateFormatSymbolsTest#test_getLocalPatternChars",
-  substring: "junit.framework.ComparisonFailure: Returned incorrect pattern string expected:<...YeugAZvcLQqV> but was:<...Z>"
-},
-{
   description: "we don't support the CharsetProvider spi, so we don't have \"mockCharset00\".",
   result: EXEC_FAILED,
   name: "tests.api.java.nio.charset.CharsetTest#test_availableCharsets",
