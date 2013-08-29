@@ -111,13 +111,6 @@ public final class NativeDecimalFormat implements Cloneable {
 
     private transient boolean parseBigDecimal;
 
-    /**
-     * Cache the BigDecimal form of the multiplier. This is null until we've
-     * formatted a BigDecimal (with a multiplier that is not 1), or the user has
-     * explicitly called {@link #setMultiplier(int)} with any multiplier.
-     */
-    private BigDecimal multiplierBigDecimal = null;
-
     public NativeDecimalFormat(String pattern, DecimalFormatSymbols dfs) {
         try {
             this.address = open(pattern, dfs.getCurrencySymbol(),
@@ -209,6 +202,23 @@ public final class NativeDecimalFormat implements Cloneable {
                 obj.getMinimumIntegerDigits() == this.getMinimumIntegerDigits() &&
                 obj.getMinimumFractionDigits() == this.getMinimumFractionDigits() &&
                 obj.isGroupingUsed() == this.isGroupingUsed();
+    }
+
+    public String toString() {
+      return getClass().getName() + "[\"" + toPattern() + "\"" +
+          ",isDecimalSeparatorAlwaysShown=" + isDecimalSeparatorAlwaysShown() +
+          ",groupingSize=" + getGroupingSize() +
+          ",multiplier=" + getMultiplier() +
+          ",negativePrefix=" + getNegativePrefix() +
+          ",negativeSuffix=" + getNegativeSuffix() +
+          ",positivePrefix=" + getPositivePrefix() +
+          ",positiveSuffix=" + getPositiveSuffix() +
+          ",maxIntegerDigits=" + getMaximumIntegerDigits() +
+          ",maxFractionDigits=" + getMaximumFractionDigits() +
+          ",minIntegerDigits=" + getMinimumIntegerDigits() +
+          ",minFractionDigits=" + getMinimumFractionDigits() +
+          ",grouping=" + isGroupingUsed() +
+          "]";
     }
 
     /**
@@ -440,8 +450,6 @@ public final class NativeDecimalFormat implements Cloneable {
 
     public void setMultiplier(int value) {
         setAttribute(this.address, UNUM_MULTIPLIER, value);
-        // Update the cached BigDecimal for multiplier.
-        multiplierBigDecimal = BigDecimal.valueOf(value);
     }
 
     public void setNegativePrefix(String value) {
@@ -595,7 +603,7 @@ public final class NativeDecimalFormat implements Cloneable {
             return data[pos + 2];
         }
 
-        private static Format.Field fields[] = {
+        private static final Format.Field[] fields = {
             // The old java field values were 0 for integer and 1 for fraction.
             // The new java field attributes are all objects.  ICU assigns the values
             // starting from 0 in the following order; note that integer and
