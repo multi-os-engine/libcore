@@ -155,8 +155,10 @@ public abstract class NumberFormat extends Format {
 
     private boolean groupingUsed = true, parseIntegerOnly = false;
 
-    private int maximumIntegerDigits = 40, minimumIntegerDigits = 1,
-            maximumFractionDigits = 3, minimumFractionDigits = 0;
+    int maximumIntegerDigits = 40;
+    int minimumIntegerDigits = 1;
+    int maximumFractionDigits = 3;
+    int minimumFractionDigits = 0;
 
     /**
      * Used by subclasses. This was public in Java 5.
@@ -208,8 +210,7 @@ public abstract class NumberFormat extends Format {
      * @return the formatted string.
      */
     public final String format(double value) {
-        return format(value, new StringBuffer(), new FieldPosition(0))
-                .toString();
+        return format(value, new StringBuffer(), new FieldPosition(0)).toString();
     }
 
     /**
@@ -241,8 +242,7 @@ public abstract class NumberFormat extends Format {
      * @return the formatted string.
      */
     public final String format(long value) {
-        return format(value, new StringBuffer(), new FieldPosition(0))
-                .toString();
+        return format(value, new StringBuffer(), new FieldPosition(0)).toString();
     }
 
     /**
@@ -301,7 +301,11 @@ public abstract class NumberFormat extends Format {
             double dv = ((Number) object).doubleValue();
             return format(dv, buffer, field);
         }
-        throw new IllegalArgumentException("Bad class: " + object.getClass());
+        if (object == null) {
+            throw new IllegalArgumentException("Can't format null object");
+        } else {
+            throw new IllegalArgumentException("Bad class: " + object.getClass());
+        }
     }
 
     /**
@@ -514,11 +518,8 @@ public abstract class NumberFormat extends Format {
     }
 
     /**
-     * Indicates whether this number format only parses integer numbers. Parsing
+     * Returns true if this number format only parses integer numbers. Parsing
      * stops if a decimal separator is encountered.
-     *
-     * @return {@code true} if this number format only parses integers,
-     *         {@code false} if if parsese integers as well as fractions.
      */
     public boolean isParseIntegerOnly() {
         return parseIntegerOnly;
@@ -751,60 +752,80 @@ public abstract class NumberFormat extends Format {
 
         private static final long serialVersionUID = 7494728892700160890L;
 
+        private static final int UNUM_INTEGER_FIELD = 0;
+        private static final int UNUM_FRACTION_FIELD = 1;
+        private static final int UNUM_DECIMAL_SEPARATOR_FIELD = 2;
+        private static final int UNUM_EXPONENT_SYMBOL_FIELD = 3;
+        private static final int UNUM_EXPONENT_SIGN_FIELD = 4;
+        private static final int UNUM_EXPONENT_FIELD = 5;
+        private static final int UNUM_GROUPING_SEPARATOR_FIELD = 6;
+        private static final int UNUM_CURRENCY_FIELD = 7;
+        private static final int UNUM_PERCENT_FIELD = 8;
+        private static final int UNUM_PERMILL_FIELD = 9;
+        private static final int UNUM_SIGN_FIELD = 10;
+        private static final int UNUM_FIELD_COUNT = 11;
+
         /**
          * This constant stands for the number sign.
          */
-        public static final Field SIGN = new Field("sign");
+        public static final Field SIGN = new Field("sign", UNUM_SIGN_FIELD);
 
         /**
          * This constant stands for the integer part of the number.
          */
-        public static final Field INTEGER = new Field("integer");
+        public static final Field INTEGER = new Field("integer", UNUM_INTEGER_FIELD);
 
         /**
          * This constant stands for the fraction part of the number.
          */
-        public static final Field FRACTION = new Field("fraction");
+        public static final Field FRACTION = new Field("fraction", UNUM_FRACTION_FIELD);
 
         /**
          * This constant stands for the exponent part of the number.
          */
-        public static final Field EXPONENT = new Field("exponent");
+        public static final Field EXPONENT = new Field("exponent", UNUM_EXPONENT_FIELD);
 
         /**
          * This constant stands for the exponent sign symbol.
          */
-        public static final Field EXPONENT_SIGN = new Field("exponent sign");
+        public static final Field EXPONENT_SIGN = new Field("exponent sign", UNUM_EXPONENT_SIGN_FIELD);
 
         /**
          * This constant stands for the exponent symbol.
          */
-        public static final Field EXPONENT_SYMBOL = new Field("exponent symbol");
+        public static final Field EXPONENT_SYMBOL = new Field("exponent symbol", UNUM_EXPONENT_SYMBOL_FIELD);
 
         /**
          * This constant stands for the decimal separator.
          */
-        public static final Field DECIMAL_SEPARATOR = new Field("decimal separator");
+        public static final Field DECIMAL_SEPARATOR = new Field("decimal separator", UNUM_DECIMAL_SEPARATOR_FIELD);
 
         /**
          * This constant stands for the grouping separator.
          */
-        public static final Field GROUPING_SEPARATOR = new Field("grouping separator");
+        public static final Field GROUPING_SEPARATOR = new Field("grouping separator", UNUM_GROUPING_SEPARATOR_FIELD);
 
         /**
          * This constant stands for the percent symbol.
          */
-        public static final Field PERCENT = new Field("percent");
+        public static final Field PERCENT = new Field("percent", UNUM_PERCENT_FIELD);
 
         /**
          * This constant stands for the permille symbol.
          */
-        public static final Field PERMILLE = new Field("per mille");
+        public static final Field PERMILLE = new Field("per mille", UNUM_PERMILL_FIELD);
 
         /**
          * This constant stands for the currency symbol.
          */
-        public static final Field CURRENCY = new Field("currency");
+        public static final Field CURRENCY = new Field("currency", UNUM_CURRENCY_FIELD);
+
+        final int fieldId;
+
+        private Field(String name, int fieldId) {
+            super(name);
+            this.fieldId = fieldId;
+        }
 
         /**
          * Constructs a new instance of {@code NumberFormat.Field} with the
@@ -814,7 +835,7 @@ public abstract class NumberFormat extends Format {
          *            the field name.
          */
         protected Field(String fieldName) {
-            super(fieldName);
+            this(fieldName, -1);
         }
     }
 
