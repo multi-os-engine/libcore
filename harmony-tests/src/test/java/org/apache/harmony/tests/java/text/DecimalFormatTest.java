@@ -1,13 +1,13 @@
-/* 
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -43,8 +43,8 @@ public class DecimalFormatTest extends TestCase {
         AttributedCharacterIterator iterator = new DecimalFormat().formatToCharacterIterator(new Integer(1));
         assertNotNull(iterator);
         assertFalse("attributes should exist", iterator.getAttributes().isEmpty());
-    } 
-    
+    }
+
     /*
      * Test the getter and setter of parseBigDecimal and parseIntegerOnly and
      * test the default value of them.
@@ -1216,7 +1216,7 @@ public class DecimalFormatTest extends TestCase {
         df = (DecimalFormat) NumberFormat.getCurrencyInstance(new Locale("QWERTY"));
         assertTrue("Test5: Returned incorrect currency",
                 df.getCurrency() == currX);
-        
+
         // JDK fails these tests since it doesn't have the PREEURO variant
         // df = (DecimalFormat)NumberFormat.getCurrencyInstance(new Locale("fr",
         // "FR","PREEURO"));
@@ -1498,7 +1498,7 @@ public class DecimalFormatTest extends TestCase {
         assertEquals("Wrong format", "50", df.format(5));
         assertEquals("Wrong parse", 5, df.parse("50", new ParsePosition(0))
                 .intValue());
-        
+
         // regression test for HARMONY-879
         df.setMultiplier(-1);
         assertEquals("Wrong  multiplier for negative value", -1, df.getMultiplier());
@@ -1594,17 +1594,17 @@ public class DecimalFormatTest extends TestCase {
         assertTrue(number instanceof Double);
         assertTrue(Double.isInfinite(number.doubleValue()));
     }
-    
+
     /**
-     * Test if setDecimalFormatSymbols method wont throw NullPointerException 
+     * Test if setDecimalFormatSymbols method wont throw NullPointerException
      * when it is called with null parameter.
      */
     public void testSetDecimalFormatSymbolsAsNull(){
 	// Regression for HARMONY-1070
         DecimalFormat format = (DecimalFormat)DecimalFormat.getInstance();
-        format.setDecimalFormatSymbols(null);                     
+        format.setDecimalFormatSymbols(null);
     }
-    
+
     /**
 	 * @tests java.text.DecimalFormat#formatToCharacterIterator(java.lang.Object)
 	 */
@@ -1670,7 +1670,7 @@ public class DecimalFormatTest extends TestCase {
 		// get the default RoundingMode of this DecimalFormat
 		DecimalFormat decimalFormat = (DecimalFormat) DecimalFormat
 				.getInstance(Locale.US);
-		
+
 		// the default RoundingMode is HALF_EVEN
 		assertEquals("Incorrect default RoundingMode", decimalFormat.getRoundingMode(), RoundingMode.HALF_EVEN);
 
@@ -1684,7 +1684,7 @@ public class DecimalFormatTest extends TestCase {
 	/**
 	 * @tests java.text.DecimalFormat#setRoundingMode(java.math.RoundingMode)
 	 */
-	public void test_SetRoudingMode_Ljava_math_RoundingMode() {
+	public void test_SetRoundingMode_Ljava_math_RoundingMode() {
 		DecimalFormat decimalFormat = (DecimalFormat) DecimalFormat
 				.getInstance(Locale.US);
 		// ignore the fraction part of a given value
@@ -1776,11 +1776,9 @@ public class DecimalFormatTest extends TestCase {
 		assertEquals("Incorrect RoundingMode behavior: RoundingMode.HALF_UP",
 				"0", result);
 
-		// the following assertion will fail on RI implementation, since the
-	    // implementation of ICU and RI are not identical.
 		result = decimalFormat.format(-0.2);
 		assertEquals("Incorrect RoundingMode behavior: RoundingMode.HALF_UP",
-				"0", result);
+				"-0", result);
 
 		// set RoundingMode.UP of this DecimalFormat and test its
 		// behavior
@@ -1804,7 +1802,7 @@ public class DecimalFormatTest extends TestCase {
 		// set RoundingMode.UNNECESSARY of this DecimalFormat and test its
 		// behavior
 		decimalFormat.setRoundingMode(RoundingMode.UNNECESSARY);
-		
+
 		try {
 			// when rounding is needed but RoundingMode is set to RoundingMode.UNNECESSARY, throw ArithmeticException
 			result = decimalFormat.format(5.5);
@@ -2038,7 +2036,7 @@ public class DecimalFormatTest extends TestCase {
 
 		result = decimalFormat.format(-0.2);
 		assertEquals("Incorrect RoundingMode behavior: RoundingMode.HALF_UP",
-				"0", result);
+				"-0", result);
 
 		// set RoundingMode.UP of this DecimalFormat and test its
 		// behavior

@@ -574,6 +574,7 @@ public class DecimalFormat extends NumberFormat {
      */
     public void applyLocalizedPattern(String pattern) {
         ndf.applyLocalizedPattern(pattern);
+        updateFieldsFromNative();
     }
 
     /**
@@ -587,6 +588,14 @@ public class DecimalFormat extends NumberFormat {
      */
     public void applyPattern(String pattern) {
         ndf.applyPattern(pattern);
+        updateFieldsFromNative();
+    }
+
+    private void updateFieldsFromNative() {
+        maximumIntegerDigits = ndf.getMaximumIntegerDigits();
+        minimumIntegerDigits = ndf.getMinimumIntegerDigits();
+        maximumFractionDigits = ndf.getMaximumFractionDigits();
+        minimumFractionDigits = ndf.getMinimumFractionDigits();
     }
 
     /**
@@ -826,16 +835,10 @@ public class DecimalFormat extends NumberFormat {
         // In this implementation, NativeDecimalFormat is wrapped to
         // fulfill most of the format and parse feature. And this method is
         // delegated to the wrapped instance of NativeDecimalFormat.
+        super.setParseIntegerOnly(value);
         ndf.setParseIntegerOnly(value);
     }
 
-    /**
-     * Indicates whether parsing with this decimal format will only
-     * return numbers of type {@code java.lang.Integer}.
-     *
-     * @return {@code true} if this {@code DecimalFormat}'s parse method only
-     *         returns {@code java.lang.Integer}; {@code false} otherwise.
-     */
     @Override
     public boolean isParseIntegerOnly() {
         return ndf.isParseIntegerOnly();
@@ -1244,4 +1247,6 @@ public class DecimalFormat extends NumberFormat {
             ndf.setRoundingMode(roundingMode, roundingIncrement);
         }
     }
+
+    public String toString() { return ndf.toString(); }
 }
