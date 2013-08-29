@@ -574,6 +574,7 @@ public class DecimalFormat extends NumberFormat {
      */
     public void applyLocalizedPattern(String pattern) {
         ndf.applyLocalizedPattern(pattern);
+        updateFieldsFromNative();
     }
 
     /**
@@ -587,6 +588,14 @@ public class DecimalFormat extends NumberFormat {
      */
     public void applyPattern(String pattern) {
         ndf.applyPattern(pattern);
+        updateFieldsFromNative();
+    }
+
+    private void updateFieldsFromNative() {
+        maximumIntegerDigits = ndf.getMaximumIntegerDigits();
+        minimumIntegerDigits = ndf.getMinimumIntegerDigits();
+        maximumFractionDigits = ndf.getMaximumFractionDigits();
+        minimumFractionDigits = ndf.getMinimumFractionDigits();
     }
 
     /**
@@ -1244,4 +1253,6 @@ public class DecimalFormat extends NumberFormat {
             ndf.setRoundingMode(roundingMode, roundingIncrement);
         }
     }
+
+    public String toString() { return ndf.toString(); }
 }

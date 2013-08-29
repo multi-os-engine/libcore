@@ -211,6 +211,23 @@ public final class NativeDecimalFormat implements Cloneable {
                 obj.isGroupingUsed() == this.isGroupingUsed();
     }
 
+    public String toString() {
+      return "NDF[" + toPattern() + " " +
+          isDecimalSeparatorAlwaysShown() + " " +
+          getGroupingSize() + " " +
+          getMultiplier() + " " +
+          getNegativePrefix() + " " +
+          getNegativeSuffix() + " " +
+          getPositivePrefix() + " " +
+          getPositiveSuffix() + " " +
+          getMaximumIntegerDigits() + " " +
+          getMaximumFractionDigits() + " " +
+          getMinimumIntegerDigits() + " " +
+          getMinimumFractionDigits() + " " +
+          isGroupingUsed() + " " +
+          "]";
+    }
+
     /**
      * Copies the DecimalFormatSymbols settings into our native peer in bulk.
      */

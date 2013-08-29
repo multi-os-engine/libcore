@@ -1,13 +1,13 @@
-/* 
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,6 +24,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.text.ChoiceFormat;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.FieldPosition;
 import java.text.Format;
 import java.text.MessageFormat;
@@ -44,7 +46,7 @@ public class MessageFormatTest extends TestCase {
     private MessageFormat format1, format2, format3;
 
     private Locale defaultLocale;
-    
+
     private void checkSerialization(MessageFormat format) {
         try {
             ByteArrayOutputStream ba = new ByteArrayOutputStream();
@@ -151,7 +153,7 @@ public class MessageFormatTest extends TestCase {
         checkSerialization(new MessageFormat("a{0}"));
         checkSerialization(new MessageFormat("{0}b"));
         checkSerialization(new MessageFormat("a{0}b"));
-        
+
         // Regression for HARMONY-65
         try {
             new MessageFormat("{0,number,integer");
@@ -191,17 +193,17 @@ public class MessageFormatTest extends TestCase {
         format.applyPattern("{0,Time, Short\n}");
         assertTrue("Wrong short time format", format.getFormats()[0]
                 .equals(DateFormat.getTimeInstance(DateFormat.SHORT)));
-		assertEquals("Wrong short time pattern", 
+		assertEquals("Wrong short time pattern",
 				"{0,time,short}", format.toPattern());
         format.applyPattern("{0,TIME,\nmedium  }");
         assertTrue("Wrong medium time format", format.getFormats()[0]
                 .equals(DateFormat.getTimeInstance(DateFormat.MEDIUM)));
-		assertEquals("Wrong medium time pattern", 
+		assertEquals("Wrong medium time pattern",
 				"{0,time}", format.toPattern());
         format.applyPattern("{0,time,LONG}");
         assertTrue("Wrong long time format", format.getFormats()[0]
                 .equals(DateFormat.getTimeInstance(DateFormat.LONG)));
-		assertEquals("Wrong long time pattern", 
+		assertEquals("Wrong long time pattern",
 				"{0,time,long}", format.toPattern());
         format.setLocale(Locale.FRENCH); // use French since English has the
         // same LONG and FULL time patterns
@@ -209,7 +211,7 @@ public class MessageFormatTest extends TestCase {
         assertTrue("Wrong full time format", format.getFormats()[0]
                 .equals(DateFormat.getTimeInstance(DateFormat.FULL,
                         Locale.FRENCH)));
-		assertEquals("Wrong full time pattern", 
+		assertEquals("Wrong full time pattern",
 				"{0,time,full}", format.toPattern());
         format.setLocale(Locale.getDefault());
 
@@ -220,69 +222,71 @@ public class MessageFormatTest extends TestCase {
         format.applyPattern("{0, date, short}");
         assertTrue("Wrong short date format", format.getFormats()[0]
                 .equals(DateFormat.getDateInstance(DateFormat.SHORT)));
-		assertEquals("Wrong short date pattern", 
+		assertEquals("Wrong short date pattern",
 				"{0,date,short}", format.toPattern());
         format.applyPattern("{0, date, medium}");
         assertTrue("Wrong medium date format", format.getFormats()[0]
                 .equals(DateFormat.getDateInstance(DateFormat.MEDIUM)));
-		assertEquals("Wrong medium date pattern", 
+		assertEquals("Wrong medium date pattern",
 				"{0,date}", format.toPattern());
         format.applyPattern("{0, date, long}");
         assertTrue("Wrong long date format", format.getFormats()[0]
                 .equals(DateFormat.getDateInstance(DateFormat.LONG)));
-		assertEquals("Wrong long date pattern", 
+		assertEquals("Wrong long date pattern",
 				"{0,date,long}", format.toPattern());
         format.applyPattern("{0, date, full}");
         assertTrue("Wrong full date format", format.getFormats()[0]
                 .equals(DateFormat.getDateInstance(DateFormat.FULL)));
-		assertEquals("Wrong full date pattern", 
+		assertEquals("Wrong full date pattern",
 				"{0,date,full}", format.toPattern());
 
         format.applyPattern("{0, date, MMM d {hh:mm:ss}}");
 		assertEquals("Wrong time/date format", " MMM d {hh:mm:ss}", ((SimpleDateFormat) (format
 				.getFormats()[0])).toPattern());
-		assertEquals("Wrong time/date pattern", 
+		assertEquals("Wrong time/date pattern",
 				"{0,date, MMM d {hh:mm:ss}}", format.toPattern());
 
         format.applyPattern("{0, number}");
         assertTrue("Wrong number format", format.getFormats()[0]
                 .equals(NumberFormat.getNumberInstance()));
-		assertEquals("Wrong number pattern", 
+		assertEquals("Wrong number pattern",
 				"{0,number}", format.toPattern());
         format.applyPattern("{0, number, currency}");
         assertTrue("Wrong currency number format", format.getFormats()[0]
                 .equals(NumberFormat.getCurrencyInstance()));
-		assertEquals("Wrong currency number pattern", 
+		assertEquals("Wrong currency number pattern",
 				"{0,number,currency}", format.toPattern());
         format.applyPattern("{0, number, percent}");
         assertTrue("Wrong percent number format", format.getFormats()[0]
                 .equals(NumberFormat.getPercentInstance()));
-		assertEquals("Wrong percent number pattern", 
+		assertEquals("Wrong percent number pattern",
 				"{0,number,percent}", format.toPattern());
         format.applyPattern("{0, number, integer}");
-        NumberFormat nf = NumberFormat.getInstance();
+        DecimalFormat nf = (DecimalFormat) NumberFormat.getInstance();
         nf.setMaximumFractionDigits(0);
         nf.setParseIntegerOnly(true);
-        assertTrue("Wrong integer number format", format.getFormats()[0]
-                .equals(nf));
-		assertEquals("Wrong integer number pattern", 
+        DecimalFormat actualNumberFormat = (DecimalFormat) format.getFormats()[0];
+        assertEquals(nf.getDecimalFormatSymbols(), actualNumberFormat.getDecimalFormatSymbols());
+        assertEquals(nf.isParseIntegerOnly(), actualNumberFormat.isParseIntegerOnly());
+        assertEquals(nf, format.getFormats()[0]);
+		assertEquals("Wrong integer number pattern",
 				"{0,number,integer}", format.toPattern());
 
         format.applyPattern("{0, number, {'#'}##0.0E0}");
 
         /*
-         * TODO validate these assertions 
-         * String actual = ((DecimalFormat)(format.getFormats()[0])).toPattern(); 
-         * assertEquals("Wrong pattern number format", "' {#}'##0.0E0", actual); 
+         * TODO validate these assertions
+         * String actual = ((DecimalFormat)(format.getFormats()[0])).toPattern();
+         * assertEquals("Wrong pattern number format", "' {#}'##0.0E0", actual);
          * assertEquals("Wrong pattern number pattern", "{0,number,' {#}'##0.0E0}", format.toPattern());
-         * 
+         *
          */
 
         format.applyPattern("{0, choice,0#no|1#one|2#{1,number}}");
 		assertEquals("Wrong choice format",
-				
+
 						"0.0#no|1.0#one|2.0#{1,number}", ((ChoiceFormat) format.getFormats()[0]).toPattern());
-		assertEquals("Wrong choice pattern", 
+		assertEquals("Wrong choice pattern",
 				"{0,choice,0.0#no|1.0#one|2.0#{1,number}}", format.toPattern());
 		assertEquals("Wrong formatted choice", "3.6", format.format(
 				new Object[] { new Integer(2), new Float(3.6) }));
@@ -292,7 +296,7 @@ public class MessageFormatTest extends TestCase {
             fail("Expected IllegalArgumentException for invalid pattern");
         } catch (IllegalArgumentException e) {
         }
-        
+
         // Regression for HARMONY-65
         MessageFormat mf = new MessageFormat("{0,number,integer}");
         String badpattern = "{0,number,#";
@@ -312,7 +316,7 @@ public class MessageFormatTest extends TestCase {
         MessageFormat format = new MessageFormat("'{'choice'}'{0}");
         MessageFormat clone = (MessageFormat) format.clone();
         assertTrue("Clone not equal", format.equals(clone));
-		assertEquals("Wrong answer", 
+		assertEquals("Wrong answer",
 				"{choice}{0}", format.format(new Object[] {}));
         clone.setFormat(0, DateFormat.getInstance());
         assertTrue("Clone shares format data", !format.equals(clone));
@@ -697,7 +701,7 @@ public class MessageFormatTest extends TestCase {
         String pattern = "[{0}]";
         MessageFormat mf = new MessageFormat(pattern);
         assertTrue("Wrong pattern", mf.toPattern().equals(pattern));
-        
+
         // Regression for HARMONY-59
         new MessageFormat("CHOICE {1,choice}").toPattern();
     }
@@ -709,7 +713,7 @@ public class MessageFormatTest extends TestCase {
     protected void setUp() {
     	defaultLocale = Locale.getDefault();
     	Locale.setDefault(Locale.US);
-    	
+
         // test with repeating formats and max argument index < max offset
         String pattern = "A {3, number, currency} B {2, time} C {0, number, percent} D {4}  E {1,choice,0#off|1#on} F {0, date}";
         format1 = new MessageFormat(pattern);
@@ -730,7 +734,7 @@ public class MessageFormatTest extends TestCase {
     protected void tearDown() {
     	Locale.setDefault(defaultLocale);
     }
-    
+
 	/**
 	 * @tests java.text.MessageFormat(java.util.Locale)
 	 */
@@ -755,25 +759,25 @@ public class MessageFormatTest extends TestCase {
 		assertEquals("Assert 1: parsed value incorrectly", new Long(10000), (Long)res[0]);
 	}
 
-	public void test_format_Object() { 
+	public void test_format_Object() {
 		// Regression for HARMONY-1875
-        Locale.setDefault(Locale.CANADA); 
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC")); 
-        String pat="text here {0, date, yyyyyyyyy } and here"; 
-        String etalon="text here  000002007  and here"; 
-        MessageFormat obj = new MessageFormat(pat); 
-        assertEquals(etalon, obj.format(new Object[]{new Date(1198141737640L)})); 
-        
+        Locale.setDefault(Locale.CANADA);
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        String pat="text here {0, date, yyyyyyyyy } and here";
+        String etalon="text here  000002007  and here";
+        MessageFormat obj = new MessageFormat(pat);
+        assertEquals(etalon, obj.format(new Object[]{new Date(1198141737640L)}));
+
         assertEquals("{0}", MessageFormat.format("{0}", (Object[])null));
         assertEquals("nullABC", MessageFormat.format("{0}{1}", new String[]{null, "ABC"}));
-    } 
+    }
 
-    public void testHARMONY5323() { 
+    public void testHARMONY5323() {
     	Object []messageArgs = new Object[11];
     	for (int i = 0; i < messageArgs.length; i++)
     		messageArgs[i] = "dumb"+i;
-    	    	
+
 		String res = MessageFormat.format("bgcolor=\"{10}\"", messageArgs);
         assertEquals(res, "bgcolor=\"dumb10\"");
-    } 
+    }
 }
