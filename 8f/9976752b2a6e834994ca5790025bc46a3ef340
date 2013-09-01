@@ -1,0 +1,7 @@
+Code-Review+2: Brian Carlstrom <bdc@google.com>
+Verified+1: Deckard Autoverifier <deckard@android.com>
+Submitted-by: Elliott Hughes <enh@google.com>
+Submitted-at: Sun, 01 Sep 2013 04:34:07 +0000
+Reviewed-on: https://android-review.googlesource.com/64623
+Project: platform/libcore
+Branch: refs/heads/master
