@@ -448,16 +448,19 @@ static bool getTimeFormats12And24(JNIEnv* env, jobject localeData, Locale& local
 
   UnicodeString pattern_Hm(generator->getBestPattern(UnicodeString("Hm", 2, US_INV), status));
   if (U_FAILURE(status)) {
+    delete generator;
     return false;
   }
 
   UnicodeString pattern_hm(generator->getBestPattern(UnicodeString("hm", 2, US_INV), status));
   if (U_FAILURE(status)) {
+    delete generator;
     return false;
   }
 
   setStringField(env, localeData, "timeFormat12", pattern_hm);
   setStringField(env, localeData, "timeFormat24", pattern_Hm);
+  delete generator;
   return true;
 }
 
@@ -678,18 +681,22 @@ static jstring ICU_getBestDateTimePattern(JNIEnv* env, jclass, jstring javaSkele
   UErrorCode status = U_ZERO_ERROR;
   DateTimePatternGenerator* generator = DateTimePatternGenerator::createInstance(locale, status);
   if (maybeThrowIcuException(env, "DateTimePatternGenerator::createInstance", status)) {
+    delete generator;
     return NULL;
   }
 
   ScopedJavaUnicodeString skeletonHolder(env, javaSkeleton);
   if (!skeletonHolder.valid()) {
+    delete generator;
     return NULL;
   }
   UnicodeString result(generator->getBestPattern(skeletonHolder.unicodeString(), status));
   if (maybeThrowIcuException(env, "DateTimePatternGenerator::getBestPattern", status)) {
+    delete generator;
     return NULL;
   }
 
+  delete generator;
   return env->NewString(result.getBuffer(), result.length());
 }
 
