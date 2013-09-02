@@ -650,18 +650,22 @@ static jstring ICU_getBestDateTimePattern(JNIEnv* env, jclass, jstring javaSkele
   UErrorCode status = U_ZERO_ERROR;
   DateTimePatternGenerator* generator = DateTimePatternGenerator::createInstance(locale, status);
   if (maybeThrowIcuException(env, "DateTimePatternGenerator::createInstance", status)) {
+    delete generator;
     return NULL;
   }
 
   ScopedJavaUnicodeString skeletonHolder(env, javaSkeleton);
   if (!skeletonHolder.valid()) {
+    delete generator;
     return NULL;
   }
   UnicodeString result(generator->getBestPattern(skeletonHolder.unicodeString(), status));
   if (maybeThrowIcuException(env, "DateTimePatternGenerator::getBestPattern", status)) {
+    delete generator;
     return NULL;
   }
 
+  delete generator;
   return env->NewString(result.getBuffer(), result.length());
 }
 
