@@ -138,6 +138,12 @@ public final class DateIntervalFormat {
       flags |= FORMAT_SHOW_DATE;
     }
 
+    if ((flags & FORMAT_SHOW_DATE) != 0 && (flags & FORMAT_SHOW_YEAR) == 0) {
+      if (!fallInSameYear(startCalendar, endCalendar) || !isThisYear(startCalendar)) {
+        flags |= FORMAT_SHOW_YEAR;
+      }
+    }
+
     StringBuilder builder = new StringBuilder();
     if ((flags & (FORMAT_SHOW_DATE | FORMAT_NO_MONTH_DAY)) != 0) {
       if ((flags & FORMAT_SHOW_YEAR) != 0) {
@@ -176,6 +182,15 @@ public final class DateIntervalFormat {
 
   private static boolean fallInSameMonth(Calendar c1, Calendar c2) {
     return c1.get(Calendar.MONTH) == c2.get(Calendar.MONTH);
+  }
+
+  private static boolean fallInSameYear(Calendar c1, Calendar c2) {
+    return c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR);
+  }
+
+  private static boolean isThisYear(Calendar c) {
+    Calendar now = Calendar.getInstance(c.getTimeZone());
+    return c.get(Calendar.YEAR) == now.get(Calendar.YEAR);
   }
 
   private static int julianDay(Calendar c) {
