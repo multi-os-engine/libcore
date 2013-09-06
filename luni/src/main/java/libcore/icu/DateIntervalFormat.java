@@ -58,11 +58,6 @@ public final class DateIntervalFormat {
   // This is our slightly more sensible internal API. (A truly sane replacement would take a
   // skeleton instead of int flags.)
   public static String formatDateRange(Locale locale, TimeZone tz, long startMs, long endMs, int flags) {
-    String skeleton = toSkeleton(tz, startMs, endMs, flags);
-    return formatDateInterval(skeleton, locale.toString(), tz.getID(), startMs, endMs);
-  }
-
-  private static String toSkeleton(TimeZone tz, long startMs, long endMs, int flags) {
     Calendar startCalendar = Calendar.getInstance(tz);
     startCalendar.setTimeInMillis(startMs);
 
@@ -74,6 +69,20 @@ public final class DateIntervalFormat {
       endCalendar.setTimeInMillis(endMs);
     }
 
+    String skeleton = toSkeleton(startCalendar, endCalendar, flags);
+
+    // If we're not showing the time, fudge the end time if it's exactly 00:00.0 so
+    // we don't count the day that's just about to start. This is not the behavior
+    // of icu4c's DateIntervalFormat, but it's the historical behavior of Android's
+    // DateUtils.formatDateRange.
+    if ((flags & FORMAT_SHOW_TIME) == 0 && isMidnight(endCalendar)) {
+      --endMs;
+    }
+
+    return formatDateInterval(skeleton, locale.toString(), tz.getID(), startMs, endMs);
+  }
+
+  private static String toSkeleton(Calendar startCalendar, Calendar endCalendar, int flags) {
     if ((flags & FORMAT_ABBREV_ALL) != 0) {
       flags |= FORMAT_ABBREV_MONTH | FORMAT_ABBREV_TIME | FORMAT_ABBREV_WEEKDAY;
     }
@@ -140,6 +149,13 @@ public final class DateIntervalFormat {
       builder.append(timePart);
     }
     return builder.toString();
+  }
+
+  private static boolean isMidnight(Calendar c) {
+    return c.get(Calendar.HOUR_OF_DAY) == 0 &&
+        c.get(Calendar.MINUTE) == 0 &&
+        c.get(Calendar.SECOND) == 0 &&
+        c.get(Calendar.MILLISECOND) == 0;
   }
 
   private static boolean onTheHour(Calendar c) {
