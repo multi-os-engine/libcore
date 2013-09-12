@@ -71,4 +71,12 @@ public final class CipherInputStreamTest extends TestCase {
         }
         return out.toByteArray();
     }
+
+    public void testCipherInputStream_TruncatedInput_Failure() throws Exception {
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(new byte[16], "AES"));
+        InputStream is = new CipherInputStream(new ByteArrayInputStream(new byte[31]), cipher);
+        is.read(new byte[4]);
+        is.close();
+    }
 }
