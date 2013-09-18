@@ -122,8 +122,9 @@ ifeq ($(WITH_HOST_DALVIK),true)
     LOCAL_BUILD_HOST_DEX := true
     LOCAL_MODULE_TAGS := optional
     LOCAL_MODULE := conscrypt-hostdex
-    LOCAL_REQUIRED_MODULES := libjavacrypto
-    LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+#   LOCAL_REQUIRED_MODULES := libjavacrypto
+    LOCAL_ADDITIONAL_DEPENDENCIES += $(HOST_OUT)/lib/libjavacore.so
+    LOCAL_ADDITIONAL_DEPENDENCIES += $(LOCAL_PATH)/Android.mk
     include $(BUILD_HOST_JAVA_LIBRARY)
 
     # Make the conscrypt-hostdex-nojarjar for tests
