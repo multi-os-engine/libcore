@@ -16,14 +16,23 @@
 
 package libcore.io;
 
+import static libcore.io.OsConstants.EINVAL;
+import static libcore.io.OsConstants.O_ACCMODE;
+import static libcore.io.OsConstants.O_RDONLY;
+import static libcore.io.OsConstants.SOL_SOCKET;
+import static libcore.io.OsConstants.SO_LINGER;
+import static libcore.io.OsConstants.S_ISSOCK;
+
 import dalvik.system.BlockGuard;
 import dalvik.system.SocketTagger;
+
+import libcore.util.MutableLong;
+
 import java.io.FileDescriptor;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
-import static libcore.io.OsConstants.*;
 
 /**
  * Informs BlockGuard of any activity it should be aware of.
@@ -53,6 +62,21 @@ public class BlockGuardOs extends ForwardingOs {
     @Override public FileDescriptor accept(FileDescriptor fd, InetSocketAddress peerAddress) throws ErrnoException, SocketException {
         BlockGuard.getThreadPolicy().onNetwork();
         return tagSocket(os.accept(fd, peerAddress));
+    }
+
+    @Override public boolean access(String path, int mode) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onReadFromDisk();
+        return os.access(path, mode);
+    }
+
+    @Override public void chmod(String path, int mode) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onWriteToDisk();
+        os.chmod(path, mode);
+    }
+
+    @Override public void chown(String path, int uid, int gid) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onWriteToDisk();
+        os.chown(path, uid, gid);
     }
 
     @Override public void close(FileDescriptor fd) throws ErrnoException {
@@ -85,11 +109,31 @@ public class BlockGuardOs extends ForwardingOs {
         os.connect(fd, address, port);
     }
 
+    @Override public void fchmod(FileDescriptor fd, int mode) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onWriteToDisk();
+        os.fchmod(fd, mode);
+    }
+
+    @Override public void fchown(FileDescriptor fd, int uid, int gid) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onWriteToDisk();
+        os.fchown(fd, uid, gid);
+    }
+
     // TODO: Untag newFd when needed for dup2(FileDescriptor oldFd, int newFd)
 
     @Override public void fdatasync(FileDescriptor fd) throws ErrnoException {
         BlockGuard.getThreadPolicy().onWriteToDisk();
         os.fdatasync(fd);
+    }
+
+    @Override public StructStat fstat(FileDescriptor fd) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onReadFromDisk();
+        return os.fstat(fd);
+    }
+
+    @Override public StructStatVfs fstatvfs(FileDescriptor fd) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onReadFromDisk();
+        return os.fstatvfs(fd);
     }
 
     @Override public void fsync(FileDescriptor fd) throws ErrnoException {
@@ -100,6 +144,31 @@ public class BlockGuardOs extends ForwardingOs {
     @Override public void ftruncate(FileDescriptor fd, long length) throws ErrnoException {
         BlockGuard.getThreadPolicy().onWriteToDisk();
         os.ftruncate(fd, length);
+    }
+
+    @Override public InetAddress[] getaddrinfo(String node, StructAddrinfo hints) throws GaiException {
+        BlockGuard.getThreadPolicy().onNetwork();
+        return os.getaddrinfo(node, hints);
+    }
+
+    @Override public void lchown(String path, int uid, int gid) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onWriteToDisk();
+        os.lchown(path, uid, gid);
+    }
+
+    @Override public long lseek(FileDescriptor fd, long offset, int whence) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onReadFromDisk();
+        return os.lseek(fd, offset, whence);
+    }
+
+    @Override public StructStat lstat(String path) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onReadFromDisk();
+        return os.lstat(path);
+    }
+
+    @Override public void mkdir(String path, int mode) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onWriteToDisk();
+        os.mkdir(path, mode);
     }
 
     @Override public FileDescriptor open(String path, int flags, int mode) throws ErrnoException {
@@ -164,6 +233,21 @@ public class BlockGuardOs extends ForwardingOs {
         return os.recvfrom(fd, bytes, byteOffset, byteCount, flags, srcAddress);
     }
 
+    @Override public void remove(String path) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onWriteToDisk();
+        os.remove(path);
+    }
+
+    @Override public void rename(String oldPath, String newPath) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onWriteToDisk();
+        os.rename(oldPath, newPath);
+    }
+
+    @Override public long sendfile(FileDescriptor outFd, FileDescriptor inFd, MutableLong inOffset, long byteCount) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onWriteToDisk();
+        return os.sendfile(outFd, inFd, inOffset, byteCount);
+    }
+
     @Override public int sendto(FileDescriptor fd, ByteBuffer buffer, int flags, InetAddress inetAddress, int port) throws ErrnoException, SocketException {
         BlockGuard.getThreadPolicy().onNetwork();
         return os.sendto(fd, buffer, flags, inetAddress, port);
@@ -185,6 +269,21 @@ public class BlockGuardOs extends ForwardingOs {
         os.socketpair(domain, type, protocol, fd1, fd2);
         tagSocket(fd1);
         tagSocket(fd2);
+    }
+
+    @Override public StructStat stat(String path) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onReadFromDisk();
+        return os.stat(path);
+    }
+
+    @Override public StructStatVfs statvfs(String path) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onReadFromDisk();
+        return os.statvfs(path);
+    }
+
+    @Override public void symlink(String oldPath, String newPath) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onWriteToDisk();
+        os.symlink(oldPath, newPath);
     }
 
     @Override public int write(FileDescriptor fd, ByteBuffer buffer) throws ErrnoException {
