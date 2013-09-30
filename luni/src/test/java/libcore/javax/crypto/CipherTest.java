@@ -58,7 +58,6 @@ import javax.crypto.spec.SecretKeySpec;
 import junit.framework.TestCase;
 import libcore.java.security.StandardNames;
 import libcore.java.security.TestKeyStore;
-import libcore.util.EmptyArray;
 
 public final class CipherTest extends TestCase {
 
@@ -754,6 +753,69 @@ public final class CipherTest extends TestCase {
             is_unlimited = true;
         }
         IS_UNLIMITED = is_unlimited;
+    }
+
+    private static abstract class MockProvider extends Provider {
+        public MockProvider(String name) {
+            super(name, 1.0, "Mock provider used for testing");
+            setup();
+        }
+
+        public abstract void setup();
+    }
+
+    public void testCipher_getInstance_DelayedInitialization_KeyType() throws Exception {
+        Provider mockProviderSpecific = new MockProvider("MockProviderSpecific") {
+            public void setup() {
+                put("Cipher.FOO", MockCipherSpi.SpecificKeyTypes.class.getName());
+                put("Cipher.FOO SupportedKeyClasses", this.getClass().getPackage().getName() + ".MockKey");
+            }
+        };
+        Provider mockProviderAll = new MockProvider("MockProviderAll") {
+            public void setup() {
+                put("Cipher.FOO", MockCipherSpi.AllKeyTypes.class.getName());
+            }
+        };
+
+        Security.addProvider(mockProviderSpecific);
+        Security.addProvider(mockProviderAll);
+
+        try {
+            {
+                Cipher c = Cipher.getInstance("FOO");
+                c.init(Cipher.ENCRYPT_MODE, new MockKey());
+                assertEquals(mockProviderSpecific, c.getProvider());
+            }
+
+            {
+                Cipher c = Cipher.getInstance("FOO");
+                c.init(Cipher.ENCRYPT_MODE, new Key() {
+                    @Override
+                    public String getAlgorithm() {
+                        throw new UnsupportedOperationException("not implemented");
+                    }
+
+                    @Override
+                    public String getFormat() {
+                        throw new UnsupportedOperationException("not implemented");
+                    }
+
+                    @Override
+                    public byte[] getEncoded() {
+                        throw new UnsupportedOperationException("not implemented");
+                    }
+                });
+                assertEquals(mockProviderAll, c.getProvider());
+            }
+
+            {
+                Cipher c = Cipher.getInstance("FOO");
+                assertEquals(mockProviderSpecific, c.getProvider());
+            }
+        } finally {
+            Security.removeProvider(mockProviderSpecific.getName());
+            Security.removeProvider(mockProviderAll.getName());
+        }
     }
 
     public void test_getInstance() throws Exception {
@@ -2336,16 +2398,16 @@ public final class CipherTest extends TestCase {
         }
 
         byte[] emptyPlainText = c.doFinal(emptyCipherText);
-        assertEquals(Arrays.toString(EmptyArray.BYTE), Arrays.toString(emptyPlainText));
+        assertEquals(Arrays.toString(new byte[0]), Arrays.toString(emptyPlainText));
 
         // empty decrypt
         {
             if (StandardNames.IS_RI) {
-                assertEquals(Arrays.toString(EmptyArray.BYTE),
+                assertEquals(Arrays.toString(new byte[0]),
                              Arrays.toString(c.doFinal()));
 
-                c.update(EmptyArray.BYTE);
-                assertEquals(Arrays.toString(EmptyArray.BYTE),
+                c.update(new byte[0]);
+                assertEquals(Arrays.toString(new byte[0]),
                              Arrays.toString(c.doFinal()));
             } else if (provider.equals("BC")) {
                 try {
@@ -2354,7 +2416,7 @@ public final class CipherTest extends TestCase {
                 } catch (IllegalBlockSizeException expected) {
                 }
                 try {
-                    c.update(EmptyArray.BYTE);
+                    c.update(new byte[0]);
                     c.doFinal();
                     fail();
                 } catch (IllegalBlockSizeException expected) {
@@ -2362,7 +2424,7 @@ public final class CipherTest extends TestCase {
             } else if (provider.equals("AndroidOpenSSL")) {
                 assertNull(c.doFinal());
 
-                c.update(EmptyArray.BYTE);
+                c.update(new byte[0]);
                 assertNull(c.doFinal());
             } else {
                 throw new AssertionError("Define your behavior here for " + provider);
@@ -2607,6 +2669,7 @@ public final class CipherTest extends TestCase {
     private void testAES_ECB_NoPadding_IncrementalUpdate_Success(String provider) throws Exception {
         SecretKey key = new SecretKeySpec(AES_128_KEY, "AES");
         Cipher c = Cipher.getInstance("AES/ECB/NoPadding", provider);
+        assertEquals(provider, c.getProvider().getName());
         c.init(Cipher.ENCRYPT_MODE, key);
 
         for (int i = 0; i < AES_128_ECB_PKCS5Padding_TestVector_1_Plaintext_Padded.length - 1; i++) {
@@ -2618,10 +2681,11 @@ public final class CipherTest extends TestCase {
 
         final byte[] output = c.doFinal(AES_128_ECB_PKCS5Padding_TestVector_1_Plaintext_Padded,
                 AES_128_ECB_PKCS5Padding_TestVector_1_Plaintext_Padded.length - 1, 1);
-        assertNotNull(output);
-        assertEquals(AES_128_ECB_PKCS5Padding_TestVector_1_Plaintext_Padded.length, output.length);
+        assertNotNull(provider, output);
+        assertEquals(provider, AES_128_ECB_PKCS5Padding_TestVector_1_Plaintext_Padded.length,
+                output.length);
 
-        assertTrue(Arrays.equals(AES_128_ECB_PKCS5Padding_TestVector_1_Encrypted, output));
+        assertTrue(provider, Arrays.equals(AES_128_ECB_PKCS5Padding_TestVector_1_Encrypted, output));
     }
 
     private static final byte[] AES_IV_ZEROES = new byte[] {

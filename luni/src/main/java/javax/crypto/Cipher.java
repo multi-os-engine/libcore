@@ -26,11 +26,14 @@ import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
+import java.security.Provider.Service;
+import java.security.ProviderException;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.ArrayList;
 import java.util.Set;
 import org.apache.harmony.crypto.internal.NullCipherSpi;
 import org.apache.harmony.security.fortress.Engine;
@@ -98,6 +101,11 @@ public class Cipher {
 
     private int mode;
 
+    /** Items that need to be set on the Cipher instance. */
+    private enum NeedToSet {
+        NONE, MODE, PADDING, BOTH,
+    };
+
     /**
      * The service name.
      */
@@ -108,6 +116,12 @@ public class Cipher {
      */
     private static final Engine ENGINE = new Engine(SERVICE);
 
+    /** The attribute used for supported paddings. */
+    private static final String ATTRIBUTE_PADDINGS = "SupportedPaddings";
+
+    /** The attribute used for supported modes. */
+    private static final String ATTRIBUTE_MODES = "SupportedModes";
+
     /**
      * The provider.
      */
@@ -116,12 +130,22 @@ public class Cipher {
     /**
      * The SPI implementation.
      */
-    private CipherSpi spiImpl;
+    private volatile CipherSpi spiImpl;
 
     /**
      * The transformation.
      */
-    private String transformation;
+    private final String transformation;
+
+    /**
+     * The transformation split into parts.
+     */
+    private final String[] transformParts;
+
+    /**
+     * Lock held while the SPI is initializing.
+     */
+    private final Object[] initLock = new Object[0];
 
     private static SecureRandom secureRandom;
 
@@ -138,8 +162,7 @@ public class Cipher {
      *             if either cipherSpi is {@code null} or provider is {@code
      *             null} and {@code cipherSpi} is a {@code NullCipherSpi}.
      */
-    protected Cipher(CipherSpi cipherSpi, Provider provider,
-            String transformation) {
+    protected Cipher(CipherSpi cipherSpi, Provider provider, String transformation) {
         if (cipherSpi == null) {
             throw new NullPointerException("cipherSpi == null");
         }
@@ -147,9 +170,17 @@ public class Cipher {
             throw new NullPointerException("provider == null");
         }
         this.provider = provider;
-        this.transformation = transformation;
         this.spiImpl = cipherSpi;
+        this.transformation = transformation;
+        this.transformParts = null;
     }
+
+    private Cipher(String transformation, String[] transformParts, Provider provider) {
+        this.transformation = transformation;
+        this.transformParts = transformParts;
+        this.provider = provider;
+    }
+
 
     /**
      * Creates a new Cipher for the specified transformation. The installed
@@ -234,8 +265,7 @@ public class Cipher {
         if (provider == null) {
             throw new IllegalArgumentException("provider == null");
         }
-        Cipher c = getCipher(transformation, provider);
-        return c;
+        return getCipher(transformation, provider);
     }
 
     private static NoSuchAlgorithmException invalidTransformation(String transformation)
@@ -244,91 +274,23 @@ public class Cipher {
     }
 
     /**
-     * Find appropriate Cipher according the specification rules
-     *
-     * @param transformation
-     * @param provider
-     * @return
-     * @throws NoSuchAlgorithmException
-     * @throws NoSuchPaddingException
+     * Create a Cipher instance but don't choose a CipherSpi until we have more
+     * information.
      */
-    private static synchronized Cipher getCipher(String transformation, Provider provider)
+    private static Cipher getCipher(String transformation, Provider provider)
             throws NoSuchAlgorithmException, NoSuchPaddingException {
-
         if (transformation == null || transformation.isEmpty()) {
             throw invalidTransformation(transformation);
         }
 
-        String[] transf = checkTransformation(transformation);
-
-        boolean needSetPadding = false;
-        boolean needSetMode = false;
-        Object engineSpi = null;
-        Provider engineProvider = provider;
-        if (transf[1] == null && transf[2] == null) { // "algorithm"
-            if (provider == null) {
-                Engine.SpiAndProvider sap = ENGINE.getInstance(transf[0], null);
-                engineSpi = sap.spi;
-                engineProvider = sap.provider;
-            } else {
-                engineSpi = ENGINE.getInstance(transf[0], provider, null);
-            }
-        } else {
-            String[] searchOrder = {
-                transf[0] + "/" + transf[1] + "/" + transf[2], // "algorithm/mode/padding"
-                transf[0] + "/" + transf[1], // "algorithm/mode"
-                transf[0] + "//" + transf[2], // "algorithm//padding"
-                transf[0] // "algorithm"
-            };
-            int i;
-            for (i = 0; i < searchOrder.length; i++) {
-                try {
-                    if (provider == null) {
-                        Engine.SpiAndProvider sap = ENGINE.getInstance(searchOrder[i], null);
-                        engineSpi = sap.spi;
-                        engineProvider = sap.provider;
-                    } else {
-                        engineSpi = ENGINE.getInstance(searchOrder[i], provider, null);
-                    }
-                    break;
-                } catch (NoSuchAlgorithmException e) {
-                    if (i == searchOrder.length-1) {
-                        throw new NoSuchAlgorithmException(transformation, e);
-                    }
-                }
-            }
-            switch (i) {
-                case 1: // "algorithm/mode"
-                    needSetPadding = true;
-                    break;
-                case 2: // "algorithm//padding"
-                    needSetMode = true;
-                    break;
-                case 3: // "algorithm"
-                    needSetPadding = true;
-                    needSetMode = true;
-            }
-        }
-        if (engineSpi == null || engineProvider == null) {
-            throw new NoSuchAlgorithmException(transformation);
-        }
-        if (!(engineSpi instanceof CipherSpi)) {
-            throw new NoSuchAlgorithmException(engineSpi.getClass().getName());
-        }
-        CipherSpi cspi = (CipherSpi) engineSpi;
-        Cipher c = new Cipher(cspi, engineProvider, transformation);
-        if (needSetMode) {
-            c.spiImpl.engineSetMode(transf[1]);
-        }
-        if (needSetPadding) {
-            c.spiImpl.engineSetPadding(transf[2]);
-        }
-        return c;
+        String[] transformParts = checkTransformation(transformation);
+        return new Cipher(transformation, transformParts, provider);
     }
 
-    private static String[] checkTransformation(String transformation) throws NoSuchAlgorithmException {
+    private static String[] checkTransformation(String transformation)
+            throws NoSuchAlgorithmException {
         // ignore an extra prefix / characters such as in
-        // "/DES/CBC/PKCS5Paddin" http://b/3387688
+        // "/DES/CBC/PKCS5Padding" http://b/3387688
         if (transformation.startsWith("/")) {
             transformation = transformation.substring(1);
         }
@@ -356,11 +318,145 @@ public class Cipher {
     }
 
     /**
-     * Returns the provider of this cipher instance.
+     * Makes sure a CipherSpi that matches this type is selected.
+     */
+    private void selectSpi(Key key) {
+        if (spiImpl != null) {
+            return;
+        }
+
+        synchronized (initLock) {
+            if (spiImpl != null) {
+                return;
+            }
+
+            final Engine.SpiAndProvider sap = tryCombinations(key, provider, transformParts);
+            if (sap == null) {
+                throw new ProviderException("No provider for " + transformation);
+            }
+
+            spiImpl = (CipherSpi) sap.spi;
+            provider = sap.provider;
+        }
+    }
+
+    /**
+     * Convenience call when the Key is not available.
+     */
+    private void selectSpi() {
+        selectSpi(null);
+    }
+
+    /**
+     * Try all combinations of mode strings:
      *
+     * <pre>
+     *   [cipher]/[mode]/[padding]
+     *   [cipher]/[mode]
+     *   [cipher]//[padding]
+     *   [cipher]
+     * </pre>
+     */
+    private static Engine.SpiAndProvider tryCombinations(Key key, Provider provider,
+            String[] transformParts) {
+        Engine.SpiAndProvider sap = null;
+
+        if (transformParts[1] != null && transformParts[2] != null) {
+            sap = tryTransform(key, provider, transformParts[0] + "/" + transformParts[1] + "/"
+                    + transformParts[2], transformParts, NeedToSet.NONE);
+            if (sap != null) {
+                return sap;
+            }
+        }
+
+        if (transformParts[1] != null) {
+            sap = tryTransform(key, provider, transformParts[0] + "/" + transformParts[1],
+                    transformParts, NeedToSet.PADDING);
+            if (sap != null) {
+                return sap;
+            }
+        }
+
+        if (transformParts[2] != null) {
+            sap = tryTransform(key, provider, transformParts[0] + "//" + transformParts[2],
+                    transformParts, NeedToSet.MODE);
+            if (sap != null) {
+                return sap;
+            }
+        }
+
+        return tryTransform(key, provider, transformParts[0], transformParts,
+                NeedToSet.BOTH);
+    }
+
+    private static Engine.SpiAndProvider tryTransform(Key key, Provider provider, String transform,
+            String[] transformParts, NeedToSet type) {
+        Engine.SpiAndProvider sap;
+        ArrayList<Provider.Service> services = ENGINE.getServices(transform, provider);
+        if (services == null) {
+            return null;
+        }
+        for (Provider.Service service : services) {
+            try {
+                if (key != null && !service.supportsParameter(key)) {
+                    continue;
+                }
+
+                /*
+                 * Check to see if the Cipher even supports the attributes
+                 * before trying to instantiate it.
+                 */
+                if (!matchAttribute(service, ATTRIBUTE_MODES, transformParts[1])
+                        || !matchAttribute(service, ATTRIBUTE_PADDINGS, transformParts[2])) {
+                    continue;
+                }
+
+                sap = ENGINE.getInstance(service, null);
+                if (sap.spi == null || sap.provider == null) {
+                    continue;
+                }
+                if (!(sap.spi instanceof CipherSpi)) {
+                    continue;
+                }
+                CipherSpi spi = (CipherSpi) sap.spi;
+                if (((type == NeedToSet.MODE) || (type == NeedToSet.BOTH))
+                        && (transformParts[1] != null)) {
+                    spi.engineSetMode(transformParts[1]);
+                }
+                if (((type == NeedToSet.PADDING) || (type == NeedToSet.BOTH))
+                        && (transformParts[2] != null)) {
+                    spi.engineSetPadding(transformParts[2]);
+                }
+                return sap;
+            } catch (NoSuchAlgorithmException ignored) {
+            } catch (NoSuchPaddingException ignored) {
+            }
+        }
+        return null;
+    }
+
+    /**
+     * If the attribute listed exists, check that it matches the regular
+     * expression.
+     */
+    private static boolean matchAttribute(Service service, String attr, String value) {
+        if (value == null) {
+            return true;
+        }
+        final String pattern = service.getAttribute(attr);
+        if (pattern == null) {
+            return true;
+        }
+        return value.matches(pattern);
+    }
+
+    /**
+     * Returns the provider of this cipher instance.
+     * 
      * @return the provider of this cipher instance.
      */
     public final Provider getProvider() {
+        selectSpi();
         return provider;
     }
 
@@ -382,6 +478,7 @@ public class Cipher {
      * @return this ciphers block size.
      */
     public final int getBlockSize() {
+        selectSpi();
         return spiImpl.engineGetBlockSize();
     }
 
@@ -408,6 +505,7 @@ public class Cipher {
      * @return the <i>initialization vector</i> for this cipher instance.
      */
     public final byte[] getIV() {
+        selectSpi();
         return spiImpl.engineGetIV();
     }
 
@@ -423,6 +521,7 @@ public class Cipher {
      *         parameters.
      */
     public final AlgorithmParameters getParameters() {
+        selectSpi();
         return spiImpl.engineGetParameters();
     }
 
@@ -440,6 +539,13 @@ public class Cipher {
         return null;
         //        }
 
+    }
+
+    private void checkMode(int mode) {
+        if (mode != ENCRYPT_MODE && mode != DECRYPT_MODE && mode != UNWRAP_MODE
+                && mode != WRAP_MODE) {
+            throw new InvalidParameterException("Invalid mode: " + mode);
+        }
     }
 
     /**
@@ -516,15 +622,11 @@ public class Cipher {
         //        FIXME InvalidKeyException
         //        if keysize exceeds the maximum allowable keysize
         //        (jurisdiction policy files)
+        if (spiImpl == null) {
+            selectSpi(key);
+        }
         spiImpl.engineInit(opmode, key, random);
         mode = opmode;
-    }
-
-    private void checkMode(int mode) {
-        if (mode != ENCRYPT_MODE && mode != DECRYPT_MODE
-            && mode != UNWRAP_MODE && mode != WRAP_MODE) {
-            throw new InvalidParameterException("Invalid mode: " + mode);
-        }
     }
 
     /**
@@ -613,6 +715,9 @@ public class Cipher {
         //        FIXME InvalidAlgorithmParameterException
         //        cryptographic strength exceed the legal limits
         //        (jurisdiction policy files)
+        if (spiImpl == null) {
+            selectSpi(key);
+        }
         spiImpl.engineInit(opmode, key, params, random);
         mode = opmode;
     }
@@ -704,6 +809,9 @@ public class Cipher {
         //        FIXME InvalidAlgorithmParameterException
         //        cryptographic strength exceed the legal limits
         //        (jurisdiction policy files)
+        if (spiImpl == null) {
+            selectSpi(key);
+        }
         spiImpl.engineInit(opmode, key, params, random);
         mode = opmode;
     }
@@ -828,7 +936,11 @@ public class Cipher {
         //        FIXME InvalidKeyException
         //        if keysize exceeds the maximum allowable keysize
         //        (jurisdiction policy files)
-        spiImpl.engineInit(opmode, certificate.getPublicKey(), random);
+        final Key key = certificate.getPublicKey();
+        if (spiImpl == null) {
+            selectSpi(key);
+        }
+        spiImpl.engineInit(opmode, key, random);
         mode = opmode;
     }
 
