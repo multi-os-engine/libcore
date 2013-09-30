@@ -543,38 +543,14 @@ public abstract class OpenSSLCipher extends CipherSpi {
         }
 
         public static class CFB extends AES {
-            public CFB(Padding padding) {
-                super(Mode.CFB, padding);
-            }
-
-            public static class NoPadding extends CFB {
-                public NoPadding() {
-                    super(Padding.NOPADDING);
-                }
-            }
-
-            public static class PKCS5Padding extends CFB {
-                public PKCS5Padding() {
-                    super(Padding.PKCS5PADDING);
-                }
+            public CFB() {
+                super(Mode.CFB, Padding.NOPADDING);
             }
         }
 
         public static class CTR extends AES {
             public CTR(Padding padding) {
-                super(Mode.CTR, padding);
-            }
-
-            public static class NoPadding extends CTR {
-                public NoPadding() {
-                    super(Padding.NOPADDING);
-                }
-            }
-
-            public static class PKCS5Padding extends CTR {
-                public PKCS5Padding() {
-                    super(Padding.PKCS5PADDING);
-                }
+                super(Mode.CTR, Padding.NOPADDING);
             }
         }
 
@@ -598,19 +574,7 @@ public abstract class OpenSSLCipher extends CipherSpi {
 
         public static class OFB extends AES {
             public OFB(Padding padding) {
-                super(Mode.OFB, padding);
-            }
-
-            public static class NoPadding extends OFB {
-                public NoPadding() {
-                    super(Padding.NOPADDING);
-                }
-            }
-
-            public static class PKCS5Padding extends OFB {
-                public PKCS5Padding() {
-                    super(Padding.PKCS5PADDING);
-                }
+                super(Mode.OFB, Padding.NOPADDING);
             }
         }
 
@@ -697,19 +661,7 @@ public abstract class OpenSSLCipher extends CipherSpi {
 
         public static class CFB extends DESEDE {
             public CFB(Padding padding) {
-                super(Mode.CFB, padding);
-            }
-
-            public static class NoPadding extends CFB {
-                public NoPadding() {
-                    super(Padding.NOPADDING);
-                }
-            }
-
-            public static class PKCS5Padding extends CFB {
-                public PKCS5Padding() {
-                    super(Padding.PKCS5PADDING);
-                }
+                super(Mode.CFB, Padding.NOPADDING);
             }
         }
 
@@ -733,19 +685,7 @@ public abstract class OpenSSLCipher extends CipherSpi {
 
         public static class OFB extends DESEDE {
             public OFB(Padding padding) {
-                super(Mode.OFB, padding);
-            }
-
-            public static class NoPadding extends OFB {
-                public NoPadding() {
-                    super(Padding.NOPADDING);
-                }
-            }
-
-            public static class PKCS5Padding extends OFB {
-                public PKCS5Padding() {
-                    super(Padding.PKCS5PADDING);
-                }
+                super(Mode.OFB, Padding.NOPADDING);
             }
         }
 
