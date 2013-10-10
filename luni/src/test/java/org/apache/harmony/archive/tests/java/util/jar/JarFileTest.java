@@ -608,22 +608,25 @@ public class JarFileTest extends TestCase {
         Support_Resources.copyFile(resources, null, jarName);
 
         File file = new File(resources, jarName);
-
-        JarFile jarFile = new JarFile(file, true);
-
         boolean foundCerts = false;
 
-        Enumeration<JarEntry> e = jarFile.entries();
-        while (e.hasMoreElements()) {
-            JarEntry entry = e.nextElement();
-            InputStream is = jarFile.getInputStream(entry);
-            is.skip(100000);
-            is.close();
-            Certificate[] certs = entry.getCertificates();
-            if (certs != null && certs.length > 0) {
-                foundCerts = true;
-                break;
+        JarFile jarFile = new JarFile(file, true);
+        try {
+
+            Enumeration<JarEntry> e = jarFile.entries();
+            while (e.hasMoreElements()) {
+                JarEntry entry = e.nextElement();
+                InputStream is = jarFile.getInputStream(entry);
+                is.skip(100000);
+                is.close();
+                Certificate[] certs = entry.getCertificates();
+                if (certs != null && certs.length > 0) {
+                    foundCerts = true;
+                    break;
+                }
             }
+        } finally {
+            jarFile.close();
         }
 
         assertTrue(
