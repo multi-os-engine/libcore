@@ -122,7 +122,24 @@ public class JarUtils {
         String alg = null;
         Signature sig = null;
 
-        if (daOid != null && deaOid != null) {
+        if (deaOid != null) {
+            alg = deaOid;
+            try {
+                sig = Signature.getInstance(alg);
+            } catch (NoSuchAlgorithmException e) {
+            }
+
+            final String deaName = sigInfo.getDigestEncryptionAlgorithmName();
+            if (sig == null && deaName != null) {
+                alg = deaName;
+                try {
+                    sig = Signature.getInstance(alg);
+                } catch (NoSuchAlgorithmException e) {
+                }
+            }
+        }
+
+        if (sig == null && daOid != null && deaOid != null) {
             alg = daOid + "with" + deaOid;
             try {
                 sig = Signature.getInstance(alg);
@@ -136,26 +153,7 @@ public class JarUtils {
                 try {
                     sig = Signature.getInstance(alg);
                 } catch (NoSuchAlgorithmException e) {
-                }
-            }
-        }
-
-        /*
-         * TODO figure out the case in which we'd only use digestAlgorithm and
-         * add a test for it.
-         */
-        if (sig == null && daOid != null) {
-            alg = daOid;
-            try {
-                sig = Signature.getInstance(alg);
-            } catch (NoSuchAlgorithmException e) {
-            }
-
-            if (sig == null && daName != null) {
-                alg = daName;
-                try {
-                    sig = Signature.getInstance(alg);
-                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
                 }
             }
         }
