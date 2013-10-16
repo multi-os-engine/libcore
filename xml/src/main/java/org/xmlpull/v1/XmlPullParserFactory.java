@@ -3,7 +3,6 @@
 
 package org.xmlpull.v1;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -247,99 +246,36 @@ public class XmlPullParserFactory {
         return newInstance(null, null);
     }
 
-    public static XmlPullParserFactory newInstance (String classNames, Class context)
+    public static XmlPullParserFactory newInstance (String unused, Class unused2)
         throws XmlPullParserException {
 
-        /*
-        if (context == null) {
-            //NOTE: make sure context uses the same class loader as API classes
-            //      this is the best we can do without having access to context classloader in J2ME
-            //      if API is in the same classloader as implementation then this will work
-            context = referenceContextClass;
-        }
+        final XmlPullParserFactory factory = new XmlPullParserFactory();
 
-        String  classNamesLocation = null;
-
-        if (classNames == null || classNames.length() == 0 || "DEFAULT".equals(classNames)) {
-            try {
-                InputStream is = context.getResourceAsStream (RESOURCE_NAME);
-
-                if (is == null) throw new XmlPullParserException
-                        ("resource not found: "+RESOURCE_NAME
-                             +" make sure that parser implementing XmlPull API is available");
-                final StringBuilder sb = new StringBuilder();
-
-                while (true) {
-                    final int ch = is.read();
-                    if (ch < 0) break;
-                    else if (ch > ' ')
-                        sb.append((char) ch);
-                }
-                is.close ();
-
-                classNames = sb.toString ();
-            }
-            catch (Exception e) {
-                throw new XmlPullParserException (null, null, e);
-            }
-            classNamesLocation = "resource "+RESOURCE_NAME+" that contained '"+classNames+"'";
-        } else {
-            classNamesLocation =
-                "parameter classNames to newInstance() that contained '"+classNames+"'";
-        }
-        */
-        classNames = "org.kxml2.io.KXmlParser,org.kxml2.io.KXmlSerializer";
-
-        XmlPullParserFactory factory = null;
+        // Add parsers.
         final ArrayList parserClasses = new ArrayList();
-        final ArrayList serializerClasses = new ArrayList();
-        int pos = 0;
-
-        while (pos < classNames.length ()) {
-            int cut = classNames.indexOf (',', pos);
-
-            if (cut == -1) cut = classNames.length ();
-            final String name = classNames.substring (pos, cut);
-
-            Class candidate = null;
-            Object instance = null;
-
-            try {
-                candidate = Class.forName (name);
-                // necessary because of J2ME .class issue
-                instance = candidate.newInstance ();
-            }
-            catch (Exception e) {}
-
-            if (candidate != null) {
-                boolean recognized = false;
-                if (instance instanceof XmlPullParser) {
-                    parserClasses.add(candidate);
-                    recognized = true;
-                }
-                if (instance instanceof XmlSerializer) {
-                    serializerClasses.add(candidate);
-                    recognized = true;
-                }
-                if (instance instanceof XmlPullParserFactory) {
-                    if (factory == null) {
-                        factory = (XmlPullParserFactory) instance;
-                    }
-                    recognized = true;
-                }
-                if (!recognized) {
-                    throw new XmlPullParserException ("incompatible class: "+name);
-                }
-            }
-            pos = cut + 1;
-        }
-
-        if (factory == null) {
-            factory = new XmlPullParserFactory ();
+        try {
+            Class<?> parser = Class.forName("org.kxml2.io.KXmlParser");
+            parser.newInstance();
+            parserClasses.add(parser);
+        } catch (Exception e) {
+            // Ignore exceptions, if something went wrong here, we'll throw
+            // a XmlPullParserException in newPullParser.
         }
         factory.parserClasses = parserClasses;
+
+        // Add serializers.
+        final ArrayList serializerClasses = new ArrayList();
+        try {
+            Class<?> serializer = Class.forName("org.kxml2.io.KXmlSerializer");
+            serializer.newInstance();
+            serializerClasses.add(serializer);
+        } catch (Exception e) {
+            // Ignore exceptions, if something went wrong here, we'll throw
+            // a XmlPullParserException from newSerializer.
+        }
         factory.serializerClasses = serializerClasses;
         factory.classNamesLocation = "org.kxml2.io.kXmlParser,org.kxml2.io.KXmlSerializer";
+
         return factory;
     }
 }
