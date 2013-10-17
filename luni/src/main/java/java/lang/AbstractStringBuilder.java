@@ -17,9 +17,10 @@
 
 package java.lang;
 
+import libcore.util.EmptyArray;
+
 import java.io.InvalidObjectException;
 import java.util.Arrays;
-import libcore.util.EmptyArray;
 
 /**
  * A modifiable {@link CharSequence sequence of characters} for use in creating
@@ -250,6 +251,13 @@ abstract class AbstractStringBuilder {
                 char[] newData = new char[value.length];
                 System.arraycopy(value, 0, newData, 0, index);
                 System.arraycopy(value, index + 1, newData, index, length);
+                value = newData;
+                shared = false;
+            }
+        } else {
+            if (shared) {
+                char[] newData = new char[value.length];
+                System.arraycopy(value, 0, newData, 0, index);
                 value = newData;
                 shared = false;
             }
