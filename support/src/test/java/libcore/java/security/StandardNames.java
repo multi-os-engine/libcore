@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import javax.crypto.spec.DHPrivateKeySpec;
 import javax.crypto.spec.DHPublicKeySpec;
 import junit.framework.Assert;
@@ -771,14 +773,27 @@ public final class StandardNames extends Assert {
                             "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA",
                             "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
                             "SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
-                            "SSL_RSA_WITH_DES_CBC_SHA",
-                            "SSL_DHE_RSA_WITH_DES_CBC_SHA",
-                            "SSL_DHE_DSS_WITH_DES_CBC_SHA",
-                            "SSL_RSA_EXPORT_WITH_RC4_40_MD5",
-                            "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
-                            "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
-                            "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
                             CIPHER_SUITE_SECURE_RENEGOTIATION);
+
+    private static final Set<String> PERMITTED_DEFAULT_KEY_EXCHANGE_ALGS =
+            new HashSet<String>(Arrays.asList("RSA",
+                                              "DHE_RSA",
+                                              "ECDH_RSA",
+                                              "ECDHE_RSA",
+                                              "ECDSA",
+                                              "ECDH_ECDSA",
+                                              "ECDHE_ECDSA",
+                                              "DHE_DSS"));
+
+    private static final Set<String> PERMITTED_DEFAULT_BULK_ENCRYPTION_CIPHERS =
+            new HashSet<String>(Arrays.asList("RC4_128",
+                                              "3DES_EDE_CBC",
+                                              "AES_128_CBC",
+                                              "AES_256_CBC"));
+
+    private static final Set<String> PERMITTED_DEFAULT_MACS =
+            new HashSet<String>(Arrays.asList("MD5",
+                                              "SHA"));
 
     public static final Set<String> CIPHER_SUITES_SSLENGINE = new HashSet<String>(CIPHER_SUITES);
     static {
@@ -897,11 +912,74 @@ public final class StandardNames extends Assert {
     }
 
     /**
-     * Assert cipher suites match the default list in content and priority order.
+     * Assert cipher suites match the default list in content and priority order and contain
+     * only cipher suites permitted by default.
      */
     public static void assertDefaultCipherSuites(String[] cipherSuites) {
         assertValidCipherSuites(CIPHER_SUITES, cipherSuites);
         assertEquals(CIPHER_SUITES_DEFAULT, Arrays.asList(cipherSuites));
+
+        // Assert that all the cipher suites are permitted to be in the default list.
+        // This assertion is a backup for the stricter assertion above.
+        //
+        // There is no point in asserting this for the RI as it's outside of our control.
+        if (!IS_RI) {
+            SortedSet<String> disallowedDefaultCipherSuites = new TreeSet<String>();
+            for (String cipherSuite : cipherSuites) {
+                if (!isPermittedDefaultCipherSuite(cipherSuite)) {
+                    disallowedDefaultCipherSuites.add(cipherSuite);
+                }
+            }
+            if (!disallowedDefaultCipherSuites.isEmpty()) {
+                fail("Default list contains disallowed cipher suites: "
+                        + disallowedDefaultCipherSuites);
+            }
+        }
+    }
+
+    private static boolean isPermittedDefaultCipherSuite(String cipherSuite) {
+        if (cipherSuite == null) {
+            throw new NullPointerException();
+        }
+        if (CIPHER_SUITE_SECURE_RENEGOTIATION.equals(cipherSuite)) {
+            return true;
+        }
+        if ((!cipherSuite.startsWith("TLS_")) && (!cipherSuite.startsWith("SSL_"))) {
+            throw new IllegalArgumentException(cipherSuite);
+        }
+
+        // Example: RSA_WITH_AES_128_CBC_SHA
+        String remainder = cipherSuite.substring("TLS_".length());
+        int macDelimiterIndex = remainder.lastIndexOf('_');
+        if (macDelimiterIndex == -1) {
+            throw new IllegalArgumentException(cipherSuite);
+        }
+        // Example: SHA
+        String mac = remainder.substring(macDelimiterIndex + 1);
+
+        // Example: RSA_WITH_AES_128_CBC
+        remainder = remainder.substring(0, macDelimiterIndex);
+        int withDelimiterIndex = remainder.indexOf("_WITH_");
+        if (withDelimiterIndex == -1) {
+            throw new IllegalArgumentException(cipherSuite);
+        }
+
+        // Example: RSA
+        String keyExchange = remainder.substring(0, withDelimiterIndex);
+        // Example: AES_128_CBC
+        String bulkEncryptionCipher = remainder.substring(withDelimiterIndex + "_WITH_".length());
+
+        if (!PERMITTED_DEFAULT_MACS.contains(mac)) {
+            return false;
+        }
+        if (!PERMITTED_DEFAULT_KEY_EXCHANGE_ALGS.contains(keyExchange)) {
+            return false;
+        }
+        if (!PERMITTED_DEFAULT_BULK_ENCRYPTION_CIPHERS.contains(bulkEncryptionCipher)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
