@@ -31,6 +31,12 @@ public final class VMRuntime {
     private static final VMRuntime THE_ONE = new VMRuntime();
 
     /**
+     * Target SDK version. Special values: {@code 0} means "current",
+     * {@code 10000} means {@code CUR_DEVELOPMENT}.
+     */
+    private int targetSdkVersion;
+
+    /**
      * Prevents this class from being instantiated.
      */
     private VMRuntime() {
@@ -111,9 +117,29 @@ public final class VMRuntime {
      * app starts to run, because it may change the VM's behavior in
      * dangerous ways. Use 0 to mean "current" (since callers won't
      * necessarily know the actual current SDK version, and the
-     * allocated version numbers start at 1).
+     * allocated version numbers start at 1), and 10000 to mean
+     * CUR_DEVELOPMENT.
      */
-    public native void setTargetSdkVersion(int targetSdkVersion);
+    public void setTargetSdkVersion(int targetSdkVersion) {
+        synchronized (this) {
+            this.targetSdkVersion = targetSdkVersion;
+            setTargetSdkVersionNative(this.targetSdkVersion);
+        }
+    }
+
+    /**
+     * Gets the target SDK version.
+     *
+     * @return version or {@code 0} for "current" and {@code 10000} for
+     *         {@code CUR_DEVELOPMENT}.
+     */
+    public int getTargetSdkVersion() {
+        synchronized (this) {
+            return targetSdkVersion;
+        }
+    }
+
+    private native void setTargetSdkVersionNative(int targetSdkVersion);
 
     /**
      * This method exists for binary compatibility.  It was part of a
