@@ -17,8 +17,11 @@
 
 package java.util;
 
-
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This class provides methods that return pseudo-random values.
@@ -38,20 +41,22 @@ public class Random implements Serializable {
 
     /**
      * The boolean value indicating if the second Gaussian number is available.
-     *
-     * @serial
      */
     private boolean haveNextNextGaussian;
 
     /**
-     * @serial It is associated with the internal state of this generator.
+     * This is used for serialization, but the actual seed is read out of
+     * {@code atomicSeed}.
      */
     private long seed;
 
     /**
+     * This is the field that holds the actual seed used in satisfying calls.
+     */
+    private transient AtomicLong atomicSeed = new AtomicLong();
+
+    /**
      * The second Gaussian generated number.
-     *
-     * @serial
      */
     private double nextNextGaussian;
 
@@ -89,9 +94,13 @@ public class Random implements Serializable {
      * <p>Subclasses only need to override this method to alter the behavior
      * of all the public methods.
      */
-    protected synchronized int next(int bits) {
-        seed = (seed * multiplier + 0xbL) & ((1L << 48) - 1);
-        return (int) (seed >>> (48 - bits));
+    protected int next(int bits) {
+        long oldSeed, newSeed;
+        do {
+            oldSeed = atomicSeed.get();
+            newSeed = (oldSeed * multiplier + 0xbL) & ((1L << 48) - 1);
+        } while (!atomicSeed.compareAndSet(oldSeed, newSeed));
+        return (int) (newSeed >>> (48 - bits));
     }
 
     /**
@@ -200,7 +209,17 @@ public class Random implements Serializable {
      * Art of Computer Programming, Volume 2</i>, Section 3.2.1.
      */
     public synchronized void setSeed(long seed) {
-        this.seed = (seed ^ multiplier) & ((1L << 48) - 1);
+        atomicSeed.set((seed ^ multiplier) & ((1L << 48) - 1));
         haveNextNextGaussian = false;
+    }
+
+    private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        atomicSeed = new AtomicLong(seed);
+    }
+
+    private void writeObject(ObjectOutputStream stream) throws IOException {
+        seed = atomicSeed.get();
+        stream.defaultWriteObject();
     }
 }
