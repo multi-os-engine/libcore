@@ -61,10 +61,10 @@ public class Throwable implements java.io.Serializable {
     private Throwable cause = this;
 
     /**
-     * Throwables suppressed by this throwable. Null when suppressed exceptions
-     * are disabled.
+     * Throwables suppressed by this throwable.
      */
-    private List<Throwable> suppressedExceptions = Collections.emptyList();
+    @SuppressWarnings("unchecked")
+    private List<Throwable> suppressedExceptions = Collections.EMPTY_LIST;
 
     /**
      * An intermediate representation of the stack trace.  This field may
@@ -334,12 +334,10 @@ public class Throwable implements java.io.Serializable {
         }
 
         // Print suppressed exceptions indented one level deeper.
-        if (suppressedExceptions != null) {
-            for (Throwable throwable : suppressedExceptions) {
-                err.append(indent);
-                err.append("\tSuppressed: ");
-                throwable.printStackTrace(err, indent + "\t", stack);
-            }
+        for (Throwable throwable : suppressedExceptions) {
+            err.append(indent);
+            err.append("\tSuppressed: ");
+            throwable.printStackTrace(err, indent + "\t", stack);
         }
 
         Throwable cause = getCause();
@@ -409,14 +407,12 @@ public class Throwable implements java.io.Serializable {
         if (throwable == null) {
             throw new NullPointerException("throwable == null");
         }
-        if (suppressedExceptions != null) {
-            // Suppressed exceptions are enabled.
-            if (suppressedExceptions.isEmpty()) {
-                // Ensure we have somewhere to place suppressed exceptions.
-                suppressedExceptions = new ArrayList<Throwable>(1);
-            }
-            suppressedExceptions.add(throwable);
+
+        if (suppressedExceptions == Collections.EMPTY_LIST) {
+            // Ensure we have somewhere to place suppressed exceptions.
+            suppressedExceptions = new ArrayList<Throwable>(1);
         }
+        suppressedExceptions.add(throwable);
     }
 
     /**
@@ -425,7 +421,7 @@ public class Throwable implements java.io.Serializable {
      * @since 1.7
      */
     public final Throwable[] getSuppressed() {
-        return (suppressedExceptions != null && !suppressedExceptions.isEmpty())
+        return (suppressedExceptions != Collections.EMPTY_LIST)
                 ? suppressedExceptions.toArray(new Throwable[suppressedExceptions.size()])
                 : EmptyArray.THROWABLE;
     }
@@ -439,10 +435,8 @@ public class Throwable implements java.io.Serializable {
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
 
-        if (suppressedExceptions != null) {
-            // The deserialized list may be unmodifiable, so just create a mutable copy.
-            suppressedExceptions = new ArrayList<Throwable>(suppressedExceptions);
-        }
+        // The deserialized list may be unmodifiable, so just create a mutable copy.
+        suppressedExceptions = new ArrayList<Throwable>(suppressedExceptions);
     }
 
     /*
