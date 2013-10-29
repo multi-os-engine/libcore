@@ -103,22 +103,31 @@ public final class IoUtils {
      * Returns the contents of 'path' as a byte array.
      */
     public static byte[] readFileAsByteArray(String path) throws IOException {
-        return readFileAsBytes(path).toByteArray();
+        return readFileAsBytes(path, 8192 /* bufferSize */).toByteArray();
     }
 
     /**
      * Returns the contents of 'path' as a string. The contents are assumed to be UTF-8.
      */
     public static String readFileAsString(String path) throws IOException {
-        return readFileAsBytes(path).toString(StandardCharsets.UTF_8);
+        return readFileAsBytes(path, 8192 /* bufferSize */).toString(StandardCharsets.UTF_8);
     }
 
-    private static UnsafeByteSequence readFileAsBytes(String path) throws IOException {
+    /**
+     * Similar to {@link #readFileAsString(String)}, except that callers can
+     * specify the size of the buffer used for reading from the file.
+     */
+    public static String readFileAsString(String path, int bufferSize) throws IOException {
+        return readFileAsBytes(path, bufferSize).toString(StandardCharsets.UTF_8);
+    }
+
+    private static UnsafeByteSequence readFileAsBytes(String path, int bufferSize)
+            throws IOException {
         RandomAccessFile f = null;
         try {
             f = new RandomAccessFile(path, "r");
             UnsafeByteSequence bytes = new UnsafeByteSequence((int) f.length());
-            byte[] buffer = new byte[8192];
+            byte[] buffer = new byte[bufferSize];
             while (true) {
                 int byteCount = f.read(buffer);
                 if (byteCount == -1) {
