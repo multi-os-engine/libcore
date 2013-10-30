@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.RandomAccessFile;
 import java.net.Socket;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import static libcore.io.OsConstants.*;
@@ -103,32 +104,14 @@ public final class IoUtils {
      * Returns the contents of 'path' as a byte array.
      */
     public static byte[] readFileAsByteArray(String path) throws IOException {
-        return readFileAsBytes(path).toByteArray();
+        return new FileReader(path, 8192).readFully().toByteArray();
     }
 
     /**
      * Returns the contents of 'path' as a string. The contents are assumed to be UTF-8.
      */
     public static String readFileAsString(String path) throws IOException {
-        return readFileAsBytes(path).toString(StandardCharsets.UTF_8);
-    }
-
-    private static UnsafeByteSequence readFileAsBytes(String path) throws IOException {
-        RandomAccessFile f = null;
-        try {
-            f = new RandomAccessFile(path, "r");
-            UnsafeByteSequence bytes = new UnsafeByteSequence((int) f.length());
-            byte[] buffer = new byte[8192];
-            while (true) {
-                int byteCount = f.read(buffer);
-                if (byteCount == -1) {
-                    return bytes;
-                }
-                bytes.write(buffer, 0, byteCount);
-            }
-        } finally {
-            IoUtils.closeQuietly(f);
-        }
+        return new FileReader(path, 8192).readFully().toString(StandardCharsets.UTF_8);
     }
 
     /**
@@ -192,5 +175,75 @@ public final class IoUtils {
         Thread.currentThread().interrupt();
         // TODO: set InterruptedIOException.bytesTransferred
         throw new InterruptedIOException();
+    }
+
+    /**
+     * A convenience class for reading the contents of a file into a {@code String}
+     * or a {@code byte[]}. This class attempts to minimize the number of allocations
+     * and copies required to read this data.
+     *
+     * For the case where we know the "true" length of a file (most ordinary files)
+     * we allocate exactly one byte[] and copy data into that. Calls to
+     * {@link #toByteArray} will then return the internal array and <b>not</b> a copy.
+     */
+    public static class FileReader {
+        private final RandomAccessFile raf;
+        private final boolean unknownLength;
+
+        private byte[] bytes;
+        private int count;
+
+        public FileReader(String path, int expectedSizeIfUnknown) throws IOException {
+            raf = new RandomAccessFile(path, "r");
+            final int length = (int) raf.length();
+            if (length == 0) {
+                unknownLength = true;
+                this.bytes = new byte[expectedSizeIfUnknown];
+            } else {
+                unknownLength = false;
+                this.bytes = new byte[length];
+            }
+        }
+
+        public FileReader readFully() throws IOException {
+            try {
+                while (true) {
+                    final int capacity = bytes.length;
+                    while (count < capacity) {
+                        final int read = raf.read(bytes, count, capacity - count);
+                        if (read == -1) {
+                            return this;
+                        }
+                        count += read;
+                    }
+
+                    // If we don't know the length of this file, we need to continue
+                    // reading until raf.read() returns -1.
+                    if (unknownLength) {
+                        byte[] newBytes = new byte[count * 2];
+                        System.arraycopy(bytes, 0, newBytes, 0, count);
+                        bytes = newBytes;
+                    } else {
+                        return this;
+                    }
+                }
+            } finally {
+                raf.close();
+            }
+        }
+
+        @FindBugsSuppressWarnings("EI_EXPOSE_REP")
+        public byte[] toByteArray() {
+            if (count == bytes.length) {
+                return bytes;
+            }
+            byte[] result = new byte[count];
+            System.arraycopy(bytes, 0, result, 0, count);
+            return result;
+        }
+
+        public String toString(Charset cs) {
+            return new String(bytes, 0, count, cs);
+        }
     }
 }

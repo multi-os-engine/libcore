@@ -20,6 +20,8 @@ package java.net;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -232,8 +234,16 @@ public final class NetworkInterface extends Object {
     }
 
     private static int readIntFile(String path) throws SocketException {
+        RandomAccessFile raf = null;
         try {
-            String s = IoUtils.readFileAsString(path).trim();
+            // We should only need 10 bytes to read either a hex or a decimal
+            // 32 bit integer from the file
+            //
+            // The performance here will deteriorate if we have say 1KiB of leading
+            // spaces, but hopefully no one releases a kernel as brain damaged as that.
+            final String s = new IoUtils.FileReader(path, 32 /* expected size */)
+                    .readFully()
+                    .toString(StandardCharsets.US_ASCII).trim();
             if (s.startsWith("0x")) {
                 return Integer.parseInt(s.substring(2), 16);
             } else {
@@ -241,6 +251,8 @@ public final class NetworkInterface extends Object {
             }
         } catch (Exception ex) {
             throw rethrowAsSocketException(ex);
+        } finally {
+            IoUtils.closeQuietly(raf);
         }
     }
 
