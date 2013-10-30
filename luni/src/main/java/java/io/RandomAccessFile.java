@@ -21,6 +21,7 @@ import dalvik.system.CloseGuard;
 import java.nio.ByteOrder;
 import java.nio.NioUtils;
 import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
 import java.nio.charset.ModifiedUtf8;
 import java.util.Arrays;
 import libcore.io.ErrnoException;
