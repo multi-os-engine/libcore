@@ -43,19 +43,6 @@ public class Manifest implements Cloneable {
 
     private static final byte[] VALUE_SEPARATOR = new byte[] { ':', ' ' };
 
-    private static final Field BAIS_BUF = getByteArrayInputStreamField("buf");
-    private static final Field BAIS_POS = getByteArrayInputStreamField("pos");
-
-    private static Field getByteArrayInputStreamField(String name) {
-        try {
-            Field f = ByteArrayInputStream.class.getDeclaredField(name);
-            f.setAccessible(true);
-            return f;
-        } catch (Exception ex) {
-            throw new AssertionError(ex);
-        }
-    }
-
     private Attributes mainAttributes = new Attributes();
 
     private HashMap<String, Attributes> entries = new HashMap<String, Attributes>();
@@ -223,14 +210,9 @@ public class Manifest implements Cloneable {
     private static byte[] exposeByteArrayInputStreamBytes(ByteArrayInputStream bais) {
         byte[] buffer;
         synchronized (bais) {
-            byte[] buf;
-            int pos;
-            try {
-                buf = (byte[]) BAIS_BUF.get(bais);
-                pos = BAIS_POS.getInt(bais);
-            } catch (IllegalAccessException iae) {
-                throw new AssertionError(iae);
-            }
+            byte[] buf = bais.unsafeGetBuffer();
+            int pos = bais.unsafeGetPosition();
+
             int available = bais.available();
             if (pos == 0 && buf.length == available) {
                 buffer = buf;

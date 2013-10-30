@@ -187,4 +187,25 @@ public class ByteArrayInputStream extends InputStream {
         pos = this.count - pos < byteCount ? this.count : (int) (pos + byteCount);
         return pos - temp;
     }
+
+    /**
+     * For internal use only. Currently used only by java.util.jar.Manifest.
+     * TODO: Get rid of this hack
+     *
+     * @hide
+     */
+    @FindBugsSuppressWarnings("EI_EXPOSE_REP")
+    public byte[] unsafeGetBuffer() {
+        return buf;
+    }
+
+    /**
+     * For internal use only. Currently used only by java.util.jar.Manifest.
+     * TODO: Get rid of this hack
+     *
+     * @hide
+     */
+    public int unsafeGetPosition() {
+        return pos;
+    }
 }
