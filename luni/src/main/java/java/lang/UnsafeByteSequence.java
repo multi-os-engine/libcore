@@ -16,6 +16,8 @@
 
 package java.lang;
 
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 
 /**
@@ -48,11 +50,48 @@ public class UnsafeByteSequence {
         count = 0;
     }
 
+    /**
+     * Special case for copying bytes from a {@link RandomAccessFile} without
+     * allocating an intermediate buffer. If the size of this file is less than
+     * or equal to the initial capacity of the buffer, no additional allocations
+     * are necessary.
+     *
+     * When {@code unknownLength} is false, we assume that the initial capacity
+     * of this byte sequence is equal to the length of the file. This class
+     * <b>DOES NOT</b> assert that this true (since it costs an additional stat),
+     * it's up to the caller to set things up correctly.
+     *
+     * @return the true length of the file (total number of bytes read).
+     */
+    public int readFully(RandomAccessFile raf, boolean unknownLength)
+            throws IOException {
+        while (true) {
+            final int capacity = bytes.length;
+            while (count < capacity) {
+                final int read = raf.read(bytes, count, capacity - count);
+                if (read == -1) {
+                    return count;
+                }
+                count += read;
+            }
+
+            // If we don't know the length of this file, we need to continue
+            // reading until raf.read() returns -1. Expand the array and
+            // continue reading from the file.
+            //
+            // NOTE: We can get rid of unknownLength at the cost of an additional
+            // read() on the RAF or an unnecessary doubling (or copy).
+            if (unknownLength) {
+                expand(0);
+            } else {
+                return count;
+            }
+        }
+    }
+
     public void write(byte[] buffer, int offset, int length) {
         if (count + length >= bytes.length) {
-            byte[] newBytes = new byte[(count + length) * 2];
-            System.arraycopy(bytes, 0, newBytes, 0, count);
-            bytes = newBytes;
+            expand(length);
         }
         System.arraycopy(buffer, offset, bytes, count, length);
         count += length;
@@ -60,11 +99,15 @@ public class UnsafeByteSequence {
 
     public void write(int b) {
         if (count == bytes.length) {
-            byte[] newBytes = new byte[count * 2];
-            System.arraycopy(bytes, 0, newBytes, 0, count);
-            bytes = newBytes;
+            expand(0);
         }
         bytes[count++] = (byte) b;
+    }
+
+    private void expand(int nextWriteLength) {
+        byte[] newBytes = new byte[(count + nextWriteLength) * 2];
+        System.arraycopy(bytes, 0, newBytes, 0, count);
+        bytes = newBytes;
     }
 
     @FindBugsSuppressWarnings("EI_EXPOSE_REP")
