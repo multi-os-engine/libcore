@@ -117,15 +117,23 @@ public final class IoUtils {
         RandomAccessFile f = null;
         try {
             f = new RandomAccessFile(path, "r");
-            UnsafeByteSequence bytes = new UnsafeByteSequence((int) f.length());
-            byte[] buffer = new byte[8192];
-            while (true) {
-                int byteCount = f.read(buffer);
-                if (byteCount == -1) {
-                    return bytes;
-                }
-                bytes.write(buffer, 0, byteCount);
+            final int length = (int) f.length();
+            final UnsafeByteSequence bytes;
+            if (length == 0) {
+                // TODO: Magic number. Could this be replaced by
+                // StructStat#st_blksize ? (We're already calling stat to figure out the
+                // length of the file).
+                bytes = new UnsafeByteSequence(8192);
+                bytes.readFully(f, true /* unknown length */);
+            } else {
+                // This is ideal case. We allocate exactly one byte array whose
+                // length == the file length, and there are no extra copies for
+                // toByteArray or toString.
+                bytes = new UnsafeByteSequence(length);
+                bytes.readFully(f, false /* length known */);
             }
+
+            return bytes;
         } finally {
             IoUtils.closeQuietly(f);
         }
