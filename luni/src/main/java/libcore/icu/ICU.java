@@ -18,6 +18,7 @@ package libcore.icu;
 
 import java.util.LinkedHashSet;
 import java.util.Locale;
+import libcore.util.BasicLruCache;
 
 /**
  * Makes ICU data accessible to Java.
@@ -32,6 +33,8 @@ public final class ICU {
      * Cache for ISO country names.
      */
     private static String[] isoCountries;
+
+    private static final BasicLruCache<String, String> CACHED_PATTERNS = new BasicLruCache<String, String>(8);
 
     /**
      * Returns an array of ISO language names (two-letter codes), fetched either
@@ -127,7 +130,19 @@ public final class ICU {
         return localesFromStrings(getAvailableNumberFormatLocalesNative());
     }
 
-    public static native String getBestDateTimePattern(String skeleton, String localeName);
+    public static String getBestDateTimePattern(String skeleton, String localeName) {
+      String key = skeleton + "\t" + localeName;
+      synchronized (CACHED_PATTERNS) {
+        String pattern = CACHED_PATTERNS.get(key);
+        if (pattern == null) {
+          pattern = getBestDateTimePatternNative(skeleton, localeName);
+          CACHED_PATTERNS.put(key, pattern);
+        }
+        return pattern;
+      }
+    }
+
+    private static native String getBestDateTimePatternNative(String skeleton, String localeName);
 
     public static char[] getDateFormatOrder(String pattern) {
       char[] result = new char[3];
@@ -231,5 +246,5 @@ public final class ICU {
     private static native String[] getISOLanguagesNative();
     private static native String[] getISOCountriesNative();
 
-    static native boolean initLocaleDataImpl(String locale, LocaleData result);
+    static native boolean initLocaleDataNative(String locale, LocaleData result);
 }
