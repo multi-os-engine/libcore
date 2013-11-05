@@ -16,6 +16,7 @@
 
 package libcore.javax.net.ssl;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -182,8 +183,10 @@ public class SSLSocketTest extends TestCase {
                 // arrays are too big to make sure we get back only what we expect
                 byte[] clientFromServer = new byte[serverToClient.length+1];
                 byte[] serverFromClient = new byte[clientToServer.length+1];
-                int readFromServer = client.getInputStream().read(clientFromServer);
-                int readFromClient = server.getInputStream().read(serverFromClient);
+                int readFromServer = readAtLeast(
+                        client.getInputStream(), clientFromServer, clientFromServer.length - 1);
+                int readFromClient = readAtLeast(
+                        server.getInputStream(), serverFromClient, serverFromClient.length - 1);
                 assertEquals(serverToClient.length, readFromServer);
                 assertEquals(clientToServer.length, readFromClient);
                 assertEquals(clientToServerString, new String(serverFromClient, 0, readFromClient));
@@ -204,6 +207,30 @@ public class SSLSocketTest extends TestCase {
             }
         }
         c.close();
+    }
+
+    /**
+     * Reads at least {@code minLength} bytes from {@code in} into {@code buf}.
+     *
+     * @return number of bytes read ({@code minLength} or greater).
+     *
+     * @throws EOFException if end of stream was encountered before {@code minLength} bytes could
+     *         be read.
+     */
+    private static int readAtLeast(InputStream in, byte[] buf, int minLength) throws IOException {
+        assertTrue(buf.length >= minLength);
+        int remaining = minLength;
+        int offset = 0;
+        while (remaining > 0) {
+            int chunkSize = in.read(buf, offset, buf.length - offset);
+            if (chunkSize == -1) {
+                throw new EOFException(
+                    "Premature EOF: expected at least: " + minLength + ", read: " + offset);
+            }
+            offset += chunkSize;
+            remaining -= chunkSize;
+        }
+        return offset;
     }
 
     public void test_SSLSocket_getEnabledCipherSuites() throws Exception {
