@@ -87,14 +87,19 @@ public abstract class Buffer {
      * This is set in the constructor.
      * TODO: make this final at the cost of loads of extra constructors? [how many?]
      */
-    long effectiveDirectAddress;
+    final long effectiveDirectAddress;
 
     Buffer(int elementSizeShift, int capacity) {
+        this(elementSizeShift, capacity, 0);
+    }
+
+    Buffer(int elementSizeShift, int capacity, long effectiveDirectAddress) {
         this._elementSizeShift = elementSizeShift;
         if (capacity < 0) {
             throw new IllegalArgumentException("capacity < 0: " + capacity);
         }
         this.capacity = this.limit = capacity;
+        this.effectiveDirectAddress = effectiveDirectAddress;
     }
 
     /**

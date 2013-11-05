@@ -89,9 +89,10 @@ public abstract class IntBuffer extends Buffer implements Comparable<IntBuffer> 
         return buf;
     }
 
-    IntBuffer(int capacity) {
-        super(2, capacity);
+    IntBuffer(int capacity, long effectiveDirectAddress) {
+        super(3, capacity, effectiveDirectAddress);
     }
+
 
     public final int[] array() {
         return protectedArray();
