@@ -21,9 +21,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import libcore.io.Streams;
 
 /**
  * The input stream from which the JAR file to be read may be fetched. It is
@@ -60,37 +62,30 @@ public class JarInputStream extends ZipInputStream {
      */
     public JarInputStream(InputStream stream, boolean verify) throws IOException {
         super(stream);
-        if (verify) {
-            verifier = new JarVerifier("JarInputStream");
-        }
+
         if ((mEntry = getNextJarEntry()) == null) {
             return;
         }
+
         if (mEntry.getName().equalsIgnoreCase(JarFile.META_DIR)) {
-            mEntry = null; // modifies behavior of getNextJarEntry()
+            mEntry = null; // modifies behavior of getNextJarEntry() [ Good lord....]
             closeEntry();
             mEntry = getNextJarEntry();
         }
+
         if (mEntry.getName().equalsIgnoreCase(JarFile.MANIFEST_NAME)) {
             mEntry = null;
-            manifest = new Manifest(this, verify);
+            manifest = new Manifest(Streams.readFullyNoClose(this), verify);
             closeEntry();
-            if (verify) {
-                verifier.setManifest(manifest);
-                if (manifest != null) {
-                    verifier.mainAttributesEnd = manifest.getMainAttributesEnd();
-                }
-            }
-
         } else {
             Attributes temp = new Attributes(3);
             temp.map.put("hidden", null);
             mEntry.setAttributes(temp);
-            /*
-             * if not from the first entry, we will not get enough
-             * information,so no verify will be taken out.
-             */
-            verifier = null;
+        }
+
+        if (verify && manifest != null) {
+            verifier = new JarVerifier("JarInputStream", manifest,
+                    new HashMap<String, byte[]>(), manifest.getMainAttributesEnd());
         }
     }
 
@@ -148,8 +143,7 @@ public class JarInputStream extends ZipInputStream {
                 if (verifier != null) {
                     if (isMeta) {
                         verifier.addMetaEntry(jarEntry.getName(),
-                                ((ByteArrayOutputStream) verStream)
-                                        .toByteArray());
+                                ((ByteArrayOutputStream) verStream).toByteArray());
                         try {
                             verifier.readCertificates();
                         } catch (SecurityException e) {
@@ -186,6 +180,7 @@ public class JarInputStream extends ZipInputStream {
             if (jarEntry == null) {
                 return null;
             }
+
             if (verifier != null) {
                 isMeta = jarEntry.getName().toUpperCase(Locale.US).startsWith(JarFile.META_DIR);
                 if (isMeta) {
