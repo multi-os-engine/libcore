@@ -62,10 +62,9 @@ class JarVerifier {
     };
 
     private final String jarName;
-
-    private Manifest man;
-
-    private HashMap<String, byte[]> metaEntries = new HashMap<String, byte[]>(5);
+    private final Manifest manifest;
+    private final HashMap<String, byte[]> metaEntries;
+    final int mainAttributesEnd;
 
     private final Hashtable<String, HashMap<String, Attributes>> signatures = new Hashtable<String, HashMap<String, Attributes>>(
             5);
@@ -75,28 +74,29 @@ class JarVerifier {
 
     private final Hashtable<String, Certificate[]> verifiedEntries = new Hashtable<String, Certificate[]>();
 
-    int mainAttributesEnd;
-
     /**
      * Stores and a hash and a message digest and verifies that massage digest
      * matches the hash.
      */
-    class VerifierEntry extends OutputStream {
+    static class VerifierEntry extends OutputStream {
 
-        private String name;
+        private final String name;
 
-        private MessageDigest digest;
+        private final MessageDigest digest;
 
-        private byte[] hash;
+        private final byte[] hash;
 
-        private Certificate[] certificates;
+        private final Certificate[] certificates;
+
+        private final Hashtable<String, Certificate[]> verifiedEntries;
 
         VerifierEntry(String name, MessageDigest digest, byte[] hash,
-                Certificate[] certificates) {
+                Certificate[] certificates, Hashtable<String, Certificate[]> verifedEntries) {
             this.name = name;
             this.digest = digest;
             this.hash = hash;
             this.certificates = certificates;
+            this.verifiedEntries = verifedEntries;
         }
 
         /**
@@ -129,19 +129,18 @@ class JarVerifier {
         void verify() {
             byte[] d = digest.digest();
             if (!MessageDigest.isEqual(d, Base64.decode(hash))) {
-                throw invalidDigest(JarFile.MANIFEST_NAME, name, jarName);
+                throw invalidDigest(JarFile.MANIFEST_NAME, name, name);
             }
             verifiedEntries.put(name, certificates);
         }
-
     }
 
-    private SecurityException invalidDigest(String signatureFile, String name, String jarName) {
+    private static SecurityException invalidDigest(String signatureFile, String name, String jarName) {
         throw new SecurityException(signatureFile + " has invalid digest for " + name +
                 " in " + jarName);
     }
 
-    private SecurityException failedVerification(String jarName, String signatureFile) {
+    private static SecurityException failedVerification(String jarName, String signatureFile) {
         throw new SecurityException(jarName + " failed verification of " + signatureFile);
     }
 
@@ -151,8 +150,12 @@ class JarVerifier {
      * @param name
      *            the name of the JAR file being verified.
      */
-    JarVerifier(String name) {
+    JarVerifier(String name, Manifest manifest, HashMap<String, byte[]> metaEntries,
+            int mainAttributesEnd) {
         jarName = name;
+        this.manifest = manifest;
+        this.metaEntries = metaEntries;
+        this.mainAttributesEnd = mainAttributesEnd;
     }
 
     /**
@@ -171,11 +174,11 @@ class JarVerifier {
         // If no manifest is present by the time an entry is found,
         // verification cannot occur. If no signature files have
         // been found, do not verify.
-        if (man == null || signatures.size() == 0) {
+        if (manifest == null || signatures.size() == 0) {
             return null;
         }
 
-        Attributes attributes = man.getAttributes(name);
+        Attributes attributes = manifest.getAttributes(name);
         // entry has no digest
         if (attributes == null) {
             return null;
@@ -212,7 +215,7 @@ class JarVerifier {
 
             try {
                 return new VerifierEntry(name, MessageDigest.getInstance(algorithm), hashBytes,
-                        certificatesArray);
+                        certificatesArray, verifiedEntries);
             } catch (NoSuchAlgorithmException e) {
                 // ignored
             }
@@ -349,7 +352,7 @@ class JarVerifier {
             Iterator<Map.Entry<String, Attributes>> it = entries.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry<String, Attributes> entry = it.next();
-                Manifest.Chunk chunk = man.getChunk(entry.getKey());
+                Manifest.Chunk chunk = this.manifest.getChunk(entry.getKey());
                 if (chunk == null) {
                     return;
                 }
@@ -361,16 +364,6 @@ class JarVerifier {
         }
         metaEntries.put(signatureFile, null);
         signatures.put(signatureFile, entries);
-    }
-
-    /**
-     * Associate this verifier with the specified {@link Manifest} object.
-     *
-     * @param mf
-     *            a {@code java.util.jar.Manifest} object.
-     */
-    void setManifest(Manifest mf) {
-        man = mf;
     }
 
     /**
@@ -431,10 +424,8 @@ class JarVerifier {
     /**
      * Remove all entries from the internal collection of data held about each
      * JAR entry in the {@code META-INF} directory.
-     *
-     * @see #addMetaEntry(String, byte[])
      */
     void removeMetaEntries() {
-        metaEntries = null;
+        metaEntries.clear();
     }
 }
