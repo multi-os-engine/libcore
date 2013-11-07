@@ -35,7 +35,7 @@ public class JarInputStream extends ZipInputStream {
 
     private Manifest manifest;
 
-    private boolean eos = false;
+    private boolean verified = false;
 
     private JarEntry mEntry;
 
@@ -71,25 +71,22 @@ public class JarInputStream extends ZipInputStream {
             closeEntry();
             mEntry = getNextJarEntry();
         }
+
         if (mEntry.getName().equalsIgnoreCase(JarFile.MANIFEST_NAME)) {
             mEntry = null;
             manifest = new Manifest(this, verify);
             closeEntry();
             if (verify) {
                 verifier.setManifest(manifest);
-                if (manifest != null) {
-                    verifier.mainAttributesEnd = manifest.getMainAttributesEnd();
-                }
+                verifier.mainAttributesEnd = manifest.getMainAttributesEnd();
             }
-
         } else {
-            Attributes temp = new Attributes(3);
-            temp.map.put("hidden", null);
-            mEntry.setAttributes(temp);
-            /*
-             * if not from the first entry, we will not get enough
-             * information,so no verify will be taken out.
-             */
+            // If the manifest isn't the first entry, we will not have enough
+            // information to perform verification on entries that precede it.
+            //
+            // TODO: Should we throw if verify == true in this case ?
+            // TODO: We need all meta entries to be placed before the manifest
+            // as well.
             verifier = null;
         }
     }
@@ -142,23 +139,26 @@ public class JarInputStream extends ZipInputStream {
             return -1;
         }
         int r = super.read(buffer, byteOffset, byteCount);
-        if (verStream != null && !eos) {
+        // verifier can be null if we've been asked not to verify or if
+        // the manifest wasn't found.
+        //
+        // verStream will be null if we're reading the manifest.
+        if (verifier != null && verStream != null && !verified) {
             if (r == -1) {
-                eos = true;
-                if (verifier != null) {
-                    if (isMeta) {
-                        verifier.addMetaEntry(jarEntry.getName(),
-                                ((ByteArrayOutputStream) verStream)
-                                        .toByteArray());
-                        try {
-                            verifier.readCertificates();
-                        } catch (SecurityException e) {
-                            verifier = null;
-                            throw e;
-                        }
-                    } else {
-                        ((JarVerifier.VerifierEntry) verStream).verify();
+                // We've hit the end of this stream for the first time, so attempt
+                // a verification.
+                verified = true;
+                if (isMeta) {
+                    verifier.addMetaEntry(jarEntry.getName(),
+                            ((ByteArrayOutputStream) verStream).toByteArray());
+                    try {
+                        verifier.readCertificates();
+                    } catch (SecurityException e) {
+                        verifier = null;
+                        throw e;
                     }
+                } else {
+                    ((JarVerifier.VerifierEntry) verStream).verify();
                 }
             } else {
                 verStream.write(buffer, byteOffset, r);
@@ -180,22 +180,24 @@ public class JarInputStream extends ZipInputStream {
         if (mEntry != null) {
             jarEntry = mEntry;
             mEntry = null;
-            jarEntry.setAttributes(null);
         } else {
             jarEntry = (JarEntry) super.getNextEntry();
             if (jarEntry == null) {
                 return null;
             }
+
             if (verifier != null) {
                 isMeta = jarEntry.getName().toUpperCase(Locale.US).startsWith(JarFile.META_DIR);
                 if (isMeta) {
-                    verStream = new ByteArrayOutputStream();
+                    final int entrySize = (int) jarEntry.getSize();
+                    verStream = new ByteArrayOutputStream(entrySize > 0 ? entrySize : 8192);
                 } else {
                     verStream = verifier.initEntry(jarEntry.getName());
                 }
             }
         }
-        eos = false;
+
+        verified = false;
         return jarEntry;
     }
 
