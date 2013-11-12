@@ -17,6 +17,8 @@
 
 package tests.api.java.util;
 
+import tests.support.Support_MapTest2;
+import tests.support.Support_UnmodifiableCollectionTest;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,9 +28,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
-import tests.support.Support_MapTest2;
-import tests.support.Support_UnmodifiableCollectionTest;
 
 /**
  * java.util.LinkedHashMap
