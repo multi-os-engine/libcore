@@ -690,7 +690,10 @@
 {
   description: "this test is invalid, proxy.equals isn't symmetric",
   result: EXEC_FAILED,
-  name: "org.apache.harmony.luni.tests.java.util.HashMapTest#test_proxies"
+  names: [
+    "org.apache.harmony.luni.tests.java.util.HashMapTest#test_proxies",
+    "tests.api.java.util.HashMapTest#test_proxies"
+  ]
 },
 {
   description: "this test is invalid, the mock map's entry set isn't to spec",
