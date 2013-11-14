@@ -275,19 +275,6 @@ public class ThreadTest extends junit.framework.TestCase {
     }
 
     /**
-     * java.lang.Thread#destroy()
-     */
-    @SuppressWarnings("deprecation")
-    public void test_destroy() {
-        try {
-            new Thread().destroy();
-            // FIXME uncomment when IBM VME is updated
-            //fail("NoSuchMethodError was not thrown");
-        } catch (NoSuchMethodError e) {
-        }
-    }
-
-    /**
      * java.lang.Thread#enumerate(java.lang.Thread[])
      */
     public void test_enumerate$Ljava_lang_Thread() {

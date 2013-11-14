@@ -17,21 +17,21 @@
 
 package tests.api.java.util;
 
+import tests.support.Support_TimeZone;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Formatter;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 
-import tests.support.Support_TimeZone;
-
 public class TimeZoneTest extends junit.framework.TestCase {
 
     private static final int ONE_HOUR = 3600000;
+
+    private TimeZone processDefault;
 
     /**
      * java.util.TimeZone#getDefault()
@@ -46,17 +46,6 @@ public class TimeZoneTest extends junit.framework.TestCase {
      */
     public void test_getDSTSavings() {
         // Test for method int java.util.TimeZone.getDSTSavings()
-
-        // test on subclass SimpleTimeZone
-        TimeZone st1 = TimeZone.getTimeZone("EST");
-        assertEquals("T1A. Incorrect daylight savings returned",
-                ONE_HOUR, st1.getDSTSavings());
-
-        // a SimpleTimeZone with daylight savings different then 1 hour
-        st1 = TimeZone.getTimeZone("Australia/Lord_Howe");
-        assertEquals("T1B. Incorrect daylight savings returned",
-                1800000, st1.getDSTSavings());
-
         // test on subclass Support_TimeZone, an instance with daylight savings
         TimeZone tz1 = new Support_TimeZone(-5 * ONE_HOUR, true);
         assertEquals("T2. Incorrect daylight savings returned",
@@ -159,6 +148,10 @@ public class TimeZoneTest extends junit.framework.TestCase {
      * java.util.TimeZone#setDefault(java.util.TimeZone)
      */
     public void test_setDefaultLjava_util_TimeZone() {
+        // NOTE: Required to get tests passing under vogar. See comments
+        // in TimeZone.getDefault.
+        TimeZone.setDefault(null);
+
         TimeZone oldDefault = TimeZone.getDefault();
         TimeZone zone = new SimpleTimeZone(45, "TEST");
         TimeZone.setDefault(zone);
@@ -185,7 +178,7 @@ public class TimeZoneTest extends junit.framework.TestCase {
         /* Time zone data was changed in ICU49.2.  Many common short names were removed. */
         assertEquals("中国标准时间",
                 timezone.getDisplayName(false, TimeZone.LONG, Locale.CHINA));
-        assertEquals("GMT+0800",
+        assertEquals("GMT+08:00",
                 timezone.getDisplayName(false, TimeZone.SHORT, Locale.CHINA));
         try {
             timezone.getDisplayName(false, 100, Locale.CHINA);
@@ -208,9 +201,11 @@ public class TimeZoneTest extends junit.framework.TestCase {
     }
 
     protected void setUp() {
+        processDefault = TimeZone.getDefault();
     }
 
     protected void tearDown() {
+        TimeZone.setDefault(processDefault);
     }
 
     /**
