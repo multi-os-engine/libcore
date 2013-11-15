@@ -181,7 +181,7 @@ ifeq ($(WITH_HOST_DALVIK),true)
     # Make the core-tests library.
     ifeq ($(LIBCORE_SKIP_TESTS),)
     include $(CLEAR_VARS)
-    LOCAL_SRC_FILES := $(call all-test-java-files-under,dalvik dom json luni xml)
+    LOCAL_SRC_FILES := $(call all-test-java-files-under,dalvik dom harmony-tests json luni xml)
     LOCAL_JAVA_RESOURCE_DIRS := $(test_resource_dirs)
     LOCAL_NO_STANDARD_LIBRARIES := true
     LOCAL_JAVA_LIBRARIES := bouncycastle-hostdex core-hostdex core-junit-hostdex core-tests-support-hostdex okhttp-hostdex
