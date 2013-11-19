@@ -766,33 +766,51 @@ public final class URI implements Comparable<URI>, Serializable {
     }
 
     /**
-     * Returns true if {@code first} and {@code second} are equal after
-     * unescaping hex sequences like %F1 and %2b.
+     * Returns true if the given URI escaped strings {@code first} and {@code second} are
+     * equal.
+     *
+     * TODO: This method assumes that both strings are escaped using the same escape rules
+     * yet it still performs case insensitive comparison of the escaped sequences.
+     * Why is this necessary ? We can just replace it with first.equals(second)
+     * otherwise.
      */
     private boolean escapedEquals(String first, String second) {
-        if (first.indexOf('%') != second.indexOf('%')) {
-            return first.equals(second);
+        // This length test isn't a micro-optimization. We need it because we sometimes
+        // calculate the number of characters to match based on the length of the second
+        // string. If the second string is shorter than the first, we might attempt to match
+        // 0 chars, and regionMatches is specified to return true in that case.
+        if (first.length() != second.length()) {
+            return false;
         }
 
         int index, prevIndex = 0;
-        while ((index = first.indexOf('%', prevIndex)) != -1
-                && second.indexOf('%', prevIndex) == index) {
-            boolean match = first.substring(prevIndex, index).equals(
-                    second.substring(prevIndex, index));
-            if (!match) {
+        while (true) {
+            int index1 = first.indexOf('%', prevIndex);
+            int index2 = second.indexOf('%', prevIndex);
+            if (index1 != index2) {
                 return false;
             }
 
-            match = first.substring(index + 1, index + 3).equalsIgnoreCase(
-                    second.substring(index + 1, index + 3));
-            if (!match) {
+            index = index1;
+            if (index == -1) {
+                // No more escapes, match the remainder of the string
+                // normally.
+                break;
+            }
+
+            if (!first.regionMatches(prevIndex, second, prevIndex, (index - prevIndex))) {
+                return false;
+            }
+
+            if (!first.regionMatches(true /* ignore case */, index + 1, second, index + 1, 2)) {
                 return false;
             }
 
             index += 3;
             prevIndex = index;
         }
-        return first.substring(prevIndex).equals(second.substring(prevIndex));
+
+        return first.regionMatches(prevIndex, second, prevIndex, second.length() - prevIndex);
     }
 
     @Override public boolean equals(Object o) {
