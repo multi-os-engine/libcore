@@ -387,6 +387,10 @@ public class PipedInputStream extends InputStream {
         lastWriter = Thread.currentThread();
         try {
             while (buffer != null && out == in) {
+                // NOTE: We currently check that the reader thread is alive only
+                // when our internal buffer is full. We could check on every call
+                // to receive, but then we take a performance hit for semantics that
+                // are not particularly useful in practice anyway.
                 if (lastReader != null && !lastReader.isAlive()) {
                     throw new IOException("Pipe broken");
                 }
@@ -402,6 +406,7 @@ public class PipedInputStream extends InputStream {
         if (in == -1) {
             in = 0;
         }
+
         buffer[in++] = (byte) oneByte;
         if (in == buffer.length) {
             in = 0;
