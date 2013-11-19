@@ -21,6 +21,7 @@ LOCAL_PATH := $(call my-dir)
 
 subdirs := benchmarks
 subdir_makefiles := $(call all-named-subdir-makefiles,$(subdirs))
+subdir_makefiles += $(LOCAL_PATH)/libziparchive/Android.mk
 
 #
 # Include the definitions to build the Java code.
