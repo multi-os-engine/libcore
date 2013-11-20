@@ -290,7 +290,10 @@ public class GregorianCalendar extends Calendar {
         set(year, month, day, hour, minute, second);
     }
 
-    GregorianCalendar(long milliseconds) {
+    /**
+     * @hide visible for testing only.
+     */
+    public GregorianCalendar(long milliseconds) {
         this(false);
         setTimeInMillis(milliseconds);
     }
@@ -670,8 +673,16 @@ public class GregorianCalendar extends Calendar {
         if (useMonth
                 && (lastDateFieldSet == DAY_OF_WEEK || lastDateFieldSet == WEEK_OF_YEAR)) {
             if (isSet[WEEK_OF_YEAR] && isSet[DAY_OF_WEEK]) {
-                useMonth = lastDateFieldSet != WEEK_OF_YEAR && weekMonthSet
-                        && isSet[DAY_OF_WEEK];
+                if (lastDateFieldSet == WEEK_OF_YEAR) {
+                    useMonth = false;
+                } else if (lastDateFieldSet == DAY_OF_WEEK) {
+                    // DAY_OF_WEEK belongs to both the Month + Week + Day and the
+                    // WeekOfYear + Day combinations. We're supposed to use the most
+                    // recent combination, as specified the single set field. We can't
+                    // know for sure in this case, so we always prefer the week-month-day
+                    // combination if week-month is already set.
+                    useMonth = weekMonthSet;
+                }
             } else if (isSet[DAY_OF_YEAR]) {
                 useMonth = isSet[DATE] && isSet[MONTH];
             }
