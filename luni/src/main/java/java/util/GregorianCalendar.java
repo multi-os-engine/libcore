@@ -290,7 +290,10 @@ public class GregorianCalendar extends Calendar {
         set(year, month, day, hour, minute, second);
     }
 
-    GregorianCalendar(long milliseconds) {
+    /**
+     * @hide visible for testing only.
+     */
+    public GregorianCalendar(long milliseconds) {
         this(false);
         setTimeInMillis(milliseconds);
     }
@@ -670,8 +673,9 @@ public class GregorianCalendar extends Calendar {
         if (useMonth
                 && (lastDateFieldSet == DAY_OF_WEEK || lastDateFieldSet == WEEK_OF_YEAR)) {
             if (isSet[WEEK_OF_YEAR] && isSet[DAY_OF_WEEK]) {
-                useMonth = lastDateFieldSet != WEEK_OF_YEAR && weekMonthSet
-                        && isSet[DAY_OF_WEEK];
+                useMonth = lastDateFieldSet != WEEK_OF_YEAR &&
+                        lastDateFieldSet != DAY_OF_WEEK &&
+                        weekMonthSet;
             } else if (isSet[DAY_OF_YEAR]) {
                 useMonth = isSet[DATE] && isSet[MONTH];
             }
