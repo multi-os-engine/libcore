@@ -31,7 +31,7 @@ final class CharsetDecoderICU extends CharsetDecoder {
      * data[OUTPUT_OFFSET]  = on input contains the start of output and on output the number of output chars written
      * data[INVALID_BYTES]  = number of invalid bytes
      */
-    private int[] data = new int[3];
+    private final int[] data = new int[3];
 
     /* handle to the ICU converter that is opened */
     private long converterHandle = 0;
@@ -114,8 +114,8 @@ final class CharsetDecoderICU extends CharsetDecoder {
                 if (error == ICU.U_BUFFER_OVERFLOW_ERROR) {
                     return CoderResult.OVERFLOW;
                 } else if (error == ICU.U_TRUNCATED_CHAR_FOUND) {
-                    if (data[INPUT_OFFSET] > 0) {
-                        return CoderResult.malformedForLength(data[INPUT_OFFSET]);
+                    if (data[INVALID_BYTES] > 0) {
+                        return CoderResult.malformedForLength(data[INVALID_BYTES]);
                     }
                 }
             }
