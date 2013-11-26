@@ -142,8 +142,8 @@ final class CharsetEncoderICU extends CharsetEncoder {
                 if (error == ICU.U_BUFFER_OVERFLOW_ERROR) {
                     return CoderResult.OVERFLOW;
                 } else if (error == ICU.U_TRUNCATED_CHAR_FOUND) {
-                    if (data[INPUT_OFFSET] > 0) {
-                        return CoderResult.malformedForLength(data[INPUT_OFFSET]);
+                    if (data[INVALID_CHARS] > 0) {
+                        return CoderResult.malformedForLength(data[INVALID_CHARS]);
                     }
                 }
             }
