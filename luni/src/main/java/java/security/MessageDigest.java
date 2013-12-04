@@ -302,12 +302,12 @@ public abstract class MessageDigest extends MessageDigestSpi {
         if (digesta.length != digestb.length) {
             return false;
         }
+        // uses constant time comparison here to avoid timing attacks
+        int v = 0;
         for (int i = 0; i < digesta.length; i++) {
-            if (digesta[i] != digestb[i]) {
-                return false;
-            }
+            v |= (digesta[i] ^ digestb[i]);
         }
-        return true;
+        return v == 0;
     }
 
     /**
