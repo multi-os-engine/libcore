@@ -394,7 +394,7 @@ public abstract class Provider extends Properties {
      * exists.
      * <p>
      * If two services match the requested type and algorithm, the one added
-     * with the {@link #putService(Service)} is returned (as opposed to the one
+     * with {@code putService(Service)} is returned (as opposed to the one
      * added via {@link #put(Object, Object)}.
      *
      * @param type
@@ -804,6 +804,40 @@ public abstract class Provider extends Properties {
      * provider it belongs and other properties.
      */
     public static class Service {
+        /** Attribute name of supported key classes. */
+        private static final String ATTR_SUPPORTED_KEY_CLASSES = "SupportedKeyClasses";
+
+        /** Attribute name of supported key formats. */
+        private static final String ATTR_SUPPORTED_KEY_FORMATS = "SupportedKeyFormats";
+
+        private static final HashMap<String, Boolean> sSupportsParameter
+                = new HashMap<String, Boolean>();
+        static {
+            // Does not support parameter
+            sSupportsParameter.put("AlgorithmParameterGenerator", false);
+            sSupportsParameter.put("AlgorithmParameters", false);
+            sSupportsParameter.put("CertificateFactory", false);
+            sSupportsParameter.put("CertPathBuilder", false);
+            sSupportsParameter.put("CertPathValidator", false);
+            sSupportsParameter.put("CertStore", false);
+            sSupportsParameter.put("KeyFactory", false);
+            sSupportsParameter.put("KeyGenerator", false);
+            sSupportsParameter.put("KeyManagerFactory", false);
+            sSupportsParameter.put("KeyPairGenerator", false);
+            sSupportsParameter.put("KeyStore", false);
+            sSupportsParameter.put("MessageDigest", false);
+            sSupportsParameter.put("SecretKeyFactory", false);
+            sSupportsParameter.put("SecureRandom", false);
+            sSupportsParameter.put("SSLContext", false);
+            sSupportsParameter.put("TrustManagerFactory", false);
+
+            // Supports parameter
+            sSupportsParameter.put("Cipher", true);
+            sSupportsParameter.put("KeyAgreement", true);
+            sSupportsParameter.put("Mac", true);
+            sSupportsParameter.put("Signature", true);
+        }
+
         // The provider
         private Provider provider;
 
@@ -827,6 +861,15 @@ public abstract class Provider extends Properties {
 
         // For newInstance() optimization
         private String lastClassName;
+
+        /** Indicates whether supportedKeyClasses and supportedKeyFormats. */
+        private volatile boolean supportedKeysInitialized;
+
+        /** List of classes that this service supports. */
+        private Class<?>[] keyClasses;
+
+        /** List of key formats this service supports. */
+        private String[] keyFormats;
 
         /**
          * Constructs a new instance of {@code Service} with the given
@@ -1005,7 +1048,7 @@ public abstract class Provider extends Properties {
                 throw new InvalidParameterException(type + ": service cannot use the parameter");
             }
 
-            Class[] parameterTypes = new Class[1];
+            Class<?>[] parameterTypes = new Class<?>[1];
             Object[] initargs = { constructorParameter };
             try {
                 if (type.equalsIgnoreCase("CertStore")) {
@@ -1031,7 +1074,89 @@ public abstract class Provider extends Properties {
          *         constructor parameter, {@code false} otherwise.
          */
         public boolean supportsParameter(Object parameter) {
-            return true;
+            Boolean supportsParameter = sSupportsParameter.get(type);
+            if (supportsParameter == null) {
+                return true;
+            }
+            if (!supportsParameter) {
+                throw new InvalidParameterException("Cannot use a parameter with " + type);
+            }
+
+            /*
+             * Only key type parameters are allowed, but allow null since there
+             * might not be any listed classes or formats for this instance.
+             */
+            if (parameter != null && !(parameter instanceof Key)) {
+                throw new InvalidParameterException("Parameter should be of type Key");
+            }
+
+            ensureSupportedKeysInitialized();
+
+            // No restriction specified by Provider registration.
+            if (keyClasses == null && keyFormats == null) {
+                return true;
+            }
+
+            Key keyParam = (Key) parameter;
+            if (keyClasses != null && isInList(keyClasses, keyParam.getClass())) {
+                return true;
+            }
+            if (keyFormats != null && isInList(keyFormats, keyParam.getFormat())) {
+                return true;
+            }
+
+            return false;
+        }
+
+        /**
+         * Initialize the list of supported key classes and formats.
+         */
+        private void ensureSupportedKeysInitialized() {
+            if (supportedKeysInitialized) {
+                return;
+            }
+
+            final String supportedClassesString = getAttribute(ATTR_SUPPORTED_KEY_CLASSES);
+            if (supportedClassesString != null) {
+                String[] keyClassNames = supportedClassesString.split("\\|");
+                ArrayList<Class<?>> supportedClassList = new ArrayList<Class<?>>(
+                        keyClassNames.length);
+                final ClassLoader classLoader = getProvider().getClass().getClassLoader();
+                for (String keyClassName : keyClassNames) {
+                    try {
+                        Class<?> keyClass = classLoader.loadClass(keyClassName);
+                        if (Key.class.isAssignableFrom(keyClass)) {
+                            supportedClassList.add(keyClass);
+                        }
+                    } catch (ClassNotFoundException ignored) {
+                    }
+                }
+                keyClasses = supportedClassList.toArray(new Class<?>[supportedClassList.size()]);
+            }
+
+            final String supportedFormatString = getAttribute(ATTR_SUPPORTED_KEY_FORMATS);
+            if (supportedFormatString != null) {
+                keyFormats = supportedFormatString.split("\\|");
+            }
+
+            supportedKeysInitialized = true;
+        }
+
+        /**
+         * Check if an item is in the list. The list of supported key classes
+         * and formats is usually just a length of 1, so we can use a simple
+         * array instead of some sort of Set.
+         */
+        private <T> boolean isInList(T[] itemList, T target) {
+            if (target == null) {
+                return false;
+            }
+            for (T item : itemList) {
+                if (target.equals(item)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /**
