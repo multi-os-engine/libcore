@@ -71,7 +71,7 @@ public class SSLSocketBenchmark extends SimpleBenchmark {
 
     @Param private Implementation implementation;
 
-    public enum Implementation { OPENSSL, HARMONY };
+    public enum Implementation { OPENSSL };
 
     private SocketFactory sf;
 
@@ -80,9 +80,6 @@ public class SSLSocketBenchmark extends SimpleBenchmark {
         switch (implementation) {
             case OPENSSL:
                 sslContext = SSLContext.getInstance("SSL", "AndroidOpenSSL");
-                break;
-            case HARMONY:
-                sslContext = SSLContext.getInstance("SSL", "HarmonyJSSE");
                 break;
             default:
                 throw new RuntimeException(implementation.toString());

@@ -88,28 +88,10 @@ public class SSLSocketTest extends TestCase {
                                                             error);
         } else  {
             test_SSLSocket_getSupportedCipherSuites_connect(testKeyStore,
-                                                            "HarmonyJSSE",
-                                                            "HarmonyJSSE",
-                                                            false,
-                                                            false,
-                                                            error);
-            test_SSLSocket_getSupportedCipherSuites_connect(testKeyStore,
                                                             "AndroidOpenSSL",
                                                             "AndroidOpenSSL",
                                                             true,
                                                             true,
-                                                            error);
-            test_SSLSocket_getSupportedCipherSuites_connect(testKeyStore,
-                                                            "HarmonyJSSE",
-                                                            "AndroidOpenSSL",
-                                                            false,
-                                                            true,
-                                                            error);
-            test_SSLSocket_getSupportedCipherSuites_connect(testKeyStore,
-                                                            "AndroidOpenSSL",
-                                                            "HarmonyJSSE",
-                                                            true,
-                                                            false,
                                                             error);
         }
         if (error.length() > 0) {

@@ -37,8 +37,7 @@ public class SSLLoopbackBenchmark extends SimpleBenchmark {
     @Param private Implementation implementation;
 
     public enum Implementation {
-        OPENSSL("AndroidOpenSSL"),
-        HARMONY("HarmonyJSSE");
+        OPENSSL("AndroidOpenSSL");
 
         final String providerName;
 
