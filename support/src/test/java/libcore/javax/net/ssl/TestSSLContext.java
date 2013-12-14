@@ -141,8 +141,7 @@ public final class TestSSLContext extends Assert {
      * TestSSLContext creation method that allows separate creation of server key store
      */
     public static TestSSLContext create(TestKeyStore client, TestKeyStore server) {
-        String provider = StandardNames.JSSE_PROVIDER_NAME;
-        return create(client, server, provider, provider);
+        return create(client, server, null, null);
     }
     public static TestSSLContext create(TestKeyStore client, TestKeyStore server,
                                         String clientProvider, String serverProvider) {
@@ -204,7 +203,14 @@ public final class TestSSLContext extends Assert {
                                                     final TrustManager[] trustManagers)
     {
         try {
-            SSLContext context = SSLContext.getInstance(protocol, provider);
+            SSLContext context;
+            if (provider == null) {
+                // Default provider
+                context = SSLContext.getInstance(protocol);
+            } else {
+                // Explicitly specified provider
+                context = SSLContext.getInstance(protocol, provider);
+            }
             context.init(keyManagers, trustManagers, new SecureRandom());
             return context;
         } catch (Exception e) {
