@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 // Note: this class was written without inspecting the non-free org.json sourcecode.
 
@@ -620,6 +621,21 @@ public class JSONObject {
     /* Return a raw type for API compatibility */
     public Iterator keys() {
         return nameValuePairs.keySet().iterator();
+    }
+
+    /**
+     * Returns the set of {@code String} names in this object. The returned set
+     * is a view of the keys in this object. {@link Set#remove(Object)} will remove
+     * the corresponding mapping from this object and set iterator behaviour
+     * is undefined if this object is modified after it is returned.
+     *
+     * See {@link #keys()}.
+     *
+     * @hide.
+     */
+    /* Return a raw type for API compatibility */
+    public Set keySet() {
+        return nameValuePairs.keySet();
     }
 
     /**

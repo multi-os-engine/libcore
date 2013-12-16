@@ -991,6 +991,6 @@ public class JSONObjectTest extends TestCase {
         HashMap<String, Object> map = new HashMap<String, Object>();
         map.put("x", "l");
         map.put("y", list);
-        assertEquals("{\"y\":[\"a\",[]],\"x\":\"l\"}", new JSONObject(map).toString());
+        assertEquals("{\"x\":\"l\",\"y\":[\"a\",[]]}", new JSONObject(map).toString());
     }
 }
