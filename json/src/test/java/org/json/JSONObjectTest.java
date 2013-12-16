@@ -158,7 +158,7 @@ public class JSONObjectTest extends TestCase {
     public void testPutNullRemoves() throws JSONException {
         JSONObject object = new JSONObject();
         object.put("foo", "bar");
-        object.put("foo", (Collection) null);
+        object.put("foo", (String) null);
         assertEquals(0, object.length());
         assertFalse(object.has("foo"));
         try {
@@ -815,13 +815,16 @@ public class JSONObjectTest extends TestCase {
     public void testNullValue() throws JSONException {
         JSONObject object = new JSONObject();
         object.put("foo", JSONObject.NULL);
-        object.put("bar", (Collection) null);
+        object.put("bar", (Object) null);
+        object.put("baz", (Collection) null);
 
         // there are two ways to represent null; each behaves differently!
         assertTrue(object.has("foo"));
         assertFalse(object.has("bar"));
+        assertTrue(object.has("baz"));
         assertTrue(object.isNull("foo"));
         assertTrue(object.isNull("bar"));
+        assertFalse(object.isNull("baz"));
     }
 
     public void testHas() throws JSONException {
@@ -991,6 +994,6 @@ public class JSONObjectTest extends TestCase {
         HashMap<String, Object> map = new HashMap<String, Object>();
         map.put("x", "l");
         map.put("y", list);
-        assertEquals("{\"y\":[\"a\",[]],\"x\":\"l\"}", new JSONObject(map).toString());
+        assertEquals("{\"x\":\"l\",\"y\":[\"a\",[]]}", new JSONObject(map).toString());
     }
 }

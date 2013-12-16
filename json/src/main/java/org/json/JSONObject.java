@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 // Note: this class was written without inspecting the non-free org.json sourcecode.
 
@@ -237,6 +238,22 @@ public class JSONObject {
      */
     public JSONObject put(String name, long value) throws JSONException {
         nameValuePairs.put(checkName(name), value);
+        return this;
+    }
+
+    /**
+     * Maps {@code name} to a {@link JSONArray} constructed from {@code value}
+     * clobbering any existing name/value mapping with the same name.
+     *
+     * This function is equivalent to
+     * {@code JSONObject#put(name, new JSONArray(value))}.
+     *
+     * @return this object
+     * @hide
+     */
+    /* Accepts a raw type for API compatibility */
+    public JSONObject put(String name, Collection value) throws JSONException {
+        nameValuePairs.put(checkName(name), new JSONArray(value));
         return this;
     }
 
@@ -620,6 +637,21 @@ public class JSONObject {
     /* Return a raw type for API compatibility */
     public Iterator keys() {
         return nameValuePairs.keySet().iterator();
+    }
+
+    /**
+     * Returns the set of {@code String} names in this object. The returned set
+     * is a view of the keys in this object. {@link Set#remove(Object)} will remove
+     * the corresponding mapping from this object and the set iterator's behaviour
+     * is undefined if this object is modified after it is returned.
+     *
+     * See {@link #keys()}.
+     *
+     * @hide.
+     */
+    /* Return a raw type for API compatibility */
+    public Set keySet() {
+        return nameValuePairs.keySet();
     }
 
     /**
