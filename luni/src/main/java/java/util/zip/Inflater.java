@@ -170,6 +170,14 @@ public class Inflater {
     }
 
     /**
+     * Returns the number of bytes of the current input that have been
+     * read by this inflater. For internal use only.
+     */
+    synchronized int getCurrentRead() {
+        return inRead;
+    }
+
+    /**
      * Returns the total number of bytes of input read by this {@code Inflater}. This
      * method is limited to 32 bits; use {@link #getBytesRead} instead.
      */
