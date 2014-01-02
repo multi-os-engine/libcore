@@ -190,9 +190,7 @@ public class DatagramSocketTest extends junit.framework.TestCase {
                         } catch (java.io.InterruptedIOException e) {
                             Thread.yield();
                         }
-                        ;
                     }
-                    ;
                 } catch (java.io.IOException e) {
                     System.out.println("Multicast server failed: " + e);
                 } finally {
@@ -228,8 +226,7 @@ public class DatagramSocketTest extends junit.framework.TestCase {
             ds.receive(receive);
             ds.close();
             fail("No PortUnreachableException when connected at native level on recv ");
-        } catch (PortUnreachableException e) {
-            // Expected
+        } catch (PortUnreachableException expected) {
         }
 
         // validate that we can send/receive with datagram sockets connected at
@@ -277,8 +274,7 @@ public class DatagramSocketTest extends junit.framework.TestCase {
             ds.connect(inetAddress, portNumber);
             ds.disconnect();
             ds.close();
-        } catch (PortUnreachableException e) {
-            // Expected
+        } catch (PortUnreachableException expected) {
         }
 
         // validate that once connected we cannot send to another address
@@ -292,8 +288,7 @@ public class DatagramSocketTest extends junit.framework.TestCase {
             ds.send(send);
             ds.close();
             fail("No Exception when trying to send to a different address on a connected socket ");
-        } catch (IllegalArgumentException e) {
-            // Expected
+        } catch (IllegalArgumentException expected) {
         }
 
         // validate that we can connect, then disconnect, then connect then
@@ -420,9 +415,6 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         ds.connect(inetAddress, portNumber);
 
         if ("true".equals(System.getProperty("run.ipv6tests"))) {
-            System.out
-                    .println("Running test_connectLjava_net_InetAddressI(DatagramSocketTest) with IPv6 address");
-
             ds = new java.net.DatagramSocket();
             byte[] addressTestBytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                     0, 0, 0 };
@@ -446,13 +438,6 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         ds.disconnect();
         assertNull("Incorrect InetAddress", ds.getInetAddress());
         assertEquals("Incorrect Port", -1, ds.getPort());
-    }
-
-    /**
-     * java.net.DatagramSocket#getInetAddress()
-     */
-    public void test_getInetAddress() {
-        assertTrue("Used to test", true);
     }
 
     public void test_getLocalAddress() throws Exception {
@@ -496,6 +481,13 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         DatagramSocket ds = new DatagramSocket();
         ds.setReceiveBufferSize(130);
         assertTrue("Incorrect buffer size", ds.getReceiveBufferSize() >= 130);
+        ds.close();
+        try {
+            ds.getReceiveBufferSize();
+            fail("SocketException was not thrown.");
+        } catch(SocketException se) {
+            //expected
+        }
     }
 
     public void test_getSendBufferSize() throws Exception {
@@ -503,6 +495,13 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         ds = new java.net.DatagramSocket(portNumber);
         ds.setSendBufferSize(134);
         assertTrue("Incorrect buffer size", ds.getSendBufferSize() >= 134);
+        ds.close();
+        try {
+            ds.getSendBufferSize();
+            fail("SocketException was not thrown.");
+        } catch(SocketException se) {
+            //expected
+        }
     }
 
     public void test_getSoTimeout() throws Exception {
@@ -527,19 +526,17 @@ public class DatagramSocketTest extends junit.framework.TestCase {
                     Thread.sleep(1000);
                     DatagramSocket sds = new DatagramSocket(ports[1]);
                     DatagramPacket rdp = new DatagramPacket("Test String"
-                            .getBytes(), 11, localHost, portNumber);
+                            .getBytes("UTF-8"), 11, localHost, portNumber);
                     sds.send(rdp);
                     sds.close();
                 } catch (Exception e) {
-                    System.err.println("host " + localHost + " port "
-                            + portNumber + " failed to send data: " + e);
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
             }
         }
 
         try {
-            new Thread(new TestDGRcv(), "DGSender").start();
+            new Thread(new TestDGRcv(), "datagram receiver").start();
             ds = new java.net.DatagramSocket(portNumber);
             ds.setSoTimeout(6000);
             byte rbuf[] = new byte[1000];
@@ -649,73 +646,6 @@ public class DatagramSocketTest extends junit.framework.TestCase {
 
     }
 
-    /**
-     * Tests receive() method in various combinations with
-     * DatagramPacket#getLength() and DatagramPacket#getLength(). This is
-     * regression test for HARMONY-2276.
-     *
-     * @throws IOException
-     *             if some I/O error occured
-     */
-    // public void test2276() throws IOException {
-    // final String ADDRESS = "239.255.2.3";
-    // final int PORT = Support_PortManager.getNextPortForUDP();
-    // InetAddress group = InetAddress.getByName(ADDRESS);
-    // MulticastSocket socket = new MulticastSocket(PORT);
-    // byte[] recvData = new byte[100];
-    // DatagramPacket recvDatagram = new DatagramPacket(recvData,
-    // recvData.length);
-    //
-    // String message = "Hello, world!";
-    // String longerMessage = message + " again.";
-    // String veryLongMessage = longerMessage + " Forever!";
-    //
-    // socket.joinGroup(group);
-    // socket.setSoTimeout(5000); // prevent eternal block in
-    // // socket.receive()
-    // // send & recieve packet
-    // byte[] sendData = message.getBytes();
-    // DatagramPacket sendDatagram = new DatagramPacket(sendData, 0,
-    // sendData.length, group, PORT);
-    // socket.send(sendDatagram);
-    // socket.receive(recvDatagram);
-    // String recvMessage = new String(recvData, 0, recvDatagram.getLength());
-    // assertEquals(message, recvMessage);
-    //
-    // // send & receive longer packet
-    // sendData = longerMessage.getBytes();
-    // sendDatagram = new DatagramPacket(sendData, 0, sendData.length,
-    // group, PORT);
-    // socket.send(sendDatagram);
-    // socket.receive(recvDatagram);
-    // recvMessage = new String(recvData, 0, recvDatagram.getLength());
-    // assertEquals(longerMessage, recvMessage);
-    //
-    // // tricky case, added to test compatibility with RI;
-    // // depends on the previous test case
-    // sendData = veryLongMessage.getBytes();
-    // sendDatagram = new DatagramPacket(sendData, 0, sendData.length, group,
-    // PORT);
-    // socket.send(sendDatagram);
-    // recvDatagram.setLength(recvDatagram.getLength()); // !!!
-    // socket.receive(recvDatagram);
-    // recvMessage = new String(recvData, 0, recvDatagram.getLength());
-    // assertEquals(longerMessage, recvMessage);
-    //
-    // // tests if received packet is truncated after length was set to 1
-    // sendData = message.getBytes();
-    // sendDatagram = new DatagramPacket(sendData, 0, sendData.length,
-    // group, PORT);
-    // socket.send(sendDatagram);
-    // recvDatagram.setLength(1);
-    // socket.receive(recvDatagram);
-    // assertEquals("Received message was not truncated", 1,
-    // recvDatagram.getLength());
-    // assertSame("Received message is invalid", sendData[0], recvData[0]);
-    //
-    // socket.leaveGroup(group);
-    // socket.close();
-    // }
 
     /**
      * java.net.DatagramSocket#send(java.net.DatagramPacket)
@@ -749,8 +679,7 @@ public class DatagramSocketTest extends junit.framework.TestCase {
                     ds.close();
                     return;
                 } catch (Exception e) {
-                    System.out
-                            .println("Failed to establish Dgram server: " + e);
+                    fail();
                 }
             }
         }
@@ -770,6 +699,8 @@ public class DatagramSocketTest extends junit.framework.TestCase {
                 assertTrue("Incorrect data sent: " + retval, retval
                         .equals(testString));
             }
+        } catch (Exception e) {
+            fail("Exception during send test : " + e.getMessage());
         } finally {
             ds.close();
         }
@@ -891,6 +822,13 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         ds = new java.net.DatagramSocket(portNumber);
         ds.setSendBufferSize(134);
         assertTrue("Incorrect buffer size", ds.getSendBufferSize() >= 134);
+        ds.close();
+        try {
+            ds.setSendBufferSize(1);
+            fail("SocketException was not thrown.");
+        } catch(SocketException se) {
+            //expected
+        }
     }
 
     public void test_setReceiveBufferSizeI() throws Exception {
@@ -898,12 +836,29 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         ds = new java.net.DatagramSocket(portNumber);
         ds.setReceiveBufferSize(130);
         assertTrue("Incorrect buffer size", ds.getReceiveBufferSize() >= 130);
-    }
 
-    public void test_setSoTimeoutI() throws Exception {
-        DatagramSocket ds = new DatagramSocket();
-        ds.setSoTimeout(100);
-        assertTrue("Set incorrect timeout", ds.getSoTimeout() >= 100);
+        try {
+            ds.setReceiveBufferSize(0);
+            fail("IllegalArgumentException was not thrown.");
+        } catch(IllegalArgumentException iae) {
+            //expected
+        }
+
+        try {
+            ds.setReceiveBufferSize(-1);
+            fail("IllegalArgumentException was not thrown.");
+        } catch(IllegalArgumentException iae) {
+            //expected
+        }
+
+        ds.close();
+
+        try {
+            ds.setReceiveBufferSize(1);
+            fail("SocketException was not thrown.");
+        } catch (SocketException e) {
+            //expected
+        }
     }
 
     public void test_ConstructorLjava_net_DatagramSocketImpl() {
@@ -960,35 +915,34 @@ public class DatagramSocketTest extends junit.framework.TestCase {
             }
         }
 
-        DatagramServer server = null;
+        InetSocketAddress isa = null;
+        try {
+            isa = new InetSocketAddress(
+                    InetAddress.getLocalHost(), 1);
+        } catch (UnknownHostException e) {
+            fail("UnknownHostException was thrown.");
+        }
+    }
+
+    public void test_bindLjava_net_SocketAddress() throws Exception {
+        int[] ports = Support_PortManager.getNextPortsForUDP(3);
+        int serverPortNumber = ports[1];
 
         // now create a socket that is not bound and then bind it
-        int[] ports = Support_PortManager.getNextPortsForUDP(3);
-        int portNumber = ports[0];
-        int serverPortNumber = ports[1];
-        DatagramSocket theSocket = new DatagramSocket(new InetSocketAddress(
-                InetAddress.getLocalHost(), portNumber));
+        InetAddress localHost = InetAddress.getLocalHost();
+        InetSocketAddress localAddress1 = new InetSocketAddress(localHost, ports[0]);
+        DatagramSocket theSocket = new DatagramSocket(localAddress1);
 
-        // validate that the localSocketAddress reflects the address we
-        // bound to
-        assertTrue(
-                "Local address not correct after bind:"
-                        + theSocket.getLocalSocketAddress().toString()
-                        + "Expected: "
-                        + (new InetSocketAddress(InetAddress.getLocalHost(),
-                        portNumber)).toString(), theSocket
-                .getLocalSocketAddress().equals(
-                        new InetSocketAddress(InetAddress
-                                .getLocalHost(), portNumber)));
+        // validate that the localSocketAddress reflects the address we bound to
+        assertEquals(localAddress1, theSocket.getLocalSocketAddress());
 
         // now make sure that datagrams sent from this socket appear to come
         // from the address we bound to
-        InetAddress localHost = InetAddress.getLocalHost();
-        portNumber = ports[2];
-        DatagramSocket ds = new DatagramSocket(null);
-        ds.bind(new InetSocketAddress(localHost, portNumber));
+        InetSocketAddress localAddress2 = new InetSocketAddress(localHost, ports[2]);
+        DatagramSocket ds = new DatagramSocket((SocketAddress) null);
+        ds.bind(localAddress2);
 
-        server = new DatagramServer(serverPortNumber, localHost);
+        DatagramServer server = new DatagramServer(serverPortNumber, localHost);
         server.start();
         Thread.sleep(1000);
 
@@ -999,60 +953,64 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         ds.send(send);
         Thread.sleep(1000);
         ds.close();
-        assertTrue("Address in packet sent does not match address bound to:"
-                + server.rdp.getAddress() + ":" + server.rdp.getPort() + ":"
-                + localHost + ":" + portNumber, (server.rdp.getAddress()
-                .equals(localHost))
-                && (server.rdp.getPort() == portNumber));
-
-        // validate if we pass in null that it picks an address for us and
-        // all is ok
-        theSocket = new DatagramSocket(null);
-        theSocket.bind(null);
-        assertNotNull("Bind with null did not work", theSocket
-                .getLocalSocketAddress());
-        theSocket.close();
-
-        // now check the error conditions
-
-        // Address we cannot bind to
-        theSocket = new DatagramSocket(null);
-        try {
-            theSocket.bind(new InetSocketAddress(InetAddress
-                    .getByAddress(Support_Configuration.nonLocalAddressBytes),
-                    Support_PortManager.getNextPortForUDP()));
-            fail("No exception when binding to bad address");
-        } catch (SocketException ex) {
-        }
-        theSocket.close();
-
-        // Address that we have allready bound to
-        ports = Support_PortManager.getNextPortsForUDP(2);
-        theSocket = new DatagramSocket(null);
-        DatagramSocket theSocket2 = new DatagramSocket(ports[0]);
-        try {
-            InetSocketAddress theAddress = new InetSocketAddress(InetAddress
-                    .getLocalHost(), ports[1]);
-            theSocket.bind(theAddress);
-            theSocket2.bind(theAddress);
-            fail("No exception binding to address that is not available");
-        } catch (SocketException ex) {
-        }
-        theSocket.close();
-        theSocket2.close();
-
-        // unsupported SocketAddress subclass
-        theSocket = new DatagramSocket(null);
-        try {
-            theSocket.bind(new mySocketAddress());
-            fail("No exception when binding using unsupported SocketAddress subclass");
-        } catch (IllegalArgumentException ex) {
-        }
-        theSocket.close();
+        // Check that the address in the packet matches the bound address.
+        assertEquals(localAddress2, server.rdp.getSocketAddress());
 
         if (server != null) {
             server.stopServer();
         }
+    }
+
+    public void test_bindLjava_net_SocketAddress_null() throws Exception {
+        // validate if we pass in null that it picks an address for us.
+        DatagramSocket theSocket = new DatagramSocket((SocketAddress) null);
+        theSocket.bind(null);
+        assertNotNull(theSocket.getLocalSocketAddress());
+        theSocket.close();
+    }
+
+    public void test_bindLjava_net_SocketAddress_bad_address() throws Exception {
+        // Address we cannot bind to
+        DatagramSocket theSocket = new DatagramSocket((SocketAddress) null);
+        try {
+            InetAddress badAddress = InetAddress.getByAddress(Support_Configuration.nonLocalAddressBytes);
+            theSocket.bind(new InetSocketAddress(badAddress, Support_PortManager.getNextPortForUDP()));
+            fail("No exception when binding to bad address");
+        } catch (SocketException expected) {
+        }
+        theSocket.close();
+    }
+
+    public void test_bindLjava_net_SocketAddress_address_in_use() throws Exception {
+        // Address that we have already bound to
+        int[] ports = Support_PortManager.getNextPortsForUDP(2);
+        DatagramSocket theSocket1 = new DatagramSocket((SocketAddress) null);
+        DatagramSocket theSocket2 = new DatagramSocket(ports[0]);
+        try {
+            InetSocketAddress theAddress = new InetSocketAddress(InetAddress.getLocalHost(), ports[1]);
+            theSocket1.bind(theAddress);
+            theSocket2.bind(theAddress);
+            fail("No exception binding to address that is not available");
+        } catch (SocketException expected) {
+        }
+        theSocket1.close();
+        theSocket2.close();
+    }
+
+    public void test_bindLjava_net_SocketAddress_unsupported_address_type() throws Exception {
+        class mySocketAddress extends SocketAddress {
+            public mySocketAddress() {
+            }
+        }
+
+        // unsupported SocketAddress subclass
+        DatagramSocket theSocket = new DatagramSocket((SocketAddress) null);
+        try {
+            theSocket.bind(new mySocketAddress());
+            fail("No exception when binding using unsupported SocketAddress subclass");
+        } catch (IllegalArgumentException expected) {
+        }
+        theSocket.close();
     }
 
     /**
@@ -1489,6 +1447,13 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         if (theSocket2 != null) {
             theSocket2.close();
         }
+
+        try {
+            theSocket1.setReuseAddress(true);
+            fail("SocketException was not thrown.");
+        } catch(SocketException se) {
+            //expected
+        }
     }
 
     public void test_getReuseAddress() throws Exception {
@@ -1497,6 +1462,13 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         assertTrue("getReuseAddress false when it should be true", theSocket.getReuseAddress());
         theSocket.setReuseAddress(false);
         assertFalse("getReuseAddress true when it should be False", theSocket.getReuseAddress());
+        theSocket.close();
+        try {
+            theSocket.getReuseAddress();
+            fail("SocketException was not thrown.");
+        } catch(SocketException se) {
+            //expected
+        }
     }
 
     public void test_setBroadcastZ() throws Exception {
@@ -1516,7 +1488,16 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         // now validate that we can connect to the broadcast address when
         // setBroadcast is true
         theSocket.setBroadcast(true);
-        theSocket.connect(new InetSocketAddress(InetAddress.getByAddress(theBytes), ports[2]));
+        theSocket.connect(new InetSocketAddress(InetAddress
+                        .getByAddress(theBytes), ports[2]));
+
+        theSocket.close();
+        try {
+            theSocket.setBroadcast(false);
+            fail("SocketException was not thrown.");
+        } catch(SocketException se) {
+            //expected
+        }
     }
 
     public void test_getBroadcast() throws Exception {
@@ -1534,7 +1515,6 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         int IPTOS_LOWDELAY = 0x10;
         int[] ports = Support_PortManager.getNextPortsForUDP(2);
 
-        new InetSocketAddress(InetAddress.getLocalHost(), ports[0]);
         DatagramSocket theSocket = new DatagramSocket(ports[1]);
 
         // validate that value set must be between 0 and 255
@@ -1562,7 +1542,6 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         int IPTOS_LOWDELAY = 0x10;
         int[] ports = Support_PortManager.getNextPortsForUDP(2);
 
-        new InetSocketAddress(InetAddress.getLocalHost(), ports[0]);
         DatagramSocket theSocket = new DatagramSocket(ports[1]);
 
         /*
@@ -1593,11 +1572,140 @@ public class DatagramSocketTest extends junit.framework.TestCase {
                 .isClosed());
     }
 
-    /**
-     * java.net.DatagramSocket#getChannel()
-     */
-    public void test_getChannel() throws SocketException {
+    public void test_getChannel() throws Exception {
         assertNull(new DatagramSocket().getChannel());
+
+        int portNumber = Support_PortManager.getNextPortForUDP();
+        DatagramSocket ds = null;
+        try {
+            InetAddress ia = InetAddress
+                        .getByName(Support_Configuration.IPv6GlobalAddressJcl4);
+            ds = new DatagramSocket();
+            assertNull(ds.getChannel());
+            ds.connect(ia, portNumber);
+            assertNull(ds.getChannel());
+        } catch (SocketException e) {
+            fail("SocketException was thrown.");
+        } finally {
+            ds.disconnect();
+            ds.close();
+        }
+        portNumber = Support_PortManager.getNextPortForUDP();
+        SocketAddress address = new InetSocketAddress(portNumber);
+        DatagramChannel channel = DatagramChannel.open();
+        DatagramSocket socket = channel.socket();
+        assertEquals(channel, socket.getChannel());
+        socket.close();
+    }
+
+    class TestDatagramSocketImplFactory implements DatagramSocketImplFactory {
+        public DatagramSocketImpl createDatagramSocketImpl() {
+            return new TestDatagramSocketImpl();
+        }
+    }
+
+    class TestDatagramSocketImpl extends DatagramSocketImpl {
+
+        @Override
+        protected void bind(int arg0, InetAddress arg1) throws SocketException {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        protected void close() {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        protected void create() throws SocketException {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        protected byte getTTL() throws IOException {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        protected int getTimeToLive() throws IOException {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        protected void join(InetAddress arg0) throws IOException {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        protected void joinGroup(SocketAddress arg0, NetworkInterface arg1) throws IOException {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        protected void leave(InetAddress arg0) throws IOException {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        protected void leaveGroup(SocketAddress arg0, NetworkInterface arg1) throws IOException {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        protected int peek(InetAddress arg0) throws IOException {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        protected int peekData(DatagramPacket arg0) throws IOException {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        protected void receive(DatagramPacket arg0) throws IOException {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        protected void send(DatagramPacket arg0) throws IOException {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        protected void setTTL(byte arg0) throws IOException {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        protected void setTimeToLive(int arg0) throws IOException {
+            // TODO Auto-generated method stub
+
+        }
+
+        public Object getOption(int arg0) throws SocketException {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        public void setOption(int arg0, Object arg1) throws SocketException {
+            // TODO Auto-generated method stub
+
+        }
+
     }
 
     /**
@@ -1620,7 +1728,7 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         }
     }
 
-    protected void receive_oversize_java_net_DatagramPacket() {
+    protected void receive_oversize_java_net_DatagramPacket() throws Exception {
         final int[] ports = Support_PortManager.getNextPortsForUDP(2);
         final int portNumber = ports[0];
 
@@ -1636,10 +1744,7 @@ public class DatagramSocketTest extends junit.framework.TestCase {
                     sds.send(rdp);
                     sds.close();
                 } catch (Exception e) {
-                    System.err.println("host " + localHost + " port "
-                            + portNumber + " failed to send oversize data: "
-                            + e);
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
             }
         }
