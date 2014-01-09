@@ -263,4 +263,31 @@ public class CharacterTest extends junit.framework.TestCase {
       assertEquals(m.invoke(null, i), Character.isWhitespace(i));
     }
   }
+
+  public void test_UnicodeScript_forName() throws Exception {
+    try {
+      Character.UnicodeScript.forName(null);
+      fail();
+    } catch (NullPointerException expected) {
+    }
+
+    try {
+      Character.UnicodeScript.forName("existential_dilemmas");
+      fail();
+    } catch (IllegalArgumentException expected) {
+    }
+
+    // Note that ICU is pretty lenient about block names and their abbreviations.
+    assertSame(Character.UnicodeScript.MALAYALAM, Character.UnicodeScript.forName("Malayalam"));
+    assertSame(Character.UnicodeScript.MALAYALAM, Character.UnicodeScript.forName("Mlym"));
+    assertSame(Character.UnicodeScript.MALAYALAM, Character.UnicodeScript.forName("MalayaLAM"));
+    assertSame(Character.UnicodeScript.MALAYALAM, Character.UnicodeScript.forName("MlYM"));
+
+    assertSame(Character.UnicodeScript.OLD_SOUTH_ARABIAN, Character.UnicodeScript.forName("Sarb"));
+  }
+
+
+  public void test_UnicodeScript_of() throws Exception {
+
+  }
 }

@@ -1489,7 +1489,7 @@ public final class Character implements Serializable, Comparable<Character> {
             if (blockName == null) {
                 throw new NullPointerException("blockName == null");
             }
-            int block = forNameImpl(blockName);
+            int block = unicodeBlockForName(blockName);
             if (block == -1) {
                 throw new IllegalArgumentException("Unknown block: " + blockName);
             }
@@ -1510,7 +1510,7 @@ public final class Character implements Serializable, Comparable<Character> {
          */
         public static UnicodeBlock of(int codePoint) {
             checkValidCodePoint(codePoint);
-            int block = ofImpl(codePoint);
+            int block = unicodeBlockForCodePoint(codePoint);
             if (block == -1 || block >= BLOCKS.length) {
                 return null;
             }
@@ -1522,9 +1522,431 @@ public final class Character implements Serializable, Comparable<Character> {
         }
     }
 
-    private static native int forNameImpl(String blockName);
+    private static native int unicodeBlockForName(String blockName);
 
-    private static native int ofImpl(int codePoint);
+    private static native int unicodeBlockForCodePoint(int codePoint);
+
+    /**
+     * Represents a <a href="http://www.unicode.org/reports/tr24/">Unicode script</a>.
+     * Every unicode character maps to either a specific script from the list below,
+     * or one of {@link UnicodeScript#INHERITED}, {@link UnicodeScript#COMMON} or
+     * {@link UnicodeScript#UNKNOWN}.
+     *
+     * @since 1.7
+     * @hide
+     */
+    public static enum UnicodeScript {
+        /** ISO 15924 script name "Arabic" */
+        ARABIC,
+        /** ISO 15924 script name "Armenian" */
+        ARMENIAN,
+        /** ISO 15924 script name "Avestan" */
+        AVESTAN,
+        /** ISO 15924 script name "Balinese" */
+        BALINESE,
+        /** ISO 15924 script name "Bamum" */
+        BAMUM,
+        /** ISO 15924 script name "Batak" */
+        BATAK,
+        /** ISO 15924 script name "Bengali" */
+        BENGALI,
+        /** ISO 15924 script name "Bopomofo" */
+        BOPOMOFO,
+        /** ISO 15924 script name "Brahmi" */
+        BRAHMI,
+        /** ISO 15924 script name "Braille" */
+        BRAILLE,
+        /** ISO 15924 script name "Buginese" */
+        BUGINESE,
+        /** ISO 15924 script name "Buhid" */
+        BUHID,
+        /** ISO 15924 script name "Canadian_Aboriginal" */
+        CANADIAN_ABORIGINAL,
+        /** ISO 15924 script name "Carian" */
+        CARIAN,
+        /** ISO 15924 script name "Cham" */
+        CHAM,
+        /** ISO 15924 script name "Cherokee" */
+        CHEROKEE,
+        /** ISO 15924 script name "Common" */
+        COMMON,
+        /** ISO 15924 script name "Coptic" */
+        COPTIC,
+        /** ISO 15924 script name "Cuneiform" */
+        CUNEIFORM,
+        /** ISO 15924 script name "Cypriot" */
+        CYPRIOT,
+        /** ISO 15924 script name "Cyrillic" */
+        CYRILLIC,
+        /** ISO 15924 script name "Deseret" */
+        DESERET,
+        /** ISO 15924 script name "Devanagari" */
+        DEVANAGARI,
+        /** ISO 15924 script name "Egyptian_Hieroglyphs" */
+        EGYPTIAN_HIEROGLYPHS,
+        /** ISO 15924 script name "Ethiopic" */
+        ETHIOPIC,
+        /** ISO 15924 script name "Georgian" */
+        GEORGIAN,
+        /** ISO 15924 script name "Glagolitic" */
+        GLAGOLITIC,
+        /** ISO 15924 script name "Gothic" */
+        GOTHIC,
+        /** ISO 15924 script name "Greek" */
+        GREEK,
+        /** ISO 15924 script name "Gujarati" */
+        GUJARATI,
+        /** ISO 15924 script name "Gurmukhi" */
+        GURMUKHI,
+        /** ISO 15924 script name "Han" */
+        HAN,
+        /** ISO 15924 script name "Hangul" */
+        HANGUL,
+        /** ISO 15924 script name "Hanunoo" */
+        HANUNOO,
+        /** ISO 15924 script name "Hebrew" */
+        HEBREW,
+        /** ISO 15924 script name "Hiragana" */
+        HIRAGANA,
+        /** ISO 15924 script name "Imperial_Aramaic" */
+        IMPERIAL_ARAMAIC,
+        /** ISO 15924 script name "Inherited" */
+        INHERITED,
+        /** ISO 15924 script name "Inscriptional_Pahlavi" */
+        INSCRIPTIONAL_PAHLAVI,
+        /** ISO 15924 script name "Inscriptional_Parthian" */
+        INSCRIPTIONAL_PARTHIAN,
+        /** ISO 15924 script name "Javanese" */
+        JAVANESE,
+        /** ISO 15924 script name "Kaithi" */
+        KAITHI,
+        /** ISO 15924 script name "Kannada" */
+        KANNADA,
+        /** ISO 15924 script name "Katakana" */
+        KATAKANA,
+        /** ISO 15924 script name "Kayah_Li" */
+        KAYAH_LI,
+        /** ISO 15924 script name "Kharoshthi" */
+        KHAROSHTHI,
+        /** ISO 15924 script name "Khmer" */
+        KHMER,
+        /** ISO 15924 script name "Lao" */
+        LAO,
+        /** ISO 15924 script name "Latin" */
+        LATIN,
+        /** ISO 15924 script name "Lepcha" */
+        LEPCHA,
+        /** ISO 15924 script name "Limbu" */
+        LIMBU,
+        /** ISO 15924 script name "Linear_B" */
+        LINEAR_B,
+        /** ISO 15924 script name "Lisu" */
+        LISU,
+        /** ISO 15924 script name "Lycian" */
+        LYCIAN,
+        /** ISO 15924 script name "Lydian" */
+        LYDIAN,
+        /** ISO 15924 script name "Malayalam" */
+        MALAYALAM,
+        /** ISO 15924 script name "Mandaic" */
+        MANDAIC,
+        /** ISO 15924 script name "Meetei_Mayek" */
+        MEETEI_MAYEK,
+        /** ISO 15924 script name "Mongolian" */
+        MONGOLIAN,
+        /** ISO 15924 script name "Myanmar" */
+        MYANMAR,
+        /** ISO 15924 script name "New_Tai_Lue" */
+        NEW_TAI_LUE,
+        /** ISO 15924 script name "Nko" */
+        NKO,
+        /** ISO 15924 script name "Ogham" */
+        OGHAM,
+        /** ISO 15924 script name "Ol_Chiki" */
+        OL_CHIKI,
+        /** ISO 15924 script name "Old_Italic" */
+        OLD_ITALIC,
+        /** ISO 15924 script name "Old_Persian" */
+        OLD_PERSIAN,
+        /** ISO 15924 script name "Old_South_Arabian" */
+        OLD_SOUTH_ARABIAN,
+        /** ISO 15924 script name "Old_Turkic" */
+        OLD_TURKIC,
+        /** ISO 15924 script name "Oriya" */
+        ORIYA,
+        /** ISO 15924 script name "Osmanya" */
+        OSMANYA,
+        /** ISO 15924 script name "Phags_Pa" */
+        PHAGS_PA,
+        /** ISO 15924 script name "Phoenician" */
+        PHOENICIAN,
+        /** ISO 15924 script name "Rejang" */
+        REJANG,
+        /** ISO 15924 script name "Runic" */
+        RUNIC,
+        /** ISO 15924 script name "Samaritan" */
+        SAMARITAN,
+        /** ISO 15924 script name "Saurashtra" */
+        SAURASHTRA,
+        /** ISO 15924 script name "Shavian" */
+        SHAVIAN,
+        /** ISO 15924 script name "Sinhala" */
+        SINHALA,
+        /** ISO 15924 script name "Sundanese" */
+        SUNDANESE,
+        /** ISO 15924 script name "Syloti_Nagri" */
+        SYLOTI_NAGRI,
+        /** ISO 15924 script name "Syriac" */
+        SYRIAC,
+        /** ISO 15924 script name "Tagalog" */
+        TAGALOG,
+        /** ISO 15924 script name "Tagbanwa" */
+        TAGBANWA,
+        /** ISO 15924 script name "Tai_Le" */
+        TAI_LE,
+        /** ISO 15924 script name "Tai_Tham" */
+        TAI_THAM,
+        /** ISO 15924 script name "Tai_Viet" */
+        TAI_VIET,
+        /** ISO 15924 script name "Tamil" */
+        TAMIL,
+        /** ISO 15924 script name "Telugu" */
+        TELUGU,
+        /** ISO 15924 script name "Thaana" */
+        THAANA,
+        /** ISO 15924 script name "Thai" */
+        THAI,
+        /** ISO 15924 script name "Tibetan" */
+        TIBETAN,
+        /** ISO 15924 script name "Tifinagh" */
+        TIFINAGH,
+        /** ISO 15924 script name "Ugaritic" */
+        UGARITIC,
+        /** ISO 15924 script name "Unknown" */
+        UNKNOWN,
+        /** ISO 15924 script name "Vai" */
+        VAI,
+        /** ISO 15924 script name "Yi" */
+        YI;
+
+        private static final UnicodeScript[] SCRIPTS = {
+                COMMON,
+                INHERITED,
+                ARABIC,
+                ARMENIAN,
+                BENGALI,
+                BOPOMOFO,
+                CHEROKEE,
+                COPTIC,
+                CYRILLIC,
+                DESERET,
+                DEVANAGARI,
+                ETHIOPIC,
+                GEORGIAN,
+                GOTHIC,
+                GREEK,
+                GUJARATI,
+                GURMUKHI,
+                HAN,
+                HANGUL,
+                HEBREW,
+                HIRAGANA,
+                KANNADA,
+                KATAKANA,
+                KHMER,
+                LAO,
+                LATIN,
+                MALAYALAM,
+                MONGOLIAN,
+                MYANMAR,
+                OGHAM,
+                OLD_ITALIC,
+                ORIYA,
+                RUNIC,
+                SINHALA,
+                SYRIAC,
+                TAMIL,
+                TELUGU,
+                THAANA,
+                THAI,
+                TIBETAN,
+                CANADIAN_ABORIGINAL,
+                YI,
+                TAGALOG,
+                HANUNOO,
+                BUHID,
+                TAGBANWA,
+                BRAILLE,
+                CYPRIOT,
+                LIMBU,
+                LINEAR_B,
+                OSMANYA,
+                SHAVIAN,
+                TAI_LE,
+                UGARITIC,
+                null,  // USCRIPT_KATAKANA_OR_HIRAGANA
+                BUGINESE,
+                GLAGOLITIC,
+                KHAROSHTHI,
+                SYLOTI_NAGRI,
+                NEW_TAI_LUE,
+                TIFINAGH,
+                OLD_PERSIAN,
+                BALINESE,
+                BATAK,
+                null, // USCRIPT_BLISSYMBOLS,
+                BRAHMI,
+                CHAM,
+                null,  // USCRIPT_CIRTH,
+                null,  // USCRIPT_OLD_CHURCH_SLAVONIC_CYRILLIC,
+                null,  // USCRIPT_DEMOTIC_EGYPTIAN,
+                null,  // USCRIPT_HIERATIC_EGYPTIAN,
+                EGYPTIAN_HIEROGLYPHS,
+                null,  // USCRIPT_USCRIPT_KHUTSURI,
+                null,  // USCRIPT_SIMPLIFIED_HAN,
+                null,  // USCRIPT_TRADITIONAL_HAN,
+                null,  // USCRIPT_PAHAWH_HMONG,
+                null,  // USCRIPT_// OLD_HUNGARIAN,
+                null,  // USCRIPT_HARAPPAN_INDUS,
+                JAVANESE,
+                KAYAH_LI,
+                null,  // USCRIPT_LATIN_FRAKTUR,
+                null,  // USCRIPT_LATIN_GAELIC,
+                LEPCHA,
+                null,  // USCRIPT_LINEAR_A,
+                MANDAIC, // == MANDAEAN
+                null,  // USCRIPT_MAYAN_HIEROGLYPHS,
+                null,  // USCRIPT_MEROITIC_HIEROGLYPHS,
+                null,  // USCRIPT_MEROITIC, // = MEROITIC_HIEROGLYPHS,
+                null,  // USCRIPT_NKO,
+                null,  // USCRIPT_ORKHON,
+                null,  // USCRIPT_OLD_PERMIC,
+                PHAGS_PA,
+                PHOENICIAN,
+                null,  // USCRIPT_MIAO,
+                null,  // USCRIPT_PHONETIC_POLLARD, // === MIAO,
+                null,  // USCRIPT_RONGORONGO,
+                null,  // USCRIPT_SARATI,
+                null,  // USCRIPT_ESTRANGELO_SYRIAC,
+                null,  // USCRIPT_WESTERN_SYRIAC,
+                null,  // USCRIPT_EASTERN_SYRIAC,
+                null,  // USCRIPT_TENGWAR,
+                VAI,
+                null,  // USCRIPT_VISIBLE_SPEECH,
+                CUNEIFORM,
+                null,  // USCRIPT_UNWRITTEN_LANGUAGES,
+                UNKNOWN,
+                CARIAN,
+                null,  // USCRIPT_JAPANESE,
+                null,  // USCRIPT_LANNA,
+                LYCIAN,
+                LYDIAN,
+                OL_CHIKI,
+                REJANG,
+                SAURASHTRA,
+                null,  // USCRIPT_SIGN_WRITING,
+                SUNDANESE,
+                null,  // USCRIPT_MOON,
+                null,  // USCRIPT_MEITEI_MAYEK,
+                IMPERIAL_ARAMAIC,
+                AVESTAN,
+                null,  // USCRIPT_CHAKMA,
+                null,  // USCRIPT_KOREAN,
+                KAITHI,
+                null,  // USCRIPT_MANICHAEAN,
+                INSCRIPTIONAL_PAHLAVI,
+                null,  // USCRIPT_PSALTER_PAHLAVI,
+                null,  // USCRIPT_BOOK_PAHLAVI,
+                INSCRIPTIONAL_PARTHIAN,
+                SAMARITAN,
+                TAI_VIET,
+                null,  // USCRIPT_MATHEMATICAL_NOTATION,
+                null,  // USCRIPT_SYMBOLS,
+                BAMUM,
+                LISU,
+                null,  // USCRIPT_NAKHI_GEBA,
+                OLD_SOUTH_ARABIAN,
+                null,  // USCRIPT_BASSA_VAH,
+                null,  // USCRIPT_DUPLOYAN_SHORTAND,
+                null,  // USCRIPT_ELBASAN,
+                null,  // USCRIPT_GRANTHA,
+                null,  // USCRIPT_KPELLE,
+                null,  // USCRIPT_LOMA,
+                null,  // USCRIPT_MENDE,
+                null,  // USCRIPT_MEROITIC_CURSIVE,
+                null,  // USCRIPT_OLD_NORTH_ARABIAN,
+                null,  // USCRIPT_NABATAEAN,
+                null,  // USCRIPT_PALMYRENE,
+                null,  // USCRIPT_SINDHI,
+                null,  // USCRIPT_WARANG_CITI,
+                null,  // USCRIPT_AFAKA,
+                null,  // USCRIPT_JURCHEN,
+                null,  // USCRIPT_MRO,
+                null,  // USCRIPT_NUSHU,
+                null,  // USCRIPT_SHARADA,
+                null,  // USCRIPT_SORA_SOMPENG,
+                null,  // USCRIPT_TAKRI,
+                null,  // USCRIPT_TANGUT,
+                null,  // USCRIPT_WOLEAI,
+                null,  // USCRIPT_ANATOLIAN_HIEROGLYPHS,
+                null,  // USCRIPT_KHOJKI,
+                null,  // USCRIPT_TIRHUTA,
+        };
+
+        /**
+         * Returns the {@link UnicodeScript} value identified by {@code scriptName}.
+         * {@code scriptName} can be a Unicode script name
+         * {@see http://www.unicode.org/reports/tr24/} or an alias (ISO-15924 script code)
+         * for that name. Lookups are case insensitive.
+         *
+         * @throws NullPointerException if {@code scriptName} is null.
+         * @throws IllegalAccessException if {@code scriptName} in invalid.
+         *
+         * @since 1.7
+         */
+        public static UnicodeScript forName(String scriptName) {
+            if (scriptName == null) {
+                throw new NullPointerException("scriptName == null");
+            }
+
+            final int script = unicodeScriptForName(scriptName);
+            if (script == -1 || script >= SCRIPTS.length ||
+                    SCRIPTS[script] == null) {
+                throw new IllegalArgumentException("Unknown script: " + scriptName);
+            }
+
+            return SCRIPTS[script];
+        }
+
+        /**
+         * Returns the {@link UnicodeScript} value that the given Unicode code
+         * point is assigned to.
+         *
+         * @throws IllegalArgumentException if {@codePoint} is not a valid Unicode code point.
+         */
+        public static UnicodeScript of(int codePoint) {
+            checkValidCodePoint(codePoint);
+            int script = unicodeScriptForCodePoint(codePoint);
+            if (script == -1 || script >= SCRIPTS.length) {
+                // This signifies an ICU error. Complain loudly instead of swallowing
+                // the error up.
+                throw new IllegalArgumentException("Invalid codePoint: " + codePoint);
+            }
+
+            // This happens when ICU maps the code point to a script known to it but
+            // which have a declared enum value.
+            if (SCRIPTS[script] == null) {
+                return UNKNOWN;
+            }
+
+            return SCRIPTS[script];
+        }
+    }
+
+    private static native int unicodeScriptForName(String blockName);
+
+    private static native int unicodeScriptForCodePoint(int codePoint);
+
 
     /**
      * Constructs a new {@code Character} with the specified primitive char
