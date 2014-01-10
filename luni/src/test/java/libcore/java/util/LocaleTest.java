@@ -20,9 +20,7 @@ import java.text.BreakIterator;
 import java.text.Collator;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
-import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.MissingResourceException;
@@ -178,4 +176,12 @@ public class LocaleTest extends junit.framework.TestCase {
         assertEquals("eng", new Locale("en", "CA").getISO3Language());
         assertEquals("eng", new Locale("en", "XX").getISO3Language());
     }
-  }
+
+    public void testJava7Locale() {
+        Locale.Builder lb = new Locale.Builder().setLanguage("fr").setRegion("FR")
+                .setVariant("abcde-abcef");
+        assertEquals("abcde_abcef", lb.build().getVariant());
+        assertEquals("abcde_abcef", lb.build().getVariant());
+        assertEquals("fr-FR-abcde_abcef", lb.build().toLanguageTag());
+    }
+}
