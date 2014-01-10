@@ -60,6 +60,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include <vector>
 
 // TODO: put this in a header file and use it everywhere!
 // DISALLOW_COPY_AND_ASSIGN disallows the copy and operator= functions.
@@ -114,6 +115,94 @@ static jstring ICU_getScript(JNIEnv* env, jclass, jstring javaLocale) {
         return NULL;
     }
     return env->NewStringUTF(script);
+}
+
+static jstring ICU_getScriptName(JNIEnv* env, jclass, jstring javaScriptId) {
+    ScopedUtfChars scriptId(env, javaScriptId);
+    const UScriptCode scriptCode = static_cast<UScriptCode>(
+        u_getPropertyValueEnum(UCHAR_SCRIPT, scriptId.c_str()));
+    const char* scriptName = uscript_getName(scriptCode);
+    if (scriptName == NULL) {
+        return NULL;
+    }
+
+    return env->NewStringUTF(scriptName);
+}
+
+static jstring ICU_localeForLanguageTag(JNIEnv* env, jclass, jstring languageTag, jboolean strict) {
+    ScopedUtfChars languageTagChars(env, languageTag);
+
+    // Naively assume that in the average case, the size of
+    // the normalized language tag will be very nearly the same as the
+    // size of the input. This is generally true for language
+    // tags that are "simple" language-region-variant combinations
+    // that don't contain any grandfathered tags.
+    const size_t initialBufferSize = languageTagChars.size() + 32;
+    std::vector<char> buffer(initialBufferSize);
+    int32_t parsedLength = 0;
+
+    UErrorCode status = U_ZERO_ERROR;
+    while (true) {
+        const size_t outputLength = uloc_forLanguageTag(languageTagChars.c_str(),
+               &buffer[0], buffer.size(), &parsedLength, &status);
+        if (U_FAILURE(status)) {
+            return NULL;
+        }
+
+        // Assume that we've run out of buffer space when this happens. Double
+        // the buffer size and try again. This should happen very infrequently.
+        if (outputLength == buffer.size()) {
+            buffer.resize(buffer.size() << 1);
+        } else {
+            break;
+        }
+    }
+
+    if (parsedLength < 0) {
+        return NULL;
+    }
+
+    // By default, ICU will ignore all subtags starting at the first unparseable
+    // or invalid subtag. Our "strict" mode is specified to throw an error if
+    // that happens.
+    //
+    // NOTE: The cast is safe because parsedLength can never be negative thanks
+    // to the check above. ICU does not document any negative return values for
+    // that field, but check for it anyway.
+    if ((strict == JNI_TRUE) &&
+        (static_cast<uint32_t>(parsedLength) != languageTagChars.size())) {
+        return NULL;
+    }
+
+    return env->NewStringUTF(&buffer[0]);
+}
+
+static jstring ICU_languageTagForLocale(JNIEnv* env, jclass, jstring javaLocaleId) {
+    ScopedUtfChars localeID(env, javaLocaleId);
+
+    // The conversion from an ICU locale ID to a BCP 47 tag will shrink
+    // the size of the string unless there's an invalid language or a bad
+    // parse (which will result in an x-lvariant private use subtag at
+    // the end of the input).
+    const size_t initialBufferSize = localeID.size();
+    std::vector<char> buffer(initialBufferSize);
+
+    UErrorCode status = U_ZERO_ERROR;
+    while (true) {
+        const size_t outputLength = uloc_toLanguageTag(localeID.c_str(),
+                &buffer[0], buffer.size(), false /* strict */, &status);
+        if (U_FAILURE(status)) {
+            return NULL;
+        }
+
+        if (outputLength == buffer.size()) {
+            buffer.resize(buffer.size() << 1);
+        } else {
+            break;
+        }
+    }
+
+    return env->NewStringUTF(&buffer[0]);
 }
 
 static jint ICU_getCurrencyFractionDigits(JNIEnv* env, jclass, jstring javaCurrencyCode) {
@@ -689,7 +778,10 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(ICU, getISOLanguagesNative, "()[Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getIcuVersion, "()Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getScript, "(Ljava/lang/String;)Ljava/lang/String;"),
+    NATIVE_METHOD(ICU, getScriptName, "(Ljava/lang/String;)Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getUnicodeVersion, "()Ljava/lang/String;"),
+    NATIVE_METHOD(ICU, languageTagForLocale, "(Ljava/lang/String;)Ljava/lang/String;"),
+    NATIVE_METHOD(ICU, localeForLanguageTag, "(Ljava/lang/String;Z)Ljava/lang/String;"),
     NATIVE_METHOD(ICU, initLocaleDataNative, "(Ljava/lang/String;Llibcore/icu/LocaleData;)Z"),
     NATIVE_METHOD(ICU, toLowerCase, "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"),
     NATIVE_METHOD(ICU, toUpperCase, "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"),
