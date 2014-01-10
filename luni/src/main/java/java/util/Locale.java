@@ -22,6 +22,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import libcore.icu.ICU;
 
 /**
@@ -242,6 +243,10 @@ public final class Locale implements Cloneable, Serializable {
      */
     public static final Locale US = new Locale(true, "en", "US");
 
+    public static final char PRIVATE_USE_EXTENSION = 'x';
+
+    public static final char UNICODE_LOCALE_EXTENSION = 'u';
+
     /**
      * The current default locale. It is temporarily assigned to US because we
      * need a default locale to lookup the real default locale.
@@ -255,10 +260,441 @@ public final class Locale implements Cloneable, Serializable {
         defaultLocale = new Locale(language, region, variant);
     }
 
+    /**
+     * A class that helps construct {@link Locale} instances.
+     *
+     * Unlike the public {@code Locale}constructors, the methods of this class
+     * perform much stricter checks on their input.
+     *
+     * Validity checks on the {@code language}, {@code country}, {@code variant}
+     * and {@code extension} values are carried out as per the
+     * <a href="https://tools.ietf.org/html/bcp47">BCP-47</a> specification.
+     *
+     * In addition, we treat the <a href="http://www.unicode.org/reports/tr35/">
+     * Unicode locale expension</a> specially and provide methods to manipulate
+     * the structured date (keywords & attributes) specified therein.
+     *
+     * @since 1.7
+     * @hide
+     */
+    public static final class Builder {
+        private String language;
+        private String region;
+        private String variant;
+        private String script;
+
+        private final Set<String> attributes;
+        private final Map<String, String> keywords;
+        private final Map<Character, String> extensions;
+
+        public Builder() {
+            // NOTE: We use sorted maps in the builder & the locale class itself
+            // because serialized forms of the unicode locale extension (and
+            // of the extension map itself) are specified to be in alphabetic
+            // order of keys.
+            attributes = new TreeSet<String>();
+            keywords = new TreeMap<String, String>();
+            extensions = new TreeMap<Character, String>();
+        }
+
+        /**
+         * Sets the locale language. If {@code language} is null or empty, the
+         * previousl value is cleared.
+         *
+         * As per BCP-47, the language must be between 2 and 3 ASCII characters
+         * in length and must only contain characters in the range {@code [a-zA-Z]}.
+         *
+         * This value is usually an <a href="http://www.loc.gov/standards/iso639-2/">
+         * ISO-639-2</a> alpha-2 or alpha-3 code, though no explicit checks are
+         * carried out that it's a valid code in that namespace.
+         *
+         * Values are normalized to lower case.
+         *
+         * Note that we don't support BCP-47 "extlang" languages because they were
+         * only ever used to substitute for a lack of 3 letter language codes.
+         *
+         * @throws IllformedLocaleException if the language was invalid.
+         */
+        public Builder setLanguage(String language) {
+            if (language == null || language.isEmpty()) {
+                this.language = null;
+                return this;
+            }
+
+            final String lowercaseLanguage = language.toLowerCase(Locale.ROOT);
+            if (!isAsciiAlphaWithBoundedLength(lowercaseLanguage, 2, 8)) {
+                throw new IllformedLocaleException("Invalid language: " + language);
+            }
+
+            this.language = language;
+            return this;
+        }
+
+        /**
+         * Set the state of this builder to the parsed contents of the BCP-47 language
+         * tag {@code languageTag}.
+         *
+         * This method is equivalent to a call to {@link #clear} if {@code languageTag}
+         * is {@code null} or empty.
+         *
+         * <b>NOTE:</b> In contrast to {@link Locale#forLanguageTag(String)}, which
+         * simply ignores malformed input, this method will throw an exception if
+         * its input is malformed.
+         *
+         * @throws IllformedLocaleException if {@code languageTag} is not a well formed
+         *         BCP-47 tag.
+         */
+        public Builder setLanguageTag(String languageTag) {
+            if (languageTag == null || languageTag.isEmpty()) {
+                clear();
+                return this;
+            }
+
+            final Locale fromIcu = ICU.forLanguageTag(languageTag, true /* strict */);
+            // When we ask ICU for strict parsing, it might return a null locale
+            // if the language tag is malformed
+            if (fromIcu == null) {
+                throw new IllformedLocaleException("Invalid languageTag: " + languageTag);
+            }
+
+            setLocale(fromIcu);
+            return this;
+        }
+
+        /**
+         * Sets the locale region. If {@code region} is {@code null} or empty, the
+         * previous value is cleared.
+         *
+         * As per BCP-47, the region must either be a 2 character ISO-3166-1 code
+         * (each character in the range [a-zA-Z]) OR a 3 digit UN M.49 code.
+         *
+         * Values are normalized to upper case.
+         *
+         * @throws IllformedLocaleException if {@code} region is invalid.
+         */
+        public Builder setRegion(String region) {
+            if (region == null || region.isEmpty()) {
+                this.region = null;
+                return this;
+            }
+
+            final String uppercaseRegion = region.toUpperCase(Locale.ROOT);
+            if (!isAsciiAlphaWithBoundedLength(uppercaseRegion, 2, 2) &&
+                    !isUnM49AreaCode(uppercaseRegion)) {
+                throw new IllformedLocaleException("Invalid region: " + region);
+            }
+
+            this.region = region;
+            return this;
+        }
+
+        /**
+         * Sets the locale variant. If {@code variant} is {@code null} or empty,
+         * the previous value is cleared.
+         *
+         * The input string my consist of one or more variants separated by
+         * valid separators ('-' or '_').
+         *
+         * As per BCP-47, each variant must be between 5 and 8 alphanumeric characters
+         * in length (each character in the range {@code [a-zA-Z0-9]}) but
+         * can be exactly 4 characters in length if the first character is a digit.
+         *
+         * Note that this is a much stricter interpretation of {@code variant}
+         * than the public {@code Locale} constructors, which allowed free form
+         * variants.
+         *
+         * Variants are normalized to lower case, and all separators are normalized
+         * to {@code '-'}.
+         *
+         * @throws IllformedLocaleException if {@code} variant is invalid.
+         */
+        public Builder setVariant(String variant) {
+            if (variant == null || variant.isEmpty()) {
+                this.variant = null;
+                return this;
+            }
+
+            // Note that unlike extensions, we canonicalize to lower case alphabets
+            // and underscores instead of hyphens.
+            final String lowerCaseVariant = variant.toLowerCase(Locale.ROOT).replace('-', '_');
+            String[] subTags = lowerCaseVariant.split("_");
+
+            for (String subTag : subTags) {
+                // The BCP-47 spec states that :
+                // - Subtags can be between [5, 8] alphanumeric chars in length.
+                // - Subtags that start with a numbers are allowed to be 4
+                //   chars in length.
+                if (subTag.length() >= 5 && subTag.length() <= 8) {
+                    if (!isAsciiAlphaNum(subTag)) {
+                        throw new IllformedLocaleException("Invalid variant: " + variant);
+                    }
+                } else if (subTag.length() == 4) {
+                    final char firstChar = subTag.charAt(0);
+                    if (!(firstChar >= '0' && firstChar <= '9') || !isAsciiAlphaNum(subTag)) {
+                        throw new IllformedLocaleException("Invalid variant: " + variant);
+                    }
+                } else {
+                    throw new IllformedLocaleException("Invalid variant: " + variant);
+                }
+            }
+
+
+            this.variant = lowerCaseVariant;
+            return this;
+        }
+
+        /**
+         * Sets the locale script. If {@code script} is {@code null} or empty,
+         * the previous value is cleared.
+         *
+         * As per BCP-47, the script must be 4 characters in length, and
+         * each character in the range {@code [a-zA-Z]}.
+         *
+         * A script usually represents a valid ISO 15924 script code, though no
+         * other registry or validity checks are performed.
+         *
+         * Scripts are normalized to title cased values.
+         *
+         * @throws IllformedLocaleException if {@code script} is invalid.
+         */
+        public Builder setScript(String script) {
+            if (script == null || script.isEmpty()) {
+                this.script = null;
+                return this;
+            }
+
+            final String lowercaseScript = script.toLowerCase(Locale.ROOT);
+            if (!isAsciiAlphaWithBoundedLength(lowercaseScript, 4, 4)) {
+                throw new IllformedLocaleException("Invalid script: " + script);
+            }
+
+            this.script = titleCaseAsciiWord(lowercaseScript);
+            return this;
+        }
+
+        /**
+         * Sets the state of the builder to the {@link Locale} represented by
+         * {@code locale}.
+         *
+         *
+         * @param locale
+         * @return
+         */
+        public Builder setLocale(Locale locale) {
+            final String backupLanguage = language;
+            final String backupRegion = region;
+            final String backupVariant = variant;
+
+            try {
+                setLanguage(locale.getLanguage());
+                setRegion(locale.getCountry());
+                setVariant(locale.getVariant());
+            } catch (IllformedLocaleException ifle) {
+                language = backupLanguage;
+                region = backupRegion;
+                variant = backupVariant;
+
+                throw ifle;
+            }
+
+            // These values can be set only via the builder class, so there's
+            // no need to normalize them or check their validity.
+            this.script = locale.getScript();
+
+            extensions.clear();
+            extensions.putAll(locale.bcp47Extensions);
+
+            keywords.clear();
+            keywords.putAll(locale.unicodeKeywords);
+
+            attributes.clear();
+            attributes.addAll(locale.unicodeAttributes);
+
+            return this;
+        }
+
+        public Builder addUnicodeLocaleAttribute(String attribute) {
+            if (attribute == null) {
+                throw new NullPointerException("attribute == null");
+            }
+
+            final String lowercaseAttribute = attribute.toLowerCase(Locale.ROOT);
+            if (!isAsciiAlphaNumWithBoundedLength(lowercaseAttribute, 3, 8)) {
+                throw new IllformedLocaleException("Invalid locale attribute: " + attribute);
+            }
+
+            attributes.add(attribute);
+
+            return this;
+        }
+
+        public Builder removeUnicodeLocaleAttribute(String attribute) {
+            if (attribute == null) {
+                throw new NullPointerException("attribute == null");
+            }
+
+            // Weirdly, remove is specified to check whether the attribute
+            // is valid, so we have to perform the full alphanumeric check here.
+            final String lowercaseAttribute = attribute.toLowerCase(Locale.ROOT);
+            if (!isAsciiAlphaNumWithBoundedLength(lowercaseAttribute, 3, 8)) {
+                throw new IllformedLocaleException("Invalid locale attribute: " + attribute);
+            }
+
+            attributes.remove(attribute);
+            return this;
+        }
+
+        public Builder setExtension(char key, String value) {
+            final String[] subtags = value.toLowerCase(Locale.ROOT).replace('_', '-').split("-");
+
+            // Lengths for subtags in the private use extension should be [1, 8] chars.
+            // For all other extensions, they should be [2, 8] chars.
+            //
+            // http://www.rfc-editor.org/rfc/bcp/bcp47.txt
+            final int minimumLength = (key == PRIVATE_USE_EXTENSION) ? 1 : 2;
+            for (String subtag : subtags) {
+                if (!isAsciiAlphaNumWithBoundedLength(subtag, minimumLength, 8)) {
+                    throw new IllformedLocaleException(
+                            "Invalid private use extension : " + value);
+                }
+            }
+
+            // We need to take special action in the case of unicode extensions,
+            // since we claim to understand their keywords and attributes.
+            if (key == UNICODE_LOCALE_EXTENSION) {
+                // First clear existing attributes and keywords.
+                extensions.clear();
+                attributes.clear();
+
+                parseUnicodeExtension(subtags, keywords, attributes);
+            }
+
+            return this;
+        }
+
+        public Builder clearExtensions() {
+            extensions.clear();
+            attributes.clear();
+            keywords.clear();
+            return this;
+        }
+
+        /*
+         * keyword = key [sep type]
+         * key = 2alphanum
+         * type = 3*8alphanum *(sep 3*8alphanum)
+         * alphanum = [0-9 A-Z a-z]
+         */
+        public Builder setUnicodeLocaleKeyword(String key, String type) {
+            if (key == null) {
+                throw new NullPointerException("key == null");
+            }
+
+            if (type == null && keywords != null) {
+                keywords.remove(key);
+                return this;
+            }
+
+            final String lowerCaseKey = key.toLowerCase(Locale.ROOT);
+            // The key must be exactly two alphanumeric characters.
+            if (lowerCaseKey.length() != 2 || !isAsciiAlphaNum(lowerCaseKey)) {
+                throw new IllformedLocaleException("Invalid unicode locale keyword: " + key);
+            }
+
+            // The type can be one or more alphanumeric strings of length [3, 8] characters,
+            // separated by a separator char, which is one of "_" or "-". Though the spec
+            // doesn't require it, we normalize all "_" to "-" to make the rest of our
+            // processing easier.
+            final String lowerCaseType = type.toLowerCase(Locale.ROOT).replace("_", "-");
+            if (!isValidTypeList(lowerCaseType)) {
+                throw new IllformedLocaleException("Invalid unicode locale type: " + type);
+            }
+
+            // Everything checks out fine, add the <key, type> mapping to the list.
+            keywords.put(key, lowerCaseType);
+
+            return this;
+        }
+
+        public Builder clear() {
+            clearExtensions();
+            language = null;
+            region = null;
+            variant = null;
+            script = null;
+
+            return this;
+        }
+
+        public Locale build() {
+            addUnicodeExtensionToExtensionsMap();
+
+            // NOTE: We need to make a copy of attributes, keywords and extensions
+            // because the RI allows this builder to reused.
+            return new Locale(language, region, variant, script,
+                    attributes, keywords, extensions,
+                    false /* from public constructor */);
+        }
+
+        private void addUnicodeExtensionToExtensionsMap() {
+            if (attributes.isEmpty() && keywords.isEmpty()) {
+                return;
+            }
+
+            StringBuilder sb = new StringBuilder(64);
+            if (!attributes.isEmpty()) {
+                Iterator<String> attributesIterator = attributes.iterator();
+                while (true) {
+                    sb.append(attributesIterator.next());
+                    if (attributesIterator.hasNext()) {
+                        sb.append('-');
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            if (!keywords.isEmpty()) {
+                if (!attributes.isEmpty()) {
+                    sb.append('-');
+                }
+
+                Iterator<Map.Entry<String, String>> keywordsIterator = keywords.entrySet().iterator();
+                while (true) {
+                    final Map.Entry<String, String> keyWord = keywordsIterator.next();
+                    sb.append(keyWord.getKey());
+                    sb.append('-');
+                    sb.append(keyWord.getValue());
+                    if (keywordsIterator.hasNext()) {
+                        sb.append('-');
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            extensions.put(UNICODE_LOCALE_EXTENSION, sb.toString());
+        }
+    }
+
+    public static Locale forLanguageTag(String languageTag) {
+        if (languageTag == null) {
+            throw new NullPointerException("languageTag == null");
+        }
+
+        return ICU.forLanguageTag(languageTag, false /* strict */);
+    }
+
     private transient String countryCode;
     private transient String languageCode;
     private transient String variantCode;
+    private transient String scriptCode;
     private transient String cachedToStringResult;
+    private transient String cachedLanguageTag;
+
+    /* Sorted, UnmodifiableSet */ private Set<String> unicodeAttributes;
+    /* Sorted, UnmodifiableMap */ private Map<String, String> unicodeKeywords;
+    /* Sorted, UnmodifiableMap */ private Map<Character, String> bcp47Extensions;
 
     /**
      * There's a circular dependency between toLowerCase/toUpperCase and
@@ -271,20 +707,83 @@ public final class Locale implements Cloneable, Serializable {
         this.languageCode = lowerCaseLanguageCode;
         this.countryCode = upperCaseCountryCode;
         this.variantCode = "";
+        this.scriptCode = "";
+
+        this.unicodeAttributes = Collections.EMPTY_SET;
+        this.unicodeKeywords = Collections.EMPTY_MAP;
+        this.bcp47Extensions = Collections.EMPTY_MAP;
     }
 
     /**
      * Constructs a new {@code Locale} using the specified language.
      */
     public Locale(String language) {
-        this(language, "", "");
+        this(language, "", "", "", Collections.EMPTY_SET, Collections.EMPTY_MAP,
+                Collections.EMPTY_MAP, true /* from public constructor */);
     }
 
     /**
      * Constructs a new {@code Locale} using the specified language and country codes.
      */
     public Locale(String language, String country) {
-        this(language, country, "");
+        this(language, country, "", "", Collections.EMPTY_SET, Collections.EMPTY_MAP,
+                Collections.EMPTY_MAP, true /* from public constructor */);
+    }
+
+    /** @hide */
+    public Locale(String language, String country, String variant, String scriptCode,
+            /* nonnull */ Set<String> unicodeAttributes,
+            /* nonnull */ Map<String, String> unicodeKeywords,
+            /* nonnull */ Map<Character, String> bcp47Extensions,
+            boolean fromPublicConstructor) {
+        if (language == null || country == null || variant == null) {
+            throw new NullPointerException("language=" + language +
+                    ",country=" + country +
+                    ",variant=" + variant);
+        }
+
+        if (fromPublicConstructor) {
+            if (language.isEmpty() && country.isEmpty()) {
+                languageCode = "";
+                countryCode = "";
+                variantCode = variant;
+            } else {
+                languageCode = language.toLowerCase(Locale.US);
+                // Map new language codes to the obsolete language
+                // codes so the correct resource bundles will be used.
+                if (languageCode.equals("he")) {
+                    languageCode = "iw";
+                } else if (languageCode.equals("id")) {
+                    languageCode = "in";
+                } else if (languageCode.equals("yi")) {
+                    languageCode = "ji";
+                }
+
+                countryCode = country.toUpperCase(Locale.US);
+
+                // Work around for be compatible with RI
+                variantCode = variant;
+            }
+        } else {
+            this.languageCode = language;
+            this.countryCode = country;
+            this.variantCode = variant;
+        }
+
+        this.scriptCode = scriptCode;
+
+        if (fromPublicConstructor) {
+            this.unicodeAttributes = unicodeAttributes;
+            this.unicodeKeywords = unicodeKeywords;
+            this.bcp47Extensions = bcp47Extensions;
+        } else {
+            this.unicodeAttributes = Collections.unmodifiableSet(
+                    new HashSet<String>(unicodeAttributes));
+            this.unicodeKeywords = Collections.unmodifiableMap(
+                    new HashMap<String, String>(unicodeKeywords));
+            this.bcp47Extensions = Collections.unmodifiableMap(
+                    new HashMap<Character, String>(bcp47Extensions));
+        }
     }
 
     /**
@@ -292,33 +791,9 @@ public final class Locale implements Cloneable, Serializable {
      * and variant codes.
      */
     public Locale(String language, String country, String variant) {
-        if (language == null || country == null || variant == null) {
-            throw new NullPointerException("language=" + language +
-                                           ",country=" + country +
-                                           ",variant=" + variant);
-        }
-        if (language.isEmpty() && country.isEmpty()) {
-            languageCode = "";
-            countryCode = "";
-            variantCode = variant;
-            return;
-        }
-
-        languageCode = language.toLowerCase(Locale.US);
-        // Map new language codes to the obsolete language
-        // codes so the correct resource bundles will be used.
-        if (languageCode.equals("he")) {
-            languageCode = "iw";
-        } else if (languageCode.equals("id")) {
-            languageCode = "in";
-        } else if (languageCode.equals("yi")) {
-            languageCode = "ji";
-        }
-
-        countryCode = country.toUpperCase(Locale.US);
-
-        // Work around for be compatible with RI
-        variantCode = variant;
+        this(language, country, variant, "", Collections.EMPTY_SET,
+                Collections.EMPTY_MAP, Collections.EMPTY_MAP,
+                true /* from public constructor */);
     }
 
     @Override public Object clone() {
@@ -427,7 +902,7 @@ public final class Locale implements Cloneable, Serializable {
         // using "fil" when they're not.
         String localeString = toString();
         if (languageCode.equals("tl")) {
-            localeString = toNewString("fil", countryCode, variantCode);
+            localeString = toNewString("fil", countryCode, variantCode, null, null);
         }
 
         String result = ICU.getDisplayLanguageNative(localeString, locale.toString());
@@ -574,6 +1049,82 @@ public final class Locale implements Cloneable, Serializable {
         return variantCode;
     }
 
+    /**
+     * @hide
+     */
+    public String getScript() {
+        return scriptCode;
+    }
+
+    /**
+     * @hide
+     */
+    public String getDisplayScript() {
+        if (scriptCode.isEmpty()) {
+            return "";
+        }
+
+        final String scriptName = ICU.getScriptName(scriptCode);
+        if (scriptName == null) {
+            return "";
+        }
+
+        return scriptName;
+    }
+
+    /**
+     * @hide
+     */
+    public String getDisplayScript(Locale locale) {
+        return getDisplayScript();
+    }
+
+    /**
+     * @hide
+     */
+    public String toLanguageTag() {
+        if (cachedLanguageTag == null) {
+            cachedLanguageTag = ICU.toLanguageTag(this);
+        }
+
+        return cachedLanguageTag;
+    }
+
+    /**
+     * @hide
+     */
+    public Set<Character> getExtensionKeys() {
+        return bcp47Extensions.keySet();
+    }
+
+    /**
+     * @hide
+     */
+    public String getExtension(char extensionKey) {
+        return bcp47Extensions.get(extensionKey);
+    }
+
+    /**
+     * @hide
+     */
+    public String getUnicodeLocaleType(String key) {
+        return unicodeKeywords.get(key);
+    }
+
+    /**
+     * @hide
+     */
+	public Set<String> getUnicodeLocaleAttributes() {
+        return unicodeAttributes;
+    }
+
+    /**
+     * @hide
+     */
+	public Set<String> getUnicodeLocaleKeys() {
+        return unicodeKeywords.keySet();
+    }
+
     @Override
     public synchronized int hashCode() {
         return countryCode.hashCode() + languageCode.hashCode()
@@ -610,12 +1161,14 @@ public final class Locale implements Cloneable, Serializable {
     public final String toString() {
         String result = cachedToStringResult;
         if (result == null) {
-            result = cachedToStringResult = toNewString(languageCode, countryCode, variantCode);
+            result = cachedToStringResult = toNewString(languageCode, countryCode,
+                    variantCode, scriptCode, bcp47Extensions);
         }
         return result;
     }
 
-    private static String toNewString(String languageCode, String countryCode, String variantCode) {
+    private String toNewString(String languageCode, String countryCode,
+            String variantCode, String scriptCode, Map<Character, String> extensions) {
         // The string form of a locale that only has a variant is the empty string.
         if (languageCode.length() == 0 && countryCode.length() == 0) {
             return "";
@@ -634,6 +1187,17 @@ public final class Locale implements Cloneable, Serializable {
             result.append('_');
         }
         result.append(variantCode);
+
+        if (scriptCode != null && !scriptCode.isEmpty()) {
+            result.append('#');
+            result.append(scriptCode);
+        }
+
+        if (bcp47Extensions != null && !bcp47Extensions.isEmpty()) {
+            result.append('-');
+            result.append(serializeExtensions(bcp47Extensions));
+        }
+
         return result.toString();
     }
 
@@ -642,6 +1206,8 @@ public final class Locale implements Cloneable, Serializable {
         new ObjectStreamField("hashcode", int.class),
         new ObjectStreamField("language", String.class),
         new ObjectStreamField("variant", String.class),
+        new ObjectStreamField("script", String.class),
+        new ObjectStreamField("extensions", String.class),
     };
 
     private void writeObject(ObjectOutputStream stream) throws IOException {
@@ -650,6 +1216,12 @@ public final class Locale implements Cloneable, Serializable {
         fields.put("hashcode", -1);
         fields.put("language", languageCode);
         fields.put("variant", variantCode);
+        fields.put("script", scriptCode);
+
+        if (!bcp47Extensions.isEmpty()) {
+            fields.put("extensions", serializeExtensions(bcp47Extensions));
+        }
+
         stream.writeFields();
     }
 
@@ -658,5 +1230,198 @@ public final class Locale implements Cloneable, Serializable {
         countryCode = (String) fields.get("country", "");
         languageCode = (String) fields.get("language", "");
         variantCode = (String) fields.get("variant", "");
+        scriptCode = (String) fields.get("script", "");
+
+        this.unicodeKeywords = Collections.EMPTY_MAP;
+        this.unicodeAttributes = Collections.EMPTY_SET;
+        this.bcp47Extensions = Collections.EMPTY_MAP;
+
+        String extensions = (String) fields.get("extensions", null);
+        if (extensions != null) {
+            Map<Character, String> extensionsMap = new TreeMap<Character, String>();
+            parseSerializedExtensions(extensions, extensionsMap);
+            this.bcp47Extensions = Collections.unmodifiableMap(extensionsMap);
+
+            if (extensionsMap.containsKey(UNICODE_LOCALE_EXTENSION)) {
+                String unicodeExtension = extensionsMap.get(UNICODE_LOCALE_EXTENSION);
+                String[] subTags = unicodeExtension.split("-");
+
+                Map<String, String> unicodeKeywords = new TreeMap<String, String>();
+                Set<String> unicodeAttributes = new TreeSet<String>();
+                parseUnicodeExtension(subTags, unicodeKeywords, unicodeAttributes);
+
+                this.unicodeKeywords = Collections.unmodifiableMap(unicodeKeywords);
+                this.unicodeAttributes = Collections.unmodifiableSet(unicodeAttributes);
+            }
+        }
+    }
+
+    static String serializeExtensions(Map<Character, String> extensionsMap) {
+        Iterator<Map.Entry<Character, String>> entryIterator = extensionsMap.entrySet().iterator();
+        StringBuilder sb = new StringBuilder(64);
+
+        while (true) {
+            final Map.Entry<Character, String> entry = entryIterator.next();
+            sb.append(entry.getKey());
+            sb.append('-');
+            sb.append(entry.getValue());
+
+            if (entryIterator.hasNext()) {
+                sb.append('-');
+            } else {
+                break;
+            }
+        }
+
+        return sb.toString();
+    }
+
+    // Visible for testing
+    static void parseSerializedExtensions(String extString, Map<Character, String> outputMap) {
+        final String[] subTags = extString.split("-");
+        int[] extensionStartIndices = new int[subTags.length / 2];
+
+        int length = 0;
+        int count = 0;
+        for (String subTag : subTags) {
+            if (subTag.length() == 1) {
+                extensionStartIndices[count++] = length;
+            }
+
+            if (subTag.length() > 0) {
+                length += subTag.length();
+            }
+        }
+
+        for (int i = 0; i < count; ++i) {
+            final int valueStart = extensionStartIndices[i] + 2;
+            final int valueEnd = (i == count) ?
+                    extString.length() : extensionStartIndices[i + 1];
+
+            outputMap.put(extString.charAt(extensionStartIndices[i]),
+                    extString.substring(valueStart, valueEnd));
+        }
+    }
+
+
+    private static boolean isUnM49AreaCode(String code) {
+        if (code.length() != 3) {
+            return false;
+        }
+
+        for (int i = 0; i < 3; ++i) {
+            final char character = code.charAt(i);
+            if (!(character >= '0' && character <= '9')) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /*
+     * Checks whether a given string is an ASCII alphanumeric string.
+     */
+    private static boolean isAsciiAlphaNum(String string) {
+        for (int i = 0; i < string.length(); i++) {
+            final char character = string.charAt(i);
+            if (!(character >= 'a' && character <= 'z' ||
+                    character >= 'A' && character <= 'Z' ||
+                    character >= '0' && character <= '9')) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean isAsciiAlphaWithBoundedLength(String string,
+            int lowerBound, int upperBound) {
+        final int length = string.length();
+        if (length < lowerBound || length > upperBound) {
+            return false;
+        }
+
+        for (int i = 0; i < length; ++i) {
+            final char character = string.charAt(i);
+            if (!(character >= 'a' && character <= 'z' ||
+                    character >= 'A' && character <= 'Z')) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean isAsciiAlphaNumWithBoundedLength(String attributeOrType,
+            int lowerBound, int upperBound) {
+        if (attributeOrType.length() < lowerBound || attributeOrType.length() > upperBound) {
+            return false;
+        }
+
+        return isAsciiAlphaNum(attributeOrType);
+    }
+
+    private static String titleCaseAsciiWord(String lowerCase) {
+        try {
+            byte[] chars = lowerCase.getBytes(StandardCharsets.US_ASCII);
+            chars[0] = (byte) ((int) chars[0] + 'A' - 'a');
+            return new String(chars, StandardCharsets.US_ASCII);
+        } catch (UnsupportedOperationException uoe) {
+            throw new AssertionError();
+        }
+    }
+
+    private static boolean isValidTypeList(String lowerCaseTypeList) {
+        final String[] splitList = lowerCaseTypeList.split("-");
+        for (String type : splitList) {
+            if (!isAsciiAlphaNumWithBoundedLength(type, 3, 8)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Visible for testing.
+    static void parseUnicodeExtension(String[] subtags,
+            Map<String, String> keywords, Set<String> attributes)  {
+        // This extension is described by http://www.unicode.org/reports/tr35/#RFC5234
+        //
+        // unicode_locale_extensions = sep "u" (1*(sep keyword) / 1*(sep attribute) *(sep keyword)).
+        //
+        // In particular, attributes (if any) must appear before keywords.
+        String lastKeyword = null;
+        List<String> subtagsForKeyword = new ArrayList<String>();
+        for (String subtag : subtags) {
+            if (subtag.length() == 2) {
+                if (subtagsForKeyword.size() > 0) {
+                    keywords.put(lastKeyword, joinStrings(subtagsForKeyword));
+                    subtagsForKeyword.clear();
+                }
+
+                lastKeyword = subtag;
+            } else if (subtag.length() > 2) {
+                if (lastKeyword == null) {
+                    attributes.add(subtag);
+                } else {
+                    subtagsForKeyword.add(subtag);
+                }
+            }
+        }
+    }
+
+    private static String joinStrings(List<String> strings) {
+        final int size = strings.size();
+
+        StringBuilder sb = new StringBuilder(strings.get(0).length());
+        for (int i = 0; i < size; ++i) {
+            sb.append(strings.get(0));
+            if (i != size - 1) {
+                sb.append('-');
+            }
+        }
+
+        return sb.toString();
     }
 }
