@@ -242,6 +242,10 @@ public final class Locale implements Cloneable, Serializable {
      */
     public static final Locale US = new Locale(true, "en", "US");
 
+    public static final char PRIVATE_USE_EXTENSION = 'x';
+
+    public static final char UNICODE_LOCALE_EXTENSION = 'u';
+
     /**
      * The current default locale. It is temporarily assigned to US because we
      * need a default locale to lookup the real default locale.
@@ -253,6 +257,200 @@ public final class Locale implements Cloneable, Serializable {
         String region = System.getProperty("user.region", "US");
         String variant = System.getProperty("user.variant", "");
         defaultLocale = new Locale(language, region, variant);
+    }
+
+    /**
+     * @hide
+     */
+    public static final class Builder {
+        private String language;
+        private String region;
+        private String variant;
+        private String script;
+
+        private final Set<String> attributes;
+        private final Map<String, String> keywords;
+        private final Map<Character, String> extensions;
+
+        public Builder() {
+            attributes = new HashSet<String>();
+            keywords = new HashMap<String, String>();
+            extensions = new HashMap<Character, String>();
+        }
+
+        public Builder setLanguage(String language) {
+            return this;
+        }
+
+        public Builder setLanguageTag(String language) {
+            return this;
+        }
+
+        public Builder setRegion(String language) {
+            return this;
+        }
+
+        public Builder setVariant(String language) {
+            return this;
+        }
+
+        public Builder setScript(String language) {
+            return this;
+        }
+
+        public Builder setLocale(Locale locale) {
+            return this;
+        }
+
+        public Builder addUnicodeLocaleAttribute(String attribute) {
+            if (attribute == null) {
+                throw new NullPointerException("attribute == null");
+            }
+
+            final String lowercaseAttribute = attribute.trim().toLowerCase(Locale.ROOT);
+            if (!isAsciiAlphaNumWithBoundedLength(lowercaseAttribute, 3, 8)) {
+                throw new IllformedLocaleException("Invalid locale attribute: " + attribute);
+            }
+
+            attributes.add(attribute);
+
+            return this;
+        }
+
+        public Builder removeUnicodeLocaleAttribute(String attribute) {
+            if (attribute == null) {
+                throw new NullPointerException("attribute == null");
+            }
+
+            // Weirdly, remove is specified to check whether the attribute
+            // is valid, so we have to perform the full alphanumeric check here.
+            final String lowercaseAttribute = attribute.trim().toLowerCase(Locale.ROOT);
+            if (!isAsciiAlphaNumWithBoundedLength(lowercaseAttribute, 3, 8)) {
+                throw new IllformedLocaleException("Invalid locale attribute: " + attribute);
+            }
+
+            attributes.remove(attribute);
+            return this;
+        }
+
+        public Builder setExtension(char key, String value) {
+            final String[] subtags = value.toLowerCase(Locale.ROOT).replace('_', '-').split("-");
+
+            // Lengths for subtags in the private use extension should be [1, 8] chars.
+            // For all other extensions, they should be [2, 8] chars.
+            //
+            // http://www.rfc-editor.org/rfc/bcp/bcp47.txt
+            final int minimumLength = (key == PRIVATE_USE_EXTENSION) ? 1 : 2;
+            for (String subtag : subtags) {
+                if (!isAsciiAlphaNumWithBoundedLength(subtag, minimumLength, 8)) {
+                    throw new IllformedLocaleException(
+                            "Invalid private use extension : " + value);
+                }
+            }
+
+            // We need to take special action in the case of unicode extensions,
+            // since we claim to understand their keywords and attributes.
+            if (key == UNICODE_LOCALE_EXTENSION) {
+                // First clear existing attributes and keywords.
+                extensions.clear();
+                attributes.clear();
+
+                parseUnicodeExtension(subtags);
+            }
+
+            return this;
+        }
+
+        public Builder clearExtensions() {
+            extensions.clear();
+            attributes.clear();
+            keywords.clear();
+            return this;
+        }
+
+        /*
+         * keyword = key [sep type]
+         * key = 2alphanum
+         * type = 3*8alphanum *(sep 3*8alphanum)
+         * alphanum = [0-9 A-Z a-z]
+         */
+        public Builder setUnicodeLocaleKeyword(String key, String type) {
+            if (key == null) {
+                throw new NullPointerException("key == null");
+            }
+
+            if (type == null && keywords != null) {
+                keywords.remove(key);
+                return this;
+            }
+
+            final String lowerCaseKey = key.trim().toLowerCase(Locale.ROOT);
+            // The key must be exactly two alphanumeric characters.
+            if (lowerCaseKey.length() != 2 || !isAsciiAlphaNum(lowerCaseKey)) {
+                throw new IllformedLocaleException("Invalid unicode locale keyword: " + key);
+            }
+
+            // The type can be one or more alphanumeric strings of length [3, 8] characters,
+            // separated by a separator char, which is one of "_" or "-". Though the spec
+            // doesn't require it, we normalize all "_" to "-" to make the rest of our
+            // processing easier.
+            final String lowerCaseType = type.trim().toLowerCase(Locale.ROOT).replace("_", "-");
+            if (!isValidateTypeList(lowerCaseType)) {
+                throw new IllformedLocaleException("Invalid unicode locale type: " + type);
+            }
+
+            // Everything checks out fine, add the <key, type> mapping to the list.
+            keywords.put(key, lowerCaseType);
+
+            return this;
+        }
+
+        public Builder clear() {
+            return this;
+        }
+
+        public Locale build() {
+            return null;
+        }
+
+        private void parseUnicodeExtension(String[] subtags) throws IllformedLocaleException {
+            String lastKeyword = null;
+            List<String> attributesForKeyword = new ArrayList<String>();
+            for (String subtag : subtags) {
+                if (subtag.length() == 2) {
+                    if (attributesForKeyword.size() > 0) {
+                        keywords.put(lastKeyword, joinStrings(attributesForKeyword));
+                        attributesForKeyword.clear();
+                    }
+
+                    lastKeyword = subtag;
+                } else if (subtag.length() > 2) {
+                    if (lastKeyword == null) {
+                        attributes.add(subtag);
+                    } else {
+                        attributesForKeyword.add(subtag);
+                    }
+                }
+            }
+        }
+
+        private static String joinStrings(List<String> strings) {
+            final int size = strings.size();
+
+            StringBuilder sb = new StringBuilder(strings.get(0).length());
+            for (int i = 0; i < size; ++i) {
+                sb.append(strings.get(0));
+                if (i != size - 1) {
+                    sb.append('-');
+                }
+            }
+
+            return sb.toString();
+        }
+    }
+
+    public static Locale forLanguageTag(String languageTag) {
+        return null;
     }
 
     private transient String countryCode;
@@ -574,6 +772,69 @@ public final class Locale implements Cloneable, Serializable {
         return variantCode;
     }
 
+    /**
+     * @hide
+     */
+    public String getScript() {
+        return null;
+    }
+
+    /**
+     * @hide
+     */
+    public String getDisplayScript() {
+        return null;
+    }
+
+    /**
+     * @hide
+     */
+    public String getDisplayScript(Locale locale) {
+        return null;
+    }
+
+    /**
+     * @hide
+     */
+    public String getExtension(char extensionKey) {
+        return null;
+    }
+
+    /**
+     * @hide
+     */
+    public String getUnicodeLocaleType(String key) {
+        return null;
+    }
+
+    /**
+     * @hide
+     */
+    public String toLanguageTag(String tag) {
+        return null;
+    }
+
+    /**
+     * @hide
+     */
+    public Set<Character> getExtensionKeys() {
+        return null;
+    }
+
+    /**
+     * @hide
+     */
+	public Set<String> getUnicodeLocaleAttributes() {
+        return null;
+    }
+
+    /**
+     * @hide
+     */
+	public Set<String> getUnicodeLocaleKeys() {
+        return null;
+    }
+
     @Override
     public synchronized int hashCode() {
         return countryCode.hashCode() + languageCode.hashCode()
@@ -658,5 +919,42 @@ public final class Locale implements Cloneable, Serializable {
         countryCode = (String) fields.get("country", "");
         languageCode = (String) fields.get("language", "");
         variantCode = (String) fields.get("variant", "");
+    }
+
+    /*
+     * Checks whether a given string is an ASCII alphanumeric string.
+     */
+    private static boolean isAsciiAlphaNum(String string) {
+        for (int i = 0; i < string.length(); i++) {
+            final char character = string.charAt(i);
+            if (!(character >= 'a' && character <= 'z' ||
+                    character >= 'A' && character <= 'Z' ||
+                    character >= '0' && character <= '9')) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean isAsciiAlphaNumWithBoundedLength(String attributeOrType,
+            int lowerBound, int upperBound) {
+        if (attributeOrType.length() < lowerBound ||
+                attributeOrType.length() > upperBound) {
+            return false;
+        }
+
+        return isAsciiAlphaNum(attributeOrType);
+    }
+
+    private static boolean isValidateTypeList(String lowerCaseTypeList) {
+        final String[] splitList = lowerCaseTypeList.split("-");
+        for (String type : splitList) {
+            if (!isAsciiAlphaNumWithBoundedLength(type, 3, 8)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
