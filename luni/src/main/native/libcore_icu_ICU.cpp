@@ -60,6 +60,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include <vector>
 
 // TODO: put this in a header file and use it everywhere!
 // DISALLOW_COPY_AND_ASSIGN disallows the copy and operator= functions.
@@ -114,6 +115,38 @@ static jstring ICU_getScript(JNIEnv* env, jclass, jstring javaLocale) {
         return NULL;
     }
     return env->NewStringUTF(script);
+}
+
+static jstring ICU_localeForLanguageTag(JNIEnv* env, jclass, jstring languageTag) {
+    UErrorCode status = U_ZERO_ERROR;
+    ScopedUtfChars languageTagChars(env, languageTag);
+
+    // Naively assume that in the average case, the size of
+    // the normalized language tag will be very nearly the same as the
+    // size of the input. This is generally true for language
+    // tags that are "simple" language-region-variant combinations
+    // that don't contain any grandfathered tags.
+    const size_t initialBufferSize = languageTagChars.size() + 32;
+    std::vector<char> buffer(initialBufferSize);
+
+    while (true) {
+        const size_t outputLength = uloc_forLanguageTag(languageTagChars.c_str(),
+               &buffer[0], buffer.size(), NULL /* parse position */, &status);
+        if (U_FAILURE(status)) {
+            return NULL;
+        }
+
+        // Assume that we've run out of buffer space when this happens. Double
+        // the buffer size and try again. This should happen very infrequently.
+        if (outputLength == buffer.size()) {
+            buffer.resize(buffer.size() << 1);
+        } else {
+            // DCHECK_LT(buffer.size(), outputLength);
+            break;
+        }
+    }
+
+    return  env->NewStringUTF(&buffer[0]);
 }
 
 static jint ICU_getCurrencyFractionDigits(JNIEnv* env, jclass, jstring javaCurrencyCode) {
@@ -693,6 +726,7 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(ICU, initLocaleDataNative, "(Ljava/lang/String;Llibcore/icu/LocaleData;)Z"),
     NATIVE_METHOD(ICU, toLowerCase, "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"),
     NATIVE_METHOD(ICU, toUpperCase, "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"),
+    NATIVE_METHOD(ICU, localeForLanguageTag, "(Ljava/lang/String;)Ljava/lang/String;"),
 };
 void register_libcore_icu_ICU(JNIEnv* env) {
     std::string path;
