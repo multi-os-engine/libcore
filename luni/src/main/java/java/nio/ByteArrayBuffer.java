@@ -239,6 +239,11 @@ final class ByteArrayBuffer extends ByteBuffer {
     return false;
   }
 
+  /** @hide */
+  @Override public final boolean isValid() {
+    return true;
+  }
+
   @Override public ByteBuffer put(byte b) {
     if (isReadOnly) {
       throw new ReadOnlyBufferException();
