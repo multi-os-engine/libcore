@@ -20,12 +20,16 @@ import java.text.BreakIterator;
 import java.text.Collator;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
-import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
-import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IllformedLocaleException;
 import java.util.Locale;
+import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.Set;
+import java.util.TreeMap;
 
 public class LocaleTest extends junit.framework.TestCase {
     // http://b/2611311; if there's no display language/country/variant, use the raw codes.
@@ -178,4 +182,588 @@ public class LocaleTest extends junit.framework.TestCase {
         assertEquals("eng", new Locale("en", "CA").getISO3Language());
         assertEquals("eng", new Locale("en", "XX").getISO3Language());
     }
-  }
+
+    public void test_serializeExtensions() {
+        Map<Character, String> extensions = new TreeMap<Character, String>();
+
+        extensions.put('x', "fooo-baar-baaz");
+        assertEquals("x-fooo-baar-baaz", Locale.serializeExtensions(extensions));
+
+        extensions.put('y', "gaaa-caar-caaz");
+        // Must show up in lexical order.
+        assertEquals("x-fooo-baar-baaz-y-gaaa-caar-caaz",
+                Locale.serializeExtensions(extensions));
+    }
+
+    public void test_parseSerializedExtensions() {
+        Map<Character, String> extensions = new HashMap<Character, String>();
+
+        Locale.parseSerializedExtensions("x-foo", extensions);
+        assertEquals("foo", extensions.get('x'));
+
+        extensions.clear();
+        Locale.parseSerializedExtensions("x-foo-y-bar-z-baz", extensions);
+        assertEquals("foo", extensions.get('x'));
+        assertEquals("bar", extensions.get('y'));
+        assertEquals("baz", extensions.get('z'));
+
+        extensions.clear();
+        Locale.parseSerializedExtensions("x-fooo-baar-baaz", extensions);
+        assertEquals("fooo-baar-baaz", extensions.get('x'));
+
+        extensions.clear();
+        Locale.parseSerializedExtensions("x-fooo-baar-baaz-y-gaaa-caar-caaz", extensions);
+        assertEquals("fooo-baar-baaz", extensions.get('x'));
+        assertEquals("gaaa-caar-caaz", extensions.get('y'));
+    }
+
+    public void test_parseUnicodeExtension() {
+        Map<String, String> keywords = new HashMap<String, String>();
+        Set<String> attributes = new HashSet<String>();
+
+        // Only attributes.
+        Locale.parseUnicodeExtension("foooo".split("-"), keywords, attributes);
+        assertTrue(attributes.contains("foooo"));
+        assertTrue(keywords.isEmpty());
+
+        attributes.clear();
+        keywords.clear();
+        Locale.parseUnicodeExtension("foooo-baa-baaabaaa".split("-"),
+                keywords, attributes);
+        assertTrue(attributes.contains("foooo"));
+        assertTrue(attributes.contains("baa"));
+        assertTrue(attributes.contains("baaabaaa"));
+        assertTrue(keywords.isEmpty());
+
+        // Only keywords
+        attributes.clear();
+        keywords.clear();
+        Locale.parseUnicodeExtension("ko-koko".split("-"), keywords, attributes);
+        assertTrue(attributes.isEmpty());
+        assertEquals("koko", keywords.get("ko"));
+
+        attributes.clear();
+        keywords.clear();
+        Locale.parseUnicodeExtension("ko-koko-kokoko".split("-"), keywords, attributes);
+        assertTrue(attributes.isEmpty());
+        assertEquals("koko-kokoko", keywords.get("ko"));
+
+        attributes.clear();
+        keywords.clear();
+        Locale.parseUnicodeExtension("ko-koko-kokoko-ba-baba-bababa".split("-"),
+                keywords, attributes);
+        assertTrue(attributes.isEmpty());
+        assertEquals("koko-kokoko", keywords.get("ko"));
+        assertEquals("baba-bababa", keywords.get("ba"));
+
+        // A mixture of attributes and keywords.
+        attributes.clear();
+        keywords.clear();
+        Locale.parseUnicodeExtension("attri1-attri2-k1-type1-type1-k2-type2".split("-"),
+                keywords, attributes);
+        assertTrue(attributes.contains("attri1"));
+        assertTrue(attributes.contains("attri2"));
+        assertEquals("type1-type1", keywords.get("k1"));
+        assertEquals("type2", keywords.get("k2"));
+    }
+
+    public void test_Builder_setLanguage() {
+        Locale.Builder b = new Locale.Builder();
+
+        // Should normalize to lower case.
+        b.setLanguage("EN");
+        assertEquals("en", b.build().getLanguage());
+
+        b = new Locale.Builder();
+
+        // Too short.
+        try {
+            b.setLanguage("e");
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        // Too long
+        try {
+            b.setLanguage("englyishh");
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        // Contains non ASCII characters
+        try {
+            b.setLanguage("தமிழ்");
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        // Null or empty languages must clear state.
+        b = new Locale.Builder();
+        b.setLanguage("en");
+        b.setLanguage(null);
+        assertEquals("", b.build().getLanguage());
+
+        b = new Locale.Builder();
+        b.setLanguage("en");
+        b.setLanguage("");
+        assertEquals("", b.build().getLanguage());
+    }
+
+    public void test_Builder_setRegion() {
+        Locale.Builder b = new Locale.Builder();
+
+        // Should normalize to upper case.
+        b.setRegion("us");
+        assertEquals("US", b.build().getCountry());
+
+        b = new Locale.Builder();
+
+        // Too short.
+        try {
+            b.setRegion("e");
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        // Too long
+        try {
+            b.setRegion("USA");
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        // Contains non ASCII characters
+        try {
+            b.setLanguage("திழ்");
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        // Null or empty regions must clear state.
+        b = new Locale.Builder();
+        b.setRegion("US");
+        b.setRegion(null);
+        assertEquals("", b.build().getCountry());
+
+        b = new Locale.Builder();
+        b.setRegion("US");
+        b.setRegion("");
+        assertEquals("", b.build().getCountry());
+    }
+
+    public void test_Builder_setVariant() {
+        Locale.Builder b = new Locale.Builder();
+
+        // Should normalize variants to lower case.
+        b.setVariant("vArIaNt-VaRiAnT");
+        assertEquals("variant_variant", b.build().getVariant());
+
+        // And normalize "_" to "-"
+        b = new Locale.Builder();
+        b.setVariant("vArIaNt-VaRiAnT-VARIANT");
+        assertEquals("variant_variant_variant", b.build().getVariant());
+
+        b = new Locale.Builder();
+        // Too short
+        try {
+            b.setVariant("shor");
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        // Too long
+        try {
+            b.setVariant("waytoolong");
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        try {
+            b.setVariant("foooo-foooo-fo");
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        // Special case. Variants of length 4 are allowed when the first
+        // character is a digit.
+        b.setVariant("0ABC");
+        assertEquals("0abc", b.build().getVariant());
+
+        b = new Locale.Builder();
+        b.setVariant("variant");
+        b.setVariant(null);
+        assertEquals("", b.build().getVariant());
+
+        b = new Locale.Builder();
+        b.setVariant("variant");
+        b.setVariant("");
+        assertEquals("", b.build().getVariant());
+    }
+
+    public void test_Builder_setLocale() {
+        // Default case.
+        Locale.Builder b = new Locale.Builder();
+        b.setLocale(Locale.US);
+        assertEquals("en", b.build().getLanguage());
+        assertEquals("US", b.build().getCountry());
+
+        // Should throw when locale is malformed.
+        // - Bad language
+        Locale bad = new Locale("e", "US");
+        b = new Locale.Builder();
+        try {
+            b.setLocale(bad);
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+        // - Bad country
+        bad = new Locale("en", "USA");
+        try {
+            b.setLocale(bad);
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        // - Bad variant
+        bad = new Locale("en", "US", "c");
+        try {
+            b.setLocale(bad);
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        // Test values are normalized as they should be
+        b = new Locale.Builder();
+        Locale good = new Locale("EN", "us", "variant-vARIANT");
+        b.setLocale(good);
+        Locale l = b.build();
+        assertEquals("en", l.getLanguage());
+        assertEquals("US", l.getCountry());
+        assertEquals("variant_variant", l.getVariant());
+
+        // Test that none of the existing fields are messed with
+        // if the locale update fails.
+        b = new Locale.Builder();
+        b.setLanguage("fr").setRegion("FR");
+
+        try {
+            b.setLocale(bad);
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        l = b.build();
+        assertEquals("fr", l.getLanguage());
+        assertEquals("FR", l.getCountry());
+    }
+
+    public void test_Builder_setScript() {
+        Locale.Builder b = new Locale.Builder();
+
+        // Should normalize variants to lower case.
+        b.setScript("lAtN");
+        assertEquals("Latn", b.build().getScript());
+
+        b = new Locale.Builder();
+        // Too short
+        try {
+            b.setScript("lat");
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        // Too long
+        try {
+            b.setScript("latin");
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        b = new Locale.Builder();
+        b.setScript("Latn");
+        b.setScript(null);
+        assertEquals("", b.build().getScript());
+
+        b = new Locale.Builder();
+        b.setScript("Latn");
+        b.setScript("");
+        assertEquals("", b.build().getScript());
+    }
+
+    public void test_Builder_clear() {
+        Locale.Builder b = new Locale.Builder();
+        b.setLanguage("en").setScript("Latn").setRegion("US")
+                .setVariant("POSIX").setExtension('g', "foo")
+                .setUnicodeLocaleKeyword("fo", "baar")
+                .addUnicodeLocaleAttribute("baaaaz");
+
+        Locale l = b.clear().build();
+        assertEquals("", l.getLanguage());
+        assertEquals("", l.getCountry());
+        assertEquals("", l.getVariant());
+        assertEquals("", l.getScript());
+        assertTrue(l.getExtensionKeys().isEmpty());
+    }
+
+    public void test_Builder_setExtension() {
+        Locale.Builder b = new Locale.Builder();
+        b.setExtension('g', "FO_ba-BR_bg");
+
+        Locale l = b.build();
+        assertEquals("fo-ba-br-bg", l.getExtension('g'));
+
+        b = new Locale.Builder();
+
+        // Too short
+        try {
+            b.setExtension('g', "fo-ba-br-x");
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        // Too long
+        try {
+            b.setExtension('g', "fo-ba-br-extension");
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        // Special case, the private use extension allows single char subtags.
+        b.setExtension(Locale.PRIVATE_USE_EXTENSION, "fo-ba-br-m");
+        l = b.build();
+        assertEquals("fo-ba-br-m", l.getExtension('x'));
+
+        // Special case, the unicode locale extension must be parsed into
+        // its individual components. The correctness of the parse is tested
+        // in test_parseUnicodeExtension.
+        b.setExtension(Locale.UNICODE_LOCALE_EXTENSION, "foooo_BaaaR-BA_Baz-bI_BIZ");
+        l = b.build();
+        // Note that attributes and keywords are sorted alphabetically.
+        assertEquals("baaar-foooo-ba-baz-bi-biz", l.getExtension('u'));
+
+        assertTrue(l.getUnicodeLocaleAttributes().contains("foooo"));
+        assertTrue(l.getUnicodeLocaleAttributes().contains("baaar"));
+        assertEquals("baz", l.getUnicodeLocaleType("ba"));
+        assertEquals("biz", l.getUnicodeLocaleType("bi"));
+    }
+
+    public void test_Builder_clearExtensions() {
+        Locale.Builder b = new Locale.Builder();
+        b.setExtension('g', "FO_ba-BR_bg");
+        b.setExtension(Locale.PRIVATE_USE_EXTENSION, "fo-ba-br-m");
+        b.clearExtensions();
+
+        assertTrue(b.build().getExtensionKeys().isEmpty());
+    }
+
+    public void test_Builder_setLanguageTag_singleSubtag() {
+        Locale.Builder b = new Locale.Builder();
+        b.setLanguageTag("en");
+
+        Locale l = b.build();
+        assertEquals("en", l.getLanguage());
+
+        b = new Locale.Builder();
+        b.setLanguageTag("eng");
+        l = b.build();
+        assertEquals("eng", l.getLanguage());
+
+        b = new Locale.Builder();
+        try {
+            b.setLanguageTag("a");
+            fail();
+        } catch (IllformedLocaleException ifle) {
+        }
+    }
+
+    public void test_Builder_setLanguageTag_twoSubtags() {
+        Locale.Builder b = new Locale.Builder();
+        b.setLanguageTag("en-US");
+
+        Locale l = b.build();
+        assertEquals("en", l.getLanguage());
+        assertEquals("US", l.getCountry());
+
+        b = new Locale.Builder();
+        b.setLanguageTag("eng-419");
+        l = b.build();
+        assertEquals("eng", l.getLanguage());
+        assertEquals("419", l.getCountry());
+
+        // IND is an invalid region code so ICU helpfully tries to parse it as
+        // a 3 letter language code, even if it isn't a valid ISO-639-3 code
+        // either.
+        b = new Locale.Builder();
+        b.setLanguageTag("en-USB");
+        l = b.build();
+        assertEquals("usb", l.getLanguage());
+        assertEquals("", l.getCountry());
+
+        // Script tags shouldn't be mis-recognized as regions.
+        b = new Locale.Builder();
+        b.setLanguageTag("en-Latn");
+        l = b.build();
+        assertEquals("en", l.getLanguage());
+        assertEquals("", l.getCountry());
+        assertEquals("Latn", l.getScript());
+
+        // Neither should variant tags.
+        b = new Locale.Builder();
+        b.setLanguageTag("en-POSIX");
+        l = b.build();
+        assertEquals("en", l.getLanguage());
+        assertEquals("", l.getCountry());
+        assertEquals("", l.getScript());
+    }
+
+    public void test_Builder_setLanguageTag_threeSubtags() {
+        // lang-region-variant
+        Locale.Builder b = new Locale.Builder();
+        b.setLanguageTag("en-US-FOOOO");
+        Locale l = b.build();
+        assertEquals("en", l.getLanguage());
+        assertEquals("US", l.getCountry());
+        assertEquals("", l.getScript());
+        assertEquals("foooo", l.getVariant());
+
+        // lang-script-variant
+        b = new Locale.Builder();
+        b.setLanguageTag("en-Latn-FOOOO");
+        l = b.build();
+        assertEquals("en", l.getLanguage());
+        assertEquals("", l.getCountry());
+        assertEquals("Latn", l.getScript());
+        assertEquals("foooo", l.getVariant());
+
+        // lang-script-region
+        b = new Locale.Builder();
+        b.setLanguageTag("en-Latn-US");
+        l = b.build();
+        assertEquals("en", l.getLanguage());
+        assertEquals("US", l.getCountry());
+        assertEquals("Latn", l.getScript());
+        assertEquals("", l.getVariant());
+
+        // lang-variant-variant
+        b = new Locale.Builder();
+        b.setLanguageTag("en-FOOOO-BAAAAR");
+        l = b.build();
+        assertEquals("en", l.getLanguage());
+        assertEquals("", l.getCountry());
+        assertEquals("", l.getScript());
+        assertEquals("foooo_baaaar", l.getVariant());
+
+        // lang-region-illformedvariant
+        b = new Locale.Builder();
+        try {
+            b.setLanguageTag("en-US-BA");
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+
+        // lang-variant-illformedvariant
+        try {
+            b.setLanguageTag("en-FOOOO-BA");
+            fail();
+        } catch (IllformedLocaleException expected) {
+        }
+    }
+
+    public void test_Builder_setLanguageTag_fourOrMoreSubtags() {
+        Locale.Builder b = new Locale.Builder();
+        b.setLanguageTag("en-Latn-US-foooo");
+
+        // Single variant.
+        Locale l = b.build();
+        assertEquals("en", l.getLanguage());
+        assertEquals("Latn", l.getScript());
+        assertEquals("US", l.getCountry());
+        assertEquals("foooo", l.getVariant());
+
+        // Variant with multiple subtags.
+        b = new Locale.Builder();
+        b.setLanguageTag("en-Latn-US-foooo-gfffh");
+        l = b.build();
+        assertEquals("en", l.getLanguage());
+        assertEquals("Latn", l.getScript());
+        assertEquals("US", l.getCountry());
+        assertEquals("foooo_gfffh", l.getVariant());
+
+        // Variant with 2 subtags. POSIX shouldn't be recognized
+        // as a region or a script.
+        b = new Locale.Builder();
+        b.setLanguageTag("en-POSIX-P2003");
+        l = b.build();
+        assertEquals("en", l.getLanguage());
+        assertEquals("", l.getScript());
+        assertEquals("", l.getCountry());
+        assertEquals("posix_p2003", l.getVariant());
+
+        // Variant with 3 subtags. POSIX shouldn't be recognized
+        // as a region or a script.
+        b = new Locale.Builder();
+        b.setLanguageTag("en-POSIX-P2003-P2004");
+        l = b.build();
+        assertEquals("en", l.getLanguage());
+        assertEquals("", l.getScript());
+        assertEquals("", l.getCountry());
+        assertEquals("posix_p2003_p2004", l.getVariant());
+
+        b = new Locale.Builder();
+        b.setLanguageTag("en-Latn-POSIX-P2003");
+        l = b.build();
+        assertEquals("en", l.getLanguage());
+        assertEquals("Latn", l.getScript());
+        assertEquals("", l.getCountry());
+        assertEquals("posix_p2003", l.getVariant());
+    }
+
+    public void test_forLanguageTag() {
+
+    }
+
+    public void test_getDisplayScript() {
+        Locale.Builder b = new Locale.Builder();
+        b.setLanguage("en").setRegion("US").setScript("Latn");
+
+        Locale l = b.build();
+        assertEquals("Latin", l.getDisplayScript());
+        assertEquals("Lateinisch", l.getDisplayScript(Locale.GERMAN));
+        // Fallback for navajo, a language for which we don't have data.
+        assertEquals("Latin", l.getDisplayScript(new Locale("nv", "US")));
+
+        b= new Locale.Builder();
+        b.setLanguage("en").setRegion("US").setScript("Fooo");
+
+        // Will be equivalent to getScriptCode for scripts that aren't
+        // registered with ISO-15429 (but are otherwise well formed).
+        l = b.build();
+        assertEquals("Fooo", l.getDisplayScript());
+    }
+
+
+    public void test_Builder_unicodeExtensions() {
+
+    }
+
+    public void test_getExtension() {
+
+    }
+
+    public void test_unicodeLocaleExtensions() {
+
+    }
+
+    public void test_toLanguageTag() {
+
+    }
+
+    public void test_toString() {
+
+    }
+
+    public void test_serializedForm() {
+
+    }
+}
+
