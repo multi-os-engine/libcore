@@ -30,7 +30,8 @@ import org.apache.harmony.security.utils.ObjectIdentifier;
  * AttributeTypeAndValue comparator
  *
  */
-public class AttributeTypeAndValueComparator implements Comparator, Serializable {
+public class AttributeTypeAndValueComparator implements Comparator<AttributeTypeAndValue>,
+        Serializable {
 
     private static final long serialVersionUID = -1286471842007103132L;
 
@@ -44,7 +45,7 @@ public class AttributeTypeAndValueComparator implements Comparator, Serializable
      * @return -1 of first AttributeTypeAndValue "less" than second
      *         AttributeTypeAndValue 1 otherwise, 0 if they are equal
      */
-    public int compare(Object obj1, Object obj2) {
+    public int compare(AttributeTypeAndValue obj1, AttributeTypeAndValue obj2) {
         if (obj1 == obj2) {
             return 0;
         }
