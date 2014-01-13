@@ -2299,7 +2299,7 @@ public class X500PrincipalTest extends TestCase {
         list.add("2.5.4.6=A", "C=A", "C=A", "c=a");
         list.add("2.5.4.9=A", "STREET=A", "STREET=A", "street=a");
         list.add("0.9.2342.19200300.100.1.25=A", "DC=A",
-                "OID.0.9.2342.19200300.100.1.25=A", "dc=a");
+                "OID.0.9.2342.19200300.100.1.25=A", "dc=#160141");
         list.add("0.9.2342.19200300.100.1.1=A", "UID=A",
                 "OID.0.9.2342.19200300.100.1.1=A", "uid=a");
 
@@ -2319,8 +2319,8 @@ public class X500PrincipalTest extends TestCase {
                 "2.5.4.43=#130141");
         list.add("GENERATION=A", "2.5.4.44=#130141", "OID.2.5.4.44=A",
                 "2.5.4.44=#130141");
-        list.add("EMAILADDRESS=A", "1.2.840.113549.1.9.1=#130141",
-                "OID.1.2.840.113549.1.9.1=A", "1.2.840.113549.1.9.1=#130141",
+        list.add("EMAILADDRESS=A", "1.2.840.113549.1.9.1=#160141",
+                "OID.1.2.840.113549.1.9.1=A", "1.2.840.113549.1.9.1=#160141",
                 null, (byte) 0x05); //FIXME bug???
         list.add("SERIALNUMBER=A", "2.5.4.5=#130141", "OID.2.5.4.5=A",
                 "2.5.4.5=#130141");
@@ -2433,7 +2433,7 @@ public class X500PrincipalTest extends TestCase {
         //
         //
         list.add("CN=#130141", "CN=A", "CN=A", "cn=a"); // ASN1 Printable hex string = 'A'
-        list.add("CN=#140141", "CN=A", "CN=A", "cn=#140141", new byte[] { 0x30,
+        list.add("CN=#140141", "CN=A", "CN=A", "cn=a", new byte[] { 0x30,
                 0x0C, 0x31, 0x0A, 0x30, 0x08, 0x06, 0x03, 0x55, 0x04, 0x03,
                 0x14, 0x01, 0x41 }); // ASN1 Teletex hex string = 'A'
 
@@ -2574,7 +2574,7 @@ public class X500PrincipalTest extends TestCase {
 
                             errorMsg.append("CANONICAL: " + i);
                             errorMsg.append("\tparm: '" + dn + "'");
-                            errorMsg.append("\t\texpected: " + canonical + "'");
+                            errorMsg.append("\t\texpected: '" + canonical + "'");
                             errorMsg.append("\treturned: '"
                                     + p.getName(X500Principal.CANONICAL)
                                     + "'\n");
