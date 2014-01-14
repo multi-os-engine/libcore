@@ -269,6 +269,8 @@ public class DatagramChannelTest extends TestCase {
         DatagramSocket s2 = dc.socket();
         // same
         assertSame(s1, s2);
+
+        dc.close();
     }
 
     /**
@@ -285,6 +287,8 @@ public class DatagramChannelTest extends TestCase {
         DatagramSocket s2 = dc.socket();
         // same
         assertSame(s1, s2);
+
+        dc.close();
     }
 
     public void testSocket_NonBlock_BasicStatusAfterConnect()
@@ -298,6 +302,8 @@ public class DatagramChannelTest extends TestCase {
         DatagramSocket s2 = dc.socket();
         // same
         assertSame(s1, s2);
+
+        dc.close();
     }
 
     /**
@@ -372,8 +378,10 @@ public class DatagramChannelTest extends TestCase {
     private void assertSocketActionBeforeConnect(DatagramSocket s)
             throws IOException {
         s.connect(datagramSocket2Address);
-        assertFalse(this.channel1.isConnected());
-        assertFalse(s.isConnected());
+        // NOTE: This diverges from the reference implementation, but is consistent with
+        // the straight DatagramSocket implementation.
+        assertTrue(this.channel1.isConnected());
+        assertTrue(s.isConnected());
 
         s.disconnect();
         assertFalse(this.channel1.isConnected());
@@ -749,6 +757,8 @@ public class DatagramChannelTest extends TestCase {
         assertFalse(dc.socket().isBound());
         ByteBuffer dst = ByteBuffer.allocateDirect(CAPACITY_ZERO);
         assertNull(dc.receive(dst));
+
+        dc.close();
     }
 
     public void testReceive_UnboundBufNotEmpty() throws Exception {
@@ -761,6 +771,8 @@ public class DatagramChannelTest extends TestCase {
         dst.put((byte) 88);
         assertEquals(dst.position() + CAPACITY_NORMAL - 1, dst.limit());
         assertNull(dc.receive(dst));
+
+        dc.close();
     }
 
     public void testReceive_UnboundBufFull() throws Exception {
@@ -774,6 +786,8 @@ public class DatagramChannelTest extends TestCase {
         dst.put((byte) 88);
         assertEquals(dst.position(), dst.limit());
         assertNull(dc.receive(dst));
+
+        dc.close();
     }
 
     /**
@@ -1345,7 +1359,7 @@ public class DatagramChannelTest extends TestCase {
             InetSocketAddress expectedAddress, String expectedString) throws IOException {
         try {
             ByteBuffer buf = ByteBuffer.wrap(new byte[bufSize]);
-            InetSocketAddress senderAddr = null;
+            InetSocketAddress senderAddr;
             long startTime = System.currentTimeMillis();
             do {
                 senderAddr = (InetSocketAddress) this.channel1.receive(buf);
@@ -2049,6 +2063,8 @@ public class DatagramChannelTest extends TestCase {
         // read
         ByteBuffer targetBuf = ByteBuffer.wrap(targetArray);
         closeBlockedReaderChannel2(targetBuf);
+
+        dc.close();
     }
 
     // NOTE: The original harmony test tested that things still work
@@ -2239,6 +2255,8 @@ public class DatagramChannelTest extends TestCase {
         // read
         ByteBuffer targetBuf = ByteBuffer.wrap(targetArray);
         assertEquals(0, this.channel2.read(targetBuf));
+
+        dc.close();
     }
 
     // NOTE: The original harmony test tested that things still work
@@ -2443,6 +2461,8 @@ public class DatagramChannelTest extends TestCase {
         } catch (IllegalBlockingModeException e) {
             // expected
         }
+
+        channel.close();
     }
 
     public void test_bounded_harmony6493() throws IOException {

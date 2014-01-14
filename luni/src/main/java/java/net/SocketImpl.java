@@ -294,4 +294,28 @@ public abstract class SocketImpl implements SocketOptions {
      */
     protected void setPerformancePreferences(int connectionTime, int latency, int bandwidth) {
     }
+
+    /**
+     * Initialize the bind() state.
+     * @hide used in java.nio.
+     */
+    public void initBound(InetAddress localAddress, int localPort) {
+        // No-op
+    }
+
+    /**
+     * Initialize the connect() state.
+     * @hide used in java.nio.
+     */
+    public void initConnected(InetAddress remoteAddress, int remotePort) {
+        // No-op
+    }
+
+    /**
+     * Initialize the close() state.
+     * @hide used in java.nio.
+     */
+    public void initClosed() {
+        // No-op
+    }
 }

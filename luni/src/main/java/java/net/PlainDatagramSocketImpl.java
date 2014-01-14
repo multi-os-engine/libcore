@@ -20,14 +20,6 @@ package java.net;
 import dalvik.system.CloseGuard;
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocketImpl;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.net.SocketAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import libcore.io.ErrnoException;
 import libcore.io.IoBridge;
 import libcore.io.Libcore;
@@ -84,6 +76,12 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl {
             IoBridge.closeSocket(fd);
         } catch (IOException ignored) {
         }
+    }
+
+    @Override
+    protected void initClosed() {
+        super.initClosed();
+        guard.close();
     }
 
     @Override
@@ -211,6 +209,14 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl {
     }
 
     @Override
+    protected void initConnected(InetAddress remoteAddress, int remotePort) {
+        super.initConnected(remoteAddress, remotePort);
+        isNativeConnected = true;
+        connectedAddress = remoteAddress;
+        connectedPort = remotePort;
+    }
+
+    @Override
     public void disconnect() {
         try {
             Libcore.os.connect(fd, InetAddress.UNSPECIFIED, 0);
@@ -219,6 +225,14 @@ public class PlainDatagramSocketImpl extends DatagramSocketImpl {
         } catch (SocketException ignored) {
             // Thrown if the socket has already been closed, but this method can't throw anything.
         }
+        connectedPort = -1;
+        connectedAddress = null;
+        isNativeConnected = false;
+    }
+
+    @Override
+    protected void initDisconnected() {
+        super.initDisconnected();
         connectedPort = -1;
         connectedAddress = null;
         isNativeConnected = false;
