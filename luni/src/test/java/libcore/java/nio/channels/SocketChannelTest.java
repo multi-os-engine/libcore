@@ -16,10 +16,13 @@
 
 package libcore.java.nio.channels;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.Selector;
@@ -50,7 +53,7 @@ public class SocketChannelTest extends junit.framework.TestCase {
     } catch (IllegalArgumentException expected) {
     }
     try {
-      sc.read(new ByteBuffer[] { readOnly });
+      sc.read(new ByteBuffer[]{readOnly});
       fail();
     } catch (IllegalArgumentException expected) {
     }
@@ -78,7 +81,92 @@ public class SocketChannelTest extends junit.framework.TestCase {
 
     try {
       sc.finishConnect();
+      fail();
     } catch (ClosedChannelException expected) {
     }
   }
+
+  public void test_channelSocketOutputStreamClosureState() throws Exception {
+    ServerSocket ss = new ServerSocket(0);
+
+    SocketChannel sc = SocketChannel.open(ss.getLocalSocketAddress());
+    sc.configureBlocking(true);
+
+    Socket scSocket = sc.socket();
+    OutputStream os = scSocket.getOutputStream();
+
+    assertTrue(sc.isOpen());
+    assertFalse(scSocket.isClosed());
+
+    os.close();
+
+    assertFalse(sc.isOpen());
+    assertTrue(scSocket.isClosed());
+
+    ss.close();
+  }
+
+  public void test_channelSocketInputStreamClosureState() throws Exception {
+    ServerSocket ss = new ServerSocket(0);
+
+    SocketChannel sc = SocketChannel.open(ss.getLocalSocketAddress());
+    sc.configureBlocking(true);
+
+    Socket scSocket = sc.socket();
+    InputStream is = scSocket.getInputStream();
+
+    assertTrue(sc.isOpen());
+    assertFalse(scSocket.isClosed());
+
+    is.close();
+
+    assertFalse(sc.isOpen());
+    assertTrue(scSocket.isClosed());
+
+    ss.close();
+  }
+
+    public void test_connect_blocking() throws Exception {
+        ServerSocket ss = new ServerSocket(0);
+
+        SocketChannel sc = SocketChannel.open();
+        assertTrue(sc.isBlocking());
+
+        assertTrue(sc.connect(ss.getLocalSocketAddress()));
+
+        assertTrue(sc.socket().isBound());
+        assertTrue(sc.isConnected());
+        assertTrue(sc.socket().isConnected());
+        assertFalse(sc.socket().isClosed());
+        assertTrue(sc.isBlocking());
+
+        ss.close();
+        sc.close();
+    }
+
+    public void test_connect_nonBlocking() throws Exception {
+        ServerSocket ss = new ServerSocket(0);
+
+        SocketChannel sc = SocketChannel.open();
+        assertTrue(sc.isBlocking());
+        sc.configureBlocking(false);
+        assertFalse(sc.isBlocking());
+
+        if (!sc.connect(ss.getLocalSocketAddress())) {
+            do {
+                assertTrue(sc.socket().isBound());
+                assertFalse(sc.isConnected());
+                assertFalse(sc.socket().isConnected());
+                assertFalse(sc.socket().isClosed());
+            } while (!sc.finishConnect());
+        }
+        assertTrue(sc.socket().isBound());
+        assertTrue(sc.isConnected());
+        assertTrue(sc.socket().isConnected());
+        assertFalse(sc.socket().isClosed());
+        assertFalse(sc.isBlocking());
+
+        ss.close();
+        sc.close();
+    }
 }
