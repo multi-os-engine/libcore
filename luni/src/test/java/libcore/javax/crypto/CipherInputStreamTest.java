@@ -18,6 +18,7 @@ package libcore.javax.crypto;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.spec.AlgorithmParameterSpec;
@@ -49,6 +50,10 @@ public final class CipherInputStreamTest extends TestCase {
             (byte) 0x30, (byte) 0x7E, (byte) 0x6A, (byte) 0x4A
     };
 
+    private final byte[] rc4CipherText = {
+            (byte) 0x88, (byte) 0x01, (byte) 0xE3, (byte) 0x52, (byte) 0x7B
+    };
+
     private final String plainText = "abcde";
     private SecretKey key;
     private AlgorithmParameterSpec iv;
@@ -56,6 +61,56 @@ public final class CipherInputStreamTest extends TestCase {
     @Override protected void setUp() throws Exception {
         key = new SecretKeySpec(aesKeyBytes, "AES");
         iv = new IvParameterSpec(aesIvBytes);
+    }
+
+    private static class MeasuringInputStream extends FilterInputStream {
+        private int totalRead;
+
+        protected MeasuringInputStream(InputStream in) {
+            super(in);
+        }
+
+        @Override
+        public int read() throws IOException {
+            int c = super.read();
+            totalRead++;
+            return c;
+        }
+
+        @Override
+        public int read(byte[] buffer, int byteOffset, int byteCount) throws IOException {
+            int numRead = super.read(buffer, byteOffset, byteCount);
+            if (numRead != -1) {
+                totalRead += numRead;
+            }
+            return numRead;
+        }
+
+        public int getTotalRead() {
+            return totalRead;
+        }
+    }
+
+    public void testAvailable() throws Exception {
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        cipher.init(Cipher.DECRYPT_MODE, key, iv);
+        MeasuringInputStream in = new MeasuringInputStream(new ByteArrayInputStream(aesCipherText));
+        InputStream cin = new CipherInputStream(in, cipher);
+        assertTrue(cin.read() != -1);
+        assertEquals(aesCipherText.length, in.getTotalRead());
+    }
+
+    public void testDecrypt_NullInput_Discarded() throws Exception {
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        cipher.init(Cipher.DECRYPT_MODE, key, iv);
+        InputStream in = new CipherInputStream(new ByteArrayInputStream(aesCipherText), cipher);
+        int discard = 3;
+        while (discard != 0) {
+            discard -= in.read(null, 0, discard);
+        }
+        byte[] bytes = readAll(in);
+        assertEquals(Arrays.toString(plainText.substring(3).getBytes("UTF-8")),
+                Arrays.toString(bytes));
     }
 
     public void testEncrypt() throws Exception {
@@ -67,10 +122,27 @@ public final class CipherInputStreamTest extends TestCase {
         assertEquals(Arrays.toString(aesCipherText), Arrays.toString(bytes));
     }
 
+    public void testEncrypt_RC4() throws Exception {
+        Cipher cipher = Cipher.getInstance("RC4");
+        cipher.init(Cipher.ENCRYPT_MODE, key);
+        InputStream in = new CipherInputStream(
+                new ByteArrayInputStream(plainText.getBytes("UTF-8")), cipher);
+        byte[] bytes = readAll(in);
+        assertEquals(Arrays.toString(rc4CipherText), Arrays.toString(bytes));
+    }
+
     public void testDecrypt() throws Exception {
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         cipher.init(Cipher.DECRYPT_MODE, key, iv);
         InputStream in = new CipherInputStream(new ByteArrayInputStream(aesCipherText), cipher);
+        byte[] bytes = readAll(in);
+        assertEquals(Arrays.toString(plainText.getBytes("UTF-8")), Arrays.toString(bytes));
+    }
+
+    public void testDecrypt_RC4() throws Exception {
+        Cipher cipher = Cipher.getInstance("RC4");
+        cipher.init(Cipher.DECRYPT_MODE, key);
+        InputStream in = new CipherInputStream(new ByteArrayInputStream(rc4CipherText), cipher);
         byte[] bytes = readAll(in);
         assertEquals(Arrays.toString(plainText.getBytes("UTF-8")), Arrays.toString(bytes));
     }
