@@ -82,6 +82,9 @@ public class Proxy implements Serializable {
      */
     protected Proxy(InvocationHandler h) {
         this.h = h;
+        if (h == null) {
+          throw new NullPointerException("h == null");
+        }
     }
 
     /**
