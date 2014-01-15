@@ -28,7 +28,6 @@ LOCAL_SRC_FILES := \
     java_lang_System.cpp \
     java_math_NativeBN.cpp \
     java_nio_ByteOrder.cpp \
-    java_nio_charset_Charsets.cpp \
     java_text_Bidi.cpp \
     java_util_jar_StrictJarFile.cpp \
     java_util_regex_Matcher.cpp \
