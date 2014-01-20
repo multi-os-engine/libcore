@@ -28,18 +28,21 @@ package java.net;
  */
 public interface SocketOptions {
     /**
-     * Number of seconds to wait when closing a socket if there
-     * is still some buffered data to be sent.
+     * Number of seconds to wait when closing a socket if there is still some buffered data to be
+     * sent. The option can also be set to off using a value of {@link Boolean#FALSE}.
      *
-     * <p>If this option is set to 0, the TCP socket is closed forcefully and the
-     * call to {@code close} returns immediately.
+     * <p>If this option is disabled, closing a socket will return immediately and the close will be
+     * handled in the background.
+     *
+     * <p>If this option is set to 0, the TCP socket is closed forcefully and the call to
+     * {@code close} returns immediately.
      *
      * <p>If this option is set to a value greater than 0, the value is interpreted
      * as the number of seconds to wait. If all data could be sent
      * during this time, the socket is closed normally. Otherwise the connection will be
      * closed forcefully.
      *
-     * <p>Valid values for this option are in the range 0 to 65535 inclusive. (Larger
+     * <p>Valid numeric values for this option are in the range 0 to 65535 inclusive. (Larger
      * timeouts will be treated as 65535s timeouts; roughly 18 hours.)
      */
     public static final int SO_LINGER = 128;
@@ -54,10 +57,12 @@ public interface SocketOptions {
     public static final int SO_TIMEOUT = 4102;
 
     /**
-     * This boolean option specifies whether data is sent immediately on this socket.
-     * As a side-effect this could lead to low packet efficiency. The
-     * socket implementation uses the Nagle's algorithm to try to reach a higher
-     * packet efficiency if this option is disabled.
+     * This boolean option specifies whether data is sent immediately on this socket or buffered.
+     * <p>
+     * If set to true the Nagle algorithm is disabled and there is no buffering. This could lead to
+     * low packet efficiency.
+     * When set to false the socket implementation uses buffering to try to reach a higher packet
+     * efficiency.
      */
     public static final int TCP_NODELAY = 1;
 
@@ -114,9 +119,8 @@ public interface SocketOptions {
 
     /**
      * This boolean option specifies whether the local loopback of multicast packets is
-     * enabled or disabled. This option is enabled by default on multicast
-     * sockets. Note that the sense of this option in Java is the
-     * <i>opposite</i> of the underlying Unix {@code IP_MULTICAST_LOOP}.
+     * enabled or disabled. This loopback is enabled by default on multicast sockets.
+     *
      * See {@link MulticastSocket#setLoopbackMode}.
      */
     public static final int IP_MULTICAST_LOOP = 18;
