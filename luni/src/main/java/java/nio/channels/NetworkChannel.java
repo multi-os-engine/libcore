@@ -19,6 +19,8 @@ package java.nio.channels;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.net.SocketOption;
+import java.util.Set;
 
 /**
  * A common interface for channels that are backed by network sockets.
@@ -55,4 +57,44 @@ public interface NetworkChannel extends AutoCloseable, Channel, Closeable {
      * @throws IOException if another I/O error occurs.
      */
     SocketAddress getLocalAddress() throws IOException;
+
+    /**
+     * Returns the value for the socket option.
+     *
+     * @param option the option to read
+     * @param <T> the type of the value
+     * @return the value.
+     * @throws UnsupportedOperationException
+     *              if the option is not supported by the socket.
+     * @throws java.nio.channels.ClosedChannelException
+     *              if the socket is closed
+     * @throws IOException
+     *              if the value cannot be read.
+     * @see java.net.StandardSocketOptions
+     */
+    <T> T getOption(SocketOption<T> option) throws IOException;
+
+    /**
+     * Sets the value for the socket option.
+     *
+     * @param option the option to read
+     * @param value the value
+     * @param <T> the type of the value
+     * @return this NetworkChannel
+     * @throws UnsupportedOperationException
+     *              if the option is not supported by the socket.
+     * @throws IllegalArgumentException
+     *              if the value is not valid for the option.
+     * @throws java.nio.channels.ClosedChannelException
+     *              if the socket is closed
+     * @throws IOException
+     *              if the value cannot be written.
+     * @see java.net.StandardSocketOptions
+     */
+    <T> NetworkChannel setOption(SocketOption<T> option, T value) throws IOException;
+
+    /**
+     * Returns the set of socket options supported by this channel.
+     */
+    Set<SocketOption<?>> supportedOptions();
 }

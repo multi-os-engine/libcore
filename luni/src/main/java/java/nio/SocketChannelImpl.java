@@ -31,7 +31,9 @@ import java.net.PlainSocketImpl;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.SocketOption;
 import java.net.SocketUtils;
+import java.net.StandardSocketOptions;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.ClosedChannelException;
@@ -44,6 +46,8 @@ import java.nio.channels.UnresolvedAddressException;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Arrays;
+import java.util.Set;
+
 import libcore.io.ErrnoException;
 import libcore.io.Libcore;
 import libcore.io.IoBridge;
@@ -187,6 +191,22 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
             throw new ClosedChannelException();
         }
         return isBound ? new InetSocketAddress(localAddress, localPort) : null;
+    }
+
+    @Override
+    public <T> T getOption(SocketOption<T> option) throws IOException {
+        return NioUtils.getSocketOption(this, StandardSocketOptions.SOCKET_OPTIONS, option);
+    }
+
+    @Override
+    public <T> SocketChannel setOption(SocketOption<T> option, T value) throws IOException {
+        NioUtils.setSocketOption(this, StandardSocketOptions.SOCKET_OPTIONS, option, value);
+        return this;
+    }
+
+    @Override
+    public Set<SocketOption<?>> supportedOptions() {
+        return StandardSocketOptions.SOCKET_OPTIONS;
     }
 
     @Override

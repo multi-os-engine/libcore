@@ -24,6 +24,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.SocketOption;
 import java.nio.ByteBuffer;
 import java.nio.channels.NoConnectionPendingException;
 import java.nio.channels.NotYetConnectedException;
@@ -33,6 +34,8 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.UnresolvedAddressException;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.Set;
+
 import junit.framework.TestCase;
 
 public class OldSocketChannelTest extends TestCase {
@@ -364,6 +367,21 @@ public class OldSocketChannelTest extends TestCase {
 
         @Override
         public SocketAddress getLocalAddress() throws IOException {
+            return null;
+        }
+
+        @Override
+        public <T> T getOption(SocketOption<T> option) throws IOException {
+            return null;
+        }
+
+        @Override
+        public <T> SocketChannel setOption(SocketOption<T> option, T value) throws IOException {
+            return null;
+        }
+
+        @Override
+        public Set<SocketOption<?>> supportedOptions() {
             return null;
         }
 
