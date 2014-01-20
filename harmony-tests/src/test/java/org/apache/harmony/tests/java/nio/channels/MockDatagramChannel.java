@@ -36,6 +36,16 @@ class MockDatagramChannel extends DatagramChannel {
     }
 
     @Override
+    public DatagramChannel bind(SocketAddress local) throws IOException {
+        return this;
+    }
+
+    @Override
+    public SocketAddress getLocalAddress() throws IOException {
+        return null;
+    }
+
+    @Override
     public boolean isConnected() {
         return false;
     }

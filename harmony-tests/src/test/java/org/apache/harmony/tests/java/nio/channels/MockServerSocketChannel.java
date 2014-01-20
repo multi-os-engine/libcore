@@ -19,6 +19,7 @@ package org.apache.harmony.tests.java.nio.channels;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.SocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
@@ -31,6 +32,16 @@ class MockServerSocketChannel extends ServerSocketChannel {
 
     @Override
     public ServerSocket socket() {
+        return null;
+    }
+
+    @Override
+    public ServerSocketChannel bind(SocketAddress local, int backlog) throws IOException {
+        return this;
+    }
+
+    @Override
+    public SocketAddress getLocalAddress() throws IOException {
         return null;
     }
 

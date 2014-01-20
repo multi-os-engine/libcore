@@ -32,6 +32,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketUtils;
+import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ConnectionPendingException;
@@ -135,6 +136,27 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
         return socket;
     }
 
+    @Override
+    synchronized public final SocketChannel bind(SocketAddress local) throws IOException {
+        if (!isOpen()) {
+            throw new ClosedChannelException();
+        }
+        if (isBound) {
+            throw new AlreadyBoundException();
+        }
+
+        if (local == null) {
+            local = new InetSocketAddress(Inet4Address.ANY, 0);
+        } else if (!(local instanceof InetSocketAddress)) {
+            throw new UnsupportedAddressTypeException();
+        }
+
+        InetSocketAddress localAddress = (InetSocketAddress) local;
+        IoBridge.bind(fd, localAddress.getAddress(), localAddress.getPort());
+        onBind(true /* updateSocketState */);
+        return this;
+    }
+
     /**
      * Initialise the isBound, localAddress and localPort state from the file descriptor. Used when
      * some or all of the bound state has been left to the OS to decide, or when the Socket handled
@@ -157,6 +179,14 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
         if (updateSocketState && socket != null) {
             socket.onBind(localAddress, localPort);
         }
+    }
+
+    @Override
+    synchronized public SocketAddress getLocalAddress() throws IOException {
+        if (!isOpen()) {
+            throw new ClosedChannelException();
+        }
+        return isBound ? new InetSocketAddress(localAddress, localPort) : null;
     }
 
     @Override
@@ -191,12 +221,12 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
             if (isBlocking) {
                 begin();
             }
-            finished = IoBridge.connect(fd, normalAddr, port);
-            if (isBlocking) {
-                newStatus = finished ? SOCKET_STATUS_CONNECTED : SOCKET_STATUS_UNCONNECTED;
-            } else {
-                newStatus = SOCKET_STATUS_PENDING;
-            }
+            // When in blocking mode, IoBridge.connect() will return without an exception when the
+            // socket is connected. When in non-blocking mode it will return without an exception
+            // without knowing the result of the connection attempt, which could still be going on.
+            IoBridge.connect(fd, normalAddr, port);
+            newStatus = isBlocking ? SOCKET_STATUS_CONNECTED : SOCKET_STATUS_PENDING;
+            finished = true;
         } catch (IOException e) {
             if (isEINPROGRESS(e)) {
                 newStatus = SOCKET_STATUS_PENDING;
@@ -204,7 +234,6 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
                 if (isOpen()) {
                     close();
                     finished = true;
-                    newStatus = SOCKET_STATUS_UNCONNECTED;
                 }
                 throw e;
             }
@@ -214,15 +243,16 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
             }
         }
 
-        // Keep the local address state held by the channel and the socket up to date.
+        // If the channel was not bound, a connection attempt will have caused an implicit bind() to
+        // take place. Keep the local address state held by the channel and the socket up to date.
         if (!isBound) {
             onBind(true /* updateSocketState */);
         }
 
         // Keep the connected state held by the channel and the socket up to date.
-        onConnect(inetSocketAddress, newStatus, true /* updateSocketState */);
+        onConnectStatusChanged(inetSocketAddress, newStatus, true /* updateSocketState */);
 
-        return finished;
+        return status == SOCKET_STATUS_CONNECTED;
     }
 
     /**
@@ -231,7 +261,7 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
      * @param updateSocketState if the associated socket (if present) needs to be updated
      * @hide package visible for other nio classes
      */
-    void onConnect(InetSocketAddress address, int status, boolean updateSocketState) {
+    void onConnectStatusChanged(InetSocketAddress address, int status, boolean updateSocketState) {
         this.status = status;
         connectAddress = address;
         if (status == SOCKET_STATUS_CONNECTED && updateSocketState && socket != null) {
@@ -272,7 +302,6 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
             InetAddress inetAddress = connectAddress.getAddress();
             int port = connectAddress.getPort();
             finished = IoBridge.isConnected(fd, inetAddress, port, 0, 0); // Return immediately.
-            isBound = finished;
         } catch (ConnectException e) {
             if (isOpen()) {
                 close();
@@ -285,7 +314,6 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
 
         synchronized (this) {
             status = (finished ? SOCKET_STATUS_CONNECTED : status);
-            isBound = finished;
             if (finished && socket != null) {
                 socket.onConnect(connectAddress.getAddress(), connectAddress.getPort());
             }
@@ -490,7 +518,7 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
     /* @hide used by ServerSocketChannelImpl to sync channel state during accept() */
     public void onAccept(InetSocketAddress remoteAddress, boolean updateSocketState) {
         onBind(updateSocketState);
-        onConnect(remoteAddress, SOCKET_STATUS_CONNECTED, updateSocketState);
+        onConnectStatusChanged(remoteAddress, SOCKET_STATUS_CONNECTED, updateSocketState);
     }
 
     /*
@@ -526,21 +554,6 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
         }
 
         @Override
-        public boolean isBound() {
-            return channel.isBound;
-        }
-
-        @Override
-        public boolean isConnected() {
-            return channel.isConnected();
-        }
-
-        @Override
-        public InetAddress getLocalAddress() {
-            return channel.localAddress != null ? channel.localAddress : Inet4Address.ANY;
-        }
-
-        @Override
         public void connect(SocketAddress remoteAddr, int timeout) throws IOException {
             if (!channel.isBlocking()) {
                 throw new IllegalBlockingModeException();
@@ -552,7 +565,7 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
             channel.onBind(false);
             if (super.isConnected()) {
                 InetSocketAddress remoteInetAddress = (InetSocketAddress) remoteAddr;
-                channel.onConnect(
+                channel.onConnectStatusChanged(
                         remoteInetAddress, SOCKET_STATUS_CONNECTED, false /* updateSocketState */);
             }
         }

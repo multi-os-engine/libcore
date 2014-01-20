@@ -36,6 +36,16 @@ class MockSocketChannel extends SocketChannel {
     }
 
     @Override
+    public SocketChannel bind(SocketAddress local) throws IOException {
+        return this;
+    }
+
+    @Override
+    public SocketAddress getLocalAddress() throws IOException {
+        return null;
+    }
+
+    @Override
     public boolean isConnected() {
         return false;
     }

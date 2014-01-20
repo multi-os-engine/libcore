@@ -312,6 +312,7 @@ public class Socket implements Closeable {
      */
     public synchronized void close() throws IOException {
         isClosed = true;
+        isConnected = false;
         // RI compatibility: the RI returns the any address (but the original local port) after close.
         localAddress = Inet4Address.ANY;
         impl.close();
@@ -325,6 +326,7 @@ public class Socket implements Closeable {
      */
     public void onClose() {
         isClosed = true;
+        isConnected = false;
         // RI compatibility: the RI returns the any address (but the original local port) after
         // close.
         localAddress = Inet4Address.ANY;
@@ -343,7 +345,9 @@ public class Socket implements Closeable {
     }
 
     /**
-     * Returns an input stream to read data from this socket.
+     * Returns an input stream to read data from this socket. If the socket has an associated
+     * {@link SocketChannel} and that channel is in non-blocking mode then reads from the
+     * stream will throw a {@link java.nio.channels.IllegalBlockingModeException}.
      *
      * @return the byte-oriented input stream.
      * @throws IOException
@@ -368,14 +372,15 @@ public class Socket implements Closeable {
 
     /**
      * Returns the local IP address this socket is bound to, or an address for which
-     * {@link InetAddress#isAnyLocalAddress()} returns true if the socket is unbound.
+     * {@link InetAddress#isAnyLocalAddress()} returns true if the socket is closed or unbound.
      */
     public InetAddress getLocalAddress() {
         return localAddress;
     }
 
     /**
-     * Returns the local port this socket is bound to, or -1 if the socket is unbound.
+     * Returns the local port this socket is bound to, or -1 if the socket is unbound. If the socket
+     * has been closed this method will still return the local port the socket was bound to.
      */
     public int getLocalPort() {
         if (!isBound()) {
@@ -385,7 +390,9 @@ public class Socket implements Closeable {
     }
 
     /**
-     * Returns an output stream to write data into this socket.
+     * Returns an output stream to write data into this socket. If the socket has an associated
+     * {@link SocketChannel} and that channel is in non-blocking mode then writes to the
+     * stream will throw a {@link java.nio.channels.IllegalBlockingModeException}.
      *
      * @return the byte-oriented output stream.
      * @throws IOException
@@ -578,6 +585,7 @@ public class Socket implements Closeable {
                     impl.bind(addr, localPort);
                 }
                 isBound = true;
+                cacheLocalAddress();
                 impl.connect(dstAddress, dstPort);
                 isConnected = true;
                 cacheLocalAddress();
@@ -686,9 +694,10 @@ public class Socket implements Closeable {
     }
 
     /**
-     * Returns the local address and port of this socket as a SocketAddress or
-     * null if the socket is unbound. This is useful on multihomed
-     * hosts.
+     * Returns the local address and port of this socket as a SocketAddress or null if the socket
+     * has never been bound. If the socket is closed but has previously been bound then an address
+     * for which  {@link InetAddress#isAnyLocalAddress()} returns true will be returned with the
+     * previously-bound port. This is useful on multihomed hosts.
      */
     public SocketAddress getLocalSocketAddress() {
         if (!isBound()) {
@@ -795,6 +804,7 @@ public class Socket implements Closeable {
      */
     public void onBind(InetAddress localAddress, int localPort) {
         isBound = true;
+        this.localAddress = localAddress;
         impl.onBind(localAddress, localPort);
     }
 
