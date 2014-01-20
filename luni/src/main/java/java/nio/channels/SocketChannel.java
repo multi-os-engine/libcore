@@ -62,7 +62,7 @@ import java.nio.channels.spi.SelectorProvider;
  * processing, calls to {@link #read} and {@link #write} will block.
  */
 public abstract class SocketChannel extends AbstractSelectableChannel implements
-        ByteChannel, ScatteringByteChannel, GatheringByteChannel {
+        ByteChannel, ScatteringByteChannel, GatheringByteChannel, NetworkChannel {
 
     /**
      * Constructs a new {@code SocketChannel}.
@@ -139,6 +139,9 @@ public abstract class SocketChannel extends AbstractSelectableChannel implements
      * @return the socket assigned to this channel.
      */
     public abstract Socket socket();
+
+    @Override
+    public abstract SocketChannel bind(SocketAddress local) throws IOException;
 
     /**
      * Indicates whether this channel's socket is connected.
