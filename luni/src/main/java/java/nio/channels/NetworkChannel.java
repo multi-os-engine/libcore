@@ -19,12 +19,14 @@ package java.nio.channels;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.net.SocketOption;
+import java.util.Set;
 
 /**
  * A common interface for channels that are backed by network sockets.
  *
- * @since 1.7
  * @hide Until ready for a public API change
+ * @since 1.7
  */
 public interface NetworkChannel extends AutoCloseable, Channel, Closeable {
 
@@ -58,4 +60,41 @@ public interface NetworkChannel extends AutoCloseable, Channel, Closeable {
    * @hide Until ready for a public API change
    */
   SocketAddress getLocalAddress() throws IOException;
+
+  /**
+   * Returns the value for the socket option.
+   *
+   * @param option the option to read
+   * @param <T>    the type of the value
+   * @return the value.
+   * @throws UnsupportedOperationException            if the option is not supported by the socket.
+   * @throws java.nio.channels.ClosedChannelException if the socket is closed
+   * @throws IOException                              if the value cannot be read.
+   * @hide Until ready for a public API change
+   * @see java.net.StandardSocketOptions
+   */
+  <T> T getOption(SocketOption<T> option) throws IOException;
+
+  /**
+   * Sets the value for the socket option.
+   *
+   * @param option the option to read
+   * @param value  the value
+   * @param <T>    the type of the value
+   * @return this NetworkChannel
+   * @throws UnsupportedOperationException            if the option is not supported by the socket.
+   * @throws IllegalArgumentException                 if the value is not valid for the option.
+   * @throws java.nio.channels.ClosedChannelException if the socket is closed
+   * @throws IOException                              if the value cannot be written.
+   * @hide Until ready for a public API change
+   * @see java.net.StandardSocketOptions
+   */
+  <T> NetworkChannel setOption(SocketOption<T> option, T value) throws IOException;
+
+  /**
+   * Returns the set of socket options supported by this channel.
+   *
+   * @hide Until ready for a public API change
+   */
+  Set<SocketOption<?>> supportedOptions();
 }
