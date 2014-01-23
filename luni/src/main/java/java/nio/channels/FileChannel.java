@@ -77,7 +77,7 @@ import java.nio.channels.spi.AbstractInterruptibleChannel;
  * content, size, etc.
  */
 public abstract class FileChannel extends AbstractInterruptibleChannel
-        implements GatheringByteChannel, ScatteringByteChannel, ByteChannel {
+        implements GatheringByteChannel, ScatteringByteChannel, SeekableByteChannel {
 
     /**
      * {@code MapMode} defines file mapping mode constants.
@@ -281,10 +281,9 @@ public abstract class FileChannel extends AbstractInterruptibleChannel
             long position, long size) throws IOException;
 
     /**
-     * Returns the current value of the file position pointer.
+     * Returns the current position as a positive integer number of bytes from the start of the
+     * file.
      *
-     * @return the current position as a positive integer number of bytes from
-     *         the start of the file.
      * @throws ClosedChannelException
      *             if this channel is closed.
      * @throws IOException
@@ -293,7 +292,7 @@ public abstract class FileChannel extends AbstractInterruptibleChannel
     public abstract long position() throws IOException;
 
     /**
-     * Sets the file position pointer to a new value.
+     * Sets the file position pointer to {@code newPosition}.
      * <p>
      * The argument is the number of bytes counted from the start of the file.
      * The position cannot be set to a value that is negative. The new position
@@ -302,8 +301,6 @@ public abstract class FileChannel extends AbstractInterruptibleChannel
      * succeed but they will fill the bytes between the current end of file and
      * the new position with the required number of (unspecified) byte values.
      *
-     * @param offset
-     *            the new file position, in bytes.
      * @return the receiver.
      * @throws IllegalArgumentException
      *             if the new position is negative.
@@ -312,7 +309,7 @@ public abstract class FileChannel extends AbstractInterruptibleChannel
      * @throws IOException
      *             if another I/O error occurs.
      */
-    public abstract FileChannel position(long offset) throws IOException;
+    public abstract FileChannel position(long newPosition) throws IOException;
 
     /**
      * Reads bytes from this file channel into the given buffer.
@@ -622,10 +619,13 @@ public abstract class FileChannel extends AbstractInterruptibleChannel
     /**
      * Writes bytes from the given byte buffer to this file channel.
      * <p>
-     * The bytes are written starting at the current file position, and after
-     * some number of bytes are written (up to the remaining number of bytes in
-     * the buffer) the file position is increased by the number of bytes
-     * actually written.
+     * The bytes are written starting at the current position, and after some number of bytes are
+     * written (up to the remaining number of bytes in the buffer) the position is increased by the
+     * number of bytes actually written.
+     * <p>
+     * If the position is beyond the current end of file, then the file is first
+     * extended up to the given position by the required number of unspecified
+     * byte values.
      *
      * @param src
      *            the byte buffer containing the bytes to be written.
@@ -642,7 +642,6 @@ public abstract class FileChannel extends AbstractInterruptibleChannel
      *             thread is set and the channel is closed.
      * @throws IOException
      *             if another I/O error occurs, details are in the message.
-     * @see java.nio.channels.WritableByteChannel#write(java.nio.ByteBuffer)
      */
     public abstract int write(ByteBuffer src) throws IOException;
 
