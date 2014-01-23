@@ -77,7 +77,7 @@ import java.nio.channels.spi.AbstractInterruptibleChannel;
  * content, size, etc.
  */
 public abstract class FileChannel extends AbstractInterruptibleChannel
-        implements GatheringByteChannel, ScatteringByteChannel, ByteChannel {
+        implements GatheringByteChannel, ScatteringByteChannel, SeekableByteChannel {
 
     /**
      * {@code MapMode} defines file mapping mode constants.
@@ -622,10 +622,13 @@ public abstract class FileChannel extends AbstractInterruptibleChannel
     /**
      * Writes bytes from the given byte buffer to this file channel.
      * <p>
-     * The bytes are written starting at the current file position, and after
-     * some number of bytes are written (up to the remaining number of bytes in
-     * the buffer) the file position is increased by the number of bytes
-     * actually written.
+     * The bytes are written starting at the current position, and after some number of bytes are
+     * written (up to the remaining number of bytes in the buffer) the position is increased by the
+     * number of bytes actually written.
+     * <p>
+     * If the position is beyond the current end of file, then the file is first
+     * extended up to the given position by the required number of unspecified
+     * byte values.
      *
      * @param src
      *            the byte buffer containing the bytes to be written.
