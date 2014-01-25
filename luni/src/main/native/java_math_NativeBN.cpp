@@ -188,8 +188,7 @@ static void NativeBN_litEndInts2bn(JNIEnv* env, jclass, jintArray arr, int len, 
       return;
     }
 
-    static_assert(sizeof(BN_ULONG) == sizeof(jint), "BN_ULONG is not 32-bit!");
-    const BN_ULONG* tmpInts = reinterpret_cast<const BN_ULONG*>(scopedArray.get());
+    const unsigned int* tmpInts = reinterpret_cast<const unsigned int*>(scopedArray.get());
     if ((tmpInts != NULL) && (bn_wexpand(ret, len) != NULL)) {
       int i = len; do { i--; ret->d[i] = tmpInts[i]; } while (i > 0);
       ret->top = len;
