@@ -30,7 +30,9 @@
 #include <poll.h>
 #include <signal.h>
 #include <stdlib.h>
+#ifdef HAVE_ANDROID_OS
 #include <sys/capability.h>
+#endif
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
@@ -59,6 +61,7 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
 #endif
     initConstant(env, c, "AI_PASSIVE", AI_PASSIVE);
     initConstant(env, c, "AI_V4MAPPED", AI_V4MAPPED);
+#ifdef HAVE_ANDROID_OS
     initConstant(env, c, "CAP_AUDIT_CONTROL", CAP_AUDIT_CONTROL);
     initConstant(env, c, "CAP_AUDIT_WRITE", CAP_AUDIT_WRITE);
     initConstant(env, c, "CAP_BLOCK_SUSPEND", CAP_BLOCK_SUSPEND);
@@ -97,6 +100,7 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "CAP_SYS_TIME", CAP_SYS_TIME);
     initConstant(env, c, "CAP_SYS_TTY_CONFIG", CAP_SYS_TTY_CONFIG);
     initConstant(env, c, "CAP_WAKE_ALARM", CAP_WAKE_ALARM);
+#endif
     initConstant(env, c, "E2BIG", E2BIG);
     initConstant(env, c, "EACCES", EACCES);
     initConstant(env, c, "EADDRINUSE", EADDRINUSE);

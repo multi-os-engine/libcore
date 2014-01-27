@@ -18,7 +18,7 @@ package java.lang;
 
 class VMThread {
     Thread thread;
-    int vmData;
+    long vmData;
 
     VMThread(Thread t) {
         thread = t;

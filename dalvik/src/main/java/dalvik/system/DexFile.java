@@ -34,7 +34,7 @@ import libcore.io.StructStat;
  * read-only by the VM.
  */
 public final class DexFile {
-    private int mCookie;
+    private long mCookie;
     private final String mFileName;
     private final CloseGuard guard = CloseGuard.get();
 
@@ -215,7 +215,7 @@ public final class DexFile {
         return defineClass(name, loader, mCookie, suppressed);
     }
 
-    private static Class defineClass(String name, ClassLoader loader, int cookie,
+    private static Class defineClass(String name, ClassLoader loader, long cookie,
                                      List<Throwable> suppressed) {
         Class result = null;
         try {
@@ -232,7 +232,7 @@ public final class DexFile {
         return result;
     }
 
-    private static native Class defineClassNative(String name, ClassLoader loader, int cookie)
+    private static native Class defineClassNative(String name, ClassLoader loader, long cookie)
         throws ClassNotFoundException, NoClassDefFoundError;
 
     /**
@@ -267,7 +267,7 @@ public final class DexFile {
     }
 
     /* return a String array with class names */
-    native private static String[] getClassNameList(int cookie);
+    native private static String[] getClassNameList(long cookie);
 
     /**
      * Called when the class is finalized. Makes sure the DEX file is closed.
@@ -291,20 +291,20 @@ public final class DexFile {
      * Open a DEX file.  The value returned is a magic VM cookie.  On
      * failure, an IOException is thrown.
      */
-    private static int openDexFile(String sourceName, String outputName,
+    private static long openDexFile(String sourceName, String outputName,
         int flags) throws IOException {
         return openDexFileNative(new File(sourceName).getCanonicalPath(),
                                  (outputName == null) ? null : new File(outputName).getCanonicalPath(),
                                  flags);
     }
 
-    native private static int openDexFileNative(String sourceName, String outputName,
+    native private static long openDexFileNative(String sourceName, String outputName,
         int flags) throws IOException;
 
     /*
      * Close DEX file.
      */
-    native private static void closeDexFile(int cookie);
+    native private static void closeDexFile(long cookie);
 
     /**
      * Returns true if the VM believes that the apk/jar file is out of date

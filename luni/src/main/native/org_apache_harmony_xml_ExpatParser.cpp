@@ -440,7 +440,7 @@ static size_t fillBuffer(ParsingContext* parsingContext, const char* utf8, int b
     }
     UErrorCode status = U_ZERO_ERROR;
     UnicodeString utf16(UnicodeString::fromUTF8(StringPiece(utf8, byteCount)));
-    return utf16.extract(chars.get(), byteCount, status);
+    return utf16.extract((UChar*) chars.get(), byteCount, status);
 }
 
 /**
@@ -1291,7 +1291,7 @@ static void ExpatAttributes_freeAttributes(JNIEnv*, jobject, jlong pointer) {
 static void ExpatParser_staticInitialize(JNIEnv* env, jobject classObject, jstring empty) {
     jclass clazz = reinterpret_cast<jclass>(classObject);
     startElementMethod = env->GetMethodID(clazz, "startElement",
-        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;II)V");
+        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JI)V");
     if (startElementMethod == NULL) return;
 
     endElementMethod = env->GetMethodID(clazz, "endElement",

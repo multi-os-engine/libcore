@@ -34,7 +34,7 @@ final class NIOAccess {
      */
     static long getBasePointer(Buffer b) {
         long address = b.effectiveDirectAddress;
-        if (address == 0) {
+        if (address == 0L) {
             return 0L;
         }
         return address + (b.position << b._elementSizeShift);

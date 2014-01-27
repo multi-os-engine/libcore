@@ -119,7 +119,7 @@ class BreakIteratorAccessor {
   } \
   return reinterpret_cast<uintptr_t>(it)
 
-static jint NativeBreakIterator_cloneImpl(JNIEnv* env, jclass, jlong address) {
+static jlong NativeBreakIterator_cloneImpl(JNIEnv* env, jclass, jlong address) {
   BreakIteratorAccessor it(env, address);
   return reinterpret_cast<uintptr_t>(it->clone());
 }
@@ -143,19 +143,19 @@ static jint NativeBreakIterator_followingImpl(JNIEnv* env, jclass, jlong address
   return it->following(offset);
 }
 
-static jint NativeBreakIterator_getCharacterInstanceImpl(JNIEnv* env, jclass, jstring javaLocale) {
+static jlong NativeBreakIterator_getCharacterInstanceImpl(JNIEnv* env, jclass, jstring javaLocale) {
   MAKE_BREAK_ITERATOR_INSTANCE(BreakIterator::createCharacterInstance);
 }
 
-static jint NativeBreakIterator_getLineInstanceImpl(JNIEnv* env, jclass, jstring javaLocale) {
+static jlong NativeBreakIterator_getLineInstanceImpl(JNIEnv* env, jclass, jstring javaLocale) {
   MAKE_BREAK_ITERATOR_INSTANCE(BreakIterator::createLineInstance);
 }
 
-static jint NativeBreakIterator_getSentenceInstanceImpl(JNIEnv* env, jclass, jstring javaLocale) {
+static jlong NativeBreakIterator_getSentenceInstanceImpl(JNIEnv* env, jclass, jstring javaLocale) {
   MAKE_BREAK_ITERATOR_INSTANCE(BreakIterator::createSentenceInstance);
 }
 
-static jint NativeBreakIterator_getWordInstanceImpl(JNIEnv* env, jclass, jstring javaLocale) {
+static jlong NativeBreakIterator_getWordInstanceImpl(JNIEnv* env, jclass, jstring javaLocale) {
   MAKE_BREAK_ITERATOR_INSTANCE(BreakIterator::createWordInstance);
 }
 
