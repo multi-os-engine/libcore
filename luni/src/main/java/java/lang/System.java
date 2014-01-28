@@ -85,11 +85,17 @@ public final class System {
     private static final String lineSeparator;
     private static Properties systemProperties;
 
+    /**
+     * Whether or not we need to do a GC before running the finalizers.
+     */
+    private static boolean runGC;
+
     static {
         err = new PrintStream(new FileOutputStream(FileDescriptor.err));
         out = new PrintStream(new FileOutputStream(FileDescriptor.out));
         in = new BufferedInputStream(new FileInputStream(FileDescriptor.in));
         lineSeparator = System.getProperty("line.separator");
+        runGC = false;
     }
 
     /**
@@ -249,7 +255,7 @@ public final class System {
      * that the garbage collector will actually be run.
      */
     public static void gc() {
-        Runtime.getRuntime().gc();
+        runGC = true;
     }
 
     /**
@@ -628,6 +634,10 @@ public final class System {
      * to perform any outstanding object finalization.
      */
     public static void runFinalization() {
+        if (runGC) {
+            Runtime.getRuntime().gc();
+            runGC = false;
+        }
         Runtime.getRuntime().runFinalization();
     }
 
