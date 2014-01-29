@@ -293,7 +293,7 @@ public final class DexFile {
      */
     private static int openDexFile(String sourceName, String outputName,
         int flags) throws IOException {
-        return openDexFileNative(new File(sourceName).getCanonicalPath(),
+        return openDexFileNative(new File(sourceName).getAbsolutePath(),
                                  (outputName == null) ? null : new File(outputName).getCanonicalPath(),
                                  flags);
     }
