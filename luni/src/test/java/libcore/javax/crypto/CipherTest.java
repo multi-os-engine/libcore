@@ -890,7 +890,13 @@ public final class CipherTest extends TestCase {
         Provider mockProviderSpecific = new MockProvider("MockProviderSpecific") {
             public void setup() {
                 put("Cipher.FOO", MockCipherSpi.SpecificKeyTypes.class.getName());
-                put("Cipher.FOO SupportedKeyClasses", this.getClass().getPackage().getName() + ".MockKey");
+                put("Cipher.FOO SupportedKeyClasses", MockKey.class.getName());
+            }
+        };
+        Provider mockProviderSpecific2 = new MockProvider("MockProviderSpecific2") {
+            public void setup() {
+                put("Cipher.FOO", MockCipherSpi.SpecificKeyTypes2.class.getName());
+                put("Cipher.FOO SupportedKeyClasses", MockKey2.class.getName());
             }
         };
         Provider mockProviderAll = new MockProvider("MockProviderAll") {
@@ -900,13 +906,17 @@ public final class CipherTest extends TestCase {
         };
 
         Security.addProvider(mockProviderSpecific);
+        Security.addProvider(mockProviderSpecific2);
         Security.addProvider(mockProviderAll);
 
         try {
             {
+                System.out.println(Arrays.deepToString(Security.getProviders("Cipher.FOO")));
                 Cipher c = Cipher.getInstance("FOO");
                 c.init(Cipher.ENCRYPT_MODE, new MockKey());
                 assertEquals(mockProviderSpecific, c.getProvider());
+                c.init(Cipher.ENCRYPT_MODE, new MockKey2());
+                assertEquals(mockProviderSpecific2, c.getProvider());
             }
 
             {
@@ -936,6 +946,7 @@ public final class CipherTest extends TestCase {
             }
         } finally {
             Security.removeProvider(mockProviderSpecific.getName());
+            Security.removeProvider(mockProviderSpecific2.getName());
             Security.removeProvider(mockProviderAll.getName());
         }
     }
