@@ -436,10 +436,10 @@ public class Cipher {
 
             Engine.SpiAndProvider sap = ENGINE.getInstance(service, null);
             if (sap.spi == null || sap.provider == null) {
-                return sap;
+                return null;
             }
             if (!(sap.spi instanceof CipherSpi)) {
-                return sap;
+                return null;
             }
             CipherSpi spi = (CipherSpi) sap.spi;
             if (((type == NeedToSet.MODE) || (type == NeedToSet.BOTH))
