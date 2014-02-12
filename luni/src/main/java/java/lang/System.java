@@ -55,7 +55,6 @@ import libcore.io.ErrnoException;
 import libcore.io.Libcore;
 import libcore.io.StructPasswd;
 import libcore.io.StructUtsname;
-import libcore.util.ZoneInfoDB;
 
 /**
  * Provides access to system-related information and resources including
@@ -509,7 +508,19 @@ public final class System {
      */
     public static String setProperty(String name, String value) {
         checkPropertyName(name);
-        return (String) getProperties().setProperty(name, value);
+        String oldProperty = (String) getProperties().setProperty(name, value);
+        postSetProperty(name, value);
+        return oldProperty;
+    }
+
+    private static void postSetProperty(String name, String value) {
+        if ("user.dir".equals(name)) {
+            try {
+                Libcore.os.chdir(value);
+            } catch (ErrnoException e) {
+                System.logW("Error setting working directory to: " + value, e);
+            }
+        }
     }
 
     /**
