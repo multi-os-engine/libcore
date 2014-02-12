@@ -429,6 +429,14 @@ static void Posix_bind(JNIEnv* env, jobject, jobject javaFd, jobject javaAddress
     (void) NET_FAILURE_RETRY(env, int, bind, javaFd, sa, sa_len);
 }
 
+static void Posix_chdir(JNIEnv* env, jobject, jstring javaPath) {
+    ScopedUtfChars path(env, javaPath);
+    if (path.c_str() == NULL) {
+        return;
+    }
+    throwIfMinusOne(env, "chdir", chdir(path.c_str()));
+}
+
 static void Posix_chmod(JNIEnv* env, jobject, jstring javaPath, jint mode) {
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
@@ -1390,6 +1398,7 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(Posix, accept, "(Ljava/io/FileDescriptor;Ljava/net/InetSocketAddress;)Ljava/io/FileDescriptor;"),
     NATIVE_METHOD(Posix, access, "(Ljava/lang/String;I)Z"),
     NATIVE_METHOD(Posix, bind, "(Ljava/io/FileDescriptor;Ljava/net/InetAddress;I)V"),
+    NATIVE_METHOD(Posix, chdir, "(Ljava/lang/String;)V"),
     NATIVE_METHOD(Posix, chmod, "(Ljava/lang/String;I)V"),
     NATIVE_METHOD(Posix, chown, "(Ljava/lang/String;II)V"),
     NATIVE_METHOD(Posix, close, "(Ljava/io/FileDescriptor;)V"),

@@ -29,6 +29,7 @@ public interface Os {
     public FileDescriptor accept(FileDescriptor fd, InetSocketAddress peerAddress) throws ErrnoException, SocketException;
     public boolean access(String path, int mode) throws ErrnoException;
     public void bind(FileDescriptor fd, InetAddress address, int port) throws ErrnoException, SocketException;
+    public void chdir(String path) throws ErrnoException;
     public void chmod(String path, int mode) throws ErrnoException;
     public void chown(String path, int uid, int gid) throws ErrnoException;
     public void close(FileDescriptor fd) throws ErrnoException;

@@ -38,6 +38,7 @@ public class ForwardingOs implements Os {
     public FileDescriptor accept(FileDescriptor fd, InetSocketAddress peerAddress) throws ErrnoException, SocketException { return os.accept(fd, peerAddress); }
     public boolean access(String path, int mode) throws ErrnoException { return os.access(path, mode); }
     public void bind(FileDescriptor fd, InetAddress address, int port) throws ErrnoException, SocketException { os.bind(fd, address, port); }
+    public void chdir(String path) throws ErrnoException { os.chdir(path); }
     public void chmod(String path, int mode) throws ErrnoException { os.chmod(path, mode); }
     public void chown(String path, int uid, int gid) throws ErrnoException { os.chown(path, uid, gid); }
     public void close(FileDescriptor fd) throws ErrnoException { os.close(fd); }

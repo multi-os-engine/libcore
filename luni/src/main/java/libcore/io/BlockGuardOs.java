@@ -61,6 +61,11 @@ public class BlockGuardOs extends ForwardingOs {
         return os.access(path, mode);
     }
 
+    @Override public void chdir(String path) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onReadFromDisk();
+        os.chdir(path);
+    }
+
     @Override public void chmod(String path, int mode) throws ErrnoException {
         BlockGuard.getThreadPolicy().onWriteToDisk();
         os.chmod(path, mode);

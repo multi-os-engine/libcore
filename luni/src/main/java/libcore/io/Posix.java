@@ -32,6 +32,7 @@ public final class Posix implements Os {
     public native FileDescriptor accept(FileDescriptor fd, InetSocketAddress peerAddress) throws ErrnoException, SocketException;
     public native boolean access(String path, int mode) throws ErrnoException;
     public native void bind(FileDescriptor fd, InetAddress address, int port) throws ErrnoException, SocketException;
+    public native void chdir(String path) throws ErrnoException;
     public native void chmod(String path, int mode) throws ErrnoException;
     public native void chown(String path, int uid, int gid) throws ErrnoException;
     public native void close(FileDescriptor fd) throws ErrnoException;
