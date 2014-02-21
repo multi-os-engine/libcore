@@ -440,7 +440,7 @@ static size_t fillBuffer(ParsingContext* parsingContext, const char* utf8, int b
     }
     UErrorCode status = U_ZERO_ERROR;
     UnicodeString utf16(UnicodeString::fromUTF8(StringPiece(utf8, byteCount)));
-    return utf16.extract(chars.get(), byteCount, status);
+    return utf16.extract((UChar*) chars.get(), byteCount, status);
 }
 
 /**

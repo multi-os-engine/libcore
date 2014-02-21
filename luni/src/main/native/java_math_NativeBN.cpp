@@ -187,8 +187,9 @@ static void NativeBN_litEndInts2bn(JNIEnv* env, jclass, jintArray arr, int len, 
     if (scopedArray.get() == NULL) {
       return;
     }
-
-    static_assert(sizeof(BN_ULONG) == sizeof(jint), "BN_ULONG is not 32-bit!");
+    // FIXME https://android-review.googlesource.com/#/c/79921/ is the proper
+    // solution to the commented assert below.
+    // static_assert(sizeof(BN_ULONG) == sizeof(jint), "BN_ULONG is not 32-bit!");
     const BN_ULONG* tmpInts = reinterpret_cast<const BN_ULONG*>(scopedArray.get());
     if ((tmpInts != NULL) && (bn_wexpand(ret, len) != NULL)) {
       int i = len; do { i--; ret->d[i] = tmpInts[i]; } while (i > 0);
