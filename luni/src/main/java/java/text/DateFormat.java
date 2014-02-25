@@ -456,6 +456,16 @@ public abstract class DateFormat extends Format {
         return getDateTimeInstance(SHORT, SHORT);
     }
 
+
+    /**
+     * @hide For internal use only.
+     */
+    public static final void set24HourTimePref(boolean is24Hour) {
+        System.logI("Time zone prefs: " + is24Hour);
+    }
+
+
+
     /**
      * Returns the {@code NumberFormat} used by this {@code DateFormat}.
      *
