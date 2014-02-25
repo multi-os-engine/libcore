@@ -21,7 +21,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
@@ -33,6 +32,8 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import junit.framework.TestCase;
+
+import tests.support.resource.Support_Resources;
 
 public final class ZipFileTest extends TestCase {
     /**
@@ -467,5 +468,28 @@ public final class ZipFileTest extends TestCase {
         out.write(-1);
         out.closeEntry();
         out.close();
+    }
+
+    /**
+     * Reference implementation does NOT allow reading of an empty zip using a {@link ZipFile}.
+     */
+    public void testReadEmpty() throws IOException {
+
+        File resources = Support_Resources.createTempFolder();
+        File emptyZip = Support_Resources.copyFile(
+                resources, "java/util/zip", "EmptyArchive.zip");
+
+        // todo(paulduffin@google.com): Use try-with-resources when available.
+        try {
+            ZipFile zipFile = new ZipFile(emptyZip);
+            try {
+                zipFile.close();
+            } catch (Exception e) {
+                // Ignore
+            }
+            fail("Did not detect problem in zip file");
+        } catch (ZipException e) {
+            // expected
+        }
     }
 }
