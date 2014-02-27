@@ -16,6 +16,8 @@
 
 package libcore.java.util.zip;
 
+import libcore.java.util.AbstractResourceLeakageDetectorTestCase;
+
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -23,6 +25,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.Enumeration;
 import java.util.Random;
 import java.util.zip.CRC32;
@@ -31,11 +34,11 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-import junit.framework.TestCase;
 
 import tests.support.resource.Support_Resources;
 
-public final class ZipFileTest extends TestCase {
+public final class ZipFileTest extends AbstractResourceLeakageDetectorTestCase {
+
     /**
      * Exercise Inflater's ability to refill the zlib's input buffer. As of this
      * writing, this buffer's max size is 64KiB compressed bytes. We'll write a
@@ -51,7 +54,7 @@ public final class ZipFileTest extends TestCase {
             assertTrue("This test needs >64 KiB of compressed data to exercise Inflater",
                     zipEntry.getCompressedSize() > (64 * 1024));
             InputStream is = zipFile.getInputStream(zipEntry);
-            while (is.read(readBuffer, 0, readBuffer.length) != -1) {}
+            drainStream(readBuffer, is);
             is.close();
         }
         zipFile.close();
@@ -73,9 +76,7 @@ public final class ZipFileTest extends TestCase {
                 }
             }
             if (found) {
-                for (int j=0; j < original.length; j++) {
-                    buffer[i+j] = replacement[j];
-                }
+                System.arraycopy(replacement, 0, buffer, i, original.length);
             }
         }
     }
@@ -89,17 +90,31 @@ public final class ZipFileTest extends TestCase {
     /**
      * Make sure we don't fail silently for duplicate entries.
      * b/8219321
+     *
+     * The reference implementation does not detect duplicate entries, it simply returns the second
+     * entry and so would have the same security issue as this had.
      */
     public void testDuplicateEntries() throws Exception {
         String name1 = "test_file_name1";
         String name2 = "test_file_name2";
 
-        // Create the good zip file.
+        // Create a valid zip file with no duplicates.
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ZipOutputStream out = new ZipOutputStream(baos);
+
+        // The first entry is the bad one that is actually loaded.
         out.putNextEntry(new ZipEntry(name2));
+        byte[] bytes;
+        bytes = "bad".getBytes(Charset.forName("UTF-8"));
+        int badSize = bytes.length;
+        out.write(bytes);
         out.closeEntry();
+
+        // The second entry is the good one that is verified.
         out.putNextEntry(new ZipEntry(name1));
+        bytes = "good".getBytes(Charset.forName("UTF-8"));
+        int goodSize = bytes.length;
+        out.write(bytes);
         out.closeEntry();
         out.close();
 
@@ -114,13 +129,34 @@ public final class ZipFileTest extends TestCase {
         // Check that we refuse to load the modified file.
         try {
             ZipFile bad = new ZipFile(badZip);
+
+            // If duplicates are detected at this point then this code will never run but just in
+            // case it does then try and see how it does behave.
+            ZipEntry entry = bad.getEntry(name1);
+            if (entry == null) {
+                System.err.println("getEntry returns no entry");
+            } else {
+                long entrySize = entry.getSize();
+                if (entrySize == badSize) {
+                    System.err.println("getEntry returns the first entry it finds");
+                } else if (entrySize == goodSize) {
+                    System.err.println("getEntry returns the second entry it finds");
+                }
+                System.err.println("Size is: " + entrySize);
+            }
+
+            try {
+                bad.close();
+            } catch (Exception e) {
+                // Ignore.
+            }
             fail();
         } catch (ZipException expected) {
         }
     }
 
     /**
-     * Make sure the size used for stored zip entires is the uncompressed size.
+     * Make sure the size used for stored zip entries is the uncompressed size.
      * b/10227498
      */
     public void testStoredEntrySize() throws Exception {
@@ -149,19 +185,26 @@ public final class ZipFileTest extends TestCase {
         writeBytes(zipFile, outBuffer);
 
         ZipFile zip = new ZipFile(zipFile);
-        // Set up the zip entry to have different compressed/uncompressed sizes.
-        ZipEntry ze = zip.getEntry(name);
-        ze.setCompressedSize(expectedLength - 1);
-        // Read the contents of the stream and verify uncompressed size was used.
-        InputStream stream = zip.getInputStream(ze);
-        int count = 0;
-        int read;
-        while ((read = stream.read(buffer)) != -1) {
-            count += read;
+        try {
+            // Set up the zip entry to have different compressed/uncompressed sizes.
+            ZipEntry ze = zip.getEntry(name);
+            ze.setCompressedSize(expectedLength - 1);
+            // Read the contents of the stream and verify uncompressed size was used.
+            InputStream stream = zip.getInputStream(ze);
+            int count = 0;
+            int read;
+            while ((read = stream.read(buffer)) != -1) {
+                count += read;
+            }
+
+            assertEquals(expectedLength, count);
+        } finally {
+            try {
+                zip.close();
+            } catch (Exception e) {
+                // Ignore.
+            }
         }
-
-        assertEquals(expectedLength, count);
-
     }
 
     public void testInflatingStreamsRequiringZipRefill() throws IOException {
@@ -169,7 +212,7 @@ public final class ZipFileTest extends TestCase {
         byte[] readBuffer = new byte[8192];
         ZipInputStream in = new ZipInputStream(new FileInputStream(createZipFile(1, originalSize)));
         while (in.getNextEntry() != null) {
-            while (in.read(readBuffer, 0, readBuffer.length) != -1) {}
+            drainStream(readBuffer, in);
         }
         in.close();
     }
@@ -178,13 +221,25 @@ public final class ZipFileTest extends TestCase {
         int expectedEntryCount = 64*1024 - 1;
         File f = createZipFile(expectedEntryCount, 0);
         ZipFile zipFile = new ZipFile(f);
-        int entryCount = 0;
-        for (Enumeration<? extends ZipEntry> e = zipFile.entries(); e.hasMoreElements(); ) {
-            ZipEntry zipEntry = e.nextElement();
-            ++entryCount;
-        }
+        int entryCount = countEntries(zipFile);
         assertEquals(expectedEntryCount, entryCount);
         zipFile.close();
+    }
+
+    private void drainStream(byte[] readBuffer, InputStream in) throws IOException {
+        int bytesRead;
+        do {
+            bytesRead = in.read(readBuffer, 0, readBuffer.length);
+        } while (bytesRead != -1);
+    }
+
+    private int countEntries(ZipFile zipFile) {
+        int entryCount = 0;
+        for (Enumeration<? extends ZipEntry> e = zipFile.entries(); e.hasMoreElements();
+                e.nextElement()) {
+            ++entryCount;
+        }
+        return entryCount;
     }
 
     // http://code.google.com/p/android/issues/detail?id=36187
@@ -192,16 +247,16 @@ public final class ZipFileTest extends TestCase {
         if (false) { // TODO: this test requires too much time and too much disk space!
             File f = createZipFile(1024, 3*1024*1024);
             ZipFile zipFile = new ZipFile(f);
-            int entryCount = 0;
-            for (Enumeration<? extends ZipEntry> e = zipFile.entries(); e.hasMoreElements(); ) {
-                ZipEntry zipEntry = e.nextElement();
-                ++entryCount;
-            }
+            int entryCount = countEntries(zipFile);
             assertEquals(1024, entryCount);
             zipFile.close();
         }
     }
 
+    /**
+     * This test fails on reference implementation, i.e. the reference implementation appears to
+     * already support Zip64, or at least more than 65535 entries.
+     */
     public void testZip64Support() throws IOException {
         try {
             createZipFile(64*1024, 0);
@@ -219,22 +274,30 @@ public final class ZipFileTest extends TestCase {
         byte[] writeBuffer = new byte[8192];
         Random random = new Random();
 
-        ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(result)));
-        for (int entry = 0; entry < entryCount; ++entry) {
-            ZipEntry ze = new ZipEntry(Integer.toHexString(entry));
-            out.putNextEntry(ze);
+        ZipOutputStream out =
+                new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(result)));
+        try {
+            for (int entry = 0; entry < entryCount; ++entry) {
+                ZipEntry ze = new ZipEntry(Integer.toHexString(entry));
+                out.putNextEntry(ze);
 
-            for (int i = 0; i < entrySize; i += writeBuffer.length) {
-                random.nextBytes(writeBuffer);
-                int byteCount = Math.min(writeBuffer.length, entrySize - i);
-                out.write(writeBuffer, 0, byteCount);
+                for (int i = 0; i < entrySize; i += writeBuffer.length) {
+                    random.nextBytes(writeBuffer);
+                    int byteCount = Math.min(writeBuffer.length, entrySize - i);
+                    out.write(writeBuffer, 0, byteCount);
+                }
+
+                out.closeEntry();
             }
 
-            out.closeEntry();
+            return result;
+        } finally {
+            try {
+                out.close();
+            } catch (Exception e) {
+                // Ignore.
+            }
         }
-
-        out.close();
-        return result;
     }
 
     private File createTemporaryZipFile() throws IOException {
@@ -421,7 +484,15 @@ public final class ZipFileTest extends TestCase {
         out.close();
 
         ZipFile zipFile = new ZipFile(file);
-        assertEquals(null, zipFile.getComment());
+        try {
+           assertEquals(null, zipFile.getComment());
+        } finally {
+            try {
+                zipFile.close();
+            } catch (Exception e) {
+                // Ignore.
+            }
+        }
     }
 
     // https://code.google.com/p/android/issues/detail?id=58465
@@ -439,6 +510,11 @@ public final class ZipFileTest extends TestCase {
         // when we find it in the central directory.
         try {
             ZipFile zipFile = new ZipFile(file);
+            try {
+                zipFile.close();
+            } catch (Exception e) {
+                // Ignore.
+            }
             fail();
         } catch (ZipException expected) {
         }

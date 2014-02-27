@@ -16,6 +16,8 @@
 
 package libcore.java.util.zip;
 
+import libcore.java.util.AbstractResourceLeakageDetectorTestCase;
+
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -26,9 +28,8 @@ import java.util.Random;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
-import junit.framework.TestCase;
 
-public final class ZipOutputStreamTest extends TestCase {
+public final class ZipOutputStreamTest extends AbstractResourceLeakageDetectorTestCase {
     public void testShortMessage() throws IOException {
         byte[] data = "Hello World".getBytes("UTF-8");
         byte[] zipped = zip("short", data);

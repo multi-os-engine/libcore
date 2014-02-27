@@ -18,6 +18,11 @@
 package java.util.zip;
 
 import dalvik.system.CloseGuard;
+
+import libcore.io.BufferIterator;
+import libcore.io.HeapBufferIterator;
+import libcore.io.Streams;
+
 import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.DataInputStream;
@@ -30,9 +35,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import libcore.io.BufferIterator;
-import libcore.io.HeapBufferIterator;
-import libcore.io.Streams;
 
 /**
  * This class provides random read access to a zip file. You pay more to read
@@ -108,15 +110,18 @@ public class ZipFile implements Closeable, ZipConstants {
 
     /**
      * Constructs a new {@code ZipFile} allowing read access to the contents of the given file.
+     *
      * @throws ZipException if a zip error occurs.
      * @throws IOException if an {@code IOException} occurs.
      */
-    public ZipFile(File file) throws ZipException, IOException {
+    public ZipFile(File file) throws IOException {
         this(file, OPEN_READ);
     }
 
     /**
      * Constructs a new {@code ZipFile} allowing read access to the contents of the given file.
+     *
+     * @throws ZipException if a zip error occurs.
      * @throws IOException if an IOException occurs.
      */
     public ZipFile(String name) throws IOException {
@@ -148,7 +153,23 @@ public class ZipFile implements Closeable, ZipConstants {
 
         raf = new RandomAccessFile(filename, "r");
 
-        readCentralDir();
+        // Make sure to close the RandomAccessFile if reading the central directory fails.
+        boolean readSucceeded = false;
+        // todo: Use try-with-resources to close underlying RAF on error
+        try {
+            readCentralDir();
+            readSucceeded = true;
+        } finally {
+            if (!readSucceeded) {
+                try {
+                    raf.close();
+                } catch (IOException e) {
+                    // Discard the exception, the exception thrown by the reading of the central
+                    // directory is more important.
+                }
+            }
+        }
+
         guard.open("close");
     }
 

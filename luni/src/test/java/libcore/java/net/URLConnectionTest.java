@@ -71,6 +71,7 @@ import javax.net.ssl.X509TrustManager;
 import junit.framework.TestCase;
 import libcore.java.lang.ref.FinalizationTester;
 import libcore.java.security.TestKeyStore;
+import libcore.java.util.AbstractResourceLeakageDetectorTestCase;
 import libcore.javax.net.ssl.TestSSLContext;
 import tests.net.StuckServer;
 
@@ -80,7 +81,8 @@ import static com.google.mockwebserver.SocketPolicy.DISCONNECT_AT_START;
 import static com.google.mockwebserver.SocketPolicy.SHUTDOWN_INPUT_AT_END;
 import static com.google.mockwebserver.SocketPolicy.SHUTDOWN_OUTPUT_AT_END;
 
-public final class URLConnectionTest extends TestCase {
+public final class URLConnectionTest extends AbstractResourceLeakageDetectorTestCase {
+
     private MockWebServer server;
     private HttpResponseCache cache;
     private String hostName;
@@ -101,8 +103,10 @@ public final class URLConnectionTest extends TestCase {
         System.clearProperty("https.proxyHost");
         System.clearProperty("https.proxyPort");
         server.shutdown();
+        server = null;
         if (cache != null) {
             cache.delete();
+            cache = null;
         }
         super.tearDown();
     }
@@ -365,16 +369,29 @@ public final class URLConnectionTest extends TestCase {
         server.play();
 
         HttpsURLConnection connection = (HttpsURLConnection) server.getUrl("/a").openConnection();
-        connection.setSSLSocketFactory(testSSLContext.clientContext.getSocketFactory());
-        connection.setDoOutput(true);
-        connection.setFixedLengthStreamingMode(3);
-        OutputStream out = connection.getOutputStream();
-        out.write(new byte[] {1, 2, 3});
-        out.close();
+        // todo: Use try-with-resources to disconnect connection cleanly. Will require an
+        // todo: AutoClosable wrapper around the connection.
         try {
-            connection.getInputStream();
-            fail();
-        } catch (IOException expected) {
+            connection.setSSLSocketFactory(testSSLContext.clientContext.getSocketFactory());
+            connection.setDoOutput(true);
+            connection.setFixedLengthStreamingMode(3);
+            OutputStream out = connection.getOutputStream();
+            try {
+                out.write(new byte[] {1, 2, 3});
+            } finally {
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    // Ignore
+                }
+            }
+            try {
+                connection.getInputStream();
+                fail();
+            } catch (IOException expected) {
+            }
+        } finally {
+            connection.disconnect();
         }
     }
 
@@ -2326,11 +2343,17 @@ public final class URLConnectionTest extends TestCase {
         HttpsURLConnection connection = (HttpsURLConnection) server.getUrl("/").openConnection();
         connection.setSSLSocketFactory(testSSLContext.clientContext.getSocketFactory());
         connection.connect();
-        assertNotNull(connection.getHostnameVerifier());
-        assertNull(connection.getLocalCertificates());
-        assertNotNull(connection.getServerCertificates());
-        assertNotNull(connection.getCipherSuite());
-        assertNotNull(connection.getPeerPrincipal());
+        // todo: Use try-with-resources to disconnect connection cleanly. Will require an
+        // todo: AutoClosable wrapper around the connection.
+        try {
+            assertNotNull(connection.getHostnameVerifier());
+            assertNull(connection.getLocalCertificates());
+            assertNotNull(connection.getServerCertificates());
+            assertNotNull(connection.getCipherSuite());
+            assertNotNull(connection.getPeerPrincipal());
+        } finally {
+            connection.disconnect();
+        }
     }
 
     /**
