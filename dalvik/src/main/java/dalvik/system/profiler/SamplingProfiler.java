@@ -222,6 +222,10 @@ public final class SamplingProfiler {
         return new ThreadGroupThreadSet(threadGroup);
     }
 
+    public static ThreadSet newThreadGroupTheadSet(ThreadGroup threadGroup) {
+        return new ThreadGroupThreadSet(threadGroup);
+    }
+
     /**
      * An ThreadGroupThreadSet sample the threads from the specified
      * ThreadGroup and the ThreadGroup's children
