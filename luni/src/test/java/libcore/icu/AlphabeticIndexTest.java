@@ -52,7 +52,8 @@ public class AlphabeticIndexTest extends junit.framework.TestCase {
     // Kanji (sorts to inflow section)
     assertHasLabel(ja, "\u65e5", "");
     // http://bugs.icu-project.org/trac/ticket/10423 / http://b/10809397
-    assertHasLabel(ja, "\u95c7", "");
+    // assertHasLabel(ja, "\u95c7", "");
+    // assertHasLabel(ja, "\u308f", "Hirigana wa");
 
     // English
     assertHasLabel(ja, "Smith", "S");
@@ -110,8 +111,9 @@ public class AlphabeticIndexTest extends junit.framework.TestCase {
     AlphabeticIndex.ImmutableIndex de = createIndex(Locale.GERMAN);
     assertHasLabel(de, "ßind", "S");
     assertHasLabel(de, "Sacher", "S");
-    assertHasLabel(de, "Schiller", "Sch");
-    assertHasLabel(de, "Steiff", "St");
+    // "Sch" and "St" are also options for lists by last name.
+    assertHasLabel(de, "Schiller", "S");
+    assertHasLabel(de, "Steiff", "S");
   }
 
   public void test_th() throws Exception {
