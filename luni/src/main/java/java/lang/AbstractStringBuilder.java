@@ -73,26 +73,30 @@ abstract class AbstractStringBuilder {
     }
 
     AbstractStringBuilder() {
-        value = new char[INITIAL_CAPACITY];
+        value = newUnpaddedCharArray(INITIAL_CAPACITY);
     }
 
     AbstractStringBuilder(int capacity) {
         if (capacity < 0) {
             throw new NegativeArraySizeException(Integer.toString(capacity));
         }
-        value = new char[capacity];
+        value = newUnpaddedCharArray(capacity);
     }
 
     AbstractStringBuilder(String string) {
         count = string.length();
         shared = false;
-        value = new char[count + INITIAL_CAPACITY];
+        value = newUnpaddedCharArray(count + INITIAL_CAPACITY);
         string._getChars(0, count, value, 0);
+    }
+
+    private char[] newUnpaddedCharArray(int min) {
+        return (char[])dalvik.system.VMRuntime.getRuntime().newUnpaddedArray(char.class, min);
     }
 
     private void enlargeBuffer(int min) {
         int newCount = ((value.length >> 1) + value.length) + 2;
-        char[] newData = new char[min > newCount ? min : newCount];
+        char[] newData = newUnpaddedCharArray(min > newCount ? min : newCount);
         System.arraycopy(value, 0, newData, 0, count);
         value = newData;
         shared = false;
@@ -236,7 +240,7 @@ abstract class AbstractStringBuilder {
             if (!shared) {
                 System.arraycopy(value, end, value, start, length);
             } else {
-                char[] newData = new char[value.length];
+                char[] newData = newUnpaddedCharArray(value.length);
                 System.arraycopy(value, 0, newData, 0, start);
                 System.arraycopy(value, end, newData, start, length);
                 value = newData;
@@ -385,7 +389,7 @@ abstract class AbstractStringBuilder {
             newCount = Math.max(count + size, value.length*2 + 2);
         }
 
-        char[] newData = new char[newCount];
+        char[] newData = newUnpaddedCharArray(newCount);
         System.arraycopy(value, 0, newData, 0, index);
         // index == count case is no-op
         System.arraycopy(value, index, newData, index + size, count - index);
@@ -407,7 +411,7 @@ abstract class AbstractStringBuilder {
                         System.arraycopy(value, end, value, start
                                 + stringLength, count - end);
                     } else {
-                        char[] newData = new char[value.length];
+                        char[] newData = newUnpaddedCharArray(value.length);
                         System.arraycopy(value, 0, newData, 0, start);
                         // index == count case is no-op
                         System.arraycopy(value, end, newData, start
@@ -497,7 +501,7 @@ abstract class AbstractStringBuilder {
                 value[end] = allowFrontSur ? endLow : frontHigh;
             }
         } else {
-            char[] newData = new char[value.length];
+            char[] newData = newUnpaddedCharArray(value.length);
             for (int i = 0, end = count; i < count; i++) {
                 char high = value[i];
                 if ((i + 1) < count && high >= 0xd800 && high <= 0xdbff) {
@@ -555,7 +559,7 @@ abstract class AbstractStringBuilder {
             enlargeBuffer(length);
         } else {
             if (shared) {
-                char[] newData = new char[value.length];
+                char[] newData = newUnpaddedCharArray(value.length);
                 System.arraycopy(value, 0, newData, 0, count);
                 value = newData;
                 shared = false;
@@ -796,7 +800,7 @@ abstract class AbstractStringBuilder {
      */
     public void trimToSize() {
         if (count < value.length) {
-            char[] newValue = new char[count];
+            char[] newValue = newUnpaddedCharArray(count);
             System.arraycopy(value, 0, newValue, 0, count);
             value = newValue;
             shared = false;
