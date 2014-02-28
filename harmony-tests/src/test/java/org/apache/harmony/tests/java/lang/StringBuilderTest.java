@@ -33,7 +33,7 @@ public class StringBuilderTest extends TestCase {
     public void test_Constructor() {
         StringBuilder sb = new StringBuilder();
         assertNotNull(sb);
-        assertEquals(16, sb.capacity());
+        assertTrue(16 <= sb.capacity());
     }
 
     /**
@@ -42,7 +42,7 @@ public class StringBuilderTest extends TestCase {
     public void test_ConstructorI() {
         StringBuilder sb = new StringBuilder(24);
         assertNotNull(sb);
-        assertEquals(24, sb.capacity());
+        assertTrue(24 <= sb.capacity());
 
         try {
             new StringBuilder(-1);
@@ -61,11 +61,11 @@ public class StringBuilderTest extends TestCase {
     public void test_ConstructorLjava_lang_CharSequence() {
         StringBuilder sb = new StringBuilder((CharSequence) "fixture");
         assertEquals("fixture", sb.toString());
-        assertEquals("fixture".length() + 16, sb.capacity());
+        assertTrue("fixture".length() + 16 <= sb.capacity());
 
         sb = new StringBuilder((CharSequence) new StringBuffer("fixture"));
         assertEquals("fixture", sb.toString());
-        assertEquals("fixture".length() + 16, sb.capacity());
+        assertTrue("fixture".length() + 16 <= sb.capacity());
 
         try {
             new StringBuilder((CharSequence) null);
@@ -81,7 +81,7 @@ public class StringBuilderTest extends TestCase {
     public void test_ConstructorLjava_lang_String() {
         StringBuilder sb = new StringBuilder("fixture");
         assertEquals("fixture", sb.toString());
-        assertEquals("fixture".length() + 16, sb.capacity());
+        assertTrue("fixture".length() + 16 <= sb.capacity());
 
         try {
             new StringBuilder((String) null);
@@ -384,7 +384,7 @@ public class StringBuilderTest extends TestCase {
      */
     public void test_capacity() {
         StringBuilder sb = new StringBuilder();
-        assertEquals(16, sb.capacity());
+        assertTrue(16 <= sb.capacity());
         sb.append("0123456789ABCDEF0123456789ABCDEF");
         assertTrue(sb.capacity() > 16);
     }
@@ -628,13 +628,13 @@ public class StringBuilderTest extends TestCase {
      */
     public void test_ensureCapacityI() {
         StringBuilder sb = new StringBuilder(5);
-        assertEquals(5, sb.capacity());
+        assertTrue(5 <= sb.capacity());
         sb.ensureCapacity(10);
-        assertEquals(12, sb.capacity());
+        assertTrue(10 <= sb.capacity());
         sb.ensureCapacity(26);
-        assertEquals(26, sb.capacity());
+        assertTrue(26 <= sb.capacity());
         sb.ensureCapacity(55);
-        assertEquals(55, sb.capacity());
+        assertTrue(55 <= sb.capacity());
     }
 
     /**
@@ -1934,7 +1934,7 @@ public class StringBuilderTest extends TestCase {
         assertEquals(fixture, sb.toString());
         int prevCapacity = sb.capacity();
         sb.trimToSize();
-        assertTrue(prevCapacity > sb.capacity());
+        assertTrue(prevCapacity >= sb.capacity());
         assertEquals(fixture.length(), sb.length());
         assertEquals(fixture, sb.toString());
     }

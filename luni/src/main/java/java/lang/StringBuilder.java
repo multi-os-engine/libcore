@@ -47,7 +47,7 @@ public final class StringBuilder extends AbstractStringBuilder implements
     private static final long serialVersionUID = 4383685877147921099L;
 
     /**
-     * Constructs an instance with an initial capacity of {@code 16}.
+     * Constructs an instance with an initial capacity of at least {@code 16}.
      *
      * @see #capacity()
      */
@@ -55,7 +55,7 @@ public final class StringBuilder extends AbstractStringBuilder implements
     }
 
     /**
-     * Constructs an instance with the specified capacity.
+     * Constructs an instance with at least the specified capacity.
      *
      * @param capacity
      *            the initial capacity to use.
@@ -70,7 +70,7 @@ public final class StringBuilder extends AbstractStringBuilder implements
     /**
      * Constructs an instance that's initialized with the contents of the
      * specified {@code CharSequence}. The capacity of the new builder will be
-     * the length of the {@code CharSequence} plus 16.
+     * at least the length of the {@code CharSequence} plus 16.
      *
      * @param seq
      *            the {@code CharSequence} to copy into the builder.
@@ -83,7 +83,7 @@ public final class StringBuilder extends AbstractStringBuilder implements
 
     /**
      * Constructs an instance that's initialized with the contents of the
-     * specified {@code String}. The capacity of the new builder will be the
+     * specified {@code String}. The capacity of the new builder will be at least the
      * length of the {@code String} plus 16.
      *
      * @param str

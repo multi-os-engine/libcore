@@ -54,7 +54,7 @@ public final class StringBuffer extends AbstractStringBuilder implements
     };
 
     /**
-     * Constructs a new StringBuffer using the default capacity which is 16.
+     * Constructs a new StringBuffer with a capacity of at least 16.
      */
     public StringBuffer() {
     }
@@ -71,8 +71,8 @@ public final class StringBuffer extends AbstractStringBuilder implements
 
     /**
      * Constructs a new StringBuffer containing the characters in the specified
-     * string. The capacity of the new buffer will be the length of the
-     * {@code String} plus the default capacity.
+     * string. The capacity of the new buffer will be at least the length of the
+     * {@code String} plus 16.
      *
      * @param string
      *            the string content with which to initialize the new instance.
@@ -86,7 +86,7 @@ public final class StringBuffer extends AbstractStringBuilder implements
     /**
      * Constructs a StringBuffer and initializes it with the content from the
      * specified {@code CharSequence}. The capacity of the new buffer will be
-     * the length of the {@code CharSequence} plus the default capacity.
+     * at least the length of the {@code CharSequence} plus 16.
      *
      * @param cs
      *            the content to initialize the instance.
