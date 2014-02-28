@@ -108,10 +108,24 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     public void close() throws IOException {
         // don't call super.close() because that calls finish() conditionally
         if (out != null) {
-            finish();
-            def.end();
-            out.close();
-            out = null;
+            // todo: Use try-with-resources to close everything off cleanly
+            try {
+                finish();
+            } finally {
+                // Make sure to clean up the deflater even if the zip output stream could not be
+                // finished.
+                try {
+                    def.end();
+                } catch (Exception e) {
+                    // Ignore for now.
+                }
+                try {
+                    out.close();
+                } catch (Exception e) {
+                    // Ignore for now.
+                }
+                out = null;
+            }
         }
     }
 
