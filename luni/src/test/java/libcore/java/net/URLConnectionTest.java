@@ -1072,7 +1072,7 @@ public final class URLConnectionTest extends TestCase {
         server.play();
 
         HttpURLConnection urlConnection = (HttpURLConnection) server.getUrl("/").openConnection();
-        urlConnection.setChunkedStreamingMode(1);
+        urlConnection.setChunkedStreamingMode(50);
         urlConnection.setDoOutput(true);
         OutputStream outputStream = urlConnection.getOutputStream();
         String outputString = "ABCDEFGH";
