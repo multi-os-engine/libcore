@@ -2198,15 +2198,21 @@ public final class URLConnectionTest extends TestCase {
         }
     }
 
+    // http://code.google.com/p/android/issues/detail?id=16895
     public void testUrlWithSpaceInHostViaHttpProxy() throws Exception {
         server.enqueue(new MockResponse());
         server.play();
         URLConnection urlConnection = new URL("http://and roid.com/")
                 .openConnection(server.toProxyAddress());
+
+        // This test is to check that NullPointerException is not thrown. The actual behavior is
+        // flexible as to whether the error is detected by the client code or left to the proxy.
         try {
             urlConnection.getInputStream();
-            fail(); // the RI makes a bogus proxy request for "GET http://and roid.com/ HTTP/1.1"
+            // Later versions of HttpURLConnectionImpl and the RI make a proxy request for
+            // "GET http://and roid.com/ HTTP/1.1"
         } catch (UnknownHostException expected) {
+            // Earlier versions of HttpURLConnectionImpl threw this.
         }
     }
 
