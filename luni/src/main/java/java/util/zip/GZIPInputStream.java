@@ -169,7 +169,7 @@ public class GZIPInputStream extends InflaterInputStream {
             // NOTE: This prevents us from creating multiple layers of nested
             // PushbackInputStreams if we have multiple members in this stream.
             if (!(in instanceof PushbackInputStream)) {
-                in = new PushbackInputStream(in, BUF_SIZE);
+                in = new PushbackInputStream(in, buf.length);
             }
             ((PushbackInputStream) in).unread(buf,
                     inf.getCurrentOffset() + GZIP_TRAILER_SIZE, remaining);
