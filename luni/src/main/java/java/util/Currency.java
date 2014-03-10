@@ -127,6 +127,15 @@ public final class Currency implements Serializable {
     }
 
     /**
+     * Returns the ISO 4217 numeric code for this currency.
+     * @since 1.7
+     * @hide Until ready for an API update
+     */
+    public int getNumericCode() {
+        return ICU.getCurrencyNumericCode(currencyCode);
+    }
+
+    /**
      * Equivalent to {@code getSymbol(Locale.getDefault())}.
      * See "<a href="../util/Locale.html#default_locale">Be wary of the default locale</a>".
      */
