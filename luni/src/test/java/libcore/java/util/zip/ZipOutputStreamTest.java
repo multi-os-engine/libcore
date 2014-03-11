@@ -76,4 +76,12 @@ public final class ZipOutputStreamTest extends TestCase {
             // expected
         }
     }
+
+    public void testNullCharset() throws IOException {
+        try {
+            new ZipOutputStream(new ByteArrayOutputStream(), null);
+            fail();
+        } catch (NullPointerException expected) {
+        }
+    }
 }
