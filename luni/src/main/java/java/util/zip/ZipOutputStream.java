@@ -20,6 +20,7 @@ package java.util.zip;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -75,6 +76,8 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
 
     private final HashSet<String> entries = new HashSet<String>();
 
+    private final Charset charset;
+
     private int defaultCompressionMethod = DEFLATED;
 
     private int compressionLevel = Deflater.DEFAULT_COMPRESSION;
@@ -90,11 +93,28 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     private byte[] nameBytes;
 
     /**
-     * Constructs a new {@code ZipOutputStream} that writes a zip file
-     * to the given {@code OutputStream}.
+     * Constructs a new {@code ZipOutputStream} that writes a zip file to the given
+     * {@code OutputStream}.
+     *
+     * <p>UTF-8 will be used to encode the file comment, entry names and comments.
      */
     public ZipOutputStream(OutputStream os) {
+        this(os, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Constructs a new {@code ZipOutputStream} that writes a zip file to the given
+     * {@code OutputStream}.
+     *
+     * <p>The specified character set will be used to encode the file comment, entry names and
+     * comments.
+     */
+    public ZipOutputStream(OutputStream os, Charset charset) {
         super(os, new Deflater(Deflater.DEFAULT_COMPRESSION, true));
+        if (charset == null) {
+            throw new NullPointerException("charset == null");
+        }
+        this.charset = charset;
     }
 
     /**
@@ -153,10 +173,12 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         // Update the CentralDirectory
         // http://www.pkware.com/documents/casestudies/APPNOTE.TXT
         int flags = currentEntry.getMethod() == STORED ? 0 : ZipFile.GPBF_DATA_DESCRIPTOR_FLAG;
-        // Since gingerbread, we always set the UTF-8 flag on individual files.
-        // Some tools insist that the central directory also have the UTF-8 flag.
+        // Since gingerbread, we always set the UTF-8 flag on individual files if appropriate.
+        // Some tools insist that the central directory have the UTF-8 flag.
         // http://code.google.com/p/android/issues/detail?id=20214
-        flags |= ZipFile.GPBF_UTF8_FLAG;
+        if (charset == StandardCharsets.UTF_8) {
+            flags |= ZipFile.GPBF_UTF8_FLAG;
+        }
         writeLong(cDir, CENSIG);
         writeShort(cDir, ZIP_VERSION_2_0); // Version this file was made by.
         writeShort(cDir, ZIP_VERSION_2_0); // Minimum version needed to extract.
@@ -182,7 +204,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         String comment = currentEntry.getComment();
         byte[] commentBytes = EmptyArray.BYTE;
         if (comment != null) {
-            commentBytes = comment.getBytes(StandardCharsets.UTF_8);
+            commentBytes = comment.getBytes(charset);
         }
         writeShort(cDir, commentBytes.length); // Comment length.
         writeShort(cDir, 0); // Disk Start
@@ -294,10 +316,11 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
             // TODO: support Zip64.
             throw new ZipException("Too many entries for the zip file format's 16-bit entry count");
         }
-        nameBytes = ze.name.getBytes(StandardCharsets.UTF_8);
+        nameBytes = ze.name.getBytes(charset);
         nameLength = nameBytes.length;
         if (nameLength > 0xffff) {
-            throw new IllegalArgumentException("Name too long: " + nameLength + " UTF-8 bytes");
+            throw new IllegalArgumentException(
+                    "Name too long in " + charset + ":" + nameLength + " bytes");
         }
 
         def.setLevel(compressionLevel);
@@ -310,8 +333,10 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         // http://www.pkware.com/documents/casestudies/APPNOTE.TXT
         int flags = (method == STORED) ? 0 : ZipFile.GPBF_DATA_DESCRIPTOR_FLAG;
         // Java always outputs UTF-8 filenames. (Before Java 7, the RI didn't set this flag and used
-        // modified UTF-8. From Java 7, it sets this flag and uses normal UTF-8.)
-        flags |= ZipFile.GPBF_UTF8_FLAG;
+        // modified UTF-8. From Java 7, when using UTF_8 it sets this flag and uses normal UTF-8.)
+        if (charset == StandardCharsets.UTF_8) {
+            flags |= ZipFile.GPBF_UTF8_FLAG;
+        }
         writeLong(out, LOCSIG); // Entry header
         writeShort(out, ZIP_VERSION_2_0); // Minimum version needed to extract.
         writeShort(out, flags);
@@ -345,7 +370,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
 
     /**
      * Sets the comment associated with the file being written. See {@link ZipFile#getComment}.
-     * @throws IllegalArgumentException if the comment is >= 64 Ki UTF-8 bytes.
+     * @throws IllegalArgumentException if the comment is >= 64 Ki encoded bytes.
      */
     public void setComment(String comment) {
         if (comment == null) {
@@ -353,9 +378,10 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
             return;
         }
 
-        byte[] newCommentBytes = comment.getBytes(StandardCharsets.UTF_8);
+        byte[] newCommentBytes = comment.getBytes(charset);
         if (newCommentBytes.length > 0xffff) {
-            throw new IllegalArgumentException("Comment too long: " + newCommentBytes.length + " bytes");
+            throw new IllegalArgumentException(
+                    "Comment too long: " + newCommentBytes.length + " bytes");
         }
         this.commentBytes = newCommentBytes;
     }

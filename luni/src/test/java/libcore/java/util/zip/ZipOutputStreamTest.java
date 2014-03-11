@@ -17,6 +17,7 @@
 package libcore.java.util.zip;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -25,6 +26,7 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import junit.framework.TestCase;
 
@@ -74,6 +76,14 @@ public final class ZipOutputStreamTest extends TestCase {
             fail("Close on empty stream failed to throw exception");
         } catch (ZipException e) {
             // expected
+        }
+    }
+
+    public void testNullCharset() throws IOException {
+        try {
+            new ZipOutputStream(new ByteArrayOutputStream(), null);
+            fail();
+        } catch (NullPointerException expected) {
         }
     }
 }

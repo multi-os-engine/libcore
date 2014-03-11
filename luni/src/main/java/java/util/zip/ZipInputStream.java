@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
 import java.nio.charset.ModifiedUtf8;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import libcore.io.Memory;
 import libcore.io.Streams;
@@ -84,18 +86,37 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
 
     private final CRC32 crc = new CRC32();
 
-    private byte[] nameBuf = new byte[256];
+    private byte[] stringBytesBuf = new byte[256];
 
-    private char[] charBuf = new char[256];
+    private char[] stringCharBuf = new char[256];
+
+    private final Charset charset;
 
     /**
      * Constructs a new {@code ZipInputStream} to read zip entries from the given input stream.
+     *
+     * <p>UTF-8 is used to decode all strings in the file.
      */
     public ZipInputStream(InputStream stream) {
+        this(stream, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Constructs a new {@code ZipInputStream} to read zip entries from the given input stream.
+     *
+     * <p>The {@code charset} is used to decode the file comment if one exists. If the character
+     * encoding for entry names and comments is unclear from the contents of the file then
+     * {@code charset} is used to decode them.
+     */
+    public ZipInputStream(InputStream stream, Charset charset) {
         super(new PushbackInputStream(stream, BUF_SIZE), new Inflater(true));
         if (stream == null) {
             throw new NullPointerException("stream == null");
         }
+        if (charset == null) {
+            throw new NullPointerException("defaultCharset == null");
+        }
+        this.charset = charset;
     }
 
     /**
@@ -249,14 +270,13 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
         }
         int extraLength = peekShort(LOCEXT - LOCVER);
 
-        if (nameLength > nameBuf.length) {
-            nameBuf = new byte[nameLength];
-            // The bytes are modified UTF-8, so the number of chars will always be less than or
-            // equal to the number of bytes. It's fine if this buffer is too long.
-            charBuf = new char[nameLength];
+        // Determine the character set to use to decode strings.
+        Charset charset = StandardCharsets.UTF_8;
+        if ((flags & ZipFile.GPBF_UTF8_FLAG) == 0) {
+            charset = this.charset;
         }
-        Streams.readFully(in, nameBuf, 0, nameLength);
-        currentEntry = createZipEntry(ModifiedUtf8.decode(nameBuf, charBuf, 0, nameLength));
+        String name = readString(nameLength, charset);
+        currentEntry = createZipEntry(name);
         currentEntry.time = ceLastModifiedTime;
         currentEntry.modDate = ceLastModifiedDate;
         currentEntry.setMethod(ceCompressionMethod);
@@ -271,6 +291,26 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
             currentEntry.setExtra(extraData);
         }
         return currentEntry;
+    }
+
+    /**
+     * Reads bytes from the current stream position returning the string representation.
+     */
+    private String readString(int byteLength, Charset charset) throws IOException {
+        if (byteLength > stringBytesBuf.length) {
+            stringBytesBuf = new byte[byteLength];
+            // The bytes are modified UTF-8, so the number of chars will always be less than or
+            // equal to the number of bytes. It's fine if this buffer is too long.
+            stringCharBuf = new char[byteLength];
+        }
+        Streams.readFully(in, stringBytesBuf, 0, byteLength);
+        String name;
+        if (charset == StandardCharsets.UTF_8) {
+            name = ModifiedUtf8.decode(stringBytesBuf, stringCharBuf, 0, byteLength);
+        } else {
+            name = new String(stringBytesBuf, 0, byteLength, charset);
+        }
+        return name;
     }
 
     private int peekShort(int offset) {
