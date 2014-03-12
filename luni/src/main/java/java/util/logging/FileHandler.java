@@ -23,6 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.Hashtable;
@@ -491,7 +492,7 @@ public class FileHandler extends StreamHandler {
         super.close();
         allLocks.remove(fileName);
         try {
-            FileChannel channel = lock.channel();
+            Channel channel = lock.acquiredBy();
             lock.release();
             channel.close();
             File file = new File(fileName + LCK_EXT);

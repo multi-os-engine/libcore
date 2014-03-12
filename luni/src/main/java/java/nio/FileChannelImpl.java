@@ -142,15 +142,15 @@ final class FileChannelImpl extends FileChannel {
         }
 
         public boolean isValid() {
-            return !isReleased && channel().isOpen();
+            return !isReleased && acquiredBy().isOpen();
         }
 
         public void release() throws IOException {
-            if (!channel().isOpen()) {
+            if (!acquiredBy().isOpen()) {
                 throw new ClosedChannelException();
             }
             if (!isReleased) {
-                ((FileChannelImpl) channel()).release(this);
+                ((FileChannelImpl) acquiredBy()).release(this);
                 isReleased = true;
             }
         }
