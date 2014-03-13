@@ -172,25 +172,29 @@ static jstring ICU_languageTagForLocale(JNIEnv* env, jclass, jstring javaLocaleI
     // the size of the string unless there's an invalid language or a bad
     // parse (which will result in an x-lvariant private use subtag at
     // the end of the input).
-    const size_t initialBufferSize = localeID.size();
+    const size_t initialBufferSize = localeID.size() + 1;
     std::vector<char> buffer(initialBufferSize);
 
-    UErrorCode status = U_ZERO_ERROR;
     while (true) {
+        UErrorCode status = U_ZERO_ERROR;
         const size_t outputLength = uloc_toLanguageTag(localeID.c_str(),
                 &buffer[0], buffer.size(), false /* strict */, &status);
-        if (U_FAILURE(status)) {
-            return NULL;
+        if (status == U_BUFFER_OVERFLOW_ERROR) {
+            buffer.resize(outputLength);
+            continue;
         }
 
-        if (outputLength == buffer.size()) {
-            buffer.resize(buffer.size() << 1);
+        if (status == U_STRING_NOT_TERMINATED_WARNING) {
+            buffer.resize(buffer.size() + 1);
+            buffer[buffer.size() -1] = '\0';
+        }
+
+        if (maybeThrowIcuException(env, "ICU::languageTagForLocale", status)) {
+            return NULL;
         } else {
-            break;
+            return env->NewStringUTF(&buffer[0]);
         }
     }
-
-    return env->NewStringUTF(&buffer[0]);
 }
 
 static jint ICU_getCurrencyFractionDigits(JNIEnv* env, jclass, jstring javaCurrencyCode) {
