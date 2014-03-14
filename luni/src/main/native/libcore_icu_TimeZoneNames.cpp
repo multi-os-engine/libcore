@@ -64,9 +64,15 @@ static void TimeZoneNames_fillZoneStrings(JNIEnv* env, jclass, jstring localeNam
 
   UErrorCode status = U_ZERO_ERROR;
   UniquePtr<TimeZoneNames> names(TimeZoneNames::createInstance(locale, status));
+  if (strlen(locale.getName()) == 0) {
+      fprintf(stderr, "Loading zone strings for the root locale: %d\n", status);
+  } else {
+      fprintf(stderr, "Loading zone strings for locale %s: %d\n", locale.getName(), status);
+  }
   if (maybeThrowIcuException(env, "TimeZoneNames::createInstance", status)) {
     return;
   }
+
 
   const UDate now(Calendar::getNow());
 

@@ -478,10 +478,12 @@ class LocaleNameIterator {
  public:
   LocaleNameIterator(const char* locale_name, UErrorCode& status) : status_(status), has_next_(true) {
     strcpy(locale_name_, locale_name);
+    fprintf(stderr, "LocaleNameIterator(): %s\n", locale_name_);
     locale_name_length_ = strlen(locale_name_);
   }
 
   const char* Get() {
+      fprintf(stderr, "Get(): %s\n", locale_name_);
       return locale_name_;
   }
 
@@ -494,6 +496,7 @@ class LocaleNameIterator {
       has_next_ = false;
     } else {
       locale_name_length_ = uloc_getParent(locale_name_, locale_name_, sizeof(locale_name_), &status_);
+      fprintf(stderr, "Up: %s\n", locale_name_);
     }
   }
 
@@ -509,6 +512,9 @@ class LocaleNameIterator {
 static bool getDateTimePatterns(JNIEnv* env, jobject localeData, const char* locale_name) {
   UErrorCode status = U_ZERO_ERROR;
   ScopedResourceBundle root(ures_open(NULL, locale_name, &status));
+  if (status == U_USING_DEFAULT_WARNING) {
+    return false;
+  }
   if (U_FAILURE(status)) {
     return false;
   }
@@ -538,6 +544,9 @@ static bool getDateTimePatterns(JNIEnv* env, jobject localeData, const char* loc
 static bool getYesterdayTodayAndTomorrow(JNIEnv* env, jobject localeData, const char* locale_name) {
   UErrorCode status = U_ZERO_ERROR;
   ScopedResourceBundle root(ures_open(NULL, locale_name, &status));
+  if (status == U_USING_DEFAULT_WARNING) {
+    return false;
+  }
   if (U_FAILURE(status)) {
     return false;
   }
@@ -601,10 +610,17 @@ static jboolean ICU_initLocaleDataNative(JNIEnv* env, jclass, jstring javaLocale
 
     status = U_ZERO_ERROR;
     Locale locale = getLocale(env, javaLocaleName);
+    if (locale.isBogus()) {
+        locale = Locale::getRoot();
+    }
+
+    status = U_ZERO_ERROR;
     UniquePtr<Calendar> cal(Calendar::createInstance(locale, status));
     if (U_FAILURE(status)) {
         return JNI_FALSE;
     }
+
+    fprintf(stderr, "Calendar::createInstance(%s) returned %d\n", locale.getName(), status);
 
     setIntegerField(env, localeData, "firstDayOfWeek", cal->getFirstDayOfWeek());
     setIntegerField(env, localeData, "minimalDaysInFirstWeek", cal->getMinimalDaysInFirstWeek());
@@ -615,6 +631,11 @@ static jboolean ICU_initLocaleDataNative(JNIEnv* env, jclass, jstring javaLocale
     if (U_FAILURE(status)) {
         return JNI_FALSE;
     }
+
+    if (status == U_USING_DEFAULT_WARNING) {
+        dateFormatSym = DateFormatSymbols(Locale::getRoot(), status);
+    }
+
 
     // Get AM/PM and BC/AD.
     int32_t count = 0;

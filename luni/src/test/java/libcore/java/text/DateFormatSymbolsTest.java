@@ -36,8 +36,6 @@ public class DateFormatSymbolsTest extends junit.framework.TestCase {
 
     /** http://b/3056586 */
     public void test_getInstance_unknown_locale() throws Exception {
-        // TODO: we fail this test. on Android, the root locale uses GMT offsets as names.
-        // see the invalid locale test below. on the RI, the root locale uses English names.
         assertLocaleIsEquivalentToRoot(new Locale("xx", "XX"));
     }
 

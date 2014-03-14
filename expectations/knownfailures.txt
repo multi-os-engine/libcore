@@ -138,11 +138,6 @@
   bug: 3015023
 },
 {
-  description: "ICU seems to treat unknown and invalid locales differently",
-  name: "libcore.java.text.DateFormatSymbolsTest#test_getInstance_unknown_locale",
-  bug: 2541757
-},
-{
   description: "Root locale uses INF for infinity but unknown locales use \u221e",
   name: "libcore.java.text.DecimalFormatSymbolsTest#test_getInstance_unknown_or_invalid_locale",
   bug: 3056617
