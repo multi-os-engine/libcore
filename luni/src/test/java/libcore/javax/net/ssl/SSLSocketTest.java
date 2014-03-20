@@ -906,6 +906,14 @@ public class SSLSocketTest extends TestCase {
 
         assertEquals(p.getWantClientAuth(), ssl.getWantClientAuth());
         assertEquals(p.getNeedClientAuth(), ssl.getNeedClientAuth());
+
+        assertNull(p.getEndpointIdentificationAlgorithm());
+        p.setEndpointIdentificationAlgorithm(null);
+        assertNull(p.getEndpointIdentificationAlgorithm());
+        p.setEndpointIdentificationAlgorithm("HTTPS");
+        assertEquals("HTTPS", p.getEndpointIdentificationAlgorithm());
+        p.setEndpointIdentificationAlgorithm("FOO");
+        assertEquals("FOO", p.getEndpointIdentificationAlgorithm());
     }
 
     public void test_SSLSocket_setSSLParameters() throws Exception {
@@ -1087,6 +1095,84 @@ public class SSLSocketTest extends TestCase {
         // close should cause an SSL_shutdown which will fail
         // because the peer has closed, but it shouldn't throw.
         server.close();
+    }
+
+    public void test_SSLSocket_endpointIdentification_Success() throws Exception {
+        final TestSSLContext c = TestSSLContext.create();
+        SSLSocket client = (SSLSocket) c.clientContext.getSocketFactory().createSocket();
+        SSLParameters p = client.getSSLParameters();
+        p.setEndpointIdentificationAlgorithm("HTTPS");
+        client.connect(new InetSocketAddress(c.host, c.port));
+        final SSLSocket server = (SSLSocket) c.serverSocket.accept();
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<Void> future = executor.submit(new Callable<Void>() {
+            @Override public Void call() throws Exception {
+                server.startHandshake();
+                assertNotNull(server.getSession());
+                try {
+                    server.getSession().getPeerCertificates();
+                    fail();
+                } catch (SSLPeerUnverifiedException expected) {
+                }
+                Certificate[] localCertificates = server.getSession().getLocalCertificates();
+                assertNotNull(localCertificates);
+                TestKeyStore.assertChainLength(localCertificates);
+                assertNotNull(localCertificates[0]);
+                TestSSLContext.assertCertificateInKeyStore(localCertificates[0],
+                                                           c.serverKeyStore);
+                return null;
+            }
+        });
+        executor.shutdown();
+        client.startHandshake();
+        assertNotNull(client.getSession());
+        assertNull(client.getSession().getLocalCertificates());
+        Certificate[] peerCertificates = client.getSession().getPeerCertificates();
+        assertNotNull(peerCertificates);
+        TestKeyStore.assertChainLength(peerCertificates);
+        assertNotNull(peerCertificates[0]);
+        TestSSLContext.assertCertificateInKeyStore(peerCertificates[0], c.serverKeyStore);
+        future.get();
+        client.close();
+        server.close();
+        c.close();
+    }
+
+    public void test_SSLSocket_endpointIdentification_Failure() throws Exception {
+
+        final TestSSLContext c = TestSSLContext.create();
+        SSLSocket client = (SSLSocket) c.clientContext.getSocketFactory().createSocket(
+                InetAddress.getByName("127.0.0.2"), c.port);
+        SSLParameters p = client.getSSLParameters();
+        p.setEndpointIdentificationAlgorithm("HTTPS");
+        client.setSSLParameters(p);
+        // client.connect(new InetSocketAddress(c.host, c.port));
+        final SSLSocket server = (SSLSocket) c.serverSocket.accept();
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<Void> future = executor.submit(new Callable<Void>() {
+            @Override public Void call() throws Exception {
+                try {
+                    server.startHandshake();
+                    fail("Should receive SSLHandshakeException as server");
+                } catch (SSLHandshakeException expected) {
+                }
+                return null;
+            }
+        });
+        executor.shutdown();
+        try {
+            client.startHandshake();
+            fail("Should throw when hostname does not match expected");
+        } catch (SSLHandshakeException expected) {
+        } finally {
+            try {
+                future.get();
+            } finally {
+                client.close();
+                server.close();
+                c.close();
+            }
+        }
     }
 
     public void test_SSLSocket_setSoTimeout_basic() throws Exception {
