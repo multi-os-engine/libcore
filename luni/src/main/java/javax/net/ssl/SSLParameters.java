@@ -27,6 +27,7 @@ public class SSLParameters {
     private String[] protocols;
     private boolean needClientAuth;
     private boolean wantClientAuth;
+    private String endpointIdentificationAlgorithm;
 
     /**
      * The default SSLParameters constructor. Cipher suites and
@@ -137,5 +138,27 @@ public class SSLParameters {
     public void setWantClientAuth (boolean wantClientAuth) {
         this.wantClientAuth = wantClientAuth;
         this.needClientAuth = false;
+    }
+
+    /**
+     * Returns a string indicating the endpoint identification algorithm to be
+     * used to identify the remote endpoint.
+     *
+     * @see #setEndpointIdentificationAlgorithm(String)
+     * @hide
+     */
+    public String getEndpointIdentificationAlgorithm() {
+        return endpointIdentificationAlgorithm;
+    }
+
+    /**
+     * Sets the endpoint identification algorithm to be used to identify the
+     * remote endpoint.
+     *
+     * @see #getEndpointIdentificationAlgorithm()
+     * @hide
+     */
+    public void setEndpointIdentificationAlgorithm(String endpointIdentificationAlgorithm) {
+        this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
     }
 }
