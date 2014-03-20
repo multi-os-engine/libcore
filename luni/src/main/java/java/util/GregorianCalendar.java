@@ -459,7 +459,7 @@ public class GregorianCalendar extends Calendar {
     }
 
     private void fullFieldsCalc(long timeVal, int zoneOffset) {
-        int millis = (int) (time % 86400000);
+        int millis = (int) (timeVal % 86400000);
         long days = timeVal / 86400000;
 
         if (millis < 0) {
