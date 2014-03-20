@@ -113,8 +113,6 @@ public class SSLSessionTest extends TestCase {
         assertNull(s.client.getLocalCertificates());
         assertNotNull(s.server.getLocalCertificates());
         TestKeyStore.assertChainLength(s.server.getLocalCertificates());
-        TestSSLContext.assertServerCertificateChain(s.s.c.serverTrustManager,
-                                                    s.server.getLocalCertificates());
         TestSSLContext.assertCertificateInKeyStore(s.server.getLocalCertificates()[0],
                                                    s.s.c.serverKeyStore);
         s.close();
@@ -165,8 +163,6 @@ public class SSLSessionTest extends TestCase {
         }
         assertNotNull(s.client.getPeerCertificates());
         TestKeyStore.assertChainLength(s.client.getPeerCertificates());
-        TestSSLContext.assertServerCertificateChain(s.s.c.serverTrustManager,
-                                                    s.client.getPeerCertificates());
         TestSSLContext.assertCertificateInKeyStore(s.client.getPeerCertificates()[0],
                                                    s.s.c.serverKeyStore);
         try {

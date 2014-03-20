@@ -469,8 +469,6 @@ public class SSLEngineTest extends TestCase {
         assertConnected(p);
         assertNotNull(p.client.getSession().getLocalCertificates());
         TestKeyStore.assertChainLength(p.client.getSession().getLocalCertificates());
-        TestSSLContext.assertClientCertificateChain(clientAuthContext.clientTrustManager,
-                                                    p.client.getSession().getLocalCertificates());
         clientAuthContext.close();
         c.close();
     }
@@ -518,6 +516,20 @@ public class SSLEngineTest extends TestCase {
         } finally {
             clientAuthContext.close();
         }
+    }
+
+    public void test_SSLEngine_endpointVerification_Success() throws Exception {
+        TestSSLContext c = TestSSLContext.create();
+        TestSSLEnginePair p = TestSSLEnginePair.create(c, new TestSSLEnginePair.Hooks() {
+            @Override
+            void beforeBeginHandshake(SSLEngine client, SSLEngine server) {
+                SSLParameters p = client.getSSLParameters();
+                p.setEndpointIdentificationAlgorithm("HTTPS");
+                client.setSSLParameters(p);
+            }
+        });
+        assertConnected(p);
+        c.close();
     }
 
     public void test_SSLEngine_getEnableSessionCreation() throws Exception {
