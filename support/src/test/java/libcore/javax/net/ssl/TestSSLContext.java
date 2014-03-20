@@ -34,6 +34,7 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedKeyManager;
+import javax.net.ssl.X509ExtendedTrustManager;
 import javax.net.ssl.X509TrustManager;
 import junit.framework.Assert;
 import libcore.java.security.StandardNames;
@@ -83,8 +84,8 @@ public final class TestSSLContext extends Assert {
     public final char[] serverStorePassword;
     public final X509ExtendedKeyManager clientKeyManager;
     public final X509ExtendedKeyManager serverKeyManager;
-    public final X509TrustManager clientTrustManager;
-    public final X509TrustManager serverTrustManager;
+    public final X509ExtendedTrustManager clientTrustManager;
+    public final X509ExtendedTrustManager serverTrustManager;
     public final SSLContext clientContext;
     public final SSLContext serverContext;
     public final SSLServerSocket serverSocket;
@@ -97,8 +98,8 @@ public final class TestSSLContext extends Assert {
                            char[] serverStorePassword,
                            X509ExtendedKeyManager clientKeyManager,
                            X509ExtendedKeyManager serverKeyManager,
-                           X509TrustManager clientTrustManager,
-                           X509TrustManager serverTrustManager,
+                           X509ExtendedTrustManager clientTrustManager,
+                           X509ExtendedTrustManager serverTrustManager,
                            SSLContext clientContext,
                            SSLContext serverContext,
                            SSLServerSocket serverSocket,
@@ -177,8 +178,8 @@ public final class TestSSLContext extends Assert {
                                       serverKeyStore, serverStorePassword,
                                       (X509ExtendedKeyManager) clientKeyManagers,
                                       (X509ExtendedKeyManager) serverKeyManagers,
-                                      (X509TrustManager) clientTrustManagers,
-                                      (X509TrustManager) serverTrustManagers,
+                                      (X509ExtendedTrustManager) clientTrustManagers,
+                                      (X509ExtendedTrustManager) serverTrustManagers,
                                       clientContext, serverContext,
                                       serverSocket, host, port);
         } catch (RuntimeException e) {
@@ -239,18 +240,20 @@ public final class TestSSLContext extends Assert {
         assertTrue(found);
     }
 
-    public static void assertServerCertificateChain(X509TrustManager trustManager,
-                                                    Certificate[] serverChain)
+    public static void assertServerCertificateChain(X509ExtendedTrustManager trustManager,
+                                                    Certificate[] serverChain,
+                                                    SSLSocket socket)
             throws CertificateException {
         X509Certificate[] chain = (X509Certificate[]) serverChain;
-        trustManager.checkServerTrusted(chain, chain[0].getPublicKey().getAlgorithm());
+        trustManager.checkServerTrusted(chain, chain[0].getPublicKey().getAlgorithm(), socket);
     }
 
-    public static void assertClientCertificateChain(X509TrustManager trustManager,
-                                                    Certificate[] clientChain)
+    public static void assertClientCertificateChain(X509ExtendedTrustManager trustManager,
+                                                    Certificate[] clientChain,
+                                                    SSLSocket socket)
             throws CertificateException {
         X509Certificate[] chain = (X509Certificate[]) clientChain;
-        trustManager.checkClientTrusted(chain, chain[0].getPublicKey().getAlgorithm());
+        trustManager.checkClientTrusted(chain, chain[0].getPublicKey().getAlgorithm(), socket);
     }
 
     /**
