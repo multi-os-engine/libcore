@@ -66,9 +66,9 @@ static jdouble StrictMath_floor(JNIEnv*, jclass, jdouble a) {
     return ieee_floor(a);
 }
 
-static jdouble StrictMath_ceil(JNIEnv*, jclass, jdouble a) {
-    return ieee_ceil(a);
-}
+// static jdouble StrictMath_ceil(JNIEnv*, jclass, jdouble a) {
+//     return ieee_ceil(a);
+// }
 
 static jdouble StrictMath_rint(JNIEnv*, jclass, jdouble a) {
     return ieee_rint(a);
@@ -125,7 +125,7 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(StrictMath, atan, "!(D)D"),
     NATIVE_METHOD(StrictMath, atan2, "!(DD)D"),
     NATIVE_METHOD(StrictMath, cbrt, "!(D)D"),
-    NATIVE_METHOD(StrictMath, ceil, "!(D)D"),
+    //    NATIVE_METHOD(StrictMath, ceil, "!(D)D"),
     NATIVE_METHOD(StrictMath, cos, "!(D)D"),
     NATIVE_METHOD(StrictMath, cosh, "!(D)D"),
     NATIVE_METHOD(StrictMath, exp, "!(D)D"),
