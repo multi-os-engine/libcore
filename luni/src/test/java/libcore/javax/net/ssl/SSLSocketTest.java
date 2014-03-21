@@ -652,9 +652,8 @@ public class SSLSocketTest extends TestCase {
             @Override public Void call() throws Exception {
                 try {
                     server.startHandshake();
-                    assertFalse(StandardNames.IS_RI);
+                    fail();
                 } catch (SSLHandshakeException expected) {
-                    assertTrue(StandardNames.IS_RI);
                 }
                 return null;
             }
