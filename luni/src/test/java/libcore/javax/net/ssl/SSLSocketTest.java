@@ -28,12 +28,17 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.security.AlgorithmConstraints;
+import java.security.AlgorithmParameters;
+import java.security.CryptoPrimitive;
+import java.security.Key;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -914,6 +919,28 @@ public class SSLSocketTest extends TestCase {
         assertEquals("HTTPS", p.getEndpointIdentificationAlgorithm());
         p.setEndpointIdentificationAlgorithm("FOO");
         assertEquals("FOO", p.getEndpointIdentificationAlgorithm());
+
+        assertNull(p.getAlgorithmConstraints());
+        AlgorithmConstraints myConstraints = new AlgorithmConstraints() {
+            @Override
+            public boolean permits(Set<CryptoPrimitive> primitives, String algorithm, Key key,
+                    AlgorithmParameters parameters) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean permits(Set<CryptoPrimitive> primitives, String algorithm,
+                    AlgorithmParameters parameters) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean permits(Set<CryptoPrimitive> primitives, Key key) {
+                throw new UnsupportedOperationException();
+            }
+        };
+        p.setAlgorithmConstraints(myConstraints);
+        assertSame(p.getAlgorithmConstraints(), myConstraints);
     }
 
     public void test_SSLSocket_setSSLParameters() throws Exception {

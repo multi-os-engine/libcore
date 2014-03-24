@@ -16,6 +16,8 @@
 
 package javax.net.ssl;
 
+import java.security.AlgorithmConstraints;
+
 /**
  * SSL handshake parameters that include protocols, cipher suites, and
  * client authentication requirements.
@@ -28,6 +30,7 @@ public class SSLParameters {
     private boolean needClientAuth;
     private boolean wantClientAuth;
     private String endpointIdentificationAlgorithm;
+    private AlgorithmConstraints algorithmConstraints;
 
     /**
      * The default SSLParameters constructor. Cipher suites and
@@ -162,5 +165,29 @@ public class SSLParameters {
      */
     public void setEndpointIdentificationAlgorithm(String endpointIdentificationAlgorithm) {
         this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
+    }
+
+    /**
+     * Returns the algorithm constraints that should be applied to this SSL
+     * connection.
+     *
+     * @see #setAlgorithmConstraints(AlgorithmConstraints)
+     * @since 1.7
+     * @hide
+     */
+    public AlgorithmConstraints getAlgorithmConstraints() {
+        return algorithmConstraints;
+    }
+
+    /**
+     * Sets the algorithm constraints that should be applied to this SSL
+     * connection.
+     *
+     * @see #getAlgorithmConstraints()
+     * @since 1.7
+     * @hide
+     */
+    public void setAlgorithmConstraints(AlgorithmConstraints algorithmConstraints) {
+        this.algorithmConstraints = algorithmConstraints;
     }
 }
