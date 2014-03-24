@@ -314,16 +314,25 @@ public class SSLContext {
     }
 
     /**
-     * Initializes this {@code SSLContext} instance. All of the arguments are
-     * optional, and the security providers will be searched for the required
-     * implementations of the needed algorithms.
+     * Initializes this {@code SSLContext} instance.
      *
      * @param km
-     *            the key sources or {@code null}.
+     *            the key sources or {@code null} for defaults. For each type of {@link KeyManager},
+     *            only the first instance of this type found in {@code km} will be used -- for
+     *            example, only the first {@link X509KeyManager} from {@code km} will be used. If
+     *            {@code km} is {@code null}, the installed security providers will be searched for
+     *            the highest priority implementation of {@link KeyManagerFactory} from which each
+     *            required type of {@code KeyManager} will then be obtained.
      * @param tm
-     *            the trust decision sources or {@code null}.
+     *            the trust decision sources or {@code null} for defaults. For each type of
+     *            {@link TrustManager}, only the first instance of this type found in {@code tm}
+     *            will be used -- for example, only the first {@link X509TrustManager} from
+     *            {@code tm} will be used. If {@code tm} is {@code null}, the installed security
+     *            providers will be searched for the highest priority implementation of
+     *            {@link TrustManagerFactory} from which each required type of {@code TrustManager}
+     *            will then be obtained.
      * @param sr
-     *            the randomness source or {@code null.}
+     *            the randomness source or {@code null} for default.
      * @throws KeyManagementException
      *             if initializing this instance fails.
      */
