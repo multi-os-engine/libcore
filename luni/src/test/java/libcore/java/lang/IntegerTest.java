@@ -16,7 +16,28 @@
 
 package libcore.java.lang;
 
+import java.util.Properties;
+
 public class IntegerTest extends junit.framework.TestCase {
+
+    public void test_SystemProperties() {
+        Properties originalProperties = System.getProperties();
+        try {
+            Properties testProperties = new Properties();
+            testProperties.put("testIncInt", "notInt");
+            System.setProperties(testProperties);
+            assertNull("returned incorrect default Integer",
+                Integer.getInteger("testIncInt"));
+            assertTrue("returned incorrect default Integer",
+                Integer.getInteger("testIncInt", 4).equals(new Integer(4)));
+            assertTrue("returned incorrect default Integer",
+                Integer.getInteger(
+                    "testIncInt", new Integer(4)).equals(new Integer(4)));
+        } finally {
+            System.setProperties(originalProperties);
+        }
+    }
+
     public void test_compare() throws Exception {
         final int min = Integer.MIN_VALUE;
         final int zero = 0;

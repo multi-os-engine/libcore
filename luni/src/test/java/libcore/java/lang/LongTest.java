@@ -16,7 +16,27 @@
 
 package libcore.java.lang;
 
+import java.util.Properties;
+
 public class LongTest extends junit.framework.TestCase {
+
+    public void test_SystemProperties() {
+        Properties originalProperties = System.getProperties();
+        try {
+            Properties testProperties = new Properties();
+            testProperties.put("testIncLong", "string");
+            System.setProperties(testProperties);
+            assertNull("returned incorrect default Long",
+                Long.getLong("testIncLong"));
+            assertTrue("returned incorrect default Long",
+                Long.getLong("testIncLong", 4L).equals(new Long(4)));
+            assertTrue("returned incorrect default Long",
+                Long.getLong("testIncLong", new Long(4)).equals(new Long(4)));
+        } finally {
+            System.setProperties(originalProperties);
+        }
+    }
+
     public void test_compare() throws Exception {
         final long min = Long.MIN_VALUE;
         final long zero = 0L;
