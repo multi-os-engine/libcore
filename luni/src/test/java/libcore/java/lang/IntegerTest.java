@@ -52,4 +52,53 @@ public class IntegerTest extends junit.framework.TestCase {
         assertTrue(Integer.compare(min,  zero) < 0);
         assertTrue(Integer.compare(min,  max)  < 0);
     }
+
+    public void test_ParseInt() throws Exception {
+        assertEquals(0, Integer.parseInt("+0", 10));
+        assertEquals(473, Integer.parseInt("+473", 10));
+        assertEquals(255, Integer.parseInt("+FF", 16));
+        assertEquals(102, Integer.parseInt("+1100110", 2));
+        assertEquals(2147483647, Integer.parseInt("+2147483647", 10));
+        assertEquals(411787, Integer.parseInt("Kona", 27));
+        assertEquals(411787, Integer.parseInt("+Kona", 27));
+
+        try {
+            Integer.parseInt("--1", 10); // multiple sign chars
+            fail();
+        } catch (NumberFormatException e) {}
+
+        try {
+            Integer.parseInt("++1", 10); // multiple sign chars
+            fail();
+        } catch (NumberFormatException e) {}
+
+        try {
+            Integer.parseInt("Kona", 10); // base too small
+            fail();
+        } catch (NumberFormatException e) {}
+    }
+
+    public void test_DecodeInt() throws Exception {
+        assertEquals(0, Integer.decode("+0").intValue());
+        assertEquals(473, Integer.decode("+473").intValue());
+        assertEquals(255, Integer.decode("+0xFF").intValue());
+        assertEquals(16, Integer.decode("+020").intValue());
+        assertEquals(2147483647, Integer.decode("+2147483647").intValue());
+
+        try {
+            Integer.decode("--1"); // multiple sign chars
+            fail();
+        } catch (NumberFormatException e) {}
+
+        try {
+            Integer.decode("++1"); // multiple sign chars
+            fail();
+        } catch (NumberFormatException e) {}
+
+        try {
+            Integer.decode("Kona"); // invalid number
+            fail();
+        } catch (NumberFormatException e) {}
+    }
+
 }
