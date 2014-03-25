@@ -127,8 +127,8 @@ public final class Long extends Number implements Comparable<Long> {
     /**
      * Parses the specified string and returns a {@code Long} instance if the
      * string can be decoded into a long value. The string may be an optional
-     * minus sign "-" followed by a hexadecimal ("0x..." or "#..."), octal
-     * ("0..."), or decimal ("...") representation of a long.
+     * optional sign character ("-" or "+") followed by a hexadecimal ("0x..."
+     * or "#..."), octal ("0..."), or decimal ("...") representation of a long.
      *
      * @param string
      *            a string representation of a long value.
@@ -143,7 +143,7 @@ public final class Long extends Number implements Comparable<Long> {
         }
         char firstDigit = string.charAt(i);
         boolean negative = firstDigit == '-';
-        if (negative) {
+        if (negative || firstDigit == '+') {
             if (length == 1) {
                 throw invalidLong(string);
             }
@@ -344,12 +344,13 @@ public final class Long extends Number implements Comparable<Long> {
         if (length == 0) {
             throw invalidLong(string);
         }
-        boolean negative = string.charAt(i) == '-';
-        if (negative && ++i == length) {
+        char firstChar = string.charAt(0);
+        boolean hasSign = firstChar == '-' || firstChar == '+';
+        if (hasSign && ++i == length) {
             throw invalidLong(string);
         }
 
-        return parse(string, i, radix, negative);
+        return parse(string, i, radix, firstChar == '-');
     }
 
     private static long parse(String string, int offset, int radix, boolean negative) {
