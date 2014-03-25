@@ -126,7 +126,8 @@ public final class Integer extends Number implements Comparable<Integer> {
 
     /**
      * Compares two {@code int} values.
-     * @return 0 if lhs = rhs, less than 0 if lhs &lt; rhs, and greater than 0 if lhs &gt; rhs.
+     * @return 0 if lhs = rhs, less than 0 if lhs &lt; rhs, and greater than 0
+     *         if lhs &gt; rhs.
      * @since 1.7
      */
     public static int compare(int lhs, int rhs) {
@@ -140,8 +141,9 @@ public final class Integer extends Number implements Comparable<Integer> {
     /**
      * Parses the specified string and returns a {@code Integer} instance if the
      * string can be decoded into an integer value. The string may be an
-     * optional minus sign "-" followed by a hexadecimal ("0x..." or "#..."),
-     * octal ("0..."), or decimal ("...") representation of an integer.
+     * optional sign character ("-" or "+") followed by a hexadecimal ("0x..."
+     * or "#..."), octal ("0..."), or decimal ("...") representation of an
+     * integer.
      *
      * @param string
      *            a string representation of an integer value.
@@ -157,7 +159,7 @@ public final class Integer extends Number implements Comparable<Integer> {
         }
         char firstDigit = string.charAt(i);
         boolean negative = firstDigit == '-';
-        if (negative) {
+        if (negative || firstDigit == '+') {
             if (length == 1) {
                 throw invalidInt(string);
             }
@@ -357,12 +359,13 @@ public final class Integer extends Number implements Comparable<Integer> {
         if (length == 0) {
             throw invalidInt(string);
         }
-        boolean negative = string.charAt(i) == '-';
-        if (negative && ++i == length) {
+        char firstChar = string.charAt(0);
+        boolean hasSign = firstChar == '-' || firstChar == '+';
+        if (hasSign && ++i == length) {
             throw invalidInt(string);
         }
 
-        return parse(string, i, radix, negative);
+        return parse(string, i, radix, firstChar == '-');
     }
 
     private static int parse(String string, int offset, int radix, boolean negative) throws NumberFormatException {
