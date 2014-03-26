@@ -275,7 +275,13 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native Object get(Object object) throws IllegalAccessException, IllegalArgumentException;
+    public Object get(Object object) throws IllegalAccessException, IllegalArgumentException {
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        return getNative(object);
+    }
+
+    private native Object getNative(Object object) throws IllegalAccessException,
+                                                          IllegalArgumentException;
 
     /**
      * Returns the value of the field in the specified object as a {@code
@@ -300,8 +306,14 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native boolean getBoolean(Object object) throws IllegalAccessException,
-                                                           IllegalArgumentException;
+    public boolean getBoolean(Object object) throws IllegalAccessException,
+                                                    IllegalArgumentException {
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        return getBooleanNative(object);
+    }
+
+    private native boolean getBooleanNative(Object object) throws IllegalAccessException,
+                                                                  IllegalArgumentException;
 
     /**
      * Returns the value of the field in the specified object as a {@code byte}.
@@ -326,8 +338,13 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native byte getByte(Object object) throws IllegalAccessException,
-                                                     IllegalArgumentException;
+    public byte getByte(Object object) throws IllegalAccessException, IllegalArgumentException {
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        return getByteNative(object);
+    }
+
+    private native byte getByteNative(Object object) throws IllegalAccessException,
+                                                            IllegalArgumentException;
 
     /**
      * Returns the value of the field in the specified object as a {@code char}.
@@ -352,8 +369,13 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native char getChar(Object object) throws IllegalAccessException,
-                                                     IllegalArgumentException;
+    public char getChar(Object object) throws IllegalAccessException, IllegalArgumentException {
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        return getCharNative(object);
+    }
+
+    private native char getCharNative(Object object) throws IllegalAccessException,
+                                                            IllegalArgumentException;
 
     /**
      * Returns the value of the field in the specified object as a {@code
@@ -378,8 +400,13 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native double getDouble(Object object) throws IllegalAccessException,
-                                                         IllegalArgumentException;
+    public double getDouble(Object object) throws IllegalAccessException, IllegalArgumentException {
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        return getDoubleNative(object);
+    }
+
+    private native double getDoubleNative(Object object) throws IllegalAccessException,
+                                                                IllegalArgumentException;
 
     /**
      * Returns the value of the field in the specified object as a {@code float}
@@ -404,8 +431,13 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native float getFloat(Object object) throws IllegalAccessException,
-                                                       IllegalArgumentException;
+    public float getFloat(Object object) throws IllegalAccessException, IllegalArgumentException {
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        return getFloatNative(object);
+    }
+
+    private native float getFloatNative(Object object) throws IllegalAccessException,
+                                                              IllegalArgumentException;
 
     /**
      * Returns the value of the field in the specified object as an {@code int}.
@@ -430,8 +462,13 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native int getInt(Object object) throws IllegalAccessException,
-                                                   IllegalArgumentException;
+    public int getInt(Object object) throws IllegalAccessException, IllegalArgumentException {
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        return getIntNative(object);
+    }
+
+    private native int getIntNative(Object object) throws IllegalAccessException,
+                                                          IllegalArgumentException;
 
     /**
      * Returns the value of the field in the specified object as a {@code long}.
@@ -456,8 +493,13 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native long getLong(Object object) throws IllegalAccessException,
-                                                     IllegalArgumentException;
+    public long getLong(Object object) throws IllegalAccessException, IllegalArgumentException {
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        return getLongNative(object);
+    }
+
+    private native long getLongNative(Object object) throws IllegalAccessException,
+                                                            IllegalArgumentException;
 
     /**
      * Returns the value of the field in the specified object as a {@code short}
@@ -482,8 +524,13 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native short getShort(Object object) throws IllegalAccessException,
-                                                       IllegalArgumentException;
+    public short getShort(Object object) throws IllegalAccessException, IllegalArgumentException {
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        return getShortNative(object);
+    }
+
+    private native short getShortNative(Object object) throws IllegalAccessException,
+                                                              IllegalArgumentException;
 
     /**
      * Sets the value of the field in the specified object to the value. This
@@ -514,8 +561,15 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native void set(Object object, Object value) throws IllegalAccessException,
-                                                               IllegalArgumentException;
+    public void set(Object object, Object value) throws IllegalAccessException,
+                                                        IllegalArgumentException {
+        checkSetFinal();
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        setNative(object, value);
+    }
+
+    private native void setNative(Object object, Object value) throws IllegalAccessException,
+                                                                      IllegalArgumentException;
 
     /**
      * Sets the value of the field in the specified object to the {@code
@@ -545,8 +599,15 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native void setBoolean(Object object, boolean value) throws IllegalAccessException,
-                                                                       IllegalArgumentException;
+    public void setBoolean(Object object, boolean value) throws IllegalAccessException,
+                                                                IllegalArgumentException {
+        checkSetFinal();
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        setBooleanNative(object, value);
+    }
+
+    private native void setBooleanNative(Object object, boolean value) throws IllegalAccessException,
+                                                                              IllegalArgumentException;
 
     /**
      * Sets the value of the field in the specified object to the {@code byte}
@@ -575,8 +636,15 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native void setByte(Object object, byte value) throws IllegalAccessException,
-                                                                 IllegalArgumentException;
+    public void setByte(Object object, byte value) throws IllegalAccessException,
+                                                          IllegalArgumentException {
+        checkSetFinal();
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        setByteNative(object, value);
+    }
+
+    private native void setByteNative(Object object, byte value) throws IllegalAccessException,
+                                                                        IllegalArgumentException;
 
     /**
      * Sets the value of the field in the specified object to the {@code char}
@@ -605,8 +673,15 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native void setChar(Object object, char value) throws IllegalAccessException,
-                                                                 IllegalArgumentException;
+    public void setChar(Object object, char value) throws IllegalAccessException,
+                                                          IllegalArgumentException {
+        checkSetFinal();
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        setCharNative(object, value);
+    }
+
+    private native void setCharNative(Object object, char value) throws IllegalAccessException,
+                                                                        IllegalArgumentException;
 
     /**
      * Sets the value of the field in the specified object to the {@code double}
@@ -635,8 +710,15 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native void setDouble(Object object, double value) throws IllegalAccessException,
-                                                                     IllegalArgumentException;
+    public void setDouble(Object object, double value) throws IllegalAccessException,
+                                                              IllegalArgumentException {
+        checkSetFinal();
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        setDoubleNative(object, value);
+    }
+
+    private native void setDoubleNative(Object object, double value) throws IllegalAccessException,
+                                                                            IllegalArgumentException;
 
     /**
      * Sets the value of the field in the specified object to the {@code float}
@@ -665,8 +747,15 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native void setFloat(Object object, float value) throws IllegalAccessException,
-                                                                   IllegalArgumentException;
+    public void setFloat(Object object, float value) throws IllegalAccessException,
+                                                            IllegalArgumentException {
+        checkSetFinal();
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        setFloatNative(object, value);
+    }
+
+    private native void setFloatNative(Object object, float value) throws IllegalAccessException,
+                                                                          IllegalArgumentException;
 
     /**
      * Set the value of the field in the specified object to the {@code int}
@@ -695,8 +784,15 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native void setInt(Object object, int value) throws IllegalAccessException,
-                                                               IllegalArgumentException;
+    public void setInt(Object object, int value) throws IllegalAccessException,
+                                                        IllegalArgumentException {
+        checkSetFinal();
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        setIntNative(object, value);
+    }
+
+    private native void setIntNative(Object object, int value) throws IllegalAccessException,
+                                                                      IllegalArgumentException;
 
     /**
      * Sets the value of the field in the specified object to the {@code long}
@@ -725,8 +821,15 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native void setLong(Object object, long value) throws IllegalAccessException,
-                                                                 IllegalArgumentException;
+    public void setLong(Object object, long value) throws IllegalAccessException,
+                                                          IllegalArgumentException {
+        checkSetFinal();
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        setLongNative(object, value);
+    }
+
+    private native void setLongNative(Object object, long value) throws IllegalAccessException,
+                                                                        IllegalArgumentException;
 
     /**
      * Sets the value of the field in the specified object to the {@code short}
@@ -755,8 +858,15 @@ public final class Field extends AccessibleObject implements Member {
      * @throws IllegalAccessException
      *             if this field is not accessible
      */
-    public native void setShort(Object object, short value) throws IllegalAccessException,
-                                                                   IllegalArgumentException;
+    public void setShort(Object object, short value) throws IllegalAccessException,
+                                                            IllegalArgumentException {
+        checkSetFinal();
+        checkAccess(object, getDeclaringClass(), getModifiers());
+        setShortNative(object, value);
+    }
+
+    private native void setShortNative(Object object, short value) throws IllegalAccessException,
+                                                                          IllegalArgumentException;
 
     /**
      * Returns a string containing a concise, human-readable description of this
@@ -788,5 +898,11 @@ public final class Field extends AccessibleObject implements Member {
         result.append('.');
         result.append(getName());
         return result.toString();
+    }
+
+    private void checkSetFinal() throws IllegalAccessException {
+        if (!isAccessible() && Modifier.isFinal(getModifiers())) {
+            throw new IllegalAccessException("Cannot set final field.");
+        }
     }
 }

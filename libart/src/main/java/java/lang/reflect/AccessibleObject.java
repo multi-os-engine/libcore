@@ -32,6 +32,7 @@
 
 package java.lang.reflect;
 
+import dalvik.system.VMStack;
 import java.lang.annotation.Annotation;
 
 /**
@@ -99,5 +100,32 @@ public class AccessibleObject implements AnnotatedElement {
 
     @Override public <T extends Annotation> T getAnnotation(Class<T> annotationType) {
         throw new UnsupportedOperationException();
+    }
+
+    /** @hide */
+    void checkAccess(Object object, Class<?> declaringClass, int accessFlags)
+            throws IllegalAccessException {
+        if (!isAccessible()) {
+            Class<?> callerClass = VMStack.getStackClass2();
+            int classAccessFlags = declaringClass.getModifiers();
+            if ((Modifier.isPublic(accessFlags) && Modifier.isPublic(classAccessFlags)) ||
+                    callerClass == declaringClass) {
+                return;
+            }
+            if (Modifier.isPrivate(accessFlags)) {
+                throw new IllegalAccessException("Access to private member not allowed.");
+            }
+            if (Modifier.isProtected(accessFlags)) {
+                if (object != null && !object.getClass().isInstance(callerClass) &&
+                        !declaringClass.inSamePackage(callerClass)) {
+                    throw new IllegalAccessException("Access to protected member not allowed from non-instance.");
+                } else if (declaringClass.isAssignableFrom(callerClass)) {
+                    return;
+                }
+            }
+            if (!declaringClass.inSamePackage(callerClass)) {
+                throw new IllegalAccessException("Access to package-private or protected member not allowed from outside package.");
+            }
+        }
     }
 }

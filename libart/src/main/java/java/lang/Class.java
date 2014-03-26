@@ -1600,7 +1600,8 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
         return inSamePackage(memberClass);
     }
 
-    private boolean inSamePackage(Class<?> c) {
+    /** @hide */
+    public boolean inSamePackage(Class<?> c) {
         if (classLoader != c.classLoader) {
             return false;
         }
