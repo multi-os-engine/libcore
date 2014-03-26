@@ -16,7 +16,6 @@
 
 package libcore.reflect;
 
-import com.android.dex.ClassDef;
 import com.android.dex.Dex;
 import com.android.dex.EncodedValueReader;
 import com.android.dex.FieldId;
@@ -167,7 +166,7 @@ public final class AnnotationAccess {
      */
     public static <A extends Annotation> A getDeclaredAnnotation(
             AnnotatedElement element, Class<A> annotationClass) {
-        com.android.dex.Annotation a = getMethodAnnotation(element, annotationClass);
+        com.android.dex.Annotation a = getAnnotation(element, annotationClass);
         return a != null
                 ? toAnnotationInstance(getDexClass(element), annotationClass, a)
                 : null;
@@ -178,10 +177,10 @@ public final class AnnotationAccess {
      */
     public static boolean isDeclaredAnnotationPresent(
             AnnotatedElement element, Class<? extends Annotation> annotationClass) {
-        return getMethodAnnotation(element, annotationClass) != null;
+        return getAnnotation(element, annotationClass) != null;
     }
 
-    private static com.android.dex.Annotation getMethodAnnotation(
+    private static com.android.dex.Annotation getAnnotation(
             AnnotatedElement element, Class<? extends Annotation> annotationClass) {
         int annotationSetOffset = getAnnotationSetOffset(element);
         if (annotationSetOffset == 0) {
@@ -190,17 +189,13 @@ public final class AnnotationAccess {
 
         Class<?> dexClass = getDexClass(element);
         Dex dex = dexClass.getDex();
-        int annotationTypeIndex = getTypeIndex(dex, annotationClass);
-        if (annotationTypeIndex == -1) {
-            return null; // The dex file doesn't use this annotation.
-        }
-
         Dex.Section setIn = dex.open(annotationSetOffset); // annotation_set_item
         for (int i = 0, size = setIn.readInt(); i < size; i++) {
             int annotationOffset = setIn.readInt();
             Dex.Section annotationIn = dex.open(annotationOffset); // annotation_item
             com.android.dex.Annotation candidate = annotationIn.readAnnotation();
-            if (candidate.getTypeIndex() == annotationTypeIndex) {
+            String annotationTypeName = dex.typeNames().get(candidate.getTypeIndex());
+            if (annotationTypeName.equals(InternalNames.getInternalName(annotationClass))) {
                 return candidate;
             }
         }
@@ -266,23 +261,6 @@ public final class AnnotationAccess {
         return element instanceof Class
                 ? ((Class<?>) element)
                 : ((Member) element).getDeclaringClass();
-    }
-
-    public static int getFieldIndex(Class<?> declaringClass, Class<?> type, String name) {
-        Dex dex = declaringClass.getDex();
-        int declaringClassIndex = getTypeIndex(dex, declaringClass);
-        int typeIndex = getTypeIndex(dex, type);
-        int nameIndex = dex.findStringIndex(name);
-        FieldId fieldId = new FieldId(dex, declaringClassIndex, typeIndex, nameIndex);
-        return dex.findFieldIndex(fieldId);
-    }
-
-    public static int getMethodIndex(Class<?> declaringClass, String name, int protoIndex) {
-        Dex dex = declaringClass.getDex();
-        int declaringClassIndex = getTypeIndex(dex, declaringClass);
-        int nameIndex = dex.findStringIndex(name);
-        MethodId methodId = new MethodId(dex, declaringClassIndex, protoIndex, nameIndex);
-        return dex.findMethodIndex(methodId);
     }
 
     /**
@@ -365,7 +343,7 @@ public final class AnnotationAccess {
         }
 
         int fieldCount = reader.readAnnotation();
-        if (reader.getAnnotationType() != getTypeIndex(dex, annotationClass)) {
+        if (reader.getAnnotationType() != annotationClass.getDexTypeIndex()) {
             throw new AssertionError("annotation value type != annotation class");
         }
 
@@ -539,22 +517,6 @@ public final class AnnotationAccess {
      * values accept that Dex as a parameter or the class from which that Dex
      * was derived.
      */
-
-    /** Find dex's type index for the class c */
-    private static int getTypeIndex(Dex dex, Class<?> c) {
-        if (dex == c.getDex()) {
-            return  c.getDexTypeIndex();
-        }
-        if (dex == null) {
-            return -1;
-        }
-        int typeIndex = dex.findTypeIndex(InternalNames.getInternalName(c));
-        if (typeIndex < 0) {
-            typeIndex = -1;
-        }
-        return typeIndex;
-    }
-
 
     private static EncodedValueReader getAnnotationReader(
             Dex dex, AnnotatedElement element, String annotationName, int expectedFieldCount) {
