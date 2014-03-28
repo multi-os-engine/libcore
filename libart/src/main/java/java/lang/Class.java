@@ -463,6 +463,11 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
         return s;
     }
 
+    /** @hide */
+    public String getDexCacheStringFromTypeIndex(Dex dex, int typeIndex) {
+        return getDexCacheString(dex, dex.descriptorIndexFromTypeIndex(typeIndex));
+    }
+
     /**
      * Returns a resolved type from the dex cache, computing the type from the dex file if
      * necessary.

@@ -1340,6 +1340,10 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
         return dex.strings().get(dexStringIndex);
     }
 
+    /** @hide */
+    public String getDexCacheStringFromTypeIndex(Dex dex, int typeIndex) {
+        return getDexCacheString(dex, dex.descriptorIndexFromTypeIndex(typeIndex));
+    }
 
     private static class Caches {
         /**

@@ -19,7 +19,6 @@ package libcore.reflect;
 import com.android.dex.Dex;
 import com.android.dex.EncodedValueReader;
 import com.android.dex.FieldId;
-import com.android.dex.MethodId;
 import com.android.dex.ProtoId;
 import com.android.dex.TypeList;
 import java.lang.annotation.Annotation;
@@ -198,7 +197,8 @@ public final class AnnotationAccess {
             // the value of annotationClass.getTypeIndex(). The annotationClass may have been
             // defined by a different dex file, which would make the indexes incomparable.
             com.android.dex.Annotation candidate = annotationIn.readAnnotation();
-            String candidateInternalName = dex.typeNames().get(candidate.getTypeIndex());
+            String candidateInternalName =
+                    dexClass.getDexCacheStringFromTypeIndex(dex, candidate.getTypeIndex());
             if (candidateInternalName.equals(annotationInternalName)) {
                 return candidate;
             }
@@ -341,9 +341,8 @@ public final class AnnotationAccess {
         Class<?> annotationClass = method.getDeclaringClass();
         // All lookups of type and string indexes are within the Dex that declares the annotation so
         // the indexes can be compared directly.
-        Dex dex = annotationClass.getDex();
         EncodedValueReader reader = getOnlyAnnotationValue(
-                dex, annotationClass, "Ldalvik/annotation/AnnotationDefault;");
+                annotationClass, "Ldalvik/annotation/AnnotationDefault;");
         if (reader == null) {
             return null;
         }
@@ -353,6 +352,7 @@ public final class AnnotationAccess {
             throw new AssertionError("annotation value type != annotation class");
         }
 
+        Dex dex = annotationClass.getDex();
         int methodNameIndex = dex.findStringIndex(method.getName());
         for (int i = 0; i < fieldCount; i++) {
             int candidateNameIndex = reader.readAnnotationName();
@@ -378,12 +378,11 @@ public final class AnnotationAccess {
          *   public class Foo {}
          * }
          */
-        Dex dex = c.getDex();
-        EncodedValueReader reader = getOnlyAnnotationValue(
-                dex, c, "Ldalvik/annotation/EnclosingClass;");
+        EncodedValueReader reader = getOnlyAnnotationValue(c, "Ldalvik/annotation/EnclosingClass;");
         if (reader == null) {
             return null;
         }
+        Dex dex = c.getDex();
         return c.getDexCacheType(dex, reader.readType());
     }
 
@@ -396,12 +395,11 @@ public final class AnnotationAccess {
          *   }
          * }
          */
-        Dex dex = c.getDex();
-        EncodedValueReader reader = getOnlyAnnotationValue(
-                dex, c, "Ldalvik/annotation/EnclosingMethod;");
+        EncodedValueReader reader = getOnlyAnnotationValue(c, "Ldalvik/annotation/EnclosingMethod;");
         if (reader == null) {
             return null;
         }
+        Dex dex = c.getDex();
         return indexToMethod(c, dex, reader.readMethod());
     }
 
@@ -413,12 +411,11 @@ public final class AnnotationAccess {
          *   class Baz {}
          * }
          */
-        Dex dex = c.getDex();
-        EncodedValueReader reader = getOnlyAnnotationValue(
-                dex, c, "Ldalvik/annotation/MemberClasses;");
+        EncodedValueReader reader = getOnlyAnnotationValue(c, "Ldalvik/annotation/MemberClasses;");
         if (reader == null) {
             return EmptyArray.CLASS;
         }
+        Dex dex = c.getDex();
         return (Class[]) decodeValue(c, Class[].class, dex, reader);
     }
 
@@ -430,13 +427,12 @@ public final class AnnotationAccess {
          * @Signature(value=["Ljava/util/List", "<", "Ljava/lang/String;", ">;"])
          * List<String> foo;
          */
-        Class<?> dexClass = getDexClass(element);
-        Dex dex = dexClass.getDex();
-        EncodedValueReader reader = getOnlyAnnotationValue(
-                dex, element, "Ldalvik/annotation/Signature;");
+        EncodedValueReader reader = getOnlyAnnotationValue(element, "Ldalvik/annotation/Signature;");
         if (reader == null) {
             return null;
         }
+        Class<?> dexClass = getDexClass(element);
+        Dex dex = dexClass.getDex();
         String[] array = (String[]) decodeValue(dexClass, String[].class, dex, reader);
         StringBuilder result = new StringBuilder();
         for (String s : array) {
@@ -453,13 +449,12 @@ public final class AnnotationAccess {
          * @Throws(value=[IOException.class])
          * void foo() throws IOException;
          */
-        Class<?> dexClass = getDexClass(element);
-        Dex dex = dexClass.getDex();
-        EncodedValueReader reader = getOnlyAnnotationValue(
-                dex, element, "Ldalvik/annotation/Throws;");
+        EncodedValueReader reader = getOnlyAnnotationValue(element, "Ldalvik/annotation/Throws;");
         if (reader == null) {
             return EmptyArray.CLASS;
         }
+        Class<?> dexClass = getDexClass(element);
+        Dex dex = dexClass.getDex();
         return (Class<?>[]) decodeValue(dexClass, Class[].class, dex, reader);
     }
 
@@ -468,9 +463,7 @@ public final class AnnotationAccess {
          * @InnerClass(accessFlags=0x01,name="Foo")
          * class Foo {};
          */
-        Dex dex = c.getDex();
-        EncodedValueReader reader = getAnnotationReader(
-                dex, c, "Ldalvik/annotation/InnerClass;", 2);
+        EncodedValueReader reader = getAnnotationReader(c, "Ldalvik/annotation/InnerClass;", 2);
         if (reader == null) {
             return defaultValue;
         }
@@ -483,15 +476,14 @@ public final class AnnotationAccess {
          * @InnerClass(accessFlags=0x01,name="Foo")
          * class Foo {};
          */
-        Dex dex = c.getDex();
-        EncodedValueReader reader = getAnnotationReader(
-                dex, c, "Ldalvik/annotation/InnerClass;", 2);
+        EncodedValueReader reader = getAnnotationReader(c, "Ldalvik/annotation/InnerClass;", 2);
         if (reader == null) {
             return null;
         }
         reader.readAnnotationName(); // accessFlags
         reader.readInt();
         reader.readAnnotationName(); // name
+        Dex dex = c.getDex();
         return reader.peek() == EncodedValueReader.ENCODED_NULL
                 ? null
                 : (String) decodeValue(c, String.class, dex, reader);
@@ -502,9 +494,7 @@ public final class AnnotationAccess {
          * @InnerClass(accessFlags=0x01,name="Foo")
          * class Foo {};
          */
-        Dex dex = c.getDex();
-        EncodedValueReader reader = getAnnotationReader(
-                dex, c, "Ldalvik/annotation/InnerClass;", 2);
+        EncodedValueReader reader = getAnnotationReader(c, "Ldalvik/annotation/InnerClass;", 2);
         if (reader == null) {
             return false;
         }
@@ -525,12 +515,14 @@ public final class AnnotationAccess {
      */
 
     private static EncodedValueReader getAnnotationReader(
-            Dex dex, AnnotatedElement element, String annotationName, int expectedFieldCount) {
+            AnnotatedElement element, String annotationName, int expectedFieldCount) {
         int annotationSetOffset = getAnnotationSetOffset(element);
         if (annotationSetOffset == 0) {
             return null; // no annotations on the class
         }
 
+        Class<?> dexClass = getDexClass(element);
+        Dex dex = dexClass.getDex();
         Dex.Section setIn = dex.open(annotationSetOffset); // annotation_set_item
         com.android.dex.Annotation annotation = null;
         // TODO: is it better to compute the index of the annotation name in the dex file and check
@@ -551,7 +543,7 @@ public final class AnnotationAccess {
 
         EncodedValueReader reader = annotation.getReader();
         int fieldCount = reader.readAnnotation();
-        String readerAnnotationName = dex.typeNames().get(reader.getAnnotationType());
+        String readerAnnotationName = dexClass.getDexCacheStringFromTypeIndex(dex, reader.getAnnotationType());
         if (!readerAnnotationName.equals(annotationName)) {
             throw new AssertionError();
         }
@@ -567,8 +559,8 @@ public final class AnnotationAccess {
      * {@code element}, or null if that annotation doesn't exist.
      */
     private static EncodedValueReader getOnlyAnnotationValue(
-            Dex dex, AnnotatedElement element, String annotationName) {
-        EncodedValueReader reader = getAnnotationReader(dex, element, annotationName, 1);
+            AnnotatedElement element, String annotationName) {
+        EncodedValueReader reader = getAnnotationReader(element, annotationName, 1);
         if (reader == null) {
             return null;
         }
