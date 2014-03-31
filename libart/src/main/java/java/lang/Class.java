@@ -206,6 +206,11 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
     private transient int clinitThreadId;
 
     /**
+     * Annotation directory offset. -1 indicates unknown, 0 indicates there are no annotations.
+     */
+    private transient volatile int dexAnnotationDirectoryOffset;
+
+    /**
      * Class def index from dex file. An index of 65535 indicates that there is no class definition,
      * for example for an array type.
      * TODO: really 16bits as type indices are 16bit.
@@ -884,6 +889,7 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
         if (result == null) {
             throw new NoSuchFieldException(name);
         } else {
+            // TODO(nfuller): Consider removing. Looks expensive.
             result.getType();  // Throw NoClassDefFoundError if type cannot be resolved.
         }
         return result;
@@ -903,6 +909,7 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
         ArrayList<Field> fields = new ArrayList(initial_size);
         getDeclaredFields(false, fields);
         Field[] result = fields.toArray(new Field[fields.size()]);
+        // TODO(nfuller): Consider removing. Looks expensive.
         for (Field f : result) {
             f.getType();  // Throw NoClassDefFoundError if type cannot be resolved.
         }
@@ -1046,6 +1053,7 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
         if (result == null) {
             throw new NoSuchFieldException(name);
         } else {
+            // TODO(nfuller): Consider removing. Looks expensive.
             result.getType();  // Throw NoClassDefFoundError if type cannot be resolved.
         }
         return result;
@@ -1089,6 +1097,7 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
         List<Field> fields = new ArrayList<Field>();
         getPublicFieldsRecursive(fields);
         Field[] result = fields.toArray(new Field[fields.size()]);
+        // TODO(nfuller): Consider removing. Looks expensive.
         for (Field f : result) {
             f.getType();  // Throw NoClassDefFoundError if type cannot be resolved.
         }
@@ -1744,15 +1753,31 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
      * @hide
      */
     public int getDexAnnotationDirectoryOffset() {
-        Dex dex = getDex();
-        if (dex == null) {
-            return 0;
+        int annotationDirectoryOffset = dexAnnotationDirectoryOffset;
+        if (annotationDirectoryOffset != -1) {
+            return annotationDirectoryOffset;
         }
-        int classDefIndex = getDexClassDefIndex();
-        if (classDefIndex < 0) {
-            return 0;
+
+        synchronized(this) {
+            annotationDirectoryOffset = dexAnnotationDirectoryOffset;
+            if (annotationDirectoryOffset != -1) {
+                return annotationDirectoryOffset;
+            }
+
+            Dex dex = getDex();
+            if (dex == null) {
+                annotationDirectoryOffset = 0;
+            } else {
+                int classDefIndex = getDexClassDefIndex();
+                if (classDefIndex < 0) {
+                    annotationDirectoryOffset = 0;
+                } else {
+                    annotationDirectoryOffset = dex.annotationDirectoryOffsetFromClassDefIndex(classDefIndex);
+                }
+            }
+            this.dexAnnotationDirectoryOffset = annotationDirectoryOffset;
+            return annotationDirectoryOffset;
         }
-        return dex.annotationDirectoryOffsetFromClassDefIndex(classDefIndex);
     }
 
     private static class Caches {
