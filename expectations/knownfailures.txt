@@ -1692,8 +1692,6 @@
     "org.apache.harmony.tests.internal.net.www.protocol.file.FileURLConnectionTest#testGetContentType",
     "org.apache.harmony.tests.internal.net.www.protocol.file.FileURLConnectionTest#testGetInputStream",
     "org.apache.harmony.tests.internal.net.www.protocol.file.FileURLConnectionTest#testHeaderFunctions",
-    "org.apache.harmony.tests.java.lang.ClassLoaderTest#test_getResourceAsStream_withSharpChar",
-    "org.apache.harmony.tests.java.lang.ClassTest#test_getResourceAsStream_withSharpChar"
   ]
 },
 {
