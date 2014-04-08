@@ -910,15 +910,15 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
     }
 
     private void getDeclaredFields(boolean publicOnly, List<Field> fields) {
-        if (iFields != null) {
-            for (ArtField f : iFields) {
+        if (sFields != null) {
+            for (ArtField f : sFields) {
                 if (!publicOnly || Modifier.isPublic(f.getAccessFlags())) {
                     fields.add(new Field(f));
                 }
             }
         }
-        if (sFields != null) {
-            for (ArtField f : sFields) {
+        if (iFields != null) {
+            for (ArtField f : iFields) {
                 if (!publicOnly || Modifier.isPublic(f.getAccessFlags())) {
                     fields.add(new Field(f));
                 }
