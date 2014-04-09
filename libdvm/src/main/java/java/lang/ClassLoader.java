@@ -93,26 +93,17 @@ public abstract class ClassLoader {
 
     /**
      * Create the system class loader. Note this is NOT the bootstrap class
-     * loader (which is managed by the VM). We use a null value for the parent
-     * to indicate that the bootstrap loader is our parent.
+     * loader (which is managed by the VM).
      */
     private static ClassLoader createSystemClassLoader() {
-        String classPath = System.getProperty("java.class.path", ".");
-
-        // String[] paths = classPath.split(":");
-        // URL[] urls = new URL[paths.length];
-        // for (int i = 0; i < paths.length; i++) {
-        // try {
-        // urls[i] = new URL("file://" + paths[i]);
-        // }
-        // catch (Exception ex) {
-        // ex.printStackTrace();
-        // }
-        // }
-        //
-        // return new java.net.URLClassLoader(urls, null);
-
-        // TODO Make this a java.net.URLClassLoader once we have those?
+        // In the Android Zygote the java.class.path system property is left unset and the app
+        // classloader is made a direct child of the Bootstrap ClassLoader. For the Zygote case we
+        // use the default classpath of "", which will not resolve to a valid directory or file
+        // path and so will be treated like an empty classpath. The System ClassLoader is then a
+        // do-nothing child of the Bootstrap ClassLoader by-passed by the app class loader. The
+        // non-Zygote case uses java.class.path as you would expect.
+        String defaultClassPath = "";
+        String classPath = System.getProperty("java.class.path", defaultClassPath);
         return new PathClassLoader(classPath, BootClassLoader.getInstance());
     }
 
