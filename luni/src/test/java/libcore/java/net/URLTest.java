@@ -350,9 +350,17 @@ public final class URLTest extends TestCase {
         }
     }
 
-    public void testNegativePort() throws Exception {
+    public void testPortWithMinusSign() throws Exception {
         try {
             new URL("http://host:-2/");
+            fail();
+        } catch (MalformedURLException expected) {
+        }
+    }
+
+    public void testPortWithPlusSign() throws Exception {
+        try {
+            new URL("http://host:+2/");
             fail();
         } catch (MalformedURLException expected) {
         }
