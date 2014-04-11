@@ -16,7 +16,7 @@
 
 #define LOG_TAG "Posix"
 
-#include "AsynchronousSocketCloseMonitor.h"
+#include "AsynchronousCloseMonitor.h"
 #include "cutils/log.h"
 #include "ExecStrings.h"
 #include "JNIHelp.h"
@@ -72,14 +72,15 @@ struct addrinfo_deleter {
  * this also handles the case where the reason for failure is that another thread called
  * Socket.close. This macro also throws exceptions on failure.
  *
- * Returns the result of 'exp', though a Java exception will be pending if the result is -1.
+ * Returns the result of the system call though a Java exception will be pending if the result is
+ * -1.
  */
 #define NET_FAILURE_RETRY(jni_env, return_type, syscall_name, java_fd, ...) ({ \
     return_type _rc = -1; \
     do { \
         { \
             int _fd = jniGetFDFromFileDescriptor(jni_env, java_fd); \
-            AsynchronousSocketCloseMonitor _monitor(_fd); \
+            AsynchronousCloseMonitor _monitor(_fd); \
             _rc = syscall_name(_fd, __VA_ARGS__); \
         } \
         if (_rc == -1) { \
@@ -93,6 +94,40 @@ struct addrinfo_deleter {
             } \
         } \
     } while (_rc == -1); \
+    _rc; })
+
+/**
+ * Used to handle read()-like system calls that can return EINTR. Handles the case where the reason
+ * for failure is that another thread called close() (either directly or because of
+ * Thread.interrupt()). This macro also throws exceptions on other failures.
+ *
+ * Returns the result of the system call though a Java exception will be pending if the result is
+ * -1.
+ */
+#define HANDLE_INTERRUPTIBLE_READ(jni_env, return_type, syscall_name, java_fd, ...) ({ \
+    return_type _rc = -1; \
+    int _fd = jniGetFDFromFileDescriptor(jni_env, java_fd); \
+    if (_fd == -1) { \
+        jniThrowException(jni_env, "java/io/IOException", "Stream closed"); \
+    } else { \
+        int syscallErrno; \
+        { \
+            AsynchronousCloseMonitor _monitor(_fd); \
+            errno = 0; \
+            _rc = syscall_name(_fd, __VA_ARGS__); \
+            syscallErrno = errno; \
+        } \
+        /* Note: write() returns a rc != -1 if the file descriptor is closed while writing. See */ \
+        /* write(2) NOTES section. */ \
+        if (_rc == -1) { \
+            if (syscallErrno == EINTR && jniGetFDFromFileDescriptor(jni_env, java_fd) == -1) { \
+                jniThrowException(jni_env, "java/io/InterruptedIOException", "Read interrupted"); \
+            } else { \
+                /* TODO: with a format string we could show the arguments too, like strace(1). */ \
+                throwErrnoException(jni_env, # syscall_name); \
+            } \
+        } \
+    } \
     _rc; })
 
 static void throwException(JNIEnv* env, jclass exceptionClass, jmethodID ctor3, jmethodID ctor2,
@@ -990,11 +1025,9 @@ static jint Posix_poll(JNIEnv* env, jobject, jobjectArray javaStructs, jint time
         ++count;
     }
 
-    // Since we don't know which fds -- if any -- are sockets, be conservative and register
-    // all fds for asynchronous socket close monitoring.
-    std::vector<AsynchronousSocketCloseMonitor*> monitors;
+    std::vector<AsynchronousCloseMonitor*> monitors;
     for (size_t i = 0; i < count; ++i) {
-        monitors.push_back(new AsynchronousSocketCloseMonitor(fds[i].fd));
+        monitors.push_back(new AsynchronousCloseMonitor(fds[i].fd));
     }
     int rc = poll(fds.get(), count, timeoutMs);
     for (size_t i = 0; i < monitors.size(); ++i) {
@@ -1029,8 +1062,7 @@ static jint Posix_preadBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaB
     if (bytes.get() == NULL) {
         return -1;
     }
-    int fd = jniGetFDFromFileDescriptor(env, javaFd);
-    return throwIfMinusOne(env, "pread", TEMP_FAILURE_RETRY(pread64(fd, bytes.get() + byteOffset, byteCount, offset)));
+    return HANDLE_INTERRUPTIBLE_READ(env, ssize_t, pread64, javaFd, bytes.get() + byteOffset, byteCount, offset);
 }
 
 static jint Posix_pwriteBytes(JNIEnv* env, jobject, jobject javaFd, jbyteArray javaBytes, jint byteOffset, jint byteCount, jlong offset) {
@@ -1038,8 +1070,7 @@ static jint Posix_pwriteBytes(JNIEnv* env, jobject, jobject javaFd, jbyteArray j
     if (bytes.get() == NULL) {
         return -1;
     }
-    int fd = jniGetFDFromFileDescriptor(env, javaFd);
-    return throwIfMinusOne(env, "pwrite", TEMP_FAILURE_RETRY(pwrite64(fd, bytes.get() + byteOffset, byteCount, offset)));
+    return HANDLE_INTERRUPTIBLE_READ(env, ssize_t, pwrite64, javaFd, bytes.get() + byteOffset, byteCount, offset);
 }
 
 static jint Posix_readBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount) {
@@ -1047,8 +1078,7 @@ static jint Posix_readBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBy
     if (bytes.get() == NULL) {
         return -1;
     }
-    int fd = jniGetFDFromFileDescriptor(env, javaFd);
-    return throwIfMinusOne(env, "read", TEMP_FAILURE_RETRY(read(fd, bytes.get() + byteOffset, byteCount)));
+    return HANDLE_INTERRUPTIBLE_READ(env, ssize_t, read, javaFd, bytes.get() + byteOffset, byteCount);
 }
 
 static jstring Posix_readlink(JNIEnv* env, jobject, jstring javaPath) {
@@ -1418,7 +1448,41 @@ static jint Posix_writeBytes(JNIEnv* env, jobject, jobject javaFd, jbyteArray ja
         return -1;
     }
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
-    return throwIfMinusOne(env, "write", TEMP_FAILURE_RETRY(write(fd, bytes.get() + byteOffset, byteCount)));
+    if (fd == -1) {
+        jniThrowException(env, "java/io/IOException", "Stream closed");
+        return -1;
+    }
+
+    int rc;
+    int syscallErrno;
+    {
+        AsynchronousCloseMonitor monitor(fd);
+        errno = 0;
+        rc = write(fd, bytes.get() + byteOffset, byteCount);
+        syscallErrno = errno;
+    }
+
+    /*
+     * write() returns -1 and sets an errno to EINTR if no bytes were written and a signal was
+     * received. It returns >0 if a signal is received and if some bytes were already written. See
+     * write(2) NOTES section. The >0 result and where not as many bytes as requested were written
+     * is treated as a special case: InterruptedIOException is thrown if the file descriptor is
+     * closed. Closure would indicate a  an asynchronous close (perhaps as the result of a
+     * Thread.interrupt()). This special casing is to create the InterruptedIOException
+     * behavior we want and avoid a second write() call from the non-native code to complete the
+     * write, which would fail with a vanilla IOException because the file descriptor is closed.
+     */
+    bool incompleteWrite = rc != -1 && rc < byteCount;
+    if (rc == -1 || incompleteWrite) {
+        bool fdClosed = jniGetFDFromFileDescriptor(env, javaFd) == -1;
+        if (fdClosed && (syscallErrno == EINTR || incompleteWrite)) {
+            jniThrowException(env, "java/io/InterruptedIOException", "Write interrupted");
+        } else if (rc == -1) {
+            /* TODO: with a format string we could show the arguments too, like strace(1). */
+            throwErrnoException(env, "write");
+        }
+    }
+    return rc;
 }
 
 static jint Posix_writev(JNIEnv* env, jobject, jobject javaFd, jobjectArray buffers, jintArray offsets, jintArray byteCounts) {

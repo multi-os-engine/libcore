@@ -321,6 +321,7 @@ final class SelectorImpl extends AbstractSelector {
         try {
             Libcore.os.write(wakeupOut, new byte[] { 1 }, 0, 1);
         } catch (ErrnoException ignored) {
+        } catch (IOException ignored) {
         }
         return this;
     }
