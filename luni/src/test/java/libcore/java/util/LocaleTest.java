@@ -22,14 +22,10 @@ import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Calendar;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IllformedLocaleException;
 import java.util.Locale;
-import java.util.Map;
 import java.util.MissingResourceException;
-import java.util.Set;
-import java.util.TreeMap;
+import libcore.icu.ICU;
 
 public class LocaleTest extends junit.framework.TestCase {
     // http://b/2611311; if there's no display language/country/variant, use the raw codes.
@@ -199,6 +195,7 @@ public class LocaleTest extends junit.framework.TestCase {
         assertEquals("eng", new Locale("en", "XX").getISO3Language());
     }
 
+    /*
     public void test_serializeExtensions() {
         Map<Character, String> extensions = new TreeMap<Character, String>();
 
@@ -282,6 +279,7 @@ public class LocaleTest extends junit.framework.TestCase {
         assertEquals("type1-type1", keywords.get("k1"));
         assertEquals("type2", keywords.get("k2"));
     }
+    */
 
     public void test_Builder_setLanguage() {
         Locale.Builder b = new Locale.Builder();
@@ -1159,5 +1157,25 @@ public class LocaleTest extends junit.framework.TestCase {
                 .setLanguage("en").setRegion("US").setVariant("POSIX")
                 .build();
         assertEquals("en-US-u-va-posix", posix.toLanguageTag());
+    }
+
+    public void test_setDefault() {
+        Locale l = Locale.getDefault();
+
+        try {
+            Locale.setDefault(Locale.GERMANY);
+            assertEquals("de_DE", ICU.getDefaultLocale());
+
+            try {
+                Locale.setDefault(null);
+                fail();
+            } catch (NullPointerException expected) {
+            }
+
+            Locale.setDefault(new Locale("bogus", "LOCALE"));
+            assertEquals("bogus_LOCALE", ICU.getDefaultLocale());
+        } finally {
+            Locale.setDefault(l);
+        }
     }
 }
