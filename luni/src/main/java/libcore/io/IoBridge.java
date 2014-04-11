@@ -177,8 +177,13 @@ public final class IoBridge {
         return detail;
     }
 
-    public static void closeSocket(FileDescriptor fd) throws IOException {
-        if (!fd.valid()) {
+    /**
+     * Closes the supplied file descriptor and sends a signal to any threads are currently blocking.
+     * In order for the signal to be sent the blocked threads must have registered with
+     * the AsynchronousCloseMonitor before they entered the blocking operation.
+     */
+    public static void closeAndSignalBlockedThreads(FileDescriptor fd) throws IOException {
+        if (fd == null || !fd.valid()) {
             // Socket.close doesn't throw if you try to close an already-closed socket.
             return;
         }

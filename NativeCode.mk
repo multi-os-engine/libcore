@@ -71,6 +71,7 @@ core_cppflags += -std=gnu++11
 
 core_test_files := \
   luni/src/test/native/dalvik_system_JniTest.cpp \
+  luni/src/test/native/libcore_java_nio_channels_FileIOInterruptTest.cpp \
   luni/src/test/native/test_openssl_engine.cpp \
 
 #
@@ -98,7 +99,7 @@ LOCAL_CFLAGS += $(core_cflags)
 LOCAL_CPPFLAGS += $(core_cppflags)
 LOCAL_SRC_FILES += $(core_test_files)
 LOCAL_C_INCLUDES += libcore/include external/openssl/include
-LOCAL_SHARED_LIBRARIES += libcrypto
+LOCAL_SHARED_LIBRARIES += libcrypto libnativehelper
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libjavacoretests
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/NativeCode.mk
@@ -136,7 +137,7 @@ ifeq ($(WITH_HOST_DALVIK),true)
     LOCAL_MODULE_TAGS := optional
     LOCAL_MODULE := libjavacoretests
     LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/NativeCode.mk
-    LOCAL_SHARED_LIBRARIES := libcrypto-host
+    LOCAL_SHARED_LIBRARIES := libcrypto-host libnativehelper
     include $(BUILD_HOST_SHARED_LIBRARY)
     endif # LIBCORE_SKIP_TESTS
 endif
