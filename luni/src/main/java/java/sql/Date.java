@@ -214,15 +214,22 @@ public class Date extends java.util.Date {
         if (dateString == null) {
             throw new IllegalArgumentException("dateString == null");
         }
+        if (dateString.length() > 10) {
+            // early fail to avoid parsing huge invalid strings
+            throw new IllegalArgumentException();
+        }
+
         int firstIndex = dateString.indexOf('-');
         int secondIndex = dateString.indexOf('-', firstIndex + 1);
-        // secondIndex == -1 means none or only one separator '-' has been
-        // found.
-        // The string is separated into three parts by two separator characters,
-        // if the first or the third part is null string, we should throw
-        // IllegalArgumentException to follow RI
-        if (secondIndex == -1 || firstIndex == 0
-                || secondIndex + 1 == dateString.length()) {
+        int minusIndex = dateString.indexOf('-', secondIndex + 1); // other '-' are signs
+        int plusIndex = dateString.indexOf('+');
+
+        if (secondIndex == -1 // only one separator '-' has been found
+            || firstIndex == 0 // empty first part
+            || firstIndex + 1 == secondIndex // empty middle part
+            || secondIndex + 1 == dateString.length() // empty third part
+            || minusIndex != -1 || plusIndex != -1 // don't allow signs
+            ) {
             throw new IllegalArgumentException();
         }
         // parse each part of the string
