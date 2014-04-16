@@ -106,14 +106,15 @@ public class SocketHandler extends StreamHandler {
             throw new IllegalArgumentException("host == null || host.isEmpty()");
         }
         // check the validity of the port number
+        char firstDigit = port.charAt(0);
+        if (firstDigit == '+' || firstDigit == '-') {
+            throw new IllegalArgumentException("Illegal port argument " + port);
+        }
         int p = 0;
         try {
             p = Integer.parseInt(port);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Illegal port argument");
-        }
-        if (p <= 0) {
-            throw new IllegalArgumentException("Illegal port argument");
+            throw new IllegalArgumentException("Illegal port argument " + port);
         }
         // establish the network connection
         try {
