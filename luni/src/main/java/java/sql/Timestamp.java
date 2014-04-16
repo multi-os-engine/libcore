@@ -451,50 +451,28 @@ public class Timestamp extends Date {
             // First, allow for the case where no fraction of a second is given:
             theNanos = 0;
         } else {
-            /*
-             * Case where fraction of a second is specified: Require 1 character
-             * plus the "." in the remaining part of the string...
-             */
-            if ((s.length() - position) < ".n".length()) {
+            // Validate string
+            char firstDigit = s.charAt(position + 1);
+            if (remaining < 2 || remaining > 10 // proper length
+                || s.charAt(position) != '.' // starts with "."
+                || firstDigit == '-' || firstDigit == '+' // disallow signs
+                ) {
                 throw badTimestampString(s);
             }
-
-            /*
-             * If we're strict, we should not allow any EXTRA characters after
-             * the 9 digits
-             */
-            if ((s.length() - position) > ".nnnnnnnnn".length()) {
-                throw badTimestampString(s);
-            }
-
-            // Require the next character to be a "."
-            if (s.charAt(position) != '.') {
-                throw new NumberFormatException("Bad input string format: expected '.' not '" +
-                        s.charAt(position) + "' in \"" + s + "\"");
-            }
-            // Get the length of the number string - need to account for the '.'
-            int nanoLength = s.length() - position - 1;
-
-            // Get the 9 characters following the "." as an integer
-            String theNanoString = s.substring(position + 1, position + 1
-                    + nanoLength);
-            /*
-             * We must adjust for the cases where the nanos String was not 9
-             * characters long by padding out with zeros
-             */
-            theNanoString = theNanoString + "000000000";
-            theNanoString = theNanoString.substring(0, 9);
 
             try {
-                theNanos = Integer.parseInt(theNanoString);
+                theNanos = Integer.parseInt(s.substring(position + 1));
+                /*
+                 * We must adjust for the cases where the nanos String was not 9
+                 * characters long
+                 */
+                for (int i = remaining - 1; i < 9; i++) {
+                    theNanos *= 10;
+                }
             } catch (Exception e) {
                 // If we get here, the string was not a number
                 throw badTimestampString(s);
             }
-        }
-
-        if (theNanos < 0 || theNanos > 999999999) {
-            throw badTimestampString(s);
         }
 
         Timestamp theTimestamp = new Timestamp(theDate.getTime());
