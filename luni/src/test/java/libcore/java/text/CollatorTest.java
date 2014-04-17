@@ -88,7 +88,9 @@ public class CollatorTest extends junit.framework.TestCase {
     }
 
     public void testEqualsObject() throws ParseException {
-        String rule = "< a < b < c < d < e";
+        // As of ICU 53, rule strings must begin with a reset '&'.
+        // http://www.unicode.org/reports/tr35/tr35-35/tr35-collation.html#Rules
+        String rule = "&9 < a < b < c < d < e";
         RuleBasedCollator coll = new RuleBasedCollator(rule);
 
         assertEquals(Collator.TERTIARY, coll.getStrength());
@@ -109,7 +111,7 @@ public class CollatorTest extends junit.framework.TestCase {
         // Regression test for HARMONY-1352, that doesn't get run in the harmony test suite because
         // of an earlier failure.
         try {
-            new RuleBasedCollator("< a< b< c< d").getCollationElementIterator((CharacterIterator) null);
+            new RuleBasedCollator("&9 < a< b< c< d").getCollationElementIterator((CharacterIterator) null);
             fail("NullPointerException expected");
         } catch (NullPointerException expected) {
         }
@@ -139,7 +141,7 @@ public class CollatorTest extends junit.framework.TestCase {
     }
 
     public void testGetCollationElementIteratorString_de_DE() throws Exception {
-        assertGetCollationElementIteratorString(new Locale("de", "DE", ""), "\u00e6b", 0, 1, 1, 1, 1, 2);
+        assertGetCollationElementIteratorString(new Locale("de", "DE", ""), "\u00e6b", 0, 1, 1, 2);
     }
 
     public void testGetCollationElementIteratorCharacterIterator_es() throws Exception {
@@ -147,6 +149,7 @@ public class CollatorTest extends junit.framework.TestCase {
     }
 
     public void testGetCollationElementIteratorCharacterIterator_de_DE() throws Exception {
-        assertGetCollationElementIteratorCharacterIterator(new Locale("de", "DE", ""), "\u00e6b", 0, 1, 1, 1, 1, 2);
+        // Same change as in the ...String_de_DE() test.
+        assertGetCollationElementIteratorCharacterIterator(new Locale("de", "DE", ""), "\u00e6b", 0, 1, 1, 2);
     }
 }
