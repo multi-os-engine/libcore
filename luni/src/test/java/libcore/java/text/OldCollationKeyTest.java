@@ -33,7 +33,7 @@ public class OldCollationKeyTest extends junit.framework.TestCase {
         assertTrue("Not enough bytes", bytes.length >= 3);
 
         try {
-            collator = new RuleBasedCollator("= 1 , 2 ; 3 , 4 < 5 ; 6 , 7");
+            collator = new RuleBasedCollator("&0 = 1 , 2 ; 3 , 4 < 5 ; 6 , 7");
         } catch (ParseException e) {
             fail("ParseException");
             return;
