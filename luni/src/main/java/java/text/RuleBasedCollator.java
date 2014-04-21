@@ -286,9 +286,6 @@ public class RuleBasedCollator extends Collator {
         if (rules == null) {
             throw new NullPointerException("rules == null");
         }
-        if (rules.isEmpty()) {
-            throw new ParseException("empty rules", 0);
-        }
         try {
             icuColl = new RuleBasedCollatorICU(rules);
         } catch (Exception e) {
