@@ -72,8 +72,8 @@ class JarVerifier {
     private final Hashtable<String, Certificate[]> certificates =
             new Hashtable<String, Certificate[]>(5);
 
-    private final Hashtable<String, Certificate[]> verifiedEntries =
-            new Hashtable<String, Certificate[]>();
+    private final Hashtable<String, Certificate[][]> verifiedEntries =
+            new Hashtable<String, Certificate[][]>();
 
     /**
      * Stores and a hash and a message digest and verifies that massage digest
@@ -87,16 +87,16 @@ class JarVerifier {
 
         private final byte[] hash;
 
-        private final Certificate[] certificates;
+        private final Certificate[][] certChains;
 
-        private final Hashtable<String, Certificate[]> verifiedEntries;
+        private final Hashtable<String, Certificate[][]> verifiedEntries;
 
         VerifierEntry(String name, MessageDigest digest, byte[] hash,
-                Certificate[] certificates, Hashtable<String, Certificate[]> verifedEntries) {
+                Certificate[][] certChains, Hashtable<String, Certificate[][]> verifedEntries) {
             this.name = name;
             this.digest = digest;
             this.hash = hash;
-            this.certificates = certificates;
+            this.certChains = certChains;
             this.verifiedEntries = verifedEntries;
         }
 
@@ -132,7 +132,7 @@ class JarVerifier {
             if (!MessageDigest.isEqual(d, Base64.decode(hash))) {
                 throw invalidDigest(JarFile.MANIFEST_NAME, name, name);
             }
-            verifiedEntries.put(name, certificates);
+            verifiedEntries.put(name, certChains);
         }
     }
 
@@ -185,7 +185,7 @@ class JarVerifier {
             return null;
         }
 
-        ArrayList<Certificate> certs = new ArrayList<Certificate>();
+        ArrayList<Certificate[]> certChains = new ArrayList<Certificate[]>();
         Iterator<Map.Entry<String, HashMap<String, Attributes>>> it = signatures.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<String, HashMap<String, Attributes>> entry = it.next();
@@ -195,16 +195,16 @@ class JarVerifier {
                 String signatureFile = entry.getKey();
                 Certificate[] certChain = certificates.get(signatureFile);
                 if (certChain != null) {
-                    Collections.addAll(certs, certChain);
+                    certChains.add(certChain);
                 }
             }
         }
 
         // entry is not signed
-        if (certs.isEmpty()) {
+        if (certChains.isEmpty()) {
             return null;
         }
-        Certificate[] certificatesArray = certs.toArray(new Certificate[certs.size()]);
+        Certificate[][] certChainsArray = certChains.toArray(new Certificate[certChains.size()][]);
 
         for (int i = 0; i < DIGEST_ALGORITHMS.length; i++) {
             final String algorithm = DIGEST_ALGORITHMS[i];
@@ -216,7 +216,7 @@ class JarVerifier {
 
             try {
                 return new VerifierEntry(name, MessageDigest.getInstance(algorithm), hashBytes,
-                        certificatesArray, verifiedEntries);
+                        certChainsArray, verifiedEntries);
             } catch (NoSuchAlgorithmException e) {
                 // ignored
             }
@@ -396,20 +396,16 @@ class JarVerifier {
     }
 
     /**
-     * Returns all of the {@link java.security.cert.Certificate} instances that
+     * Returns all of the {@link java.security.cert.Certificate} chains that
      * were used to verify the signature on the JAR entry called
-     * {@code name}.
+     * {@code name}. Callers must clone the arrays.
      *
      * @param name
      *            the name of a JAR entry.
-     * @return an array of {@link java.security.cert.Certificate}.
+     * @return an array of {@link java.security.cert.Certificate} chains.
      */
-    Certificate[] getCertificates(String name) {
-        Certificate[] verifiedCerts = verifiedEntries.get(name);
-        if (verifiedCerts == null) {
-            return null;
-        }
-        return verifiedCerts.clone();
+    Certificate[][] getCertificateChains(String name) {
+        return verifiedEntries.get(name);
     }
 
     /**
