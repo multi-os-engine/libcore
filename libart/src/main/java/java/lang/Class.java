@@ -1567,14 +1567,11 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
         if (!caller.canAccessMember(this, init.getAccessFlags())) {
           throw new IllegalAccessException(init + " is not accessible from " + caller);
         }
-        try {
-            return init.newInstance(null, init.isAccessible());
-        } catch (InvocationTargetException e) {
-            InstantiationException t = new InstantiationException(this);
-            t.initCause(e);
-            throw t;
-        }
+        return newInstance(init);
     }
+
+    private native T newInstance(Constructor<T> init) throws InstantiationException,
+            IllegalAccessException;
 
     private boolean canAccess(Class<?> c) {
         if(Modifier.isPublic(c.accessFlags)) {
