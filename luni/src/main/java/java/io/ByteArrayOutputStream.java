@@ -83,12 +83,24 @@ public class ByteArrayOutputStream extends OutputStream {
     }
 
     private void expand(int i) {
-        /* Can the buffer handle @i more bytes, if not expand it */
-        if (count + i <= buf.length) {
+        /* Can the buffer handle @i more bytes, if not expand it. */
+        long expandedSize = (long) count + i;
+        if (expandedSize <= buf.length) {
             return;
         }
 
-        byte[] newbuf = new byte[(count + i) * 2];
+        /* Check it is possible to grow the buffer by the required amount (or at all). */
+        if (expandedSize > Integer.MAX_VALUE || buf.length == Integer.MAX_VALUE) {
+            throw new IndexOutOfBoundsException("Unable to expand the buffer");
+        }
+
+        /*
+         * Allocate a new buffer: double the expandedSize but limit to Integer.MAX_VALUE. We know
+         * that Integer.MAX_VALUE would be sufficient for the current request because of the check
+         * above.
+         */
+        int newBufferSize = (int) Math.min(2 * expandedSize, Integer.MAX_VALUE);
+        byte[] newbuf = new byte[newBufferSize];
         System.arraycopy(buf, 0, newbuf, 0, count);
         buf = newbuf;
     }
