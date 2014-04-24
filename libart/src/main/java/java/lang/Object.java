@@ -146,6 +146,12 @@ public class Object {
      * Constructs a new instance of {@code Object}.
      */
     public Object() {
+    }
+
+    /**
+     * Add an object to the finalizer queue if it is finalizable. 
+     */
+    void enqueueIfFinalizable() {
       if (shadow$_klass_.isFinalizable()) {
         java.lang.ref.FinalizerReference.add(this);
       }
