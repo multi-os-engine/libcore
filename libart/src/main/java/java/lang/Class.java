@@ -62,6 +62,7 @@ import libcore.reflect.Types;
 import libcore.util.BasicLruCache;
 import libcore.util.CollectionUtils;
 import libcore.util.EmptyArray;
+import libcore.util.SneakyThrow;
 
 /**
  * The in-memory representation of a Java class. This representation serves as
@@ -1570,9 +1571,8 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
         try {
             return init.newInstance(null, init.isAccessible());
         } catch (InvocationTargetException e) {
-            InstantiationException t = new InstantiationException(this);
-            t.initCause(e);
-            throw t;
+            SneakyThrow.sneakyThrow(e);
+            return null;  // Unreachable.
         }
     }
 
