@@ -17,15 +17,15 @@
 
 package java.net;
 
+import android.os.ErrnoException;
+import android.os.StructGroupReq;
 import dalvik.system.CloseGuard;
 import java.io.FileDescriptor;
 import java.io.IOException;
-import libcore.io.ErrnoException;
 import libcore.io.IoBridge;
 import libcore.io.Libcore;
-import libcore.io.StructGroupReq;
 import libcore.util.EmptyArray;
-import static libcore.io.OsConstants.*;
+import static android.os.OsConstants.*;
 
 /**
  * @hide used in java.nio.

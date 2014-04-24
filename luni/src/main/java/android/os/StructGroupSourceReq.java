@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package libcore.io;
+package android.os;
 
 import java.net.InetAddress;
 
 /**
  * Corresponds to C's {@code struct group_source_req}.
+ *
+ * @hide
  */
 public final class StructGroupSourceReq {
 

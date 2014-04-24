@@ -14,29 +14,25 @@
  * limitations under the License.
  */
 
-package libcore.io;
+package android.os;
+
+import java.net.InetAddress;
 
 /**
- * Corresponds to C's {@code struct linger} from
- * <a href="http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_socket.h.html">&lt;sys/socket.h&gt;</a>
+ * Corresponds to C's {@code struct group_req}.
+ *
+ * @hide
  */
-public final class StructLinger {
-    /** Whether or not linger is enabled. Non-zero is on. */
-    public final int l_onoff;
+public final class StructGroupReq {
+    public final int gr_interface;
+    public final InetAddress gr_group;
 
-    /** Linger time in seconds. */
-    public final int l_linger;
-
-    public StructLinger(int l_onoff, int l_linger) {
-        this.l_onoff = l_onoff;
-        this.l_linger = l_linger;
-    }
-
-    public boolean isOn() {
-        return l_onoff != 0;
+    public StructGroupReq(int gr_interface, InetAddress gr_group) {
+        this.gr_interface = gr_interface;
+        this.gr_group = gr_group;
     }
 
     @Override public String toString() {
-        return "StructLinger[l_onoff=" + l_onoff + ",l_linger=" + l_linger + "]";
+        return "StructGroupReq[gr_interface=" + gr_interface + ",gr_group=" + gr_group + "]";
     }
 }

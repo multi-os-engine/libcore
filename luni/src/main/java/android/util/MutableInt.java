@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package libcore.util;
+package android.util;
 
+/**
+ * @hide
+ */
 public final class MutableInt {
-    public int value;
+  public int value;
 
-    public MutableInt(int value) {
-        this.value = value;
-    }
+  public MutableInt(int value) {
+    this.value = value;
+  }
 }

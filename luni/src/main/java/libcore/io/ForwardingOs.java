@@ -16,6 +16,22 @@
 
 package libcore.io;
 
+import android.os.ErrnoException;
+import android.os.GaiException;
+import android.os.StructAddrinfo;
+import android.os.StructFlock;
+import android.os.StructGroupReq;
+import android.os.StructGroupSourceReq;
+import android.os.StructLinger;
+import android.os.StructPasswd;
+import android.os.StructPollfd;
+import android.os.StructStat;
+import android.os.StructStatVfs;
+import android.os.StructTimeval;
+import android.os.StructUcred;
+import android.os.StructUtsname;
+import android.util.MutableInt;
+import android.util.MutableLong;
 import java.io.FileDescriptor;
 import java.io.InterruptedIOException;
 import java.net.InetAddress;
@@ -23,8 +39,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
-import libcore.util.MutableInt;
-import libcore.util.MutableLong;
 
 /**
  * Subclass this if you want to override some {@link Os} methods but otherwise delegate.

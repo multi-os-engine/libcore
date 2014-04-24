@@ -36,7 +36,7 @@ import java.util.Set;
 
 import tests.io.MockOs;
 
-import static libcore.io.OsConstants.*;
+import static android.os.OsConstants.*;
 
 public class SocketChannelTest extends junit.framework.TestCase {
 

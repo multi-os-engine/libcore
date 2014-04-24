@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-package libcore.util;
+package android.os;
 
-public final class MutableFloat {
-    public float value;
+/**
+ * @hide
+ */
+public final class ErrnoException extends libcore.io.ErrnoException {
+  public ErrnoException(String functionName, int errno) {
+    super(functionName, errno);
+  }
 
-    public MutableFloat(float value) {
-        this.value = value;
-    }
+  public ErrnoException(String functionName, int errno, Throwable cause) {
+    super(functionName, errno, cause);
+  }
 }

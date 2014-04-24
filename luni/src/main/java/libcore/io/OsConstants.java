@@ -16,8 +16,9 @@
 
 package libcore.io;
 
-public final class OsConstants {
-    private OsConstants() { }
+public /* Not final because of android.os.OsConstants */ class OsConstants {
+    // So android.os.OsConstants can subclass us.
+    protected OsConstants() { }
 
     public static boolean S_ISBLK(int mode) { return (mode & S_IFMT) == S_IFBLK; }
     public static boolean S_ISCHR(int mode) { return (mode & S_IFMT) == S_IFCHR; }

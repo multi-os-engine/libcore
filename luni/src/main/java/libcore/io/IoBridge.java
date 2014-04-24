@@ -16,6 +16,12 @@
 
 package libcore.io;
 
+import android.os.StructGroupReq;
+import android.os.StructGroupSourceReq;
+import android.os.StructLinger;
+import android.os.StructPollfd;
+import android.os.StructTimeval;
+import android.util.MutableInt;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -35,8 +41,7 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import static libcore.io.OsConstants.*;
-import libcore.util.MutableInt;
+import static android.os.OsConstants.*;
 
 /**
  * Implements java.io/java.net/java.nio semantics in terms of the underlying POSIX system calls.

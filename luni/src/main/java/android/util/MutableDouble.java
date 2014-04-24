@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package libcore.util;
+package android.util;
 
-public final class MutableChar {
-    public char value;
+/**
+ * @hide
+ */
+public final class MutableDouble {
+  public double value;
 
-    public MutableChar(char value) {
-        this.value = value;
-    }
+  public MutableDouble(double value) {
+    this.value = value;
+  }
 }

@@ -17,14 +17,14 @@
 
 package java.net;
 
+import android.os.ErrnoException;
 import java.io.Closeable;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.channels.DatagramChannel;
-import libcore.io.ErrnoException;
 import libcore.io.IoBridge;
 import libcore.io.Libcore;
-import static libcore.io.OsConstants.*;
+import static android.os.OsConstants.*;
 
 /**
  * This class implements a UDP socket for sending and receiving {@code

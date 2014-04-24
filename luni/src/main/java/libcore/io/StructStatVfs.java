@@ -19,7 +19,7 @@ package libcore.io;
 /**
  * File information returned by fstatvfs(2) and statvfs(2).
  */
-public final class StructStatVfs {
+public /* not final for android.os.StructStatVfs */ class StructStatVfs {
   /** File system block size (used for block counts). */
   public final long f_bsize; /*unsigned long*/
 

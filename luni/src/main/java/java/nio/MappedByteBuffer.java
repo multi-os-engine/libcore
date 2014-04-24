@@ -16,11 +16,11 @@
 
 package java.nio;
 
+import android.os.ErrnoException;
 import java.nio.channels.FileChannel.MapMode;
-import libcore.io.ErrnoException;
 import libcore.io.Libcore;
-import static libcore.io.OsConstants.MS_SYNC;
-import static libcore.io.OsConstants._SC_PAGE_SIZE;
+import static android.os.OsConstants.MS_SYNC;
+import static android.os.OsConstants._SC_PAGE_SIZE;
 
 /**
  * {@code MappedByteBuffer} is a special kind of direct byte buffer which maps a
