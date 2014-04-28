@@ -18,7 +18,7 @@ package tests.api.javax.net.ssl;
 
 import junit.framework.TestCase;
 
-import libcore.io.Base64;
+import libcore.util.Base64;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

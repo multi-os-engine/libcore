@@ -22,7 +22,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.security.KeyStore;
 import java.security.Principal;
 import java.security.cert.Certificate;
@@ -37,7 +36,7 @@ import javax.net.ssl.SSLSessionBindingListener;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import junit.framework.TestCase;
-import libcore.io.Base64;
+import libcore.util.Base64;
 import tests.api.javax.net.ssl.HandshakeCompletedEventTest.MyHandshakeListener;
 import tests.api.javax.net.ssl.HandshakeCompletedEventTest.TestTrustManager;
 

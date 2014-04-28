@@ -36,7 +36,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.security.cert.X509Certificate;
 import junit.framework.TestCase;
-import libcore.io.Base64;
+import libcore.util.Base64;
 import tests.api.javax.net.ssl.HandshakeCompletedEventTest.TestTrustManager;
 import libcore.java.security.StandardNames;
 
