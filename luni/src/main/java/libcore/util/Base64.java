@@ -17,6 +17,7 @@
 package libcore.util;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 
 /**
  * Utilities for encoding and decoding the Base64 representation of
@@ -425,6 +426,27 @@ public class Base64 {
 
             this.state = state;
             return bytesDecoded;
+        }
+
+        /**
+         * Returns true if the {@code lineSeparator} bytes could be used as a Base64 separator with
+         * the specified alphabet. A {@code null} or empty lineSeparator is considered invalid.
+         *
+         * @param lineSeparator the line separator bytes
+         * @param webSafe true to use the "web safe" alphabet (table 2), false to use the basic
+         *     (table 1) alphabet
+         */
+        public static boolean isValidLineSeparator(boolean webSafe, byte[] lineSeparator) {
+            if (lineSeparator == null || lineSeparator.length == 0) {
+                return false;
+            }
+            byte[] alphabet = webSafe ? DECODE_WEBSAFE : DECODE;
+            for (byte lineSeparatorByte : lineSeparator) {
+                if (alphabet[lineSeparatorByte] != OUTSIDE_ALPHABET) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 

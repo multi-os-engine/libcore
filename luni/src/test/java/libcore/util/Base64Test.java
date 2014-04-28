@@ -21,8 +21,6 @@ import junit.framework.TestCase;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import libcore.util.Base64;
-import libcore.util.Base64DataException;
 
 public class Base64Test extends TestCase {
 
@@ -635,6 +633,42 @@ public class Base64Test extends TestCase {
         assertEquals("EjRWeA==", encodeBytesToString(encoder, 0x12, 0x34, 0x56, 0x78));
         assertEquals("EjRWeJo=", encodeBytesToString(encoder, 0x12, 0x34, 0x56, 0x78, 0x9A));
         assertEquals("EjRWeJq8", encodeBytesToString(encoder, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc));
+    }
+
+    public void testDecoder_validateLineSeparator() {
+      final boolean websafeAlphabet = true;
+
+      assertFalse(Base64.Decoder.isValidLineSeparator(websafeAlphabet, new byte[0]));
+      assertFalse(Base64.Decoder.isValidLineSeparator(websafeAlphabet, null));
+
+      byte[] alphabetCharacter = { 'A' };
+      assertFalse(Base64.Decoder.isValidLineSeparator(websafeAlphabet, alphabetCharacter));
+      assertFalse(Base64.Decoder.isValidLineSeparator(!websafeAlphabet, alphabetCharacter));
+
+      byte[] paddingCharacter = { '=' };
+      assertFalse(Base64.Decoder.isValidLineSeparator(websafeAlphabet, paddingCharacter));
+      assertFalse(Base64.Decoder.isValidLineSeparator(!websafeAlphabet, paddingCharacter));
+
+      byte[] mixedCharacters = { '\r', 'A' };
+      assertFalse(Base64.Decoder.isValidLineSeparator(websafeAlphabet, mixedCharacters));
+      assertFalse(Base64.Decoder.isValidLineSeparator(!websafeAlphabet, mixedCharacters));
+
+      byte[] table2AlphabetCharacter = { '_' };
+      assertFalse(Base64.Decoder.isValidLineSeparator(websafeAlphabet, table2AlphabetCharacter));
+      assertTrue(Base64.Decoder.isValidLineSeparator(!websafeAlphabet, table2AlphabetCharacter));
+
+      byte[] table1AlphabetCharacter = { '+' };
+      assertTrue(Base64.Decoder.isValidLineSeparator(websafeAlphabet, table1AlphabetCharacter));
+      assertFalse(Base64.Decoder.isValidLineSeparator(!websafeAlphabet, table1AlphabetCharacter));
+
+      byte[] nonAlphabetCharacter = { '*' };
+      assertTrue(Base64.Decoder.isValidLineSeparator(websafeAlphabet, nonAlphabetCharacter));
+      assertTrue(Base64.Decoder.isValidLineSeparator(!websafeAlphabet, nonAlphabetCharacter));
+
+      byte[] nonAlphabetCharacters = { '\r', '\n' };
+      assertTrue(Base64.Decoder.isValidLineSeparator(websafeAlphabet, nonAlphabetCharacters));
+      assertTrue(Base64.Decoder.isValidLineSeparator(!websafeAlphabet, nonAlphabetCharacters));
+
     }
 
     /** Encode a set of bytes with the supplied flags and no line wrapping. */
