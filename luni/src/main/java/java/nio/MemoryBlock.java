@@ -90,11 +90,6 @@ class MemoryBlock {
         private UnmanagedBlock(long address, long byteCount) {
             super(address, byteCount);
         }
-
-        @Override
-        public void free() {
-            address = 0;
-        }
     }
 
     protected long address;
@@ -151,6 +146,11 @@ class MemoryBlock {
     }
 
     public void free() {
+        address = 0;
+    }
+
+    public boolean isValid() {
+        return address != 0;
     }
 
     public final void pokeByte(int offset, byte value) {

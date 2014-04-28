@@ -753,6 +753,10 @@ public abstract class ByteBuffer extends Buffer implements Comparable<ByteBuffer
      *                if no changes may be made to the contents of this buffer.
      */
     public ByteBuffer put(ByteBuffer src) {
+        if (!src.isValid() || !isValid()) {
+            throw new IllegalStateException("attempting to access an invalid bytebuffer");
+        }
+
         if (isReadOnly()) {
             throw new ReadOnlyBufferException();
         }
