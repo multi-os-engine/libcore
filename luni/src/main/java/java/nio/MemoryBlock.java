@@ -50,6 +50,7 @@ class MemoryBlock {
                 }
                 address = 0;
             }
+            super.free();
         }
 
         @Override protected void finalize() throws Throwable {
@@ -78,7 +79,7 @@ class MemoryBlock {
 
         @Override public void free() {
             array = null;
-            address = 0;
+            super.free();
         }
     }
 
@@ -89,11 +90,6 @@ class MemoryBlock {
     private static class UnmanagedBlock extends MemoryBlock {
         private UnmanagedBlock(long address, long byteCount) {
             super(address, byteCount);
-        }
-
-        @Override
-        public void free() {
-            address = 0;
         }
     }
 
@@ -151,6 +147,11 @@ class MemoryBlock {
     }
 
     public void free() {
+        address = 0;
+    }
+
+    public boolean isFreed() {
+        return address == 0;
     }
 
     public final void pokeByte(int offset, byte value) {
