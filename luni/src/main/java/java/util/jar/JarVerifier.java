@@ -33,7 +33,8 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
-import libcore.io.Base64;
+import libcore.util.Base64;
+import libcore.util.Base64DataException;
 
 /**
  * Non-public class used by {@link JarFile} and {@link JarInputStream} to manage
@@ -129,7 +130,13 @@ class JarVerifier {
          */
         void verify() {
             byte[] d = digest.digest();
-            if (!MessageDigest.isEqual(d, Base64.decode(hash))) {
+            byte[] decodedHash;
+            try {
+                decodedHash = Base64.decode(hash);
+            } catch (Base64DataException e) {
+                throw new IllegalArgumentException(e);
+            }
+            if (!MessageDigest.isEqual(d, decodedHash)) {
                 throw invalidDigest(JarFile.MANIFEST_NAME, name, name);
             }
             verifiedEntries.put(name, certificates);
@@ -390,7 +397,13 @@ class JarVerifier {
             }
             byte[] b = md.digest();
             byte[] hashBytes = hash.getBytes(StandardCharsets.ISO_8859_1);
-            return MessageDigest.isEqual(b, Base64.decode(hashBytes));
+            byte[] decodedHash;
+            try {
+                decodedHash = Base64.decode(hashBytes);
+            } catch (Base64DataException e) {
+                throw new IllegalArgumentException(e);
+            }
+            return MessageDigest.isEqual(b, decodedHash);
         }
         return ignorable;
     }

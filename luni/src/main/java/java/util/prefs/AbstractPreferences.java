@@ -28,7 +28,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
-import libcore.io.Base64;
+import libcore.util.Base64;
 import libcore.util.EmptyArray;
 
 /**
@@ -662,7 +662,7 @@ public abstract class AbstractPreferences extends Preferences {
 
     @Override
     public void putByteArray(String key, byte[] value) {
-        put(key, Base64.encode(value));
+        put(key, Base64.encodeToString(value));
     }
 
     @Override
