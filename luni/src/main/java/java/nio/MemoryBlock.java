@@ -94,6 +94,7 @@ class MemoryBlock {
 
     protected long address;
     protected final long size;
+    private boolean accessAllowed;
 
     public static MemoryBlock mmap(FileDescriptor fd, long offset, long size, MapMode mapMode) throws IOException {
         if (size == 0) {
@@ -138,6 +139,7 @@ class MemoryBlock {
     private MemoryBlock(long address, long size) {
         this.address = address;
         this.size = size;
+        accessAllowed = true;
     }
 
     // Used to support array/arrayOffset/hasArray for direct buffers.
@@ -151,6 +153,14 @@ class MemoryBlock {
 
     public boolean isValid() {
         return address != 0;
+    }
+
+    public boolean canAccess() {
+        return isValid() && accessAllowed;
+    }
+
+    public final void allowAccess(boolean allow) {
+        accessAllowed = allow;
     }
 
     public final void pokeByte(int offset, byte value) {

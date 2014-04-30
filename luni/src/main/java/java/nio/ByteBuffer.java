@@ -609,14 +609,33 @@ public abstract class ByteBuffer extends Buffer implements Comparable<ByteBuffer
     @Override public abstract boolean isDirect();
 
     /**
-     * Indicates whether this buffer is still valid.
+     * Indicates whether this buffer is still valid and accessible.
      *
      * @return {@code true} if this buffer is valid, {@code false} if the
-     *         buffer was invalidated and should not be used anymore.
+     *         buffer is invalidated and should not be used at this time.
      * @hide
      */
     public boolean isValid() {
         return true;
+    }
+
+    /**
+     * Dynamically sets buffer accessibility (only supported for direct
+     * byte buffers).
+     *
+     * @param allow
+     *            whether to allow access to the buffer.  If {@code false},
+     *            {@link #isValid} will return false, and any attempt to
+     *            dereference the bytebuffer will return an error.  Use this
+     *            if the underlying memory can be freed by external forces.
+     *            If {@code true}, the bytebuffer will become again useable,
+     *            unless it has been freed.  Use this if the underlying
+     *            memory is stable, and cannot be freed by external forces.
+     *
+     * @hide
+     */
+    public void allowAccess(boolean allow) {
+        throw new UnsupportedOperationException("cannot modify accessibility of ByteBuffer object");
     }
 
     /**
