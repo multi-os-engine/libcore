@@ -23,22 +23,22 @@ package android.system;
  * @hide
  */
 public final class StructLinger {
-    /** Whether or not linger is enabled. Non-zero is on. */
-    public final int l_onoff;
+  /** Whether or not linger is enabled. Non-zero is on. */
+  public final int l_onoff;
 
-    /** Linger time in seconds. */
-    public final int l_linger;
+  /** Linger time in seconds. */
+  public final int l_linger;
 
-    public StructLinger(int l_onoff, int l_linger) {
-        this.l_onoff = l_onoff;
-        this.l_linger = l_linger;
-    }
+  public StructLinger(int l_onoff, int l_linger) {
+    this.l_onoff = l_onoff;
+    this.l_linger = l_linger;
+  }
 
-    public boolean isOn() {
-        return l_onoff != 0;
-    }
+  public boolean isOn() {
+    return l_onoff != 0;
+  }
 
-    @Override public String toString() {
-        return "StructLinger[l_onoff=" + l_onoff + ",l_linger=" + l_linger + "]";
-    }
+  @Override public String toString() {
+    return "StructLinger[l_onoff=" + l_onoff + ",l_linger=" + l_linger + "]";
+  }
 }

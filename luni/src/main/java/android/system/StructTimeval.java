@@ -34,7 +34,6 @@ public final class StructTimeval {
     this.tv_usec = tv_usec;
   }
 
-
   public static StructTimeval fromMillis(long millis) {
     long tv_sec = millis / 1000;
     long tv_usec = (millis - (tv_sec * 1000)) * 1000;
