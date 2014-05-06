@@ -18,6 +18,7 @@
 package org.apache.harmony.security.x509;
 
 import java.io.IOException;
+import java.security.cert.CRLReason;
 import org.apache.harmony.security.asn1.ASN1Enumerated;
 import org.apache.harmony.security.asn1.ASN1Type;
 
@@ -69,6 +70,32 @@ public final class ReasonCode extends ExtensionValue {
             encoding = ASN1.encode(new byte[] { code });
         }
         return encoding;
+    }
+
+    public CRLReason getReason() {
+        switch (code) {
+            case UNSPECIFIED:
+                return CRLReason.UNSPECIFIED;
+            case KEY_COMPROMISE:
+                return CRLReason.KEY_COMPROMISE;
+            case CA_COMPROMISE:
+                return CRLReason.CA_COMPROMISE;
+            case AFFILIATION_CHANGED:
+                return CRLReason.AFFILIATION_CHANGED;
+            case SUPERSEDED:
+                return CRLReason.SUPERSEDED;
+            case CESSATION_OF_OPERATION:
+                return CRLReason.CESSATION_OF_OPERATION;
+            case CERTIFICATE_HOLD:
+                return CRLReason.CERTIFICATE_HOLD;
+            case REMOVE_FROM_CRL:
+                return CRLReason.REMOVE_FROM_CRL;
+            case PRIVILEGE_WITHDRAWN:
+                return CRLReason.PRIVILEGE_WITHDRAWN;
+            case AA_COMPROMISE:
+                return CRLReason.AA_COMPROMISE;
+        }
+        return null;
     }
 
     @Override public void dumpValue(StringBuilder sb, String prefix) {
