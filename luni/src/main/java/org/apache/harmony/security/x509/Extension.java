@@ -82,8 +82,8 @@ public final class Extension implements java.security.cert.Extension {
     // crl entry extensions:
     static final int[] CRL_NUMBER = {2, 5, 29, 20};
     static final int[] CERTIFICATE_ISSUER = {2, 5, 29, 29};
-    static final int[] INVALIDITY_DATE = {2, 5, 29, 24};
-    static final int[] REASON_CODE = {2, 5, 29, 21};
+    public static final int[] INVALIDITY_DATE = {2, 5, 29, 24};
+    public static final int[] REASON_CODE = {2, 5, 29, 21};
     static final int[] ISSUING_DISTR_POINTS = {2, 5, 29, 28};
 
     // the value of extnID field of the structure
