@@ -183,9 +183,7 @@ public abstract class Reference<T> {
      * @return the referent to which reference refers, or {@code null} if the
      *         object has been cleared.
      */
-    public T get() {
-        return referent;
-    }
+    public native T get();
 
     /**
      * Checks whether the reference object has been enqueued.
