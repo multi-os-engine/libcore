@@ -29,6 +29,24 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 public class DateFormatSymbolsTest extends junit.framework.TestCase {
+
+    private TimeZone originalTz;
+    private Locale originalLocale;
+
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        originalTz = TimeZone.getDefault();
+        originalLocale = Locale.getDefault();
+    }
+
+    @Override
+    public void tearDown() throws Exception {
+        TimeZone.setDefault(originalTz);
+        Locale.setDefault(originalLocale);
+        super.tearDown();
+    }
+
     private void assertLocaleIsEquivalentToRoot(Locale locale) {
         DateFormatSymbols dfs = DateFormatSymbols.getInstance(locale);
         assertEquals(DateFormatSymbols.getInstance(Locale.ROOT), dfs);
@@ -46,6 +64,10 @@ public class DateFormatSymbolsTest extends junit.framework.TestCase {
     }
 
     public void testSerialization() throws Exception {
+        // Set the default locale. The default locale determines what strings are used by the
+        // DateFormatSymbols after deserialization.
+        Locale.setDefault(Locale.US);
+
         // The Polish language needs stand-alone month and weekday names.
         Locale pl = new Locale("pl");
         DateFormatSymbols originalDfs = new DateFormatSymbols(pl);
