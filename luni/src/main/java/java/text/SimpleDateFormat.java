@@ -212,6 +212,53 @@ public class SimpleDateFormat extends DateFormat {
     // necessary for correct localization in various languages (http://b/2633414).
     private static final int STAND_ALONE_DAY_OF_WEEK_FIELD = 20;
 
+    /**
+     * Support for legacy locale-independent timezones: The Olson IDs for the timezone aliases
+     * defined in LEGACY_TIME_ZONE_NAMES.
+     *
+     * This mapping could be subject to change if the timezone for an exemplar city changes
+     * independently of the legacy name. This information sourced from ICU's metaZones.xml for ICU
+     * v53. See: http://www.w3.org/International/docs/timezones/#tzids
+     *
+     * See {@link #LEGACY_TIME_ZONE_NAMES} for legacy name details.
+     */
+    private static final String[] LEGACY_TIME_ZONE_IDS = new String[] {
+            "Africa/Maputo", // Africa_Central
+            "Africa/Nairobi", // Africa_Eastern
+            "Africa/Johannesburg", // Africa_Southern
+            "Africa/Lagos", // Africa_Western
+            "America/Chicago", // America_Central
+            "America/New_York", // America_Eastern
+            "America/Denver", // America_Mountain
+            "America/Los_Angeles", // America_Pacific
+            "Europe/Paris", // Europe_Central
+            "Europe/Bucharest", // Europe_Eastern
+            "Atlantic/Canary", // Europe_Western
+    };
+    /**
+     * Support for legacy locale-independent timezones: The aliases for IDs defined in
+     * LEGACY_TIME_ZONE_IDS.
+     *
+     * The set defined here is as much to do with supporting prior hacks in Android and what
+     * ICU used to do as for supporting Java. For example, Java probably never supported "PT", but
+     * recognizes both "PDT" and "PST" as being "America/Los_Angeles". Meanwhile, Android probably
+     * never supported parsing "AST" for all locales, though Java appears to. Previous versions of
+     * Android hacked ICU to achieve this.
+     */
+    private static final String[][] LEGACY_TIME_ZONE_NAMES = new String[][] {
+            { "CAT" }, // Africa_Central
+            { "EAT" }, // Africa_Eastern
+            { "SAST" }, // Africa_Southern
+            { "WAST", "WAT" }, // Africa_Western
+            { "CDT", "CT", "CST" }, // America_Central
+            { "EDT", "ET", "EST" }, // America_Eastern
+            { "MDT", "MT", "MST" }, // America_Mountain
+            { "PDT", "PT", "PST" }, // America_Pacific
+            { "CEST", "CET" }, // Europe_Central
+            { "EEST", "EET" }, // Europe_Eastern
+            { "WEST", "WET" }, // Europe_Western
+    };
+
     private String pattern;
 
     private DateFormatSymbols formatData;
@@ -1168,6 +1215,8 @@ public class SimpleDateFormat extends DateFormat {
         if (foundGMT) {
             offset += 3;
         }
+
+        // Check for an offset, which may have been preceded by "GMT"
         char sign;
         if (offset < string.length() && ((sign = string.charAt(offset)) == '+' || sign == '-')) {
             ParsePosition position = new ParsePosition(offset + 1);
@@ -1195,10 +1244,27 @@ public class SimpleDateFormat extends DateFormat {
             calendar.setTimeZone(new SimpleTimeZone(raw, ""));
             return position.getIndex();
         }
+
+        // If there was "GMT" but no offset.
         if (foundGMT) {
             calendar.setTimeZone(TimeZone.getTimeZone("GMT"));
             return offset;
         }
+
+        // Check for one of the short names that supported in any locale. This is to enable
+        // backwards compatibility with earlier Android versions and some Java 1.1 strings without
+        // needing to hack ICU data.
+        for (int i = 0; i < LEGACY_TIME_ZONE_NAMES.length; i++) {
+            for (String alias : LEGACY_TIME_ZONE_NAMES[i]) {
+                if (string.regionMatches(true, offset, alias, 0, alias.length())) {
+                    calendar.setTimeZone(TimeZone.getTimeZone(LEGACY_TIME_ZONE_IDS[i]));
+                    return offset + alias.length();
+                }
+            }
+        }
+
+        // Exhaustively look for the string amongst the various locale-specific strings
+        // for all known timezones.
         for (String[] row : formatData.internalZoneStrings()) {
             for (int i = TimeZoneNames.LONG_NAME; i < TimeZoneNames.NAME_COUNT; ++i) {
                 if (row[i] == null) {

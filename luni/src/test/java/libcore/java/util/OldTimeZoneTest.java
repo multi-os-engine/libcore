@@ -98,22 +98,44 @@ public class OldTimeZoneTest extends TestCase {
     public void test_getDisplayNameZI() {
         Locale.setDefault(Locale.US);
         TimeZone tz = TimeZone.getTimeZone("America/Los_Angeles");
-        assertEquals("PST",                   tz.getDisplayName(false, 0));
-        assertEquals("Pacific Daylight Time", tz.getDisplayName(true, 1));
-        assertEquals("Pacific Standard Time", tz.getDisplayName(false, 1));
+        assertEquals("PST",                   tz.getDisplayName(false, TimeZone.SHORT));
+        assertEquals("Pacific Daylight Time", tz.getDisplayName(true, TimeZone.LONG));
+        assertEquals("Pacific Standard Time", tz.getDisplayName(false, TimeZone.LONG));
     }
 
     @AndroidOnly("fail on RI. See comment below")
     public void test_getDisplayNameZILjava_util_Locale() {
         TimeZone tz = TimeZone.getTimeZone("America/Los_Angeles");
-        assertEquals("PST",                   tz.getDisplayName(false, 0, Locale.US));
-        assertEquals("Pacific Daylight Time", tz.getDisplayName(true,  1, Locale.US));
-        assertEquals("Pacific Standard Time", tz.getDisplayName(false, 1, Locale.UK));
-        // RI always returns short time zone name as "PST"
-        // ICU zone/root.txt patched to allow metazone names.
-        assertEquals("PST",             tz.getDisplayName(false, 0, Locale.FRANCE));
-        assertEquals("heure avanc\u00e9e du Pacifique", tz.getDisplayName(true,  1, Locale.FRANCE));
-        assertEquals("heure normale du Pacifique nord-américain", tz.getDisplayName(false, 1, Locale.FRANCE));
+        assertEquals("PST",                   tz.getDisplayName(false, TimeZone.SHORT, Locale.US));
+        assertEquals("Pacific Daylight Time", tz.getDisplayName(true,  TimeZone.LONG, Locale.US));
+
+        assertEquals("Pacific Standard Time", tz.getDisplayName(false, TimeZone.LONG, Locale.UK));
+
+        assertEquals("heure avanc\u00e9e du Pacifique",
+                tz.getDisplayName(true,  TimeZone.LONG, Locale.FRANCE));
+        assertEquals("heure normale du Pacifique nord-américain",
+                tz.getDisplayName(false, TimeZone.LONG, Locale.FRANCE));
+
+        // RI fails on following lines. RI always returns short time zone name for
+        // "America/Los_Angeles" as "PST", Android only returns a string if ICU has a translation.
+        // There is no short time zone name for America/Los_Angeles in French or British English in
+        // ICU data so an offset is returned instead.
+        assertEquals("GMT-08:00", tz.getDisplayName(false, TimeZone.SHORT, Locale.FRANCE));
+        assertEquals("GMT-07:00", tz.getDisplayName(true, TimeZone.SHORT, Locale.FRANCE));
+        assertEquals("GMT-08:00", tz.getDisplayName(false, TimeZone.SHORT, Locale.UK));
+        assertEquals("GMT-07:00", tz.getDisplayName(true, TimeZone.SHORT, Locale.UK));
+
+        // The RI behavior mentioned above does not appear to be because "PST" is a legacy
+        // three-character timezone supported by the RI: it happens for "Asia/Tehran"/"IRST" too
+        // (IRST is not a legacy code). The RI may just use a different dataset that has "PST" /
+        // "IRST" as valid translations (even for scripts like Chinese).
+        TimeZone iranTz = TimeZone.getTimeZone("Asia/Tehran");
+        assertEquals("Iran Summer Time", iranTz.getDisplayName(true, TimeZone.LONG, Locale.UK));
+        assertEquals("Iran Daylight Time", iranTz.getDisplayName(true, TimeZone.LONG, Locale.US));
+        assertEquals("Iran Standard Time", iranTz.getDisplayName(false, TimeZone.LONG, Locale.UK));
+        assertEquals("Iran Standard Time", iranTz.getDisplayName(false, TimeZone.LONG, Locale.US));
+        assertEquals("GMT+03:30", iranTz.getDisplayName(false, TimeZone.SHORT, Locale.UK));
+        assertEquals("GMT+04:30", iranTz.getDisplayName(true, TimeZone.SHORT, Locale.UK));
     }
 
     public void test_getID() {
