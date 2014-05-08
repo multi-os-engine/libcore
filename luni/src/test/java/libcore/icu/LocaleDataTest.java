@@ -19,59 +19,69 @@ package libcore.icu;
 import java.util.Locale;
 
 public class LocaleDataTest extends junit.framework.TestCase {
-    public void testAll() throws Exception {
-        // Test that we can get the locale data for all known locales.
-        for (Locale l : Locale.getAvailableLocales()) {
-            LocaleData d = LocaleData.get(l);
-            // System.err.format("%10s %10s %10s\n", l, d.timeFormat12, d.timeFormat24);
-        }
+  public void testAll() throws Exception {
+    // Test that we can get the locale data for all known locales.
+    for (Locale l : Locale.getAvailableLocales()) {
+      LocaleData d = LocaleData.get(l);
+      // System.err.format("%20s %s %s %s\n", l, d.yesterday, d.today, d.tomorrow);
+      // System.err.format("%20s %10s %10s\n", l, d.timeFormat12, d.timeFormat24);
     }
+  }
 
-    public void test_en_US() throws Exception {
-        LocaleData l = LocaleData.get(Locale.US);
-        assertEquals("AM", l.amPm[0]);
-        assertEquals("BC", l.eras[0]);
+  public void test_en_US() throws Exception {
+    LocaleData l = LocaleData.get(Locale.US);
+    assertEquals("AM", l.amPm[0]);
+    assertEquals("BC", l.eras[0]);
 
-        assertEquals("January", l.longMonthNames[0]);
-        assertEquals("Jan", l.shortMonthNames[0]);
-        assertEquals("J", l.tinyMonthNames[0]);
+    assertEquals("January", l.longMonthNames[0]);
+    assertEquals("Jan", l.shortMonthNames[0]);
+    assertEquals("J", l.tinyMonthNames[0]);
 
-        assertEquals("January", l.longStandAloneMonthNames[0]);
-        assertEquals("Jan", l.shortStandAloneMonthNames[0]);
-        assertEquals("J", l.tinyStandAloneMonthNames[0]);
+    assertEquals("January", l.longStandAloneMonthNames[0]);
+    assertEquals("Jan", l.shortStandAloneMonthNames[0]);
+    assertEquals("J", l.tinyStandAloneMonthNames[0]);
 
-        assertEquals("Sunday", l.longWeekdayNames[1]);
-        assertEquals("Sun", l.shortWeekdayNames[1]);
-        assertEquals("S", l.tinyWeekdayNames[1]);
+    assertEquals("Sunday", l.longWeekdayNames[1]);
+    assertEquals("Sun", l.shortWeekdayNames[1]);
+    assertEquals("S", l.tinyWeekdayNames[1]);
 
-        assertEquals("Sunday", l.longStandAloneWeekdayNames[1]);
-        assertEquals("Sun", l.shortStandAloneWeekdayNames[1]);
-        assertEquals("S", l.tinyStandAloneWeekdayNames[1]);
+    assertEquals("Sunday", l.longStandAloneWeekdayNames[1]);
+    assertEquals("Sun", l.shortStandAloneWeekdayNames[1]);
+    assertEquals("S", l.tinyStandAloneWeekdayNames[1]);
 
-        assertEquals("yesterday", l.yesterday);
-        assertEquals("today", l.today);
-        assertEquals("tomorrow", l.tomorrow);
-    }
+    assertEquals("Yesterday", l.yesterday);
+    assertEquals("Today", l.today);
+    assertEquals("Tomorrow", l.tomorrow);
+  }
 
-    public void test_de_DE() throws Exception {
-        LocaleData l = LocaleData.get(new Locale("de", "DE"));
+  public void test_de_DE() throws Exception {
+    LocaleData l = LocaleData.get(new Locale("de", "DE"));
 
-        assertEquals("Gestern", l.yesterday);
-        assertEquals("Heute", l.today);
-        assertEquals("Morgen", l.tomorrow);
-    }
+    assertEquals("Gestern", l.yesterday);
+    assertEquals("Heute", l.today);
+    assertEquals("Morgen", l.tomorrow);
+  }
 
-    public void test_cs_CZ() throws Exception {
-        LocaleData l = LocaleData.get(new Locale("cs", "CZ"));
+  public void test_cs_CZ() throws Exception {
+    LocaleData l = LocaleData.get(new Locale("cs", "CZ"));
 
-        assertEquals("ledna", l.longMonthNames[0]);
-        assertEquals("led", l.shortMonthNames[0]);
-        assertEquals("1", l.tinyMonthNames[0]);
+    assertEquals("ledna", l.longMonthNames[0]);
+    assertEquals("led", l.shortMonthNames[0]);
+    assertEquals("1", l.tinyMonthNames[0]);
 
-        assertEquals("leden", l.longStandAloneMonthNames[0]);
-        assertEquals("led", l.shortStandAloneMonthNames[0]);
-        assertEquals("l", l.tinyStandAloneMonthNames[0]);
-    }
+    assertEquals("leden", l.longStandAloneMonthNames[0]);
+    assertEquals("led", l.shortStandAloneMonthNames[0]);
+    assertEquals("l", l.tinyStandAloneMonthNames[0]);
+  }
+
+  public void test_ko_KR() throws Exception {
+    LocaleData l = LocaleData.get(new Locale("ko", "KR"));
+
+    // Ensure the fix for http://b/14493853 doesn't mangle Hangul.
+    assertEquals("어제", l.yesterday);
+    assertEquals("오늘", l.today);
+    assertEquals("내일", l.tomorrow);
+  }
 
     public void test_ru_RU() throws Exception {
         LocaleData l = LocaleData.get(new Locale("ru", "RU"));
