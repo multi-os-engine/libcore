@@ -458,7 +458,7 @@ public class GregorianCalendar extends Calendar {
         complete();
     }
 
-    private void fullFieldsCalc(int zoneOffset) {
+    private void fullFieldsCalc() {
         int millis = (int) (time % 86400000);
         long days = time / 86400000;
 
@@ -467,7 +467,7 @@ public class GregorianCalendar extends Calendar {
             days--;
         }
         // Cannot add ZONE_OFFSET to time as it might overflow
-        millis += zoneOffset;
+        millis += fields[ZONE_OFFSET];
         while (millis < 0) {
             millis += 86400000;
             days--;
@@ -477,9 +477,9 @@ public class GregorianCalendar extends Calendar {
             days++;
         }
 
-        int dayOfYear = computeYearAndDay(days, time + zoneOffset);
+        int dayOfYear = computeYearAndDay(days, time + fields[ZONE_OFFSET]);
         fields[DAY_OF_YEAR] = dayOfYear;
-        if(fields[YEAR] == changeYear && gregorianCutover <= time + zoneOffset){
+        if (fields[YEAR] == changeYear && gregorianCutover <= time + fields[ZONE_OFFSET]){
             dayOfYear += currentYearSkew;
         }
         int month = dayOfYear / 32;
@@ -493,7 +493,7 @@ public class GregorianCalendar extends Calendar {
         int dstOffset = fields[YEAR] <= 0 ? 0 : getTimeZone().getOffset(AD,
                 fields[YEAR], month, date, fields[DAY_OF_WEEK], millis);
         if (fields[YEAR] > 0) {
-            dstOffset -= zoneOffset;
+            dstOffset -= fields[ZONE_OFFSET];
         }
         fields[DST_OFFSET] = dstOffset;
         if (dstOffset != 0) {
@@ -507,10 +507,10 @@ public class GregorianCalendar extends Calendar {
                 days++;
             }
             if (oldDays != days) {
-                dayOfYear = computeYearAndDay(days, time - zoneOffset
+                dayOfYear = computeYearAndDay(days, time - fields[ZONE_OFFSET]
                         + dstOffset);
                 fields[DAY_OF_YEAR] = dayOfYear;
-                if(fields[YEAR] == changeYear && gregorianCutover <= time - zoneOffset + dstOffset){
+                if(fields[YEAR] == changeYear && gregorianCutover <= time - fields[ZONE_OFFSET] + dstOffset){
                     dayOfYear += currentYearSkew;
                 }
                 month = dayOfYear / 32;
@@ -567,10 +567,22 @@ public class GregorianCalendar extends Calendar {
         TimeZone timeZone = getTimeZone();
         int dstOffset = timeZone.inDaylightTime(new Date(time)) ? timeZone.getDSTSavings() : 0;
         int zoneOffset = timeZone.getRawOffset();
+
+        // We unconditionally overwrite DST_OFFSET and ZONE_OFFSET with
+        // values from the timezone that's currently in use. This gives us
+        // much more consistent behaviour.
+        //
+        // Anything callers can do with ZONE_OFFSET they can do by constructing
+        // a SimpleTimeZone with the required offset.
+        //
+        // DST_OFFSET is a bit of a WTF, given that it's dependent on the rest
+        // of the fields. There's no sensible use for this field, nor is there a
+        // sensible way to ensure consistent full-fields calculation after this
+        // field is set.
         fields[DST_OFFSET] = dstOffset;
         fields[ZONE_OFFSET] = zoneOffset;
 
-        fullFieldsCalc(zoneOffset);
+        fullFieldsCalc();
 
         for (int i = 0; i < FIELD_COUNT; i++) {
             isSet[i] = true;
