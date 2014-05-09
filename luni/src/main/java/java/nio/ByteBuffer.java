@@ -612,11 +612,27 @@ public abstract class ByteBuffer extends Buffer implements Comparable<ByteBuffer
      * Indicates whether this buffer is still accessible.
      *
      * @return {@code true} if this buffer is accessible, {@code false} if the
-     *         buffer was invalidated (e.g. freed) and should not be used.
+     *         buffer was invalidated (e.g. freed or set inaccessible) and
+     *         should not be used.
      * @hide
      */
     public boolean isAccessible() {
         return true;
+    }
+
+    /**
+     * Dynamically sets buffer accessibility (only supported for direct
+     * byte buffers).  If {@code accessible} is {@code false},
+     * {@link #isAccessible} will return false, and any attempt to dereference
+     * the buffer will throw an exception.  Use this if the underlying memory
+     * can be freed by external forces. If {@code true}, the buffer will become
+     * again useable, unless it has been freed.  Use this if the underlying
+     * memory is stable and cannot be freed by external forces.
+     *
+     * @hide
+     */
+    public void setAccessible(boolean accessible) {
+        throw new UnsupportedOperationException();
     }
 
     /**
