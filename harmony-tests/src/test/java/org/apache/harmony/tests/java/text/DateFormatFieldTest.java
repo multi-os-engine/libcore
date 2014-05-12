@@ -30,7 +30,7 @@ import java.util.Calendar;
 
 import junit.framework.TestCase;
 
-public class DataFormatFieldTest extends TestCase{
+public class DateFormatFieldTest extends TestCase{
 
 	public void test_ConstructorLjava_lang_StringLjava_lang_String() {
 		// Regression for HARMONY-178
@@ -111,7 +111,7 @@ public class DataFormatFieldTest extends TestCase{
         // test special cases
         assertEquals(
                 "Field.TIME_ZONE.getCalendarField() returned the wrong value",
-                -1, Field.TIME_ZONE.getCalendarField());
+                Calendar.ZONE_OFFSET, Field.TIME_ZONE.getCalendarField());
         assertEquals("Field.HOUR0.getCalendarField() returned the wrong value",
                 Calendar.HOUR, Field.HOUR0.getCalendarField());
         assertEquals("Field.HOUR1.getCalendarField() returned the wrong value",
@@ -157,9 +157,6 @@ public class DataFormatFieldTest extends TestCase{
         assertNull(
                 "ofCalendarField(Calendar.DST_OFFSET) returned the wrong value",
                 DateFormat.Field.ofCalendarField(Calendar.DST_OFFSET));
-        assertNull(
-                "ofCalendarField(Calendar.ZONE_OFFSET) returned the wrong value",
-                DateFormat.Field.ofCalendarField(Calendar.ZONE_OFFSET));
     }
 
     /**
