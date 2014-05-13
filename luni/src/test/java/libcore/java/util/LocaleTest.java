@@ -33,6 +33,7 @@ import java.util.TreeMap;
 import libcore.icu.ICU;
 
 public class LocaleTest extends junit.framework.TestCase {
+
     // http://b/2611311; if there's no display language/country/variant, use the raw codes.
     public void test_getDisplayName_invalid() throws Exception {
         Locale invalid = new Locale("AaBbCc", "DdEeFf", "GgHhIi");
@@ -814,7 +815,12 @@ public class LocaleTest extends junit.framework.TestCase {
         b.setLanguage("en").setRegion("US").setScript("Latn");
 
         Locale l = b.build();
+
+        // getDisplayScript() test relies on the default locale. We set it here to avoid test
+        // failures if the test device is set to a non-English locale.
+        Locale.setDefault(Locale.US);
         assertEquals("Latin", l.getDisplayScript());
+
         assertEquals("Lateinisch", l.getDisplayScript(Locale.GERMAN));
         // Fallback for navajo, a language for which we don't have data.
         assertEquals("Latin", l.getDisplayScript(new Locale("nv", "US")));
@@ -1163,23 +1169,17 @@ public class LocaleTest extends junit.framework.TestCase {
     }
 
     public void test_setDefault_setsICUDefaultLocale() {
-        Locale l = Locale.getDefault();
+        Locale.setDefault(Locale.GERMANY);
+        assertEquals("de_DE", ICU.getDefaultLocale());
 
         try {
-            Locale.setDefault(Locale.GERMANY);
-            assertEquals("de_DE", ICU.getDefaultLocale());
-
-            try {
-                Locale.setDefault(null);
-                fail();
-            } catch (NullPointerException expected) {
-                assertEquals(Locale.GERMANY, Locale.getDefault());
-            }
-
-            Locale.setDefault(new Locale("bogus", "LOCALE"));
-            assertEquals("bogus__LOCALE", ICU.getDefaultLocale());
-        } finally {
-            Locale.setDefault(l);
+            Locale.setDefault(null);
+            fail();
+        } catch (NullPointerException expected) {
+            assertEquals(Locale.GERMANY, Locale.getDefault());
         }
+
+        Locale.setDefault(new Locale("bogus", "LOCALE"));
+        assertEquals("bogus__LOCALE", ICU.getDefaultLocale());
     }
 }
