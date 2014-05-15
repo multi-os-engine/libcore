@@ -91,13 +91,13 @@ struct addrinfo_deleter {
             _syscallErrno = errno; \
             _wasSignaled = _monitor.wasSignaled(); \
         } \
-        if (_wasSignaled) { \
-            jniThrowException(jni_env, "java/net/SocketException", "Socket closed"); \
-            break; \
-        } \
-        if (_rc == -1 && _syscallErrno != EINTR) { \
-            /* TODO: with a format string we could show the arguments too, like strace(1). */ \
-            throwErrnoException(jni_env, # syscall_name); \
+        if (_rc == -1 && (_syscallErrno != EINTR || _wasSignaled)) { \
+            if (_wasSignaled) { \
+                jniThrowException(jni_env, "java/net/SocketException", "Socket closed"); \
+            } else { \
+                /* TODO: with a format string we could show the arguments too, like strace(1). */ \
+                throwErrnoException(jni_env, # syscall_name); \
+            } \
             break; \
         } \
     } while (_rc == -1); /* _syscallErrno == EINTR && !_wasSignaled */ \
