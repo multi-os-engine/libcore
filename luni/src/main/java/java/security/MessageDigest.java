@@ -426,7 +426,8 @@ public abstract class MessageDigest extends MessageDigestSpi {
                 return new MessageDigestImpl(spi, getProvider(), getAlgorithm());
             }
 
-            throw new CloneNotSupportedException();
+            throw new CloneNotSupportedException(spiImpl.getClass().toString()
+                    + " does not support cloning");
         }
     }
 }
