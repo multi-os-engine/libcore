@@ -87,6 +87,27 @@ public final class VMRuntime {
     public native String vmLibrary();
 
     /**
+     * Returns the VM's instruction set.
+     */
+    public String vmInstructionSet() {
+        return "";
+    }
+
+    /**
+     * Returns the VM's internal flags.
+     */
+    public String vmFlags() {
+        return "";
+    }
+
+    /**
+     * Returns whether the VM runs in 64-bit mode.
+     */
+    public boolean is64Bit() {
+        return false;
+    }
+
+    /**
      * Gets the current ideal heap utilization, represented as a number
      * between zero and one.  After a GC happens, the Dalvik heap may
      * be resized so that (size of live objects) / (size of heap) is
