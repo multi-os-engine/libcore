@@ -90,6 +90,11 @@ LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/NativeCode.mk
 include external/stlport/libstlport.mk
 include $(BUILD_SHARED_LIBRARY)
 
+ifeq ($(WITH_NATIVE_BRIDGE), true)
+	LOCAL_CPPFLAGS += -DWITH_NATIVE_BRIDGE
+	LOCAL_SHARED_LIBRARIES += libdl
+endif
+
 # Test JNI library.
 ifeq ($(LIBCORE_SKIP_TESTS),)
 

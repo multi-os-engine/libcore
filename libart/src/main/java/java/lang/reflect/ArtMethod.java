@@ -68,6 +68,11 @@ public final class ArtMethod {
     private long entryPointFromJni;
 
     /**
+     * Pointer to JNI function registered to this method by native bridge.
+     */
+    private long entryPointFromNativeBridge;
+
+    /**
      * Method dispatch from portable compiled code invokes this pointer which may cause bridging
      * into quick compiled code or the interpreter.
      */
