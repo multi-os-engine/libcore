@@ -1006,12 +1006,57 @@ static void Posix_munmap(JNIEnv* env, jobject, jlong address, jlong byteCount) {
     throwIfMinusOne(env, "munmap", TEMP_FAILURE_RETRY(munmap(ptr, byteCount)));
 }
 
+#ifdef WITH_NATIVE_BRIDGE
+#include <sys/system_properties.h>
+
+#define SYS_LIB_PATH        "/system/lib/"
+#define SYS_LIB_PATH_LEN    (sizeof(SYS_LIB_PATH) - 1)
+#define SYS_LIB64_PATH      "/system/lib64/"
+#define SYS_LIB64_PATH_LEN  (sizeof(SYS_LIB64_PATH) - 1)
+
+#define NBH_CORE_SYM    "nativeBridgeHelperOpen"
+#define PROP_LIB_NBH    "persist.sys.native.bridge.helper"
+#define PROP_ENABLE_NB  "persist.enable.native.bridge"
+
+#define IS_64BIT_PROC()     ((sizeof(void*) == 8)?true:false)
+
+typedef int (*NBH_OPEN)(const char *path, int flags, int mode);
+#endif
+
 static jobject Posix_open(JNIEnv* env, jobject, jstring javaPath, jint flags, jint mode) {
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return NULL;
     }
-    int fd = throwIfMinusOne(env, "open", TEMP_FAILURE_RETRY(open(path.c_str(), flags, mode)));
+    int fd = -1;
+#ifdef WITH_NATIVE_BRIDGE
+    if (!IS_64BIT_PROC()) {
+        void * handle = NULL;
+        NBH_OPEN  nbh_open = NULL;
+        char propBuf[PROP_VALUE_MAX];
+        __system_property_get(PROP_ENABLE_NB, propBuf);
+        if (!strcmp(propBuf, "true")) {
+            int libNbhNameLen = __system_property_get(PROP_LIB_NBH, propBuf);
+            if (libNbhNameLen > 0) {
+                char * libNbhPath = new char[libNbhNameLen + SYS_LIB_PATH_LEN + 1];
+                strncpy (libNbhPath, SYS_LIB_PATH, SYS_LIB_PATH_LEN);
+                strncpy (libNbhPath + SYS_LIB_PATH_LEN, propBuf, libNbhNameLen);
+                libNbhPath[libNbhNameLen + SYS_LIB_PATH_LEN] = '\0';
+
+                handle = dlopen(libNbhPath, RTLD_LAZY);
+                delete (libNbhPath);
+                if (handle != NULL) {
+                    nbh_open = (NBH_OPEN)dlsym(handle, NBH_CORE_SYM);
+                    if (nbh_open != NULL) {
+                        fd = throwIfMinusOne(env, "open", nbh_open(path.c_str(), flags, mode));
+                        return fd != -1 ? jniCreateFileDescriptor(env, fd) : NULL;
+                    }
+                }
+            }
+        }
+    }
+#endif
+    fd = throwIfMinusOne(env, "open", TEMP_FAILURE_RETRY(open(path.c_str(), flags, mode)));
     return fd != -1 ? jniCreateFileDescriptor(env, fd) : NULL;
 }
 
