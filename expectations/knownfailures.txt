@@ -606,7 +606,8 @@
 {
   description: "statement.close() does not wrap up",
   bug: 3403706,
-  name: "libcore.java.sql.OldResultSetTest#testBeforeFirst"
+  name: "libcore.java.sql.OldResultSetTest#testBeforeFirst",
+  name: "libcore.java.sql.OldResultSetTest#testAfterLast"
 },
 {
   description: "Resultset.close() does not wrap up",
