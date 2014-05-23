@@ -44,9 +44,14 @@
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#ifndef __APPLE__
 #include <sys/prctl.h>
+#endif
 #include <sys/socket.h>
 #include <sys/stat.h>
+#ifdef __APPLE__
+#include <sys/statvfs.h>
+#endif
 #include <sys/syscall.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -331,8 +336,14 @@ static jobject makeStructTimeval(JNIEnv* env, const struct timeval& tv) {
 }
 
 static jobject makeStructUcred(JNIEnv* env, const struct ucred& u) {
+#ifdef __APPLE__
+  (void) u;
+  jniThrowException(env, "java/lang/UnsupportedOperationException", "unimplemented support for ucred on a Mac");
+  return NULL;
+#else
   static jmethodID ctor = env->GetMethodID(JniConstants::structUcredClass, "<init>", "(III)V");
   return env->NewObject(JniConstants::structUcredClass, ctor, u.pid, u.uid, u.gid);
+#endif
 }
 
 static jobject makeStructUtsname(JNIEnv* env, const struct utsname& buf) {
@@ -847,9 +858,20 @@ static jobject Posix_getsockoptUcred(JNIEnv* env, jobject, jobject javaFd, jint 
   return makeStructUcred(env, u);
 }
 
-static jint Posix_gettid(JNIEnv*, jobject) {
+static jint Posix_gettid(JNIEnv* env, jobject) {
+#if defined(__APPLE__)
+  uint64_t owner;
+  int rc = pthread_threadid_np(NULL, &owner);  // Requires Mac OS 10.6
+  if (rc != 0) {
+    throwErrnoException(env, "gettid");
+    return NULL;
+  }
+  return static_cast<jint>(owner);
+#else
   // Neither bionic nor glibc exposes gettid(2).
+  (void) env;
   return syscall(__NR_gettid);
+#endif
 }
 
 static jint Posix_getuid(JNIEnv*, jobject) {
@@ -1083,18 +1105,35 @@ static jint Posix_poll(JNIEnv* env, jobject, jobjectArray javaStructs, jint time
 }
 
 static void Posix_posix_fallocate(JNIEnv* env, jobject, jobject javaFd, jlong offset, jlong length) {
+#ifdef __APPLE__
+    (void) javaFd;
+    (void) offset;
+    (void) length;
+    jniThrowException(env, "java/lang/UnsupportedOperationException", "fallocate doesn't exist on a Mac");
+#else
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     errno = TEMP_FAILURE_RETRY(posix_fallocate64(fd, offset, length));
     if (errno != 0) {
         throwErrnoException(env, "posix_fallocate");
     }
+#endif
 }
 
 static jint Posix_prctl(JNIEnv* env, jobject, jint option, jlong arg2, jlong arg3, jlong arg4, jlong arg5) {
+#ifdef __APPLE__
+    (void) option;
+    (void) arg2;
+    (void) arg3;
+    (void) arg4;
+    (void) arg5;
+    jniThrowException(env, "java/lang/UnsupportedOperationException", "prctl doesn't exist on a Mac");
+    return 0;
+#else
     int result = prctl(static_cast<int>(option),
                        static_cast<unsigned long>(arg2), static_cast<unsigned long>(arg3),
                        static_cast<unsigned long>(arg4), static_cast<unsigned long>(arg5));
     return throwIfMinusOne(env, "prctl", result);
+#endif
 }
 
 static jint Posix_preadBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jlong offset) {
