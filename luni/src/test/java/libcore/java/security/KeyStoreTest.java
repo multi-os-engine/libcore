@@ -56,13 +56,10 @@ import junit.framework.TestCase;
 
 public class KeyStoreTest extends TestCase {
 
-    private static HashMap<String, PrivateKeyEntry> sPrivateKeys
+    private static final HashMap<String, PrivateKeyEntry> sPrivateKeys
             = new HashMap<String, PrivateKeyEntry>();
 
-    private static TestKeyStore TEST_KEY_STORE = new TestKeyStore.Builder()
-            .keyAlgorithms("RSA", "DH_RSA", "DSA", "EC")
-            .aliasPrefix("rsa-dsa-ec-dh")
-            .build();
+    private static TestKeyStore TEST_KEY_STORE;
 
     private static final String[] KEY_TYPES = new String[] { "DH", "DSA", "RSA", "EC" };
 
@@ -101,6 +98,15 @@ public class KeyStoreTest extends TestCase {
     }
 
     private static PrivateKeyEntry getPrivateKey(String keyType) {
+        // Avoiding initialization of TestKeyStore in the static initializer: it breaks CTS tests
+        // by causing a NetworkOnMainThreadException.
+        if (TEST_KEY_STORE == null) {
+            TEST_KEY_STORE = new TestKeyStore.Builder()
+                .keyAlgorithms("RSA", "DH_RSA", "DSA", "EC")
+                .aliasPrefix("rsa-dsa-ec-dh")
+                .build();
+        }
+
         PrivateKeyEntry entry = sPrivateKeys.get(keyType);
         if (entry == null) {
             if ("RSA".equals(keyType)) {
