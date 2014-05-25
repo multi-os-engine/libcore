@@ -313,7 +313,7 @@ public class WeakHashMapTest extends junit.framework.TestCase {
             System.gc();
             FinalizationTester.induceFinalization();
             count++;
-        } while (count <= 5 && keySet.size() == 100);
+        } while (count <= 50 && keySet.size() == 100);
 
         assertEquals("Incorrect number of keys returned after gc,", 99, keySet
                 .size());
