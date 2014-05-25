@@ -329,6 +329,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
 
         assertContent("Output shutdown after this response", server.getUrl("/a").openConnection());
         assertEquals(0, server.takeRequest().getSequenceNumber());
+        Thread.sleep(2000);
         assertContent("This comes after a busted connection", server.getUrl("/b").openConnection());
         assertEquals(1, server.takeRequest().getSequenceNumber());
         assertEquals(0, server.takeRequest().getSequenceNumber());
