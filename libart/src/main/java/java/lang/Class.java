@@ -241,8 +241,20 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
     /** Bitmap of offsets of sFields. */
     private transient int referenceStaticOffsets;
 
+    /** Whether this belongs to class_roots_. */
+    private transient boolean root;
+
+    /** Start offset for static fields */
+    private transient int staticFieldsStart;
+
     /** State of class initialization */
     private transient int status;
+
+    /**
+     * Whether this is a temporary class object, i.e. it will be retired
+     * later and be replaced with a class object of the right size.
+     */
+    private transient boolean temporary;
 
     private Class() {
         // Prevent this class to be instantiated, instance should be created by JVM only
