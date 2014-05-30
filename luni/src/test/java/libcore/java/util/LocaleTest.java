@@ -38,10 +38,10 @@ public class LocaleTest extends junit.framework.TestCase {
         // Android using icu4c < 49.2 returned empty strings for display language, country,
         // and variant, but a display name made up of the raw strings.
         // Newer releases return slightly different results, but no less unreasonable.
-        assertEquals("aabbcc", invalid.getDisplayLanguage());
-        assertEquals("", invalid.getDisplayCountry());
-        assertEquals("DDEEFF_GGHHII", invalid.getDisplayVariant());
-        assertEquals("aabbcc (DDEEFF,DDEEFF_GGHHII)", invalid.getDisplayName());
+        assertEquals("aabbcc", invalid.getDisplayLanguage(Locale.FRANCE));
+        assertEquals("DDEEFF", invalid.getDisplayCountry());
+        assertEquals("GGHHII", invalid.getDisplayVariant());
+        assertEquals("aabbcc (DDEEFF,GGHHII)", invalid.getDisplayName());
     }
 
     // http://b/2611311; if there's no display language/country/variant, use the raw codes.
@@ -53,8 +53,8 @@ public class LocaleTest extends junit.framework.TestCase {
 
         assertEquals("xx", unknown.getDisplayLanguage());
         assertEquals("YY", unknown.getDisplayCountry());
-        assertEquals("TRADITIONAL", unknown.getDisplayVariant());
-        assertEquals("xx (YY,TRADITIONAL)", unknown.getDisplayName());
+        assertEquals("Traditional", unknown.getDisplayVariant());
+        assertEquals("xx (YY,Traditional)", unknown.getDisplayName());
     }
 
     public void test_getDisplayName_easy() throws Exception {
