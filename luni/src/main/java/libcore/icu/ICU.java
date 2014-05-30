@@ -70,10 +70,6 @@ public final class ICU {
     return localeFromIcuLocaleId(icuLocaleId);
   }
 
-  public static String toLanguageTag(Locale locale) {
-    return languageTagForLocale(localeIdFromLocale(locale));
-  }
-
   private static final int IDX_LANGUAGE = 0;
   private static final int IDX_SCRIPT = 1;
   private static final int IDX_REGION = 2;
@@ -242,6 +238,10 @@ public final class ICU {
         unicodeAttributeSet, unicodeKeywordsMap, extensionsMap, false);
   }
 
+  public static String toLanguageTag(Locale locale) {
+      return languageTagForIcuLocale(localeIdFromLocale(locale));
+  }
+
   /**
    * Builds an ICU locale ID from the given locale. The format is very
    * straightforward. It is a series of subtags in BCP 47 order
@@ -252,7 +252,7 @@ public final class ICU {
    * In this use case, each key is an extension identifier, and each value
    * is the value of the extension.
    */
-  public static String localeIdFromLocale(Locale l) {
+  private static String localeIdFromLocale(Locale l) {
       StringBuilder b = new StringBuilder(16);
       b.append(l.getLanguage());
 
@@ -352,19 +352,33 @@ public final class ICU {
     return localesFromStrings(getAvailableNumberFormatLocalesNative());
   }
 
-  public static String getBestDateTimePattern(String skeleton, String localeName) {
-    String key = skeleton + "\t" + localeName;
+  @Deprecated /* TODO: move frameworks/base off this and remove it! */
+  public static String getBestDateTimePattern(String skeleton, String languageTag) {
+    String key = skeleton + "\t" + languageTag;
     synchronized (CACHED_PATTERNS) {
       String pattern = CACHED_PATTERNS.get(key);
       if (pattern == null) {
-        pattern = getBestDateTimePatternNative(skeleton, localeName);
+        pattern = getBestDateTimePatternNative(skeleton, languageTag);
         CACHED_PATTERNS.put(key, pattern);
       }
       return pattern;
     }
   }
 
-  private static native String getBestDateTimePatternNative(String skeleton, String localeName);
+  public static String getBestDateTimePattern(String skeleton, Locale locale) {
+    String languageTag = locale.toLanguageTag();
+    String key = skeleton + "\t" + languageTag;
+    synchronized (CACHED_PATTERNS) {
+      String pattern = CACHED_PATTERNS.get(key);
+      if (pattern == null) {
+        pattern = getBestDateTimePatternNative(skeleton, languageTag);
+        CACHED_PATTERNS.put(key, pattern);
+      }
+      return pattern;
+    }
+  }
+
+  private static native String getBestDateTimePatternNative(String skeleton, String languageTag);
 
   public static char[] getDateFormatOrder(String pattern) {
     char[] result = new char[3];
@@ -424,8 +438,17 @@ public final class ICU {
 
   // --- Case mapping.
 
-  public static native String toLowerCase(String s, String localeName);
-  public static native String toUpperCase(String s, String localeName);
+  public static String toLowerCase(String s, Locale locale) {
+    return toLowerCase(s, locale.toLanguageTag());
+  }
+
+  private static native String toLowerCase(String s, String languageTag);
+
+  public static String toUpperCase(String s, Locale locale) {
+    return toUpperCase(s, locale.toLanguageTag());
+  }
+
+  private static native String toUpperCase(String s, String languageTag);
 
   // --- Errors.
 
@@ -451,18 +474,57 @@ public final class ICU {
 
   public static native String[] getAvailableCurrencyCodes();
   public static native String getCurrencyCode(String countryCode);
-  public static native String getCurrencyDisplayName(String locale, String currencyCode);
+
+  public static String getCurrencyDisplayName(Locale locale, String currencyCode) {
+    return getCurrencyDisplayName(locale.toLanguageTag(), currencyCode);
+  }
+
+  private static native String getCurrencyDisplayName(String languageTag, String currencyCode);
+
   public static native int getCurrencyFractionDigits(String currencyCode);
   public static native int getCurrencyNumericCode(String currencyCode);
-  public static native String getCurrencySymbol(String locale, String currencyCode);
 
-  public static native String getDisplayCountryNative(String countryCode, String locale);
-  public static native String getDisplayLanguageNative(String languageCode, String locale);
-  public static native String getDisplayVariantNative(String variantCode, String locale);
-  public static native String getDisplayScriptNative(String variantCode, String locale);
+  public static String getCurrencySymbol(Locale locale, String currencyCode) {
+    return getCurrencySymbol(locale.toLanguageTag(), currencyCode);
+  }
 
-  public static native String getISO3CountryNative(String locale);
-  public static native String getISO3LanguageNative(String locale);
+  private static native String getCurrencySymbol(String languageTag, String currencyCode);
+
+  public static String getDisplayCountry(Locale targetLocale, Locale locale) {
+    return getDisplayCountryNative(targetLocale.toLanguageTag(), locale.toLanguageTag());
+  }
+
+  private static native String getDisplayCountryNative(String targetLanguageTag, String languageTag);
+
+  public static String getDisplayLanguage(Locale targetLocale, Locale locale) {
+    return getDisplayLanguageNative(targetLocale.toLanguageTag(), locale.toLanguageTag());
+  }
+
+  private static native String getDisplayLanguageNative(String targetLanguageTag, String languageTag);
+
+  public static String getDisplayVariant(Locale targetLocale, Locale locale) {
+    return getDisplayVariantNative(targetLocale.toLanguageTag(), locale.toLanguageTag());
+  }
+
+  private static native String getDisplayVariantNative(String targetLanguageTag, String languageTag);
+
+  public static String getDisplayScript(Locale targetLocale, Locale locale) {
+    return getDisplayScriptNative(targetLocale.toLanguageTag(), locale.toLanguageTag());
+  }
+
+  private static native String getDisplayScriptNative(String targetLanguageTag, String languageTag);
+
+  public static String getISO3Country(Locale locale) {
+    return getISO3CountryNative(locale.toLanguageTag());
+  }
+
+  private static native String getISO3CountryNative(String languageTag);
+
+  public static String getISO3Language(Locale locale) {
+    return getISO3LanguageNative(locale.toLanguageTag());
+  }
+
+  private static native String getISO3LanguageNative(String languageTag);
 
   public static native String addLikelySubtags(String locale);
   public static native String getScript(String locale);
@@ -471,10 +533,12 @@ public final class ICU {
   private static native String[] getISOCountriesNative();
 
   private static native String localeForLanguageTag(String languageTag, boolean strict);
-  public static native String languageTagForLocale(String locale);
+
+  /** Translates an icu4c locale id to a language tag. */
+  public static native String languageTagForIcuLocale(String icuLocale);
 
   static native boolean initLocaleDataNative(String locale, LocaleData result);
 
-  public static native void setDefaultLocale(String locale);
+  public static native void setDefaultLocale(String languageTag);
   public static native String getDefaultLocale();
 }
