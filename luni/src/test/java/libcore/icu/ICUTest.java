@@ -123,4 +123,39 @@ public class ICUTest extends junit.framework.TestCase {
     } catch (IllegalArgumentException expected) {
     }
   }
+
+  public void testScriptsPassedToIcu() throws Exception {
+    Locale sr_Cyrl_BA = Locale.forLanguageTag("sr-Cyrl-BA");
+    Locale sr_Cyrl_ME = Locale.forLanguageTag("sr-Cyrl-ME");
+    Locale sr_Latn_BA = Locale.forLanguageTag("sr-Latn-BA");
+    Locale sr_Latn_ME = Locale.forLanguageTag("sr-Latn-ME");
+
+    assertEquals("sr_BA_#Cyrl", sr_Cyrl_BA.toString());
+    assertEquals("Cyrl",        sr_Cyrl_BA.getScript());
+
+    assertEquals("sr_ME_#Cyrl", sr_Cyrl_ME.toString());
+    assertEquals("Cyrl",        sr_Cyrl_ME.getScript());
+
+    assertEquals("sr_BA_#Latn", sr_Latn_BA.toString());
+    assertEquals("Latn",        sr_Latn_BA.getScript());
+
+    assertEquals("sr_ME_#Latn", sr_Latn_ME.toString());
+    assertEquals("Latn",        sr_Latn_ME.getScript());
+
+    assertEquals("Српски",              sr_Cyrl_BA.getDisplayLanguage(sr_Cyrl_BA));
+    assertEquals("Босна и Херцеговина", sr_Cyrl_BA.getDisplayCountry(sr_Cyrl_BA));
+    assertEquals("Ћирилица",            sr_Cyrl_BA.getDisplayScript(sr_Cyrl_BA));
+
+    assertEquals("Српски",    sr_Cyrl_ME.getDisplayLanguage(sr_Cyrl_ME));
+    assertEquals("Црна Гора", sr_Cyrl_ME.getDisplayCountry(sr_Cyrl_ME));
+    assertEquals("Ћирилица",  sr_Cyrl_ME.getDisplayScript(sr_Cyrl_ME));
+
+    assertEquals("Srpski",              sr_Latn_BA.getDisplayLanguage(sr_Latn_BA));
+    assertEquals("Bosna i Hercegovina", sr_Latn_BA.getDisplayCountry(sr_Latn_BA));
+    assertEquals("Latinica",            sr_Latn_BA.getDisplayScript(sr_Latn_BA));
+
+    assertEquals("Srpski",    sr_Latn_ME.getDisplayLanguage(sr_Latn_ME));
+    assertEquals("Crna Gora", sr_Latn_ME.getDisplayCountry(sr_Latn_ME));
+    assertEquals("Latinica",  sr_Latn_ME.getDisplayScript(sr_Latn_ME));
+  }
 }
