@@ -782,7 +782,8 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Returns a locale for a given BCP-47 language tag. This method is more
      * lenient than {@link Builder#setLanguageTag}. For a given language tag, parsing
-     * will proceed upto the first malformed subtag. All subsequent tags are discarded.
+     * will proceed up to the first malformed subtag. All subsequent tags are discarded.
+     * Note that language tags use {@code -} rather than {@code _}, for example {@code en-US}.
      *
      * @throws NullPointerException if {@code languageTag} is {@code null}.
      *
@@ -891,17 +892,14 @@ public final class Locale implements Cloneable, Serializable {
 
         if (hasValidatedFields) {
             Set<String> attribsCopy = new TreeSet<String>(unicodeAttributes);
-            Map<String, String> keywordsCopy = new TreeMap<String, String>(
-                    unicodeKeywords);
-            Map<Character, String> extensionsCopy = new TreeMap<Character, String>(
-                    extensions);
+            Map<String, String> keywordsCopy = new TreeMap<String, String>(unicodeKeywords);
+            Map<Character, String> extensionsCopy = new TreeMap<Character, String>(extensions);
 
             // We need to transform the list of attributes & keywords set on the
             // builder to a unicode locale extension. i.e, if we have any keywords
             // or attributes set, Locale#getExtension('u') should return a well
             // formed extension.
-            addUnicodeExtensionToExtensionsMap(attribsCopy, keywordsCopy,
-                    extensionsCopy);
+            addUnicodeExtensionToExtensionsMap(attribsCopy, keywordsCopy, extensionsCopy);
 
             this.unicodeAttributes = Collections.unmodifiableSet(attribsCopy);
             this.unicodeKeywords = Collections.unmodifiableMap(keywordsCopy);
@@ -1006,10 +1004,9 @@ public final class Locale implements Cloneable, Serializable {
         if (countryCode.isEmpty()) {
             return "";
         }
-        String result = ICU.getDisplayCountryNative(getIcuLocaleId(), locale.getIcuLocaleId());
+        String result = ICU.getDisplayCountry(this, locale);
         if (result == null) { // TODO: do we need to do this, or does ICU do it for us?
-            result = ICU.getDisplayCountryNative(getIcuLocaleId(),
-                    Locale.getDefault().getIcuLocaleId());
+            result = ICU.getDisplayCountry(this, Locale.getDefault());
         }
         return result;
     }
@@ -1035,14 +1032,12 @@ public final class Locale implements Cloneable, Serializable {
         // using "fil" when they're not.
         String localeString = toString();
         if (languageCode.equals("tl")) {
-            localeString = toNewString("fil", countryCode, variantCode, scriptCode,
-                    extensions);
+            localeString = toNewString("fil", countryCode, variantCode, scriptCode, extensions);
         }
 
-        String result = ICU.getDisplayLanguageNative(localeString, locale.getIcuLocaleId());
+        String result = ICU.getDisplayLanguage(this, locale);
         if (result == null) { // TODO: do we need to do this, or does ICU do it for us?
-            result = ICU.getDisplayLanguageNative(localeString,
-                    Locale.getDefault().getIcuLocaleId());
+            result = ICU.getDisplayLanguage(this, Locale.getDefault());
         }
         return result;
     }
@@ -1130,10 +1125,9 @@ public final class Locale implements Cloneable, Serializable {
         if (variantCode.length() == 0) {
             return variantCode;
         }
-        String result = ICU.getDisplayVariantNative(getIcuLocaleId(), locale.getIcuLocaleId());
+        String result = ICU.getDisplayVariant(this, locale);
         if (result == null) { // TODO: do we need to do this, or does ICU do it for us?
-            result = ICU.getDisplayVariantNative(getIcuLocaleId(),
-                    Locale.getDefault().getIcuLocaleId());
+            result = ICU.getDisplayVariant(this, Locale.getDefault());
         }
         return result;
     }
@@ -1144,7 +1138,7 @@ public final class Locale implements Cloneable, Serializable {
      * @throws MissingResourceException if there's no 3-letter country code for this locale.
      */
     public String getISO3Country() {
-        String code = ICU.getISO3CountryNative(getIcuLocaleId());
+        String code = ICU.getISO3Country(this);
         if (!countryCode.isEmpty() && code.isEmpty()) {
             throw new MissingResourceException("No 3-letter country code for locale: " + this, "FormatData_" + this, "ShortCountry");
         }
@@ -1157,7 +1151,7 @@ public final class Locale implements Cloneable, Serializable {
      * @throws MissingResourceException if there's no 3-letter language code for this locale.
      */
     public String getISO3Language() {
-        String code = ICU.getISO3LanguageNative(getIcuLocaleId());
+        String code = ICU.getISO3Language(this);
         if (!languageCode.isEmpty() && code.isEmpty()) {
             throw new MissingResourceException("No 3-letter language code for locale: " + this, "FormatData_" + this, "ShortLanguage");
         }
@@ -1233,10 +1227,9 @@ public final class Locale implements Cloneable, Serializable {
             return "";
         }
 
-        String result = ICU.getDisplayScriptNative(getIcuLocaleId(), locale.getIcuLocaleId());
+        String result = ICU.getDisplayScript(this, locale);
         if (result == null) { // TODO: do we need to do this, or does ICU do it for us?
-            result = ICU.getDisplayScriptNative(getIcuLocaleId(),
-                    Locale.getDefault().getIcuLocaleId());
+            result = ICU.getDisplayScript(this, Locale.getDefault());
         }
 
         return result;
@@ -1257,7 +1250,7 @@ public final class Locale implements Cloneable, Serializable {
      * where they will appear after a subtag whose value is {@code "lvariant"}.
      *
      * It's also important to note that the BCP-47 tag is well formed in the sense
-     * that it is unambiguously parsable into its specified components. We do not
+     * that it is unambiguously parseable into its specified components. We do not
      * require that any of the components are registered with the applicable registries.
      * For example, we do not require scripts to be a registered ISO 15924 scripts or
      * languages to appear in the ISO-639-2 code list.
@@ -1558,8 +1551,9 @@ public final class Locale implements Cloneable, Serializable {
         if (locale == null) {
             throw new NullPointerException("locale == null");
         }
+        String languageTag = locale.toLanguageTag();
         defaultLocale = locale;
-        ICU.setDefaultLocale(ICU.localeIdFromLocale(locale));
+        ICU.setDefaultLocale(languageTag);
     }
 
     /**
@@ -1577,18 +1571,10 @@ public final class Locale implements Cloneable, Serializable {
     public final String toString() {
         String result = cachedToStringResult;
         if (result == null) {
-            result = cachedToStringResult = toNewString(languageCode, countryCode,
-                    variantCode, scriptCode, extensions);
+            result = cachedToStringResult = toNewString(languageCode, countryCode, variantCode,
+                                                        scriptCode, extensions);
         }
         return result;
-    }
-
-    private String getIcuLocaleId() {
-        if (cachedIcuLocaleId == null) {
-            cachedIcuLocaleId = ICU.localeIdFromLocale(this);
-        }
-
-        return cachedIcuLocaleId;
     }
 
     private static String toNewString(String languageCode, String countryCode,
@@ -1605,8 +1591,7 @@ public final class Locale implements Cloneable, Serializable {
         StringBuilder result = new StringBuilder(11);
         result.append(languageCode);
 
-        final boolean hasScriptOrExtensions = !scriptCode.isEmpty() ||
-                !extensions.isEmpty();
+        final boolean hasScriptOrExtensions = !scriptCode.isEmpty() || !extensions.isEmpty();
 
         if (!countryCode.isEmpty() || !variantCode.isEmpty() || hasScriptOrExtensions) {
             result.append('_');
@@ -1812,8 +1797,7 @@ public final class Locale implements Cloneable, Serializable {
         return true;
     }
 
-    private static boolean isValidBcp47Alpha(String string,
-            int lowerBound, int upperBound) {
+    private static boolean isValidBcp47Alpha(String string, int lowerBound, int upperBound) {
         final int length = string.length();
         if (length < lowerBound || length > upperBound) {
             return false;
