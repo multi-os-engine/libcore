@@ -82,14 +82,6 @@ public class RuntimeTest extends junit.framework.TestCase {
     }
 
     /**
-     * java.lang.Runtime#freeMemory()
-     */
-    public void test_freeMemory() {
-        // Test for method long java.lang.Runtime.freeMemory()
-        assertTrue("freeMemory returned nonsense value", r.freeMemory() > 0);
-    }
-
-    /**
      * java.lang.Runtime#gc()
      */
     public void test_gc() {
@@ -142,12 +134,15 @@ public class RuntimeTest extends junit.framework.TestCase {
     }
 
     /**
-     * java.lang.Runtime#totalMemory()
+     * java.lang.Runtime#freeMemory() / java.lang.Runtime#totalMemory() /
+     * java.lang.Runtime#maxMemory()
      */
-    public void test_totalMemory() {
-        // Test for method long java.lang.Runtime.totalMemory()
-        assertTrue("totalMemory returned nonsense value", r.totalMemory() >= r
-                .freeMemory());
+    public void test_memory() {
+        assertTrue("freeMemory returned a nonsense value", r.freeMemory() > 0);
+        assertTrue("totalMemory() or freeMemory() returned a nonsense value",
+                r.totalMemory() >= r.freeMemory());
+        assertTrue("maxMemory() or totalMemory() returned a nonsense value",
+                r.maxMemory() >= r.totalMemory());
     }
 
     public RuntimeTest() {

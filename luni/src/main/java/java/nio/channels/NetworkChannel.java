@@ -31,8 +31,8 @@ import java.util.Set;
 public interface NetworkChannel extends AutoCloseable, Channel, Closeable {
 
   /**
-   * Binds this channel to the given local socket address. If the {@code localAddr} is set
-   * to {@code null} the socket will be bound to an available local address on any free port of
+   * Binds this channel to the given local socket address. If the {@code localAddr} is {@code null}
+   * the socket will be bound to an available local address on any free port of
    * the system.
    *
    * @param local
