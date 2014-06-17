@@ -146,14 +146,14 @@ public class CurrencyTest extends junit.framework.TestCase {
         assertEquals("currUS.getSymbol()", "$", currUS.getSymbol());
         // END android-changed
 
-        // test what happens if this is an invalid locale,
-        // one with Korean country but an India language
+        // test what happens if this is an invalid locale, one with the country Korea (KR) but a
+        // currently unsupported Indian language. "kr" == Kanuri, Korean is actually "ko".
         Locale.setDefault(new Locale("kr", "KR"));
         // BEGIN android-changed
         assertEquals("currK.getSymbol()", "\u20a9", currK.getSymbol());
         assertEquals("currI.getSymbol()", "IEP", currI.getSymbol());
+        assertEquals("currUS.getSymbol()", "US$", currUS.getSymbol());
         // END android-changed
-        assertEquals("currUS.getSymbol()", "$", currUS.getSymbol());
     }
 
     /**
