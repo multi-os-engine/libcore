@@ -28,7 +28,7 @@ public class ScannerParseLargeFileBenchmarkTest extends TestCase {
      * the Scanner will exhaust all heap memory
      */
     public void testParseLargeFile() throws Exception {
-        MyReader reader = new MyReader();
+        FakeLargeFile reader = new FakeLargeFile();
         String delimiter = "\r?\n";
         Scanner scanner = new Scanner(reader).useDelimiter(delimiter);
 
@@ -39,14 +39,9 @@ public class ScannerParseLargeFileBenchmarkTest extends TestCase {
         reader.close();
     }
 
-    private static class MyReader extends Reader {
-        static final char[] CONTENT = "large file!\n".toCharArray();
-
-        static long fileLength = (8 << 21) * 12;
-
-        static boolean first = true;
-
-        static int position = 0;
+    private static class FakeLargeFile extends Reader {
+        private static final char[] CONTENT = "large file!\n".toCharArray();
+        private static final int FILE_LENGTH = (8 << 21) * 12;
 
         private int count = 0;
 
@@ -55,22 +50,24 @@ public class ScannerParseLargeFileBenchmarkTest extends TestCase {
         }
 
         @Override
-        public int read(char[] buf, int offset, int length) {
-            if (count >= fileLength) {
+        public int read(char[] buffer, int offset, int length) {
+            if (count >= FILE_LENGTH) {
                 return -1;
             }
-            if (first == true) {
-                position = 0;
-                first = false;
-            }
-            for (int i = offset; i < length; i++) {
-                buf[i] = CONTENT[(i + position) % CONTENT.length];
-                count++;
-            }
 
-            position = (length + position) % CONTENT.length;
-
-            return length - offset;
+            final int charsToRead = Math.min(FILE_LENGTH - count, length);
+            int bufferIndex = offset;
+            int contentIndex = count % CONTENT.length;
+            int charsRead = 0;
+            while (charsRead < charsToRead) {
+                buffer[bufferIndex++] = CONTENT[contentIndex++];
+                if (contentIndex == CONTENT.length) {
+                    contentIndex = 0;
+                }
+                charsRead++;
+            }
+            count += charsRead;
+            return charsToRead;
         }
     }
 }
