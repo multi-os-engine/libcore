@@ -21,9 +21,10 @@ import org.apache.harmony.testframework.serialization.SerializationTest;
 import org.apache.harmony.testframework.serialization.SerializationTest.SerializableAssert;
 import tests.support.Support_CollectionTest;
 import tests.support.Support_ListTest;
+import tests.support.Support_MapTest;
 import tests.support.Support_SetTest;
 import tests.support.Support_UnmodifiableCollectionTest;
-import tests.support.Support_UnmodifiableMapTest;
+
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -38,6 +39,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -67,7 +69,7 @@ public class CollectionsTest extends junit.framework.TestCase {
 
     private HashMap hm;
 
-    private Object[] objArray;
+    private Integer[] objArray;
 
     private Object[] myobjArray;
 
@@ -1561,7 +1563,7 @@ public class CollectionsTest extends junit.framework.TestCase {
             smallMap.put(objArray[i].toString(), objArray[i]);
         }
         synchMap = Collections.synchronizedMap(smallMap);
-        new Support_UnmodifiableMapTest("", synchMap).runTest();
+        new Support_MapTest("", synchMap).runTest();
         synchMap.keySet().remove(objArray[50].toString());
         assertNull(
                 "Removing a key from the keySet of the synchronized map did not remove it from the synchronized map: ",
@@ -1569,6 +1571,20 @@ public class CollectionsTest extends junit.framework.TestCase {
         assertNull(
                 "Removing a key from the keySet of the synchronized map did not remove it from the original map",
                 smallMap.get(objArray[50].toString()));
+    }
+
+    /**
+     * java.util.Collections#unmodifiableMap(java.util.Map)
+     */
+    public void test_unmodifiableMap_LinkedHashMap() {
+        // LinkedHashMap has a well defined iteration order and shows ordering issues with
+        // entrySet() / keySet() methods: iterator(), toArray(T[]) and toArray(). See bug 72073.
+        LinkedHashMap<String, Integer> smallMap = new LinkedHashMap<String, Integer>();
+        for (int counter = 0; counter < 100; counter++) {
+            Integer object = objArray[counter];
+            smallMap.put(object.toString(), object);
+        }
+        new Support_MapTest("", smallMap).runTest();
     }
 
     /**
@@ -1679,7 +1695,7 @@ public class CollectionsTest extends junit.framework.TestCase {
             smallMap.put(objArray[i].toString(), objArray[i]);
         }
         synchMap = Collections.synchronizedSortedMap(smallMap);
-        new Support_UnmodifiableMapTest("", synchMap).runTest();
+        new Support_MapTest("", synchMap).runTest();
         synchMap.keySet().remove(objArray[50].toString());
         assertNull(
                 "Removing a key from the keySet of the synchronized map did not remove it from the synchronized map",
@@ -1930,8 +1946,7 @@ public class CollectionsTest extends junit.framework.TestCase {
         for (int counter = 0; counter < 100; counter++) {
             smallMap.put(objArray[counter].toString(), objArray[counter]);
         }
-        unmodMap = Collections.unmodifiableMap(smallMap);
-        new Support_UnmodifiableMapTest("", unmodMap).runTest();
+        new Support_MapTest("", smallMap).runTest();
 
     }
 
@@ -2333,10 +2348,10 @@ public class CollectionsTest extends junit.framework.TestCase {
      * is called before a test is executed.
      */
     protected void setUp() {
-        objArray = new Object[1000];
+        objArray = new Integer[1000];
         myobjArray = new Object[1000];
         for (int i = 0; i < objArray.length; i++) {
-            objArray[i] = new Integer(i);
+            objArray[i] = i;
             myobjArray[i] = new MyInt(i);
         }
 
