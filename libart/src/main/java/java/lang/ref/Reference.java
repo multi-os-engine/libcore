@@ -97,6 +97,8 @@ package java.lang.ref;
  */
 public abstract class Reference<T> {
 
+    private static boolean slowPathEnabled = true;
+
     /**
      * The object to which this reference refers.
      * VM requirement: this field <em>must</em> be called "referent"
