@@ -98,6 +98,24 @@ package java.lang.ref;
 public abstract class Reference<T> {
 
     /**
+     * Forces JNI path.
+     *
+     *
+     * @hide
+     */
+    private static boolean disableIntrinsic = false;
+
+    /**
+     * Slow path flag for the reference processor.
+     * Used by the reference processor to determine whether or not slow path is enabled.
+     * Do not attempt to access the slowPathEnabled variable through any sort of mechanism
+     * in java code (ie: reflection) as it might cause deadlocks.
+     *
+     * @hide
+     */
+    private static boolean slowPathEnabled = false;
+
+    /**
      * The object to which this reference refers.
      * VM requirement: this field <em>must</em> be called "referent"
      * and be an object.
