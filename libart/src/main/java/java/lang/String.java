@@ -533,44 +533,33 @@ outer:
     }
 
     /**
-     * Compares the specified string to this string using the Unicode values of
-     * the characters. Returns 0 if the strings contain the same characters in
-     * the same order. Returns a negative integer if the first non-equal
-     * character in this string has a Unicode value which is less than the
-     * Unicode value of the character at the same position in the specified
-     * string, or if this string is a prefix of the specified string. Returns a
-     * positive integer if the first non-equal character in this string has a
-     * Unicode value which is greater than the Unicode value of the character at
-     * the same position in the specified string, or if the specified string is
-     * a prefix of this string.
+     * Compares this string to the given string.
      *
-     * @param string
-     *            the string to compare.
-     * @return 0 if the strings are equal, a negative integer if this string is
-     *         before the specified string, or a positive integer if this string
-     *         is after the specified string.
+     * <p>The strings are compared {@code char} at a time. This is not normally a problem.
+     * In the discussion of the return value below, note that character does not
+     * mean code point, though this should only be visible for surrogate pairs.
+     *
+     * <p>If there is an index at which the two strings differ, the result is
+     * the difference between the two characters. If not, but the lengths of the
+     * strings differ, the result is the difference between the two strings' lengths.
+     * If the strings are the same length and every character is the same, the result is 0.
+     *
      * @throws NullPointerException
      *             if {@code string} is {@code null}.
      */
     public native int compareTo(String string);
 
     /**
-     * Compares the specified string to this string using the Unicode values of
-     * the characters, ignoring case differences. Returns 0 if the strings
-     * contain the same characters in the same order. Returns a negative integer
-     * if the first non-equal character in this string has a Unicode value which
-     * is less than the Unicode value of the character at the same position in
-     * the specified string, or if this string is a prefix of the specified
-     * string. Returns a positive integer if the first non-equal character in
-     * this string has a Unicode value which is greater than the Unicode value
-     * of the character at the same position in the specified string, or if the
-     * specified string is a prefix of this string.
+     * Compares this string to the given string, ignoring case differences.
      *
-     * @param string
-     *            the string to compare.
-     * @return 0 if the strings are equal, a negative integer if this string is
-     *         before the specified string, or a positive integer if this string
-     *         is after the specified string.
+     * <p>The strings are compared {@code char} at a time. This is not generally suitable
+     * for comparing strings in a locale-sensitive manner. Use a {@link java.text.Collator} instead.
+     *
+     * <p>If there is an index at which the two strings differ, the result is
+     * the difference between the two characters. If not, but the lengths of the
+     * strings differ, the result is the difference between the two strings' lengths.
+     * If the strings are the same length and every character is the same, the result is 0.
+     *
      * @throws NullPointerException
      *             if {@code string} is {@code null}.
      */
