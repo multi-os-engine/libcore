@@ -19,6 +19,7 @@ package libcore.icu;
 import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.IllformedLocaleException;
 import java.util.Locale;
 import libcore.util.Objects;
 
@@ -112,27 +113,36 @@ public final class LocaleData {
     private LocaleData() {
     }
 
+    public static Locale convertInvalidLocalesToDefault(Locale locale) {
+        if (locale == null) {
+            return Locale.getDefault();
+        }
+
+        if ("und".equals(locale.toLanguageTag())) {
+            return Locale.ROOT;
+        }
+
+        return locale;
+    }
+
     /**
      * Returns a shared LocaleData for the given locale.
      */
-    public static LocaleData get(Locale locale) {
-        if (locale == null) {
-            locale = Locale.getDefault();
-        }
-        String localeName = locale.toString();
+    public static LocaleData get(Locale locale) throws IllformedLocaleException {
+        final String languageTag = locale.toLanguageTag();
         synchronized (localeDataCache) {
-            LocaleData localeData = localeDataCache.get(localeName);
+            LocaleData localeData = localeDataCache.get(languageTag);
             if (localeData != null) {
                 return localeData;
             }
         }
         LocaleData newLocaleData = initLocaleData(locale);
         synchronized (localeDataCache) {
-            LocaleData localeData = localeDataCache.get(localeName);
+            LocaleData localeData = localeDataCache.get(languageTag);
             if (localeData != null) {
                 return localeData;
             }
-            localeDataCache.put(localeName, newLocaleData);
+            localeDataCache.put(languageTag, newLocaleData);
             return newLocaleData;
         }
     }
@@ -171,8 +181,8 @@ public final class LocaleData {
 
     private static LocaleData initLocaleData(Locale locale) {
         LocaleData localeData = new LocaleData();
-        if (!ICU.initLocaleDataNative(locale.toString(), localeData)) {
-            throw new AssertionError("couldn't initialize LocaleData for locale " + locale);
+        if (!ICU.initLocaleDataNative(locale.toLanguageTag(), localeData)) {
+            throw new IllformedLocaleException("couldn't initialize LocaleData for locale " + locale);
         }
 
         // Get the "h:mm a" and "HH:mm" 12- and 24-hour time format strings.
