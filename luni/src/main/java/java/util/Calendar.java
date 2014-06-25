@@ -642,13 +642,18 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Field number for {@code get} and {@code set} indicating the
-     * raw offset from GMT in milliseconds.
+     * raw (non-DST) offset from GMT in milliseconds.
+     * Equivalent to {@link java.util.TimeZone#getRawOffset}. Note that you'll typically
+     * want to add the {@code ZONE_OFFSET} and {@code DST_OFFSET} fields.
      */
     public static final int ZONE_OFFSET = 15;
 
     /**
      * Field number for {@code get} and {@code set} indicating the
-     * daylight savings offset in milliseconds.
+     * daylight savings offset from the {@code ZONE_OFFSET} in milliseconds.
+     * Equivalent to {@link java.util.TimeZone#getDSTSavings} if the represented time
+     * falls inside DST, or 0 otherwise.
+     * Note that you'll typically want to add the {@code ZONE_OFFSET} and {@code DST_OFFSET} fields.
      */
     public static final int DST_OFFSET = 16;
 
