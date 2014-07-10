@@ -286,9 +286,7 @@ public final class DexFile {
      * failure, an IOException is thrown.
      */
     private static long openDexFile(String sourceName, String outputName, int flags) throws IOException {
-        return openDexFileNative(new File(sourceName).getCanonicalPath(),
-                                 (outputName == null) ? null : new File(outputName).getCanonicalPath(),
-                                 flags);
+        return openDexFileNative(sourceName, outputName, flags);
     }
 
     private static native void closeDexFile(long cookie);
