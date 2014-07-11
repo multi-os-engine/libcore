@@ -15,6 +15,17 @@
  *  limitations under the License.
  */
 
+/*
+ * Some of the below functions have been implemented with the following license.
+ * ====================================================
+ * Copyright (C) 2004 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice 
+ * is preserved.
+ * ====================================================
+ */
+
 package java.lang;
 
 /**
@@ -102,58 +113,208 @@ public final class StrictMath {
         return Math.abs(l);
     }
 
-    /**
-     * Returns the closest double approximation of the arc cosine of the
-     * argument within the range {@code [0..pi]}.
-     * <p>
-     * Special cases:
-     * <ul>
-     * <li>{@code acos((anything > 1) = NaN}</li>
-     * <li>{@code acos((anything < -1) = NaN}</li>
-     * <li>{@code acos(NaN) = NaN}</li>
-     * </ul>
-     *
-     * @param d
-     *            the value to compute arc cosine of.
-     * @return the arc cosine of the argument.
-     */
-    public static native double acos(double d);
+    private static final double one = 1.00000000000000000000e+00;
+    private static final double pi = 3.14159265358979311600e+00;
+    private static final double pio2_hi = 1.57079632679489655800e+00;
+    private static final double pio2_lo = 6.12323399573676603587e-17;
+    private static final double pS0 = 1.66666666666666657415e-01;
+    private static final double pS1 = -3.25565818622400915405e-01;
+    private static final double pS2 = 2.01212532134862925881e-01;
+    private static final double pS3 = -4.00555345006794114027e-02;
+    private static final double pS4 = 7.91534994289814532176e-04;
+    private static final double pS5 = 3.47933107596021167570e-05;
+    private static final double qS1 = -2.40339491173441421878e+00;
+    private static final double qS2 = 2.02094576023350569471e+00;
+    private static final double qS3 = -6.88283971605453293030e-01;
+    private static final double qS4 = 7.70381505559019352791e-02;
+    private static final double huge = 1.000e+300;
+    private static final double pio4_hi = 7.85398163397448278999e-01;
 
-    /**
-     * Returns the closest double approximation of the arc sine of the argument
-     * within the range {@code [-pi/2..pi/2]}.
-     * <p>
-     * Special cases:
-     * <ul>
-     * <li>{@code asin((anything > 1)) = NaN}</li>
-     * <li>{@code asin((anything < -1)) = NaN}</li>
-     * <li>{@code asin(NaN) = NaN}</li>
-     * </ul>
-     *
-     * @param d
-     *            the value whose arc sine has to be computed.
-     * @return the arc sine of the argument.
-     */
-    public static native double asin(double d);
+    public static double acos(double x) {
+        double z, p, q, r, w, s, c, df;
+        int hx, ix;
+        final long bits = Double.doubleToRawLongBits(x);
+        hx = (int) (bits >>> 32);
+        ix = hx & 0x7fffffff;
+        if (ix >= 0x3ff00000) { /* |x| >= 1 */
+            if ((((ix - 0x3ff00000) | ((int) bits))) == 0) { /* |x|==1 */
+                if (hx > 0) {
+                    return 0.0; /* ieee_acos(1) = 0 */
+                } else {
+                    return pi + 2.0 * pio2_lo; /* ieee_acos(-1)= pi */
+                }
+            }
 
-    /**
-     * Returns the closest double approximation of the arc tangent of the
-     * argument within the range {@code [-pi/2..pi/2]}.
-     * <p>
-     * Special cases:
-     * <ul>
-     * <li>{@code atan(+0.0) = +0.0}</li>
-     * <li>{@code atan(-0.0) = -0.0}</li>
-     * <li>{@code atan(+infinity) = +pi/2}</li>
-     * <li>{@code atan(-infinity) = -pi/2}</li>
-     * <li>{@code atan(NaN) = NaN}</li>
-     * </ul>
-     *
-     * @param d
-     *            the value whose arc tangent has to be computed.
-     * @return the arc tangent of the argument.
-     */
-    public static native double atan(double d);
+            return (x - x) / (x - x); /* ieee_acos(|x|>1) is NaN */
+        }
+
+        if (ix < 0x3fe00000) { /* |x| < 0.5 */
+            if (ix <= 0x3c600000) {
+                return pio2_hi + pio2_lo;/* if|x|<2**-57 */
+            }
+
+            z = x * x;
+            p = z * (pS0 + z
+                    * (pS1 + z * (pS2 + z * (pS3 + z * (pS4 + z * pS5)))));
+            q = one + z * (qS1 + z * (qS2 + z * (qS3 + z * qS4)));
+            r = p / q;
+            return pio2_hi - (x - (pio2_lo - x * r));
+        } else if (hx < 0) { /* x < -0.5 */
+            z = (one + x) * 0.5;
+            p = z * (pS0 + z
+                    * (pS1 + z * (pS2 + z * (pS3 + z * (pS4 + z * pS5)))));
+            q = one + z * (qS1 + z * (qS2 + z * (qS3 + z * qS4)));
+            s = StrictMath.sqrt(z);
+            r = p / q;
+            w = r * s - pio2_lo;
+            return pi - 2.0 * (s + w);
+        } else { /* x > 0.5 */
+            z = (one - x) * 0.5;
+            s = StrictMath.sqrt(z);
+            df = s;
+            df = Double.longBitsToDouble(
+                    Double.doubleToRawLongBits(df) & 0xffffffffL << 32);
+            c = (z - df * df) / (s + df);
+            p = z * (pS0 + z
+                    * (pS1 + z * (pS2 + z * (pS3 + z * (pS4 + z * pS5)))));
+            q = one + z * (qS1 + z * (qS2 + z * (qS3 + z * qS4)));
+            r = p / q;
+            w = r * s + c;
+            return 2.0 * (df + w);
+        }
+    }
+
+    public static double asin(double x) {
+        double t, w, p, q, c, r, s;
+        int hx, ix;
+        final long bits = Double.doubleToRawLongBits(x);
+        hx = (int) (bits >>> 32);
+        ix = hx & 0x7fffffff;
+        if (ix >= 0x3ff00000) { /* |x|>= 1 */
+            if ((((ix - 0x3ff00000) | ((int) bits))) == 0) {
+                /* ieee_asin(1)=+-pi/2 with inexact */
+                return x * pio2_hi + x * pio2_lo;
+            }
+            return (x - x) / (x - x); /* ieee_asin(|x|>1) is NaN */
+        } else if (ix < 0x3fe00000) { /* |x|<0.5 */
+            if (ix < 0x3e400000) { /* if |x| < 2**-27 */
+                if (huge + x > one) {
+                    return x;/* return x with inexact if x!=0 */
+                }
+            } else {
+                t = x * x;
+                p = t * (pS0 + t
+                        * (pS1 + t * (pS2 + t * (pS3 + t * (pS4 + t * pS5)))));
+                q = one + t * (qS1 + t * (qS2 + t * (qS3 + t * qS4)));
+                w = p / q;
+                return x + x * w;
+            }
+        }
+        /* 1> |x|>= 0.5 */
+        w = one - Math.abs(x);
+        t = w * 0.5;
+        p = t * (pS0 + t * (pS1 + t * (pS2 + t * (pS3 + t * (pS4 + t * pS5)))));
+        q = one + t * (qS1 + t * (qS2 + t * (qS3 + t * qS4)));
+        s = StrictMath.sqrt(t);
+        if (ix >= 0x3FEF3333) { /* if |x| > 0.975 */
+            w = p / q;
+            t = pio2_hi - (2.0 * (s + s * w) - pio2_lo);
+        } else {
+            w = s;
+            w = Double.longBitsToDouble(
+                    Double.doubleToRawLongBits(w) & 0xffffffffL << 32);
+            c = (t - w * w) / (s + w);
+            r = p / q;
+            p = 2.0 * s * r - (pio2_lo - 2.0 * c);
+            q = pio4_hi - 2.0 * w;
+            t = pio4_hi - (p - q);
+        }
+        return (hx > 0) ? t : -t;
+    }
+
+    private static final double[] atanhi = { 4.63647609000806093515e-01,
+            7.85398163397448278999e-01, 9.82793723247329054082e-01,
+            1.57079632679489655800e+00 };
+    private static final double atanlo[] = { 2.26987774529616870924e-17,
+            3.06161699786838301793e-17, 1.39033110312309984516e-17, 
+            6.12323399573676603587e-17 };
+
+    private static final double aT[] = { 3.33333333333329318027e-01,
+            -1.99999999998764832476e-01, /* 0xBFC99999, 0x9998EBC4 */
+            1.42857142725034663711e-01, /* 0x3FC24924, 0x920083FF */
+            -1.11111104054623557880e-01, /* 0xBFBC71C6, 0xFE231671 */
+            9.09088713343650656196e-02, /* 0x3FB745CD, 0xC54C206E */
+            -7.69187620504482999495e-02, /* 0xBFB3B0F2, 0xAF749A6D */
+            6.66107313738753120669e-02, /* 0x3FB10D66, 0xA0D03D51 */
+            -5.83357013379057348645e-02, /* 0xBFADDE2D, 0x52DEFD9A */
+            4.97687799461593236017e-02, /* 0x3FA97B4B, 0x24760DEB */
+            -3.65315727442169155270e-02, /* 0xBFA2B444, 0x2C6A6C2F */
+            1.62858201153657823623e-02, /* 0x3F90AD3A, 0xE322DA11 */
+    };
+
+    public static double atan(double x) {
+        double w, s1, s2, z;
+        int ix, hx, id;
+
+        final long bits = Double.doubleToRawLongBits(x);
+        hx = (int) (bits >>> 32);
+        ix = hx & 0x7fffffff;
+        if (ix >= 0x44100000) { /* if |x| >= 2^66 */
+            if (ix > 0x7ff00000 || (ix == 0x7ff00000 && (((int) bits) != 0))) {
+                return x + x; /* NaN */
+            }
+            if (hx > 0) {
+                return atanhi[3] + atanlo[3];
+            } else {
+                return -atanhi[3] - atanlo[3];
+            }
+        }
+        if (ix < 0x3fdc0000) { /* |x| < 0.4375 */
+            if (ix < 0x3e200000) { /* |x| < 2^-29 */
+                if (huge + x > one) {
+                    return x; /* raise inexact */
+                }
+            }
+            id = -1;
+        } else {
+            x = Math.abs(x);
+            if (ix < 0x3ff30000) { /* |x| < 1.1875 */
+                if (ix < 0x3fe60000) { /* 7/16 <=|x|<11/16 */
+                    id = 0;
+                    x = (2.0 * x - one) / (2.0 + x);
+                } else { /* 11/16<=|x|< 19/16 */
+                    id = 1;
+                    x = (x - one) / (x + one);
+                }
+            } else {
+                if (ix < 0x40038000) { /* |x| < 2.4375 */
+                    id = 2;
+                    x = (x - 1.5) / (one + 1.5 * x);
+                } else { /* 2.4375 <= |x| < 2^66 */
+                    id = 3;
+                    x = -1.0 / x;
+                }
+            }
+        }
+
+        /* end of argument reduction */
+        z = x * x;
+        w = z * z;
+        /* break sum from i=0 to 10 aT[i]z**(i+1) into odd and even poly */
+        s1 = z * (aT[0] + w * (aT[2] + w
+                * (aT[4] + w * (aT[6] + w * (aT[8] + w * aT[10])))));
+        s2 = w * (aT[1] + w * (aT[3] + w * (aT[5] + w * (aT[7] + w * aT[9]))));
+        if (id < 0) {
+            return x - x * (s1 + s2);
+        } else {
+            z = atanhi[id] - ((x * (s1 + s2) - atanlo[id]) - x);
+            return (hx < 0) ? -z : z;
+        }
+    }
+
+    private static final double pi_o_4 = 7.8539816339744827900E-01;
+    private static final double pi_o_2 = 1.5707963267948965580E+00;
+    private static final double pi_lo = 1.2246467991473531772E-16;
 
     /**
      * Returns the closest double approximation of the arc tangent of
@@ -185,33 +346,185 @@ public final class StrictMath {
      * <li>{@code atan2(-infinity, (anything but,0, NaN, and infinity))}
      * {@code =} {@code -pi/2}</li>
      * </ul>
-     *
+     * 
      * @param y
      *            the numerator of the value whose atan has to be computed.
      * @param x
      *            the denominator of the value whose atan has to be computed.
      * @return the arc tangent of {@code y/x}.
      */
-    public static native double atan2(double y, double x);
+    public static double atan2(double y, double x) {
+        double z;
+        int k, m, hx, hy, ix, iy;
+        int lx, ly; // watch out, should be unsigned
 
-    /**
-     * Returns the closest double approximation of the cube root of the
-     * argument.
-     * <p>
-     * Special cases:
-     * <ul>
-     * <li>{@code cbrt(+0.0) = +0.0}</li>
-     * <li>{@code cbrt(-0.0) = -0.0}</li>
-     * <li>{@code cbrt(+infinity) = +infinity}</li>
-     * <li>{@code cbrt(-infinity) = -infinity}</li>
-     * <li>{@code cbrt(NaN) = NaN}</li>
-     * </ul>
-     *
-     * @param d
-     *            the value whose cube root has to be computed.
-     * @return the cube root of the argument.
-     */
-    public static native double cbrt(double d);
+        final long yBits = Double.doubleToRawLongBits(y);
+        final long xBits = Double.doubleToRawLongBits(x);
+
+        hx = (int) (xBits >>> 32); // __HI(x);
+        ix = hx & 0x7fffffff;
+        lx = (int) xBits; // __LO(x);
+        hy = (int) (yBits >>> 32); // __HI(y);
+        iy = hy & 0x7fffffff;
+        ly = (int) yBits; // __LO(y);
+        if (((ix | ((lx | -lx) >> 31)) > 0x7ff00000)
+                || ((iy | ((ly | -ly) >> 31)) > 0x7ff00000)) { /* x or y is NaN */
+            return x + y;
+        }
+        if ((hx - 0x3ff00000 | lx) == 0) {
+            return StrictMath.atan(y); /* x=1.0 */
+        }
+
+        m = ((hy >> 31) & 1) | ((hx >> 30) & 2); /* 2*sign(x)+sign(y) */
+
+        /* when y = 0 */
+        if ((iy | ly) == 0) {
+            switch (m) {
+                case 0:
+                case 1:
+                    return y; /* ieee_atan(+-0,+anything)=+-0 */
+                case 2:
+                    return pi + tiny;/* ieee_atan(+0,-anything) = pi */
+                case 3:
+                    return -pi - tiny;/* ieee_atan(-0,-anything) =-pi */
+            }
+        }
+        /* when x = 0 */
+        if ((ix | lx) == 0)
+            return (hy < 0) ? -pi_o_2 - tiny : pi_o_2 + tiny;
+
+        /* when x is INF */
+        if (ix == 0x7ff00000) {
+            if (iy == 0x7ff00000) {
+                switch (m) {
+                    case 0:
+                        return pi_o_4 + tiny;/* ieee_atan(+INF,+INF) */
+                    case 1:
+                        return -pi_o_4 - tiny;/* ieee_atan(-INF,+INF) */
+                    case 2:
+                        return 3.0 * pi_o_4 + tiny;/* ieee_atan(+INF,-INF) */
+                    case 3:
+                        return -3.0 * pi_o_4 - tiny;/* ieee_atan(-INF,-INF) */
+                }
+            } else {
+                switch (m) {
+                    case 0:
+                        return zero; /* ieee_atan(+...,+INF) */
+                    case 1:
+                        return -zero; /* ieee_atan(-...,+INF) */
+                    case 2:
+                        return pi + tiny; /* ieee_atan(+...,-INF) */
+                    case 3:
+                        return -pi - tiny; /* ieee_atan(-...,-INF) */
+                }
+            }
+        }
+        /* when y is INF */
+        if (iy == 0x7ff00000)
+            return (hy < 0) ? -pi_o_2 - tiny : pi_o_2 + tiny;
+
+        /* compute y/x */
+        k = (iy - ix) >> 20;
+        if (k > 60) {
+            z = pi_o_2 + 0.5 * pi_lo; /* |y/x| > 2**60 */
+        } else if (hx < 0 && k < -60) {
+            z = 0.0; /* |y|/x < -2**60 */
+        } else {
+            z = StrictMath.atan(Math.abs(y / x)); /* safe to do y/x */
+        }
+
+        switch (m) {
+            case 0:
+                return z; /* ieee_atan(+,+) */
+            case 1:
+                // __HI(z) ^= 0x80000000;
+                z = Double.longBitsToDouble(
+                        Double.doubleToRawLongBits(z) ^ (0x80000000L << 32));
+                return z; /* ieee_atan(-,+) */
+            case 2:
+                return pi - (z - pi_lo);/* ieee_atan(+,-) */
+            default: /* case 3 */
+                return (z - pi_lo) - pi;/* ieee_atan(-,-) */
+        }
+    }
+
+    private static final int B1 = 715094163;
+    private static final int B2 = 696219795;
+    private static final double C = 5.42857142857142815906e-01;
+    private static final double D = -7.05306122448979611050e-01;
+    private static final double cbrtE = 1.41428571428571436819e+00;
+    private static final double F = 1.60714285714285720630e+00;
+    private static final double G = 3.57142857142857150787e-01;
+
+    public static double cbrt(double x) {
+        if (x < 0) {
+            return -cbrt(-x);
+        }
+        int hx;
+        double r, s, w;
+        int sign; // caution: should be unsigned
+        long bits = Double.doubleToRawLongBits(x);
+
+        hx = (int) (bits >>> 32);
+        sign = hx & 0x80000000; /* sign= sign(x) */
+        hx ^= sign;
+        if (hx >= 0x7ff00000) {
+            return (x + x); /* ieee_cbrt(NaN,INF) is itself */
+        }
+
+        if ((hx | ((int) bits)) == 0) {
+            return x; /* ieee_cbrt(0) is itself */
+        }
+
+        // __HI(x) = hx; /* x <- |x| */
+        bits &= 0x00000000ffffffffL;
+        bits |= ((long) hx << 32);
+
+        long tBits = Double.doubleToRawLongBits(0.0) & 0x00000000ffffffffL;
+        double t = 0.0;
+        /* rough cbrt to 5 bits */
+        if (hx < 0x00100000) { /* subnormal number */
+            // __HI(t)=0x43500000; /*set t= 2**54*/
+            tBits |= 0x43500000L << 32;
+            t = Double.longBitsToDouble(tBits);
+            t *= x;
+
+            // __HI(t)=__HI(t)/3+B2;
+            tBits = Double.doubleToRawLongBits(t);
+            long tBitsHigh = tBits >> 32;
+            tBits &= 0x00000000ffffffffL;
+            tBits |= ((tBitsHigh / 3) + B2) << 32;
+            t = Double.longBitsToDouble(tBits);
+
+        } else {
+            // __HI(t)=hx/3+B1;
+            tBits |= ((long) ((hx / 3) + B1)) << 32;
+            t = Double.longBitsToDouble(tBits);
+        }
+
+        /* new cbrt to 23 bits, may be implemented in single precision */
+        r = t * t / x;
+        s = C + r * t;
+        t *= G + F / (s + cbrtE + D / s);
+
+        /* chopped to 20 bits and make it larger than ieee_cbrt(x) */
+        tBits = Double.doubleToRawLongBits(t);
+        tBits &= 0xFFFFFFFFL << 32;
+        tBits += 0x00000001L << 32;
+        t = Double.longBitsToDouble(tBits);
+
+        /* one step newton iteration to 53 bits with error less than 0.667 ulps */
+        s = t * t; /* t*t is exact */
+        r = x / s;
+        w = t + t;
+        r = (r - t) / (w + r); /* r-s is exact */
+        t = t + t * r;
+
+        /* retore the sign bit */
+        tBits = Double.doubleToRawLongBits(t);
+        tBits |= ((long) sign) << 32;
+        return Double.longBitsToDouble(tBits);
+    }
 
     /**
      * Returns the double conversion of the most negative (closest to negative
@@ -229,6 +542,9 @@ public final class StrictMath {
      */
     public static native double ceil(double d);
 
+    private static final double half = 0.5;
+    private static final long oneBits = Double.doubleToRawLongBits(one)
+            & 0x00000000ffffffffL;
 
     /**
      * Returns the closest double approximation of the hyperbolic cosine of the
@@ -240,12 +556,55 @@ public final class StrictMath {
      * <li>{@code cosh(-infinity) = +infinity}</li>
      * <li>{@code cosh(NaN) = NaN}</li>
      * </ul>
-     *
-     * @param d
+     * 
+     * @param x
      *            the value whose hyperbolic cosine has to be computed.
      * @return the hyperbolic cosine of the argument.
      */
-    public static native double cosh(double d);
+    public static double cosh(double x) {
+        double t, w;
+        int ix;
+        final long bits = Double.doubleToRawLongBits(x);
+        ix = (int) (bits >>> 32) & 0x7fffffff;
+
+        /* x is INF or NaN */
+        if (ix >= 0x7ff00000) {
+            return x * x;
+        }
+
+        /* |x| in [0,0.5*ln2], return 1+ieee_expm1(|x|)^2/(2*ieee_exp(|x|)) */
+        if (ix < 0x3fd62e43) {
+            t = expm1(Math.abs(x));
+            w = one + t;
+            if (ix < 0x3c800000)
+                return w; /* ieee_cosh(tiny) = 1 */
+            return one + (t * t) / (w + w);
+        }
+
+        /* |x| in [0.5*ln2,22], return (ieee_exp(|x|)+1/ieee_exp(|x|)/2; */
+        if (ix < 0x40360000) {
+            t = exp(Math.abs(x));
+            return half * t + half / t;
+        }
+
+        /* |x| in [22, ieee_log(maxdouble)] return half*ieee_exp(|x|) */
+        if (ix < 0x40862E42) {
+            return half * exp(Math.abs(x));
+        }
+
+        /* |x| in [log(maxdouble), overflowthresold] */
+        final long lx = ((oneBits >>> 29) + ((int) bits)) & 0x00000000ffffffffL;
+        // watch out: lx should be an unsigned int
+        // lx = *( (((*(unsigned*)&one)>>29)) + (unsigned*)&x);
+        if (ix < 0x408633CE || (ix == 0x408633ce) && (lx <= 0x8fb9f87dL)) {
+            w = exp(half * Math.abs(x));
+            t = half * w;
+            return t * w;
+        }
+
+        /* |x| > overflowthresold, ieee_cosh(x) overflow */
+        return huge * huge;
+    }
 
     /**
      * Returns the closest double approximation of the cosine of the argument.
@@ -256,12 +615,31 @@ public final class StrictMath {
      * <li>{@code cos(-infinity) = NaN}</li>
      * <li>{@code cos(NaN) = NaN}</li>
      * </ul>
-     *
+     * 
      * @param d
      *            the angle whose cosine has to be computed, in radians.
      * @return the cosine of the argument.
      */
     public static native double cos(double d);
+
+    private static final int init_jk[] = { 2, 3, 4, 6 };
+    private static final double twon24 = 5.96046447753906250000e-08;
+    private static final double two54 = 1.80143985094819840000e+16,
+            twom54 = 5.55111512312578270212e-17;
+    private static final double[] halF = { 0.5, -0.5 };
+    private static final double twom1000 = 9.33263618503218878990e-302;
+    private static final double o_threshold = 7.09782712893383973096e+02;
+    private static final double u_threshold = -7.45133219101941108420e+02;
+    private static final double[] ln2HI = { 6.93147180369123816490e-01,
+            -6.93147180369123816490e-01 };
+    private static final double[] ln2LO = { 1.90821492927058770002e-10,
+            -1.90821492927058770002e-10 };
+    private static final double invln2 = 1.44269504088896338700e+00;
+    private static final double P1 = 1.66666666666666019037e-01;
+    private static final double P2 = -2.77777777770155933842e-03;
+    private static final double P3 = 6.61375632143793436117e-05;
+    private static final double P4 = -1.65339022054652515390e-06;
+    private static final double P5 = 4.13813679705723846039e-08;
 
     /**
      * Returns the closest double approximation of the raising "e" to the power
@@ -273,12 +651,87 @@ public final class StrictMath {
      * <li>{@code exp(-infinity) = +0.0}</li>
      * <li>{@code exp(NaN) = NaN}</li>
      * </ul>
-     *
-     * @param d
+     * 
+     * @param x
      *            the value whose exponential has to be computed.
      * @return the exponential of the argument.
      */
-    public static native double exp(double d);
+    public static double exp(double x) {
+        double y, c, t;
+        double hi = 0, lo = 0;
+        int k = 0, xsb;
+        int hx; // should be unsigned, be careful!
+        final long bits = Double.doubleToRawLongBits(x);
+        int lowBits = (int) bits;
+        int highBits = (int) (bits >>> 32);
+        hx = highBits & 0x7fffffff;
+        xsb = (highBits >>> 31) & 1;
+
+        /* filter out non-finite argument */
+        if (hx >= 0x40862E42) { /* if |x|>=709.78... */
+            if (hx >= 0x7ff00000) {
+                if (((hx & 0xfffff) | lowBits) != 0) {
+                    return x + x; /* NaN */
+                } else {
+                    return (xsb == 0) ? x : 0.0; /* ieee_exp(+-inf)={inf,0} */
+                }
+            }
+
+            if (x > o_threshold) {
+                return huge * huge; /* overflow */
+            }
+
+            if (x < u_threshold) {
+                return twom1000 * twom1000; /* underflow */
+            }
+        }
+
+        /* argument reduction */
+        if (hx > 0x3fd62e42) { /* if |x| > 0.5 ln2 */
+            if (hx < 0x3FF0A2B2) { /* and |x| < 1.5 ln2 */
+                hi = x - ln2HI[xsb];
+                lo = ln2LO[xsb];
+                k = 1 - xsb - xsb;
+            } else {
+                k = (int) (invln2 * x + halF[xsb]);
+                t = k;
+                hi = x - t * ln2HI[0]; /* t*ln2HI is exact here */
+                lo = t * ln2LO[0];
+            }
+            x = hi - lo;
+        } else if (hx < 0x3e300000) { /* when |x|<2**-28 */
+            if (huge + x > one)
+                return one + x;/* trigger inexact */
+        } else {
+            k = 0;
+        }
+
+        /* x is now in primary range */
+        t = x * x;
+        c = x - t * (P1 + t * (P2 + t * (P3 + t * (P4 + t * P5))));
+        if (k == 0) {
+            return one - ((x * c) / (c - 2.0) - x);
+        } else {
+            y = one - ((lo - (x * c) / (2.0 - c)) - hi);
+        }
+        long yBits = Double.doubleToRawLongBits(y);
+        if (k >= -1021) {
+            yBits += ((long) (k << 20)) << 32; /* add k to y's exponent */
+            return Double.longBitsToDouble(yBits);
+        } else {
+            yBits += ((long) ((k + 1000) << 20)) << 32;/* add k to y's exponent */
+            return Double.longBitsToDouble(yBits) * twom1000;
+        }
+    }
+
+    private static final double tiny = 1.0e-300;
+    private static final double ln2_hi = 6.93147180369123816490e-01;
+    private static final double ln2_lo = 1.90821492927058770002e-10;
+    private static final double Q1 = -3.33333333333331316428e-02;
+    private static final double Q2 = 1.58730158725481460165e-03;
+    private static final double Q3 = -7.93650757867487942473e-05;
+    private static final double Q4 = 4.00821782732936239552e-06;
+    private static final double Q5 = -2.01099218183624371326e-07;
 
     /**
      * Returns the closest double approximation of <i>{@code e}</i><sup>
@@ -294,18 +747,125 @@ public final class StrictMath {
      * <li>{@code expm1(-infinity) = -1.0}</li>
      * <li>{@code expm1(NaN) = NaN}</li>
      * </ul>
-     *
-     * @param d
+     * 
+     * @param x
      *            the value to compute the <i>{@code e}</i><sup>{@code d}</sup>
      *            {@code - 1} of.
-     * @return the <i>{@code e}</i><sup>{@code d}</sup>{@code - 1} value
-     *         of the argument.
+     * @return the <i>{@code e}</i><sup>{@code d}</sup>{@code - 1} value of the
+     *         argument.
      */
-    public static native double expm1(double d);
+    public static double expm1(double x) {
+        double y, hi, lo, t, e, hxs, hfx, r1, c = 0.0;
+        int k, xsb;
+        long yBits = 0;
+        final long bits = Double.doubleToRawLongBits(x);
+        int highBits = (int) (bits >>> 32);
+        int lowBits = (int) (bits);
+        int hx = highBits & 0x7fffffff; // caution: should be unsigned!
+        xsb = highBits & 0x80000000; /* sign bit of x */
+        y = xsb == 0 ? x : -x; /* y = |x| */
+
+        /* filter out huge and non-finite argument */
+        if (hx >= 0x4043687A) { /* if |x|>=56*ln2 */
+            if (hx >= 0x40862E42) { /* if |x|>=709.78... */
+                if (hx >= 0x7ff00000) {
+                    if (((hx & 0xfffff) | lowBits) != 0) {
+                        return x + x; /* NaN */
+                    } else {
+                        return (xsb == 0) ? x : -1.0;/* ieee_exp(+-inf)={inf,-1} */
+                    }
+                }
+                if (x > o_threshold) {
+                    return huge * huge; /* overflow */
+                }
+            }
+            if (xsb != 0) { /* x < -56*ln2, return -1.0 with inexact */
+                if (x + tiny < 0.0) { /* raise inexact */
+                    return tiny - one; /* return -1 */
+                }
+            }
+        }
+        /* argument reduction */
+        if (hx > 0x3fd62e42) { /* if |x| > 0.5 ln2 */
+            if (hx < 0x3FF0A2B2) { /* and |x| < 1.5 ln2 */
+                if (xsb == 0) {
+                    hi = x - ln2_hi;
+                    lo = ln2_lo;
+                    k = 1;
+                } else {
+                    hi = x + ln2_hi;
+                    lo = -ln2_lo;
+                    k = -1;
+                }
+            } else {
+                k = (int) (invln2 * x + ((xsb == 0) ? 0.5 : -0.5));
+                t = k;
+                hi = x - t * ln2_hi; /* t*ln2_hi is exact here */
+                lo = t * ln2_lo;
+            }
+            x = hi - lo;
+            c = (hi - x) - lo;
+        } else if (hx < 0x3c900000) { /* when |x|<2**-54, return x */
+            // t = huge+x; /* return x with inexact flags when x!=0 */
+            // return x - (t-(huge+x));
+            return x; // inexact flag is not set, but Java ignors this flag
+                      // anyway
+        } else {
+            k = 0;
+        }
+
+        /* x is now in primary range */
+        hfx = 0.5 * x;
+        hxs = x * hfx;
+        r1 = one + hxs * (Q1 + hxs * (Q2 + hxs * (Q3 + hxs * (Q4 + hxs * Q5))));
+        t = 3.0 - r1 * hfx;
+        e = hxs * ((r1 - t) / (6.0 - x * t));
+        if (k == 0) {
+            return x - (x * e - hxs); /* c is 0 */
+        } else {
+            e = (x * (e - c) - c);
+            e -= hxs;
+            if (k == -1) {
+                return 0.5 * (x - e) - 0.5;
+            }
+
+            if (k == 1) {
+                if (x < -0.25) {
+                    return -2.0 * (e - (x + 0.5));
+                } else {
+                    return one + 2.0 * (x - e);
+                }
+            }
+
+            if (k <= -2 || k > 56) { /* suffice to return ieee_exp(x)-1 */
+                y = one - (e - x);
+                yBits = Double.doubleToRawLongBits(y);
+                yBits += (((long) k) << 52); /* add k to y's exponent */
+                return Double.longBitsToDouble(yBits) - one;
+            }
+
+            long tBits = Double.doubleToRawLongBits(one) & 0x00000000ffffffffL;
+
+            if (k < 20) {
+                tBits |= (((long) 0x3ff00000) - (0x200000 >> k)) << 32;
+                y = Double.longBitsToDouble(tBits) - (e - x);
+                yBits = Double.doubleToRawLongBits(y);
+                yBits += (((long) k) << 52); /* add k to y's exponent */
+                return Double.longBitsToDouble(yBits);
+            } else {
+                tBits |= ((((long) 0x3ff) - k) << 52); /* 2^-k */
+                y = x - (e + Double.longBitsToDouble(tBits));
+                y += one;
+                yBits = Double.doubleToRawLongBits(y);
+                yBits += (((long) k) << 52); /* add k to y's exponent */
+                return Double.longBitsToDouble(yBits);
+            }
+        }
+    }
 
     /**
-     * Returns the double conversion of the most positive (closest to
-     * positive infinity) integer less than or equal to the argument.
+     * Returns the double conversion of the most positive (closest to positive
+     * infinity) integer less than or equal to the argument.
      * <p>
      * Special cases:
      * <ul>
@@ -319,9 +879,9 @@ public final class StrictMath {
     public static native double floor(double d);
 
     /**
-     * Returns {@code sqrt(}<i>{@code x}</i><sup>{@code 2}</sup>{@code +}
-     * <i> {@code y}</i><sup>{@code 2}</sup>{@code )}. The final result is
-     * without medium underflow or overflow.
+     * Returns {@code sqrt(}<i>{@code x}</i><sup>{@code 2}</sup>{@code +} <i>
+     * {@code y}</i><sup>{@code 2}</sup>{@code )}. The final result is without
+     * medium underflow or overflow.
      * <p>
      * Special cases:
      * <ul>
@@ -331,7 +891,7 @@ public final class StrictMath {
      * <li>{@code hypot((anything including NaN), -infinity) = +infinity}</li>
      * <li>{@code hypot(NaN, NaN) = NaN}</li>
      * </ul>
-     *
+     * 
      * @param x
      *            a double number.
      * @param y
@@ -360,7 +920,7 @@ public final class StrictMath {
      * <li>{@code IEEEremainder(x, -infinity) = x } where x is anything but
      * +/-infinity</li>
      * </ul>
-     *
+     * 
      * @param x
      *            the numerator of the operation.
      * @param y
@@ -368,6 +928,15 @@ public final class StrictMath {
      * @return the IEEE754 floating point reminder of of {@code x/y}.
      */
     public static native double IEEEremainder(double x, double y);
+
+    private static final double zero = 0.0;
+    private static final double Lg1 = 6.666666666666735130e-01;
+    private static final double Lg2 = 3.999999999940941908e-01;
+    private static final double Lg3 = 2.857142874366239149e-01;
+    private static final double Lg4 = 2.222219843214978396e-01;
+    private static final double Lg5 = 1.818357216161805012e-01;
+    private static final double Lg6 = 1.531383769920937332e-01;
+    private static final double Lg7 = 1.479819860511658591e-01;
 
     /**
      * Returns the closest double approximation of the natural logarithm of the
@@ -382,12 +951,96 @@ public final class StrictMath {
      * <li>{@code log(-infinity) = NaN}</li>
      * <li>{@code log(NaN) = NaN}</li>
      * </ul>
-     *
-     * @param d
+     * 
+     * @param x
      *            the value whose log has to be computed.
      * @return the natural logarithm of the argument.
      */
-    public static native double log(double d);
+    public static double log(double x) {
+        double hfsq, f, s, z, R, w, t1, t2, dk;
+        int hx, i, j, k = 0;
+        int lx; // watch out, should be unsigned
+
+        long bits = Double.doubleToRawLongBits(x);
+        hx = (int) (bits >>> 32); /* high word of x */
+        lx = (int) bits; /* low word of x */
+
+        if (hx < 0x00100000) { /* x < 2**-1022 */
+            if (((hx & 0x7fffffff) | lx) == 0) {
+                return -two54 / zero; /* ieee_log(+-0)=-inf */
+            }
+
+            if (hx < 0) {
+                return (x - x) / zero; /* ieee_log(-#) = NaN */
+            }
+
+            k -= 54;
+            x *= two54; /* subnormal number, scale up x */
+            bits = Double.doubleToRawLongBits(x);
+            hx = (int) (bits >>> 32); /* high word of x */
+        }
+
+        if (hx >= 0x7ff00000) {
+            return x + x;
+        }
+
+        k += (hx >> 20) - 1023;
+        hx &= 0x000fffff;
+        bits &= 0x00000000ffffffffL;
+        i = (hx + 0x95f64) & 0x100000;
+        bits |= ((long) hx | (i ^ 0x3ff00000)) << 32; /* normalize x or x/2 */
+        x = Double.longBitsToDouble(bits);
+        k += (i >> 20);
+        f = x - 1.0;
+
+        if ((0x000fffff & (2 + hx)) < 3) { /* |f| < 2**-20 */
+            if (f == zero) {
+                if (k == 0) {
+                    return zero;
+                } else {
+                    dk = k;
+                }
+                return dk * ln2_hi + dk * ln2_lo;
+            }
+
+            R = f * f * (0.5 - 0.33333333333333333 * f);
+            if (k == 0) {
+                return f - R;
+            } else {
+                dk = k;
+                return dk * ln2_hi - ((R - dk * ln2_lo) - f);
+            }
+        }
+        s = f / (2.0 + f);
+        dk = k;
+        z = s * s;
+        i = hx - 0x6147a;
+        w = z * z;
+        j = 0x6b851 - hx;
+        t1 = w * (Lg2 + w * (Lg4 + w * Lg6));
+        t2 = z * (Lg1 + w * (Lg3 + w * (Lg5 + w * Lg7)));
+        i |= j;
+        R = t2 + t1;
+        if (i > 0) {
+            hfsq = 0.5 * f * f;
+            if (k == 0) {
+                return f - (hfsq - s * (hfsq + R));
+            } else {
+                return dk * ln2_hi
+                        - ((hfsq - (s * (hfsq + R) + dk * ln2_lo)) - f);
+            }
+        } else {
+            if (k == 0) {
+                return f - s * (f - R);
+            } else {
+                return dk * ln2_hi - ((s * (f - R) - dk * ln2_lo) - f);
+            }
+        }
+    }
+
+    private static final double ivln10 = 4.34294481903251816668e-01;
+    private static final double log10_2hi = 3.01029995663611771306e-01;
+    private static final double log10_2lo = 3.69423907715893078616e-13;
 
     /**
      * Returns the closest double approximation of the base 10 logarithm of the
@@ -402,12 +1055,55 @@ public final class StrictMath {
      * <li>{@code log10(-infinity) = NaN}</li>
      * <li>{@code log10(NaN) = NaN}</li>
      * </ul>
-     *
-     * @param d
+     * 
+     * @param x
      *            the value whose base 10 log has to be computed.
-     * @return the natural logarithm of the argument.
+     * @return the the base 10 logarithm of x
      */
-    public static native double log10(double d);
+    public static double log10(double x) {
+        double y, z;
+        int i, k = 0, hx;
+        int lx; // careful: lx should be unsigned!
+        long bits = Double.doubleToRawLongBits(x);
+        hx = (int) (bits >> 32); /* high word of x */
+        lx = (int) bits; /* low word of x */
+        if (hx < 0x00100000) { /* x < 2**-1022 */
+            if (((hx & 0x7fffffff) | lx) == 0) {
+                return -two54 / zero; /* ieee_log(+-0)=-inf */
+            }
+
+            if (hx < 0) {
+                return (x - x) / zero; /* ieee_log(-#) = NaN */
+            }
+
+            k -= 54;
+            x *= two54; /* subnormal number, scale up x */
+            bits = Double.doubleToRawLongBits(x);
+            hx = (int) (bits >> 32); /* high word of x */
+        }
+
+        if (hx >= 0x7ff00000) {
+            return x + x;
+        }
+
+        k += (hx >> 20) - 1023;
+        i = (int) (((k & 0x00000000ffffffffL) & 0x80000000) >>> 31);
+        hx = (hx & 0x000fffff) | ((0x3ff - i) << 20);
+        y = k + i;
+        bits &= 0x00000000ffffffffL;
+        bits |= ((long) hx) << 32;
+        x = Double.longBitsToDouble(bits); // __HI(x) = hx;
+        z = y * log10_2lo + ivln10 * log(x);
+        return z + y * log10_2hi;
+    }
+
+    private static final double Lp1 = 6.666666666666735130e-01,
+            Lp2 = 3.999999999940941908e-01, /* 3FD99999 9997FA04 */
+            Lp3 = 2.857142874366239149e-01, /* 3FD24924 94229359 */
+            Lp4 = 2.222219843214978396e-01, /* 3FCC71C5 1D8E78AF */
+            Lp5 = 1.818357216161805012e-01, /* 3FC74664 96CB03DE */
+            Lp6 = 1.531383769920937332e-01, /* 3FC39A09 D078C69F */
+            Lp7 = 1.479819860511658591e-01; /* 3FC2F112 DF3E5244 */
 
     /**
      * Returns the closest double approximation of the natural logarithm of the
@@ -425,12 +1121,108 @@ public final class StrictMath {
      * <li>{@code log1p(-infinity) = NaN}</li>
      * <li>{@code log1p(NaN) = NaN}</li>
      * </ul>
-     *
-     * @param d
+     * 
+     * @param x
      *            the value to compute the {@code ln(1+d)} of.
      * @return the natural logarithm of the sum of the argument and 1.
      */
-    public static native double log1p(double d);
+
+    public static double log1p(double x) {
+        double hfsq, f = 0.0, c = 0.0, s, z, R, u = 0.0;
+        int k, hx, hu = 0, ax;
+
+        final long bits = Double.doubleToRawLongBits(x);
+        hx = (int) (bits >>> 32); /* high word of x */
+        ax = hx & 0x7fffffff;
+
+        k = 1;
+        if (hx < 0x3FDA827A) { /* x < 0.41422 */
+            if (ax >= 0x3ff00000) { /* x <= -1.0 */
+                if (x == -1.0) {
+                    return -two54 / zero; /* ieee_log1p(-1)=+inf */
+                } else {
+                    return (x - x) / (x - x); /* ieee_log1p(x<-1)=NaN */
+                }
+            }
+            if (ax < 0x3e200000) {
+                if (two54 + x > zero && ax < 0x3c900000) {
+                    return x;
+                } else {
+                    return x - x * x * 0.5;
+                }
+            }
+            if (hx > 0 || hx <= 0xbfd2bec3) {
+                k = 0;
+                f = x;
+                hu = 1;
+            } /* -0.2929<x<0.41422 */
+        }
+
+        if (hx >= 0x7ff00000) {
+            return x + x;
+        }
+
+        if (k != 0) {
+            long uBits;
+            if (hx < 0x43400000) {
+                u = 1.0 + x;
+                uBits = Double.doubleToRawLongBits(u);
+                hu = (int) (uBits >>> 32);
+                k = (hu >> 20) - 1023;
+                c = (k > 0) ? 1.0 - (u - x) : x - (u - 1.0);/* correction term */
+                c /= u;
+            } else {
+                uBits = Double.doubleToRawLongBits(x);
+                hu = (int) (uBits >>> 32);
+                k = (hu >> 20) - 1023;
+                c = 0;
+            }
+            hu &= 0x000fffff;
+            if (hu < 0x6a09e) {
+                // __HI(u) = hu|0x3ff00000; /* normalize u */
+                uBits &= 0x00000000ffffffffL;
+                uBits |= ((long) hu | 0x3ff00000) << 32;
+                u = Double.longBitsToDouble(uBits);
+            } else {
+                k += 1;
+                // __HI(u) = hu|0x3fe00000; /* normalize u/2 */
+                uBits &= 0xffffffffL;
+                uBits |= ((long) hu | 0x3fe00000) << 32;
+                u = Double.longBitsToDouble(uBits);
+                hu = (0x00100000 - hu) >> 2;
+            }
+            f = u - 1.0;
+        }
+        hfsq = 0.5 * f * f;
+        if (hu == 0) { /* |f| < 2**-20 */
+            if (f == zero) {
+                if (k == 0) {
+                    return zero;
+                } else {
+                    c += k * ln2_lo;
+                    return k * ln2_hi + c;
+                }
+            }
+
+            R = hfsq * (1.0 - 0.66666666666666666 * f);
+            if (k == 0) {
+                return f - R;
+            } else {
+                return k * ln2_hi - ((R - (k * ln2_lo + c)) - f);
+            }
+        }
+
+        s = f / (2.0 + f);
+        z = s * s;
+        R = z * (Lp1 + z * (Lp2 + z
+                * (Lp3 + z * (Lp4 + z * (Lp5 + z * (Lp6 + z * Lp7))))));
+        if (k == 0) {
+            return f - (hfsq - s * (hfsq + R));
+        } else {
+            return k * ln2_hi
+                    - ((hfsq - (s * (hfsq + R) + (k * ln2_lo + c))) - f);
+        }
+    }
 
     /**
      * Returns the most positive (closest to positive infinity) of the two
@@ -453,8 +1245,9 @@ public final class StrictMath {
         if (d1 != d2)
             return Double.NaN;
         /* max( +0.0,-0.0) == +0.0 */
-        if (d1 == 0.0
-                && ((Double.doubleToLongBits(d1) & Double.doubleToLongBits(d2)) & 0x8000000000000000L) == 0)
+        if (d1 == 0.0 && (
+                (Double.doubleToLongBits(d1) & Double.doubleToLongBits(d2))
+                & 0x8000000000000000L) == 0)
             return 0.0;
         return d1;
     }
@@ -480,8 +1273,8 @@ public final class StrictMath {
         if (f1 != f2)
             return Float.NaN;
         /* max( +0.0,-0.0) == +0.0 */
-        if (f1 == 0.0f
-                && ((Float.floatToIntBits(f1) & Float.floatToIntBits(f2)) & 0x80000000) == 0)
+        if (f1 == 0.0f && ((Float.floatToIntBits(f1) & Float.floatToIntBits(f2))
+                & 0x80000000) == 0)
             return 0.0f;
         return f1;
     }
@@ -523,8 +1316,9 @@ public final class StrictMath {
         if (d1 != d2)
             return Double.NaN;
         /* min( +0.0,-0.0) == -0.0 */
-        if (d1 == 0.0
-                && ((Double.doubleToLongBits(d1) | Double.doubleToLongBits(d2)) & 0x8000000000000000l) != 0)
+        if (d1 == 0.0 && (
+                (Double.doubleToLongBits(d1) | Double.doubleToLongBits(d2))
+                & 0x8000000000000000l) != 0)
             return 0.0 * (-1.0);
         return d1;
     }
@@ -550,8 +1344,8 @@ public final class StrictMath {
         if (f1 != f2)
             return Float.NaN;
         /* min( +0.0,-0.0) == -0.0 */
-        if (f1 == 0.0f
-                && ((Float.floatToIntBits(f1) | Float.floatToIntBits(f2)) & 0x80000000) != 0)
+        if (f1 == 0.0f && ((Float.floatToIntBits(f1) | Float.floatToIntBits(f2))
+                & 0x80000000) != 0)
             return 0.0f * (-1.0f);
         return f1;
     }
@@ -603,7 +1397,7 @@ public final class StrictMath {
      * <li>{@code pow((-anything except 0 and infinity), (non-integer))}
      * {@code =} {@code NAN}</li>
      * </ul>
-     *
+     * 
      * @param x
      *            the base of the operation.
      * @param y
@@ -615,7 +1409,7 @@ public final class StrictMath {
     /**
      * Returns a pseudo-random number between 0.0 (inclusive) and 1.0
      * (exclusive).
-     *
+     * 
      * @return a pseudo-random number.
      */
     public static double random() {
@@ -634,7 +1428,7 @@ public final class StrictMath {
      * <li>{@code rint(-infinity) = -infinity}</li>
      * <li>{@code rint(NaN) = NaN}</li>
      * </ul>
-     *
+     * 
      * @param d
      *            the value to be rounded.
      * @return the closest integer to the argument (as a double).
@@ -655,7 +1449,7 @@ public final class StrictMath {
      * <li>{@code round(-infinity) = Long.MIN_VALUE}</li>
      * <li>{@code round(NaN) = +0.0}</li>
      * </ul>
-     *
+     * 
      * @param d
      *            the value to be rounded.
      * @return the closest integer to the argument.
@@ -678,7 +1472,7 @@ public final class StrictMath {
      * <li>{@code round(-infinity) = Integer.MIN_VALUE}</li>
      * <li>{@code round(NaN) = +0.0}</li>
      * </ul>
-     *
+     * 
      * @param f
      *            the value to be rounded.
      * @return the closest integer to the argument.
@@ -701,12 +1495,12 @@ public final class StrictMath {
      * <li>{@code signum(-infinity) = -1.0}</li>
      * <li>{@code signum(NaN) = NaN}</li>
      * </ul>
-     *
+     * 
      * @param d
      *            the value whose signum has to be computed.
      * @return the value of the signum function.
      */
-    public static double signum(double d){
+    public static double signum(double d) {
         return Math.signum(d);
     }
 
@@ -724,14 +1518,16 @@ public final class StrictMath {
      * <li>{@code signum(-infinity) = -1.0}</li>
      * <li>{@code signum(NaN) = NaN}</li>
      * </ul>
-     *
+     * 
      * @param f
      *            the value whose signum has to be computed.
      * @return the value of the signum function.
      */
-    public static float signum(float f){
+    public static float signum(float f) {
         return Math.signum(f);
     }
+
+    private static final double shuge = 1.0e307;
 
     /**
      * Returns the closest double approximation of the hyperbolic sine of the
@@ -745,12 +1541,59 @@ public final class StrictMath {
      * <li>{@code sinh(-infinity) = -infinity}</li>
      * <li>{@code sinh(NaN) = NaN}</li>
      * </ul>
-     *
-     * @param d
+     * 
+     * @param x
      *            the value whose hyperbolic sine has to be computed.
      * @return the hyperbolic sine of the argument.
      */
-    public static native double sinh(double d);
+
+    public static double sinh(double x) {
+        double t, w, h;
+        int ix, jx;
+        final long bits = Double.doubleToRawLongBits(x);
+
+        jx = (int) (bits >>> 32);
+        ix = jx & 0x7fffffff;
+
+        /* x is INF or NaN */
+        if (ix >= 0x7ff00000) {
+            return x + x;
+        }
+
+        h = 0.5;
+        if (jx < 0) {
+            h = -h;
+        }
+
+        /* |x| in [0,22], return sign(x)*0.5*(E+E/(E+1))) */
+        if (ix < 0x40360000) { /* |x|<22 */
+            if (ix < 0x3e300000) /* |x|<2**-28 */
+                if (shuge + x > one) {
+                    return x;/* ieee_sinh(tiny) = tiny with inexact */
+                }
+            t = expm1(Math.abs(x));
+            if (ix < 0x3ff00000)
+                return h * (2.0 * t - t * t / (t + one));
+            return h * (t + t / (t + one));
+        }
+
+        /* |x| in [22, ieee_log(maxdouble)] return 0.5*ieee_exp(|x|) */
+        if (ix < 0x40862E42) {
+            return h * exp(Math.abs(x));
+        }
+
+        /* |x| in [log(maxdouble), overflowthresold] */
+        final long lx = ((oneBits >>> 29) + ((int) bits)) & 0x00000000ffffffffL;
+        // lx = *( (((*(unsigned*)&one)>>29)) + (unsigned*)&x);
+        if (ix < 0x408633CE || (ix == 0x408633ce) && (lx <= 0x8fb9f87dL)) {
+            w = exp(0.5 * Math.abs(x));
+            t = h * w;
+            return t * w;
+        }
+
+        /* |x| > overflowthresold, ieee_sinh(x) overflow */
+        return x * shuge;
+    }
 
     /**
      * Returns the closest double approximation of the sine of the argument.
@@ -796,12 +1639,14 @@ public final class StrictMath {
      * <li>{@code tan(-infinity) = NaN}</li>
      * <li>{@code tan(NaN) = NaN}</li>
      * </ul>
-     *
+     * 
      * @param d
      *            the angle whose tangent has to be computed, in radians.
      * @return the tangent of the argument.
      */
     public static native double tan(double d);
+
+    private static final double two = 2.0;
 
     /**
      * Returns the closest double approximation of the hyperbolic tangent of the
@@ -815,12 +1660,48 @@ public final class StrictMath {
      * <li>{@code tanh(-infinity) = -1.0}</li>
      * <li>{@code tanh(NaN) = NaN}</li>
      * </ul>
-     *
-     * @param d
+     * 
+     * @param x
      *            the value whose hyperbolic tangent has to be computed.
      * @return the hyperbolic tangent of the argument
      */
-    public static native double tanh(double d);
+    public static double tanh(double x) {
+        double t, z;
+        int jx, ix;
+
+        final long bits = Double.doubleToRawLongBits(x);
+        /* High word of |x|. */
+        jx = (int) (bits >>> 32);
+        ix = jx & 0x7fffffff;
+
+        /* x is INF or NaN */
+        if (ix >= 0x7ff00000) {
+            if (jx >= 0) {
+                return one / x + one; /* ieee_tanh(+-inf)=+-1 */
+            } else {
+                return one / x - one; /* ieee_tanh(NaN) = NaN */
+            }
+        }
+
+        /* |x| < 22 */
+        if (ix < 0x40360000) { /* |x|<22 */
+            if (ix < 0x3c800000) { /* |x|<2**-55 */
+                return x * (one + x);/* ieee_tanh(small) = small */
+            }
+
+            if (ix >= 0x3ff00000) { /* |x|>=1 */
+                t = Math.expm1(two * Math.abs(x));
+                z = one - two / (t + two);
+            } else {
+                t = Math.expm1(-two * Math.abs(x));
+                z = -t / (t + two);
+            }
+            /* |x| > 22, return +-1 */
+        } else {
+            z = one - tiny; /* raised inexact flag */
+        }
+        return (jx >= 0) ? z : -z;
+    }
 
     /**
      * Returns the measure in degrees of the supplied radian angle. The result
@@ -834,7 +1715,7 @@ public final class StrictMath {
      * <li>{@code toDegrees(-infinity) = -infinity}</li>
      * <li>{@code toDegrees(NaN) = NaN}</li>
      * </ul>
-     *
+     * 
      * @param angrad
      *            an angle in radians.
      * @return the degree measure of the angle.
@@ -855,7 +1736,7 @@ public final class StrictMath {
      * <li>{@code toRadians(-infinity) = -infinity}</li>
      * <li>{@code toRadians(NaN) = NaN}</li>
      * </ul>
-     *
+     * 
      * @param angdeg
      *            an angle in degrees.
      * @return the radian measure of the angle.
@@ -878,7 +1759,7 @@ public final class StrictMath {
      * <li>{@code ulp(-infinity) = infinity}</li>
      * <li>{@code ulp(NaN) = NaN}</li>
      * </ul>
-     *
+     * 
      * @param d
      *            the floating-point value to compute ulp of.
      * @return the size of a ulp of the argument.
@@ -908,7 +1789,7 @@ public final class StrictMath {
      * <li>{@code ulp(-infinity) = infinity}</li>
      * <li>{@code ulp(NaN) = NaN}</li>
      * </ul>
-     *
+     * 
      * @param f
      *            the floating-point value to compute ulp of.
      * @return the size of a ulp of the argument.
@@ -922,6 +1803,7 @@ public final class StrictMath {
     /**
      * Returns a double with the given magnitude and the sign of {@code sign}.
      * If {@code sign} is NaN, the sign of the result is positive.
+     * 
      * @since 1.6
      */
     public static double copySign(double magnitude, double sign) {
@@ -932,13 +1814,15 @@ public final class StrictMath {
         // (Tested on a Nexus One.)
         long magnitudeBits = Double.doubleToRawLongBits(magnitude);
         long signBits = Double.doubleToRawLongBits((sign != sign) ? 1.0 : sign);
-        magnitudeBits = (magnitudeBits & ~Double.SIGN_MASK) | (signBits & Double.SIGN_MASK);
+        magnitudeBits = (magnitudeBits & ~Double.SIGN_MASK)
+                | (signBits & Double.SIGN_MASK);
         return Double.longBitsToDouble(magnitudeBits);
     }
 
     /**
-     * Returns a float with the given magnitude and the sign of {@code sign}.
-     * If {@code sign} is NaN, the sign of the result is positive.
+     * Returns a float with the given magnitude and the sign of {@code sign}. If
+     * {@code sign} is NaN, the sign of the result is positive.
+     * 
      * @since 1.6
      */
     public static float copySign(float magnitude, float sign) {
@@ -949,12 +1833,14 @@ public final class StrictMath {
         // (Tested on a Nexus One.)
         int magnitudeBits = Float.floatToRawIntBits(magnitude);
         int signBits = Float.floatToRawIntBits((sign != sign) ? 1.0f : sign);
-        magnitudeBits = (magnitudeBits & ~Float.SIGN_MASK) | (signBits & Float.SIGN_MASK);
+        magnitudeBits = (magnitudeBits & ~Float.SIGN_MASK)
+                | (signBits & Float.SIGN_MASK);
         return Float.intBitsToFloat(magnitudeBits);
     }
 
     /**
      * Returns the exponent of float {@code f}.
+     * 
      * @since 1.6
      */
     public static int getExponent(float f) {
@@ -963,14 +1849,17 @@ public final class StrictMath {
 
     /**
      * Returns the exponent of double {@code d}.
+     * 
      * @since 1.6
      */
-    public static int getExponent(double d){
+    public static int getExponent(double d) {
         return Math.getExponent(d);
     }
 
     /**
-     * Returns the next double after {@code start} in the given {@code direction}.
+     * Returns the next double after {@code start} in the given
+     * {@code direction}.
+     * 
      * @since 1.6
      */
     public static double nextAfter(double start, double direction) {
@@ -981,7 +1870,9 @@ public final class StrictMath {
     }
 
     /**
-     * Returns the next float after {@code start} in the given {@code direction}.
+     * Returns the next float after {@code start} in the given {@code direction}
+     * .
+     * 
      * @since 1.6
      */
     public static float nextAfter(float start, double direction) {
@@ -990,6 +1881,7 @@ public final class StrictMath {
 
     /**
      * Returns the next double larger than {@code d}.
+     * 
      * @since 1.6
      */
     public static double nextUp(double d) {
@@ -998,6 +1890,7 @@ public final class StrictMath {
 
     /**
      * Returns the next float larger than {@code f}.
+     * 
      * @since 1.6
      */
     public static float nextUp(float f) {
@@ -1006,6 +1899,7 @@ public final class StrictMath {
 
     /**
      * Returns {@code d} * 2^{@code scaleFactor}. The result may be rounded.
+     * 
      * @since 1.6
      */
     public static double scalb(double d, int scaleFactor) {
@@ -1017,11 +1911,13 @@ public final class StrictMath {
         // the sign of the results must be the same of given d
         long sign = bits & Double.SIGN_MASK;
         // calculates the factor of the result
-        long factor = (int) ((bits & Double.EXPONENT_MASK) >> Double.MANTISSA_BITS)
+        long factor =
+                (int) ((bits & Double.EXPONENT_MASK) >> Double.MANTISSA_BITS)
                 - Double.EXPONENT_BIAS + scaleFactor;
 
         // calculates the factor of sub-normal values
-        int subNormalFactor = Long.numberOfLeadingZeros(bits & ~Double.SIGN_MASK)
+        int subNormalFactor =
+                Long.numberOfLeadingZeros(bits & ~Double.SIGN_MASK)
                 - Double.EXPONENT_BITS;
         if (subNormalFactor < 0) {
             // not sub-normal values
@@ -1031,7 +1927,8 @@ public final class StrictMath {
             factor = factor - subNormalFactor;
         }
         if (factor > Double.MAX_EXPONENT) {
-            return (d > 0 ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY);
+            return (d > 0 ? Double.POSITIVE_INFINITY
+                    : Double.NEGATIVE_INFINITY);
         }
 
         long result;
@@ -1044,17 +1941,21 @@ public final class StrictMath {
                 result = shiftLongBits(bits & Double.MANTISSA_MASK, digits);
             } else {
                 // origin d is not sub-normal, change mantissa to sub-normal
-                result = shiftLongBits(bits & Double.MANTISSA_MASK | 0x0010000000000000L, digits - 1);
+                result = shiftLongBits(
+                        bits & Double.MANTISSA_MASK | 0x0010000000000000L,
+                        digits - 1);
             }
         } else {
             if (Math.abs(d) >= Double.MIN_NORMAL) {
                 // common situation
-                result = ((factor + Double.EXPONENT_BIAS) << Double.MANTISSA_BITS)
+                result = ((factor + Double.EXPONENT_BIAS)
+                        << Double.MANTISSA_BITS)
                         | (bits & Double.MANTISSA_MASK);
             } else {
                 // origin d is sub-normal, change mantissa to normal style
-                result = ((factor + Double.EXPONENT_BIAS) << Double.MANTISSA_BITS)
-                        | ((bits << (subNormalFactor + 1)) & Double.MANTISSA_MASK);
+                result = ((factor + Double.EXPONENT_BIAS)
+                        << Double.MANTISSA_BITS) | (
+                        (bits << (subNormalFactor + 1)) & Double.MANTISSA_MASK);
             }
         }
         return Double.longBitsToDouble(result | sign);
@@ -1062,6 +1963,7 @@ public final class StrictMath {
 
     /**
      * Returns {@code d} * 2^{@code scaleFactor}. The result may be rounded.
+     * 
      * @since 1.6
      */
     public static float scalb(float d, int scaleFactor) {
@@ -1073,7 +1975,8 @@ public final class StrictMath {
         int factor = ((bits & Float.EXPONENT_MASK) >> Float.MANTISSA_BITS)
                 - Float.EXPONENT_BIAS + scaleFactor;
         // calculates the factor of sub-normal values
-        int subNormalFactor = Integer.numberOfLeadingZeros(bits & ~Float.SIGN_MASK)
+        int subNormalFactor =
+                Integer.numberOfLeadingZeros(bits & ~Float.SIGN_MASK)
                 - Float.EXPONENT_BITS;
         if (subNormalFactor < 0) {
             // not sub-normal values
@@ -1096,7 +1999,8 @@ public final class StrictMath {
                 result = shiftIntBits(bits & Float.MANTISSA_MASK, digits);
             } else {
                 // origin d is not sub-normal, change mantissa to sub-normal
-                result = shiftIntBits(bits & Float.MANTISSA_MASK | 0x00800000, digits - 1);
+                result = shiftIntBits(bits & Float.MANTISSA_MASK | 0x00800000,
+                        digits - 1);
             }
         } else {
             if (Math.abs(d) >= Float.MIN_NORMAL) {
@@ -1105,8 +2009,9 @@ public final class StrictMath {
                         | (bits & Float.MANTISSA_MASK);
             } else {
                 // origin d is sub-normal, change mantissa to normal style
-                result = ((factor + Float.EXPONENT_BIAS) << Float.MANTISSA_BITS)
-                        | ((bits << (subNormalFactor + 1)) & Float.MANTISSA_MASK);
+                result = ((factor + Float.EXPONENT_BIAS)
+                        << Float.MANTISSA_BITS) | (
+                        (bits << (subNormalFactor + 1)) & Float.MANTISSA_MASK);
             }
         }
         return Float.intBitsToFloat(result | sign);
@@ -1120,7 +2025,8 @@ public final class StrictMath {
         }
         // change it to positive
         int absDigits = -digits;
-        if (Integer.numberOfLeadingZeros(bits & ~Float.SIGN_MASK) <= (32 - absDigits)) {
+        if (Integer.numberOfLeadingZeros(bits & ~Float.SIGN_MASK)
+                <= (32 - absDigits)) {
             // some bits will remain after shifting, calculates its carry
             if ((((bits >> (absDigits - 1)) & 0x1) == 0)
                     || Integer.numberOfTrailingZeros(bits) == (absDigits - 1)) {
@@ -1139,7 +2045,8 @@ public final class StrictMath {
         }
         // change it to positive
         long absDigits = -digits;
-        if (Long.numberOfLeadingZeros(bits & ~Double.SIGN_MASK) <= (64 - absDigits)) {
+        if (Long.numberOfLeadingZeros(bits & ~Double.SIGN_MASK)
+                <= (64 - absDigits)) {
             // some bits will remain after shifting, calculates its carry
             if ((((bits >> (absDigits - 1)) & 0x1) == 0)
                     || Long.numberOfTrailingZeros(bits) == (absDigits - 1)) {
