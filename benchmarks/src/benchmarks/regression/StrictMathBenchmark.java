@@ -30,7 +30,7 @@ public class StrictMathBenchmark extends SimpleBenchmark {
     private final int i = 1;
     private final long l = 1L;
 
-    public void timeAbsD(int reps) {
+    /* public void timeAbsD(int reps) {
         for (int rep = 0; rep < reps; ++rep) {
             StrictMath.abs(d);
         }
@@ -82,15 +82,15 @@ public class StrictMathBenchmark extends SimpleBenchmark {
         for (int rep = 0; rep < reps; ++rep) {
             StrictMath.cbrt(d);
         }
-    }
+    } */
 
     public void timeCeil(int reps) {
         for (int rep = 0; rep < reps; ++rep) {
             StrictMath.ceil(d);
         }
     }
-
-    public void timeCopySignD(int reps) {
+    
+    /* public void timeCopySignD(int reps) {
         for (int rep = 0; rep < reps; ++rep) {
             StrictMath.copySign(d, d);
         }
@@ -124,7 +124,7 @@ public class StrictMathBenchmark extends SimpleBenchmark {
         for (int rep = 0; rep < reps; ++rep) {
             StrictMath.expm1(d);
         }
-    }
+    } */
 
     public void timeFloor(int reps) {
         for (int rep = 0; rep < reps; ++rep) {
@@ -132,7 +132,7 @@ public class StrictMathBenchmark extends SimpleBenchmark {
         }
     }
 
-    public void timeGetExponentD(int reps) {
+    /* public void timeGetExponentD(int reps) {
         for (int rep = 0; rep < reps; ++rep) {
             StrictMath.getExponent(d);
         }
@@ -142,7 +142,7 @@ public class StrictMathBenchmark extends SimpleBenchmark {
         for (int rep = 0; rep < reps; ++rep) {
             StrictMath.getExponent(f);
         }
-    }
+    } */
 
     public void timeHypot(int reps) {
         for (int rep = 0; rep < reps; ++rep) {
@@ -156,7 +156,7 @@ public class StrictMathBenchmark extends SimpleBenchmark {
         }
     }
 
-    public void timeLog(int reps) {
+    /* public void timeLog(int reps) {
         for (int rep = 0; rep < reps; ++rep) {
             StrictMath.log(d);
         }
@@ -220,7 +220,7 @@ public class StrictMathBenchmark extends SimpleBenchmark {
         for (int rep = 0; rep < reps; ++rep) {
             StrictMath.min(l, l);
         }
-    }
+    } */
 
     public void timeNextAfterD(int reps) {
         for (int rep = 0; rep < reps; ++rep) {
@@ -234,7 +234,7 @@ public class StrictMathBenchmark extends SimpleBenchmark {
         }
     }
 
-    public void timeNextUpD(int reps) {
+    /* public void timeNextUpD(int reps) {
         for (int rep = 0; rep < reps; ++rep) {
             StrictMath.nextUp(d);
         }
@@ -256,7 +256,7 @@ public class StrictMathBenchmark extends SimpleBenchmark {
         for (int rep = 0; rep < reps; ++rep) {
             StrictMath.random();
         }
-    }
+    } */
 
     public void timeRint(int reps) {
         for (int rep = 0; rep < reps; ++rep) {
@@ -264,7 +264,7 @@ public class StrictMathBenchmark extends SimpleBenchmark {
         }
     }
 
-    public void timeRoundD(int reps) {
+    /* public void timeRoundD(int reps) {
         for (int rep = 0; rep < reps; ++rep) {
             StrictMath.round(d);
         }
@@ -317,7 +317,7 @@ public class StrictMathBenchmark extends SimpleBenchmark {
             StrictMath.sqrt(d);
         }
     }
-
+    
     public void timeTan(int reps) {
         for (int rep = 0; rep < reps; ++rep) {
             StrictMath.tan(d);
@@ -352,5 +352,5 @@ public class StrictMathBenchmark extends SimpleBenchmark {
         for (int rep = 0; rep < reps; ++rep) {
             StrictMath.ulp(f);
         }
-    }
+    } */
 }
