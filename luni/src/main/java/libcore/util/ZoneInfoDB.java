@@ -68,6 +68,19 @@ public final class ZoneInfoDB {
     private int[] byteOffsets;
     private int[] rawUtcOffsets;
 
+    /**
+     * ZoneInfo objects are worth caching because they are expensive to create.
+     * See http://b/8270865 for context.
+     */
+    private final static int CACHE_SIZE = 1;
+    private final BasicLruCache<String, ZoneInfo> cache =
+        new BasicLruCache<String, ZoneInfo>(CACHE_SIZE) {
+      @Override
+      protected ZoneInfo create(String key) {
+        return makeTimeZoneUncached(key);
+      }
+    };
+
     public TzData(String... paths) {
       for (String path : paths) {
         if (loadData(path)) {
@@ -206,7 +219,12 @@ public final class ZoneInfoDB {
       return zoneTab;
     }
 
-    public TimeZone makeTimeZone(String id) throws IOException {
+    public ZoneInfo makeTimeZone(String id) throws IOException {
+      // The object from the cache is cloned because TimeZone / ZoneInfo are mutable.
+      return (ZoneInfo) cache.get(id).clone();
+    }
+
+    private ZoneInfo makeTimeZoneUncached(String id) {
       // Work out where in the big data file this time zone is.
       int index = Arrays.binarySearch(ids, id);
       if (index < 0) {
