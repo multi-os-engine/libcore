@@ -51,6 +51,9 @@ import static android.system.OsConstants.*;
     /** class definition context */
     private final ClassLoader definingContext;
 
+    /** List of dexfiles. */
+    private final File[] dexFiles;
+
     /**
      * List of dex/resource (class path) elements.
      * Should be called pathElements, but the Facebook app uses reflection
@@ -106,7 +109,9 @@ import static android.system.OsConstants.*;
 
         this.definingContext = definingContext;
         ArrayList<IOException> suppressedExceptions = new ArrayList<IOException>();
-        this.dexElements = makeDexElements(splitDexPath(dexPath), optimizedDirectory,
+        // save dexPath for BaseDexClassLoader
+        this.dexFiles = splitDexPath(dexPath);
+        this.dexElements = makeDexElements(dexFiles, optimizedDirectory,
                                            suppressedExceptions);
         if (suppressedExceptions.size() > 0) {
             this.dexElementsSuppressedExceptions =
@@ -130,13 +135,21 @@ import static android.system.OsConstants.*;
     }
 
     /**
+     * For BaseDexClassLoader.getDexPath.
+     */
+    public File[] getDexFiles() {
+        return dexFiles;
+    }
+
+    /**
      * Splits the given dex path string into elements using the path
      * separator, pruning out any elements that do not refer to existing
      * and readable files. (That is, directories are not included in the
      * result.)
      */
-    private static ArrayList<File> splitDexPath(String path) {
-        return splitPaths(path, null, false);
+    private static File[] splitDexPath(String path) {
+        List<File> result = splitPaths(path, null, false);
+        return result.toArray(new File[result.size()]);
     }
 
     /**
@@ -200,7 +213,7 @@ import static android.system.OsConstants.*;
      * Makes an array of dex/resource path elements, one per element of
      * the given array.
      */
-    private static Element[] makeDexElements(ArrayList<File> files, File optimizedDirectory,
+    private static Element[] makeDexElements(File[] files, File optimizedDirectory,
                                              ArrayList<IOException> suppressedExceptions) {
         ArrayList<Element> elements = new ArrayList<Element>();
         /*

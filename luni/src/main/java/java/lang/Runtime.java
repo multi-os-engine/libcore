@@ -418,19 +418,21 @@ public class Runtime {
 
         // So, find out what the native library search path is for the ClassLoader in question...
         String ldLibraryPath = null;
+        String dexPath = null;
         if (loader != null && loader instanceof BaseDexClassLoader) {
             ldLibraryPath = ((BaseDexClassLoader) loader).getLdLibraryPath();
+            dexPath = ((BaseDexClassLoader) loader).getDexPath();
         }
         // nativeLoad should be synchronized so there's only one LD_LIBRARY_PATH in use regardless
         // of how many ClassLoaders are in the system, but dalvik doesn't support synchronized
         // internal natives.
         synchronized (this) {
-            return nativeLoad(name, loader, ldLibraryPath);
+            return nativeLoad(name, loader, ldLibraryPath, dexPath);
         }
     }
 
     // TODO: should be synchronized, but dalvik doesn't support synchronized internal natives.
-    private static native String nativeLoad(String filename, ClassLoader loader, String ldLibraryPath);
+    private static native String nativeLoad(String filename, ClassLoader loader, String ldLibraryPath, String dexPath);
 
     /**
      * Provides a hint to the VM that it would be useful to attempt
