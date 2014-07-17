@@ -133,6 +133,22 @@ public class BaseDexClassLoader extends ClassLoader {
         return result.toString();
     }
 
+    /**
+     * @hide
+     */
+    public String getDexPath() {
+        StringBuilder builder = new StringBuilder();
+        for (File file : pathList.getDexFiles()) {
+            if (builder.length() > 0) {
+                builder.append(':');
+            }
+
+            builder.append(file);
+        }
+
+        return builder.toString();
+    }
+
     @Override public String toString() {
         return getClass().getName() + "[" + pathList + "]";
     }
