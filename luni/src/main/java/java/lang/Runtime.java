@@ -359,12 +359,8 @@ public class Runtime {
         if (loader != null) {
             String filename = loader.findLibrary(libraryName);
             if (filename == null) {
-                // It's not necessarily true that the ClassLoader used
-                // System.mapLibraryName, but the default setup does, and it's
-                // misleading to say we didn't find "libMyLibrary.so" when we
-                // actually searched for "liblibMyLibrary.so.so".
-                throw new UnsatisfiedLinkError(loader + " couldn't find \"" +
-                                               System.mapLibraryName(libraryName) + "\"");
+                // dynamic linker can still be able to find the library by name
+                filename = System.mapLibraryName(libraryName);
             }
             String error = doLoad(filename, loader);
             if (error != null) {
@@ -418,19 +414,21 @@ public class Runtime {
 
         // So, find out what the native library search path is for the ClassLoader in question...
         String ldLibraryPath = null;
+        String dexPath = null;
         if (loader != null && loader instanceof BaseDexClassLoader) {
             ldLibraryPath = ((BaseDexClassLoader) loader).getLdLibraryPath();
+            dexPath = ((BaseDexClassLoader) loader).getDexPath();
         }
         // nativeLoad should be synchronized so there's only one LD_LIBRARY_PATH in use regardless
         // of how many ClassLoaders are in the system, but dalvik doesn't support synchronized
         // internal natives.
         synchronized (this) {
-            return nativeLoad(name, loader, ldLibraryPath);
+            return nativeLoad(name, loader, ldLibraryPath, dexPath);
         }
     }
 
     // TODO: should be synchronized, but dalvik doesn't support synchronized internal natives.
-    private static native String nativeLoad(String filename, ClassLoader loader, String ldLibraryPath);
+    private static native String nativeLoad(String filename, ClassLoader loader, String ldLibraryPath, String dexPath);
 
     /**
      * Provides a hint to the VM that it would be useful to attempt
