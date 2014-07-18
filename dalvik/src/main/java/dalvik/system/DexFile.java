@@ -311,7 +311,38 @@ public final class DexFile {
     /**
      * @hide
      **/
-    public static native boolean isDexOptNeededInternal(String fileName, String pkgname,
+    public static final byte DEXOPT_NOT_NEEDED = 0;
+
+    /**
+     * @hide
+     **/
+    public static final byte PATCHOAT_NEEDED = 1;
+
+    /**
+     * @hide
+     **/
+    public static final byte DEXOPT_NEEDED = 2;
+
+    /**
+     * Returns 0 if the VM believes that the apk/jar file is up to date, 1
+     * if it believes that the file is up to date but it must be relocated to
+     * match the base address offset, and 2 if it believes that it is out of
+     * date and should be passed through "dexopt" again.
+     *
+     * @param fileName the absolute path to the apk/jar file to examine.
+     * @return 2 if dexopt should be called on the file, 1 if we need to run
+     *         "patchoat" on it and 0 otherwise.
+     * @throws java.io.FileNotFoundException if fileName is not readable,
+     *         not a file, or not present.
+     * @throws java.io.IOException if fileName is not a valid apk/jar file or
+     *         if problems occur while parsing it.
+     * @throws java.lang.NullPointerException if fileName is null.
+     * @throws dalvik.system.StaleDexCacheError if the optimized dex file
+     *         is stale but exists on a read-only partition.
+     *
+     * @hide
+     **/
+    public static native byte isDexOptNeededInternal(String fileName, String pkgname,
             String instructionSet, boolean defer)
             throws FileNotFoundException, IOException;
 }
