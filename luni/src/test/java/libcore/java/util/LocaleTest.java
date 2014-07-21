@@ -541,13 +541,6 @@ public class LocaleTest extends junit.framework.TestCase {
         assertEquals("eng", l.getLanguage());
         assertEquals("419", l.getCountry());
 
-        // IND is an invalid region code so ICU helpfully tries to parse it as
-        // a 3 letter language code, even if it isn't a valid ISO-639-3 code
-        // either.
-        l =  fromLanguageTag("en-USB", useBuilder);
-        assertEquals("usb", l.getLanguage());
-        assertEquals("", l.getCountry());
-
         // Script tags shouldn't be mis-recognized as regions.
         l =  fromLanguageTag("en-Latn", useBuilder);
         assertEquals("en", l.getLanguage());
@@ -615,13 +608,6 @@ public class LocaleTest extends junit.framework.TestCase {
         // Ill-formed extension with long subtag.
         try {
             fromLanguageTag("en-f-fooobaaaz", true);
-            fail();
-        } catch (IllformedLocaleException expected) {
-        }
-
-        // Ill-formed extension key.
-        try {
-            fromLanguageTag("en-9-baa", true);
             fail();
         } catch (IllformedLocaleException expected) {
         }
@@ -700,7 +686,7 @@ public class LocaleTest extends junit.framework.TestCase {
         assertEquals("en", l.getLanguage());
         assertEquals("Latn", l.getScript());
         assertEquals("GB", l.getCountry());
-        assertEquals("FOOOO_POSIX", l.getVariant());
+        assertEquals("FOOOO", l.getVariant());
         assertEquals("fo-bar-baaz", l.getExtension('g'));
 
         // Multiple extensions
@@ -708,7 +694,7 @@ public class LocaleTest extends junit.framework.TestCase {
         assertEquals("en", l.getLanguage());
         assertEquals("Latn", l.getScript());
         assertEquals("US", l.getCountry());
-        assertEquals("FOOOO_POSIX", l.getVariant());
+        assertEquals("FOOOO", l.getVariant());
         assertEquals("fo-bar", l.getExtension('g'));
         assertEquals("go-gaz", l.getExtension('h'));
 
@@ -782,7 +768,7 @@ public class LocaleTest extends junit.framework.TestCase {
 
     public void test_setLanguageTag_malformedTags() {
         Locale l = fromLanguageTag("a", false);
-        assertEquals("", l.getLanguage());
+        assertEquals("und", l.getLanguage());
         assertEquals("", l.getCountry());
         assertEquals("", l.getVariant());
         assertEquals("", l.getScript());
