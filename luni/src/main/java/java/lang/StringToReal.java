@@ -151,7 +151,19 @@ final class StringToReal {
             throw invalidReal(s, isDouble);
         }
 
-        int decimal = s.indexOf('.');
+        // Confirm that the mantissa should parse.
+        int decimal = -1;
+        for (int i = start; i < end; i++) {
+            char mc = s.charAt(i);
+            if (mc == '.') {
+                if (decimal != -1) {
+                    throw invalidReal(s, isDouble);
+                }
+                decimal = i;
+            } else if (mc < '0' || mc > '9') {
+                throw invalidReal(s, isDouble);
+            }
+        }
         if (decimal > -1) {
             result.e -= end - decimal - 1;
             s = s.substring(start, decimal) + s.substring(decimal + 1, end);
@@ -159,7 +171,8 @@ final class StringToReal {
             s = s.substring(start, end);
         }
 
-        if ((length = s.length()) == 0) {
+        length = s.length();
+        if (length == 0) {
             throw invalidReal(s, isDouble);
         }
 
