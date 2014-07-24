@@ -238,7 +238,6 @@ public final class StrictMath {
      * <li>{@code ceil(NaN) = NaN}</li>
      * </ul>
      */
-    // public static native double ceil(double x);
     public static double ceil(double x) {
       final double huge = 1.0e300;
       long bits;
@@ -393,7 +392,6 @@ public final class StrictMath {
      * <li>{@code floor(NaN) = NaN}</li>
      * </ul>
      */
-    // public static native double floor(double d);
     public static double floor(double x) {
       final double huge = 1.0e300;
       long bits;
@@ -486,7 +484,6 @@ public final class StrictMath {
      *         <i> {@code y}</i><sup>{@code 2}</sup>{@code )} value of the
      *         arguments.
      */
-    // public static native double hypot(double x, double y);
     public static double hypot(double x, double y) {
       double a;
       double b;
@@ -647,7 +644,6 @@ public final class StrictMath {
      *            the denominator of the operation.
      * @return the IEEE754 floating point reminder of of {@code x/y}.
      */
-     // public static native double IEEEremainder(double x, double y);
      public static double IEEEremainder(double x, double y) {
        final double zero = 0.0;
        int hx;
@@ -982,8 +978,7 @@ public final class StrictMath {
      * @param d
      *            the value to be rounded.
      * @return the closest integer to the argument (as a double).
-     */
-     // public static native double rint(double x);
+     */    
      public static double rint(double x) {
        double w;
        double t;
@@ -1016,7 +1011,6 @@ public final class StrictMath {
            bits |= ((long)(i0)) << 32;
            x = Double.longBitsToDouble(bits);
            
-           // Uses specific magic numbers depending on value of sx.
            if(sx == 0) {
              w= m0 + x;
              t = w - m0;
@@ -1065,7 +1059,6 @@ public final class StrictMath {
          }
        }
       
-       // The magic number used is determined by the value of sx.
        if(sx == 0) {
          w = m0 + x;
          return w - m0;
@@ -1355,96 +1348,64 @@ public final class StrictMath {
      * Returns the next machine floating-point number of x in the direction
      * toward y.
      */
-    // private static native double nextafter(double x, double y);
-    public static double nextafter(double x, double y) {
-      int hx;
-      int hy;
-      int ix;
-      int iy;
+    private static double nextafter(double x, double y) {
+      double small = 1.4e-45;
       long bits;
       boolean raise = false;
-      // Write x and y as long types for bitwise operations.
+      boolean lower = false;
       final long x_asRawLongBits = Double.doubleToRawLongBits(x);
       final long y_asRawLongBits = Double.doubleToRawLongBits(y);
-      // Separate the upper half of bits in x and y.
-      hx = (int) x_asRawLongBits;
-      hy = (int) y_asRawLongBits;
-      // Separate the lower half of bits in x and y.
+      int hx = (int) x_asRawLongBits;
       int lx = ((int)(x_asRawLongBits >>> 32))&0x7fffffff;
+      int hy = (int) y_asRawLongBits;
       int ly = ((int)(y_asRawLongBits >>> 32))&0x7fffffff;
-      if(x >= 0) {
-        hx = StrictMath.abs(hx);
-      }      
-      // Set ix and iy as absolute values of x and y.
-      ix = hx&0x7fffffff;
-      iy = hy&0x7fffffff;
-      // Deal with edge cases.
+      int ix = hx&0x7fffffff;
+      int iy = hy&0x7fffffff;
+
       if(Double.isNaN(x) || Double.isNaN(y)) {
         return Double.NaN;
       }
-      if(x==y) {
-        return x;
+      if(x == y) {
+        return x;      /* x=y, return x */
       }
-      if(x==0.0) {
-        return 0.0;
-      }
-      // Determines if x needs to be rounded up or down based on the value of y.
-      if(x >= 0) {
-        if(x>y||((hx==hy)&&(lx>ly))) {
-          if(lx==0) {
-            hx -= 1;
-          }
-          lx -= 1;
-        } else {
-          lx += 1;
+      if((ix|lx) == 0) {            /* x == 0 */  
+        return small;
+      } 
+      if(x >= 0) {             /* x > 0 */
+        if(x>y || ((hx==hy) && (lx>ly))) {    /* x > y, x -= ulp */
+          lower = true;
+        } else {                /* x < y, x += ulp */
           raise = true;
-          if(lx==0) {
-            hx += 1;
-          }
         }
-      } else {
-        if(hy>=0||hx>hy||((hx==hy)&&(lx>ly))) {
-          if(lx==0) {
-            hx -= 1;
-          }
-          lx -= 1;
-        } else {
-          lx += 1;
+      } else {                /* x < 0 */
+        if(x > y || ((hx==hy) && (lx>ly))) {  
           raise = true;
-          if(lx==0) {
-            hx += 1;
-          }
+        } else {
+          lower = true;
         }
       }
-      // Deals with overflow cases. 
       hy = hx&0x7ff00000;
-      if(hy>=0x7ff00000) {
-        return x+x;
+      if(hy >= 0x7ff00000) {
+        return x+x;  /* overflow  */
       }
-      if(hy<0x00100000) {
+      if(hy < 0x00100000) {     /* underflow */
         y = x*x;
-        if(y!=x) {  
+        if(y != x) {      /* raise underflow flag */   
           bits = Double.doubleToRawLongBits(y);
           bits &= 0x00000000FFFFFFFF;
-          // Rounds y up or down and converts it back to a double.
-          if(raise) {
-            bits += 1;
-          } else {
-            bits -= 1;
-          }
+          bits |= ((long)(hy)) << 32;
           y = Double.longBitsToDouble(bits);
           return y;
         }
       }
-      // Convert x to long.
       bits = Double.doubleToRawLongBits(x);
       bits &= 0x00000000FFFFFFFF;
-      // Rounds x up or down and converts it back to a double.
-      if(raise) {
-        bits += 1;
-      } else {
+      if(lower) {
         bits -= 1;
       }
+      if(raise) {
+        bits += 1;
+      } 
       x = Double.longBitsToDouble(bits);
       return x;
     }
