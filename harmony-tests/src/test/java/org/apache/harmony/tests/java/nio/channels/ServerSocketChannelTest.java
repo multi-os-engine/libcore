@@ -657,20 +657,35 @@ public class ServerSocketChannelTest extends TestCase {
      * @tests ServerSocketChannel#socket().getSoTimeout()
      */
     public void test_accept_SOTIMEOUT() throws IOException {
-        // regression test for Harmony-707
-        final int SO_TIMEOUT = 10;
+        // Regression test for Harmony-707
+        // We cannot check timeouts equality, as timeout is approximated by the
+        // Linux Kernel (see set_sock_timeout() in net/core/sock.c).
+        // Instead, set 2 different timeout and ensure they are not equals
+        // after calling accept() two times.
+        final int SO_FIRST_TIMEOUT = 10;
+        final int SO_SECOND_TIMEOUT = SO_FIRST_TIMEOUT + 4;
+
         ServerSocketChannel sc = ServerSocketChannel.open();
         try {
-            sc.socket().bind(null);
-            sc.configureBlocking(false);
             ServerSocket ss = sc.socket();
-            ss.setSoTimeout(SO_TIMEOUT);
-            SocketChannel client = sc.accept();
-            // non blocking mode, returns null since there are no pending connections.
-            assertNull(client);
-            int soTimeout = ss.getSoTimeout();
+            ss.bind(localAddr1);
+            // Non blocking mode, accept() will return NULL since there are no pending connections.
+            sc.configureBlocking(false);
+
+            // First run.
+            ss.setSoTimeout(SO_FIRST_TIMEOUT);
+            SocketChannel firstClient = sc.accept();
+            assertNull(firstClient);
+            int soFirstTimeout = ss.getSoTimeout();
+
+            // Second run.
+            ss.setSoTimeout(SO_SECOND_TIMEOUT);
+            SocketChannel secondClient = sc.accept();
+            assertNull(secondClient);
+            int soSecondTimeout = ss.getSoTimeout();
+
             // Harmony fails here.
-            assertEquals(SO_TIMEOUT, soTimeout);
+            assertTrue(soFirstTimeout != soSecondTimeout);
         } finally {
             sc.close();
         }
