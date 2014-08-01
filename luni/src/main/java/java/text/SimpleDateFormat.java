@@ -76,7 +76,7 @@ import libcore.icu.TimeZoneNames;
  * <tr> <td>{@code M}</td> <td>month in year</td>           <td>(Text)</td>        <td>{@code M}:1 {@code MM}:01 {@code MMM}:Jan {@code MMMM}:January {@code MMMMM}:J</td> </tr>
  * <tr> <td>{@code S}</td> <td>fractional seconds</td>      <td>(Number)</td>      <td>978</td> </tr>
  * <tr> <td>{@code W}</td> <td>week in month</td>           <td>(Number)</td>      <td>2</td> </tr>
- * <tr> <td>{@code Z}</td> <td>time zone (RFC 822)</td>     <td>(Time Zone)</td>   <td>{@code Z}/{@code ZZ}/{@code ZZZ}:-0800 {@code ZZZZ}:GMT-08:00 {@code ZZZZZ}:-08:00</td> </tr>
+ * <tr> <td>{@code Z}</td> <td>time zone</td>               <td>(Time Zone)</td>   <td>{@code Z}/{@code ZZ}/{@code ZZZ}:-0800 (RFC 822) {@code ZZZZ}:GMT-08:00 {@code ZZZZZ}:-08:00</td> </tr>
  * <tr> <td>{@code a}</td> <td>am/pm marker</td>            <td>(Text)</td>        <td>PM</td> </tr>
  * <tr> <td>{@code c}</td> <td>stand-alone day of week</td> <td>(Text)</td>        <td>{@code c}/{@code cc}/{@code ccc}:Tue, {@code cccc}:Tuesday, {@code ccccc}:T</td> </tr>
  * <tr> <td>{@code d}</td> <td>day in month</td>            <td>(Number)</td>      <td>10</td> </tr>
@@ -738,7 +738,7 @@ public class SimpleDateFormat extends DateFormat {
     private void appendTimeZone(StringBuffer buffer, int count, boolean generalTimeZone) {
         if (generalTimeZone) {
             TimeZone tz = calendar.getTimeZone();
-            boolean daylight = (calendar.get(Calendar.DST_OFFSET) != 0);
+            boolean daylight = calendar.get(Calendar.DST_OFFSET) != 0;
             int style = count < 4 ? TimeZone.SHORT : TimeZone.LONG;
             if (!formatData.customZoneStrings) {
                 buffer.append(tz.getDisplayName(daylight, style, formatData.locale));
@@ -757,7 +757,7 @@ public class SimpleDateFormat extends DateFormat {
     }
 
     // See http://www.unicode.org/reports/tr35/#Date_Format_Patterns for the different counts.
-    // @param generalTimeZone "GMT-08:00" rather than "-0800".
+    // @param generalTimeZone when true 'z' (custom / unnamed TZ) behavior, otherwise 'Z' behavior.
     private void appendNumericTimeZone(StringBuffer buffer, int count, boolean generalTimeZone) {
         int offset = calendar.get(Calendar.ZONE_OFFSET) + calendar.get(Calendar.DST_OFFSET);
         char sign = '+';
