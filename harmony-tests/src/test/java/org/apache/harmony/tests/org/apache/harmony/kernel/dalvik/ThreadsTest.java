@@ -28,6 +28,7 @@ import sun.misc.Unsafe;
  */
 public class ThreadsTest extends TestCase {
     private static Unsafe UNSAFE = null;
+    static boolean parker_start_park;
     static {
         /*
          * Set up {@link #UNSAFE}. This subverts the access check to
@@ -55,6 +56,7 @@ public class ThreadsTest extends TestCase {
         Thread waiterThread =
             new Thread(new WaitAndUnpark(barrier, 1000, parkerThread));
 
+        parker_start_park = false;
         parkerThread.start();
         waiterThread.start();
         parker.assertDurationIsInRange(500);
@@ -70,6 +72,7 @@ public class ThreadsTest extends TestCase {
         Thread waiterThread =
             new Thread(new WaitAndUnpark(barrier, 300, parkerThread));
 
+        parker_start_park = false;
         parkerThread.start();
         waiterThread.start();
         parker.assertDurationIsInRange(300);
@@ -97,6 +100,7 @@ public class ThreadsTest extends TestCase {
         Thread waiterThread =
             new Thread(new WaitAndUnpark(barrier, 1000, parkerThread));
 
+        parker_start_park = false;
         parkerThread.start();
         waiterThread.start();
         parker.assertDurationIsInRange(500);
@@ -112,6 +116,7 @@ public class ThreadsTest extends TestCase {
         Thread waiterThread =
             new Thread(new WaitAndUnpark(barrier, 300, parkerThread));
 
+        parker_start_park = false;
         parkerThread.start();
         waiterThread.start();
         parker.assertDurationIsInRange(300);
@@ -174,16 +179,12 @@ public class ThreadsTest extends TestCase {
         }
 
         public void run() {
-            try {
-                barrier.await(60, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
             boolean absolute = this.absolute;
             long amount = this.amount;
             long startNanos = System.nanoTime();
             long start = System.currentTimeMillis();
 
+            parker_start_park = true;
             if (absolute) {
                 UNSAFE.park(true, start + amount);
             } else {
@@ -197,6 +198,11 @@ public class ThreadsTest extends TestCase {
                 endMillis = endNanos / 1000000;
                 completed = true;
                 notifyAll();
+            }
+            try {
+                barrier.await(60, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                throw new AssertionError(e);
             }
         }
 
@@ -268,10 +274,7 @@ public class ThreadsTest extends TestCase {
         }
 
         public void run() {
-            try {
-                barrier.await(60, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                throw new AssertionError(e);
+            while (parker_start_park == false) {
             }
             try {
                 Thread.sleep(waitMillis);
@@ -280,6 +283,11 @@ public class ThreadsTest extends TestCase {
             }
 
             UNSAFE.unpark(thread);
+            try {
+                barrier.await(60, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                throw new AssertionError(e);
+            }
         }
     }
 }
