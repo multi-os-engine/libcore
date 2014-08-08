@@ -70,7 +70,13 @@ public class AccessibleObject implements AnnotatedElement {
      * Attempts to set the accessible flag. Setting this to true prevents {@code
      * IllegalAccessExceptions}.
      */
-    public void setAccessible(boolean flag) {
+    public void setAccessible(boolean flag) throws SecurityException {
+        try {
+          if (equals(Class.class.getDeclaredConstructor())) {
+            throw new SecurityException("Can't make Class.class.getDeclaredConstructor() accessible");
+          }
+        } catch (NoSuchMethodException e) {
+        }
         this.flag = flag;
      }
 
