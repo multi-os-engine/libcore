@@ -86,6 +86,7 @@ class IterationHandle {
 
   ~IterationHandle() {
     free(prefix_);
+    EndIteration(cookie_);
   }
 
  private:
