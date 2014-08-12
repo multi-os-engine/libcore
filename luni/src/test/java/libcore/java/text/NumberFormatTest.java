@@ -99,4 +99,27 @@ public class NumberFormatTest extends junit.framework.TestCase {
         } catch (NullPointerException expected) {
         }
     }
+
+    // http://b/16938922.
+    //
+    // TODO: This is for backwards compatibility only. Seems like a better idea to throw
+    // here. We should add a targetSdkVersion based check and throw for each of these
+    // cases.
+    public void test_nullLocales() {
+        assertEquals(
+                NumberFormat.getInstance(Locale.getDefault()),
+                NumberFormat.getInstance(null));
+        assertEquals(
+                NumberFormat.getCurrencyInstance(Locale.getDefault()),
+                NumberFormat.getCurrencyInstance(null));
+        assertEquals(
+                NumberFormat.getIntegerInstance(Locale.getDefault()),
+                NumberFormat.getIntegerInstance(null));
+        assertEquals(
+                NumberFormat.getPercentInstance(Locale.getDefault()),
+                NumberFormat.getPercentInstance(null));
+        assertEquals(
+                NumberFormat.getNumberInstance(Locale.getDefault()),
+                NumberFormat.getNumberInstance(null));
+    }
 }

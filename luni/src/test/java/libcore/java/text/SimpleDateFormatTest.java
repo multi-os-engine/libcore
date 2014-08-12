@@ -350,4 +350,22 @@ public class SimpleDateFormatTest extends junit.framework.TestCase {
         assertEquals(1376927400000L, sdf.parse("19. Aug 2013 8:50").getTime());
         assertEquals(1376927400000L, sdf.parse("19. Aug. 2013 8:50").getTime());
     }
+
+    // http://b/16938922.
+    //
+    // TODO: This is for backwards compatibility only. Seems like a better idea to throw
+    // here. We should add a targetSdkVersion based check and throw for each of these
+    // cases.
+    public void test_nullLocales() {
+        assertEquals(
+                SimpleDateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault()),
+                SimpleDateFormat.getDateInstance(DateFormat.SHORT, null));
+        assertEquals(
+                SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT,
+                        Locale.getDefault()),
+                SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, null));
+        assertEquals(
+                SimpleDateFormat.getTimeInstance(DateFormat.SHORT, Locale.getDefault()),
+                SimpleDateFormat.getTimeInstance(DateFormat.SHORT, null));
+    }
 }

@@ -79,4 +79,14 @@ public class CurrencyTest extends junit.framework.TestCase {
         assertEquals("€", Currency.getInstance(pt_PT).getSymbol(pt_BR));
         assertEquals("€", Currency.getInstance(pt_PT).getSymbol(pt_PT));
     }
+
+    // http://b/16938922.
+    //
+    // TODO: This is for backwards compatibility only. Seems like a better idea to throw
+    // here. We should add a targetSdkVersion based check and throw for each of these
+    // cases.
+    public void test_nullLocales() {
+        Currency currency = Currency.getInstance(Locale.getDefault());
+        assertEquals(currency.getSymbol(Locale.getDefault()), currency.getSymbol(null));
+    }
 }

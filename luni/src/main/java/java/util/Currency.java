@@ -65,6 +65,9 @@ public final class Currency implements Serializable {
      */
     public static Currency getInstance(Locale locale) {
         synchronized (localesToCurrencies) {
+            if (locale == null) {
+                throw new NullPointerException("locale == null");
+            }
             Currency currency = localesToCurrencies.get(locale);
             if (currency != null) {
                 return currency;
@@ -147,6 +150,7 @@ public final class Currency implements Serializable {
      */
     public String getSymbol(Locale locale) {
         // Check the locale first, in case the locale has the same currency.
+        locale = LocaleData.mapInvalidAndNullLocales(locale);
         LocaleData localeData = LocaleData.get(locale);
         if (localeData.internationalCurrencySymbol.equals(currencyCode)) {
             return localeData.currencySymbol;

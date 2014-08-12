@@ -388,6 +388,7 @@ public abstract class DateFormat extends Format {
      */
     public static final DateFormat getDateInstance(int style, Locale locale) {
         checkDateStyle(style);
+        locale = LocaleData.mapInvalidAndNullLocales(locale);
         return new SimpleDateFormat(LocaleData.get(locale).getDateFormat(style), locale);
     }
 
@@ -440,6 +441,7 @@ public abstract class DateFormat extends Format {
     public static final DateFormat getDateTimeInstance(int dateStyle, int timeStyle, Locale locale) {
         checkTimeStyle(timeStyle);
         checkDateStyle(dateStyle);
+        locale = LocaleData.mapInvalidAndNullLocales(locale);
         LocaleData localeData = LocaleData.get(locale);
         String pattern = localeData.getDateFormat(dateStyle) + " " + localeData.getTimeFormat(timeStyle);
         return new SimpleDateFormat(pattern, locale);
@@ -514,6 +516,7 @@ public abstract class DateFormat extends Format {
      */
     public static final DateFormat getTimeInstance(int style, Locale locale) {
         checkTimeStyle(style);
+        locale = LocaleData.mapInvalidAndNullLocales(locale);
         return new SimpleDateFormat(LocaleData.get(locale).getTimeFormat(style), locale);
     }
 
