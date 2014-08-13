@@ -28,8 +28,23 @@
 #include "ziparchive/zip_archive.h"
 #include "cutils/log.h"
 
+struct ZipEntryNameDelete {
+  void operator()(ZipEntryName* p) const {
+    if (p != NULL) {
+      delete[] p->name;
+    }
+    delete p;
+  }
+};
+
+typedef UniquePtr<ZipEntryName, ZipEntryNameDelete> UniqueEntryNamePtr;
+
 static void throwIoException(JNIEnv* env, const int32_t errorCode) {
   jniThrowException(env, "java/io/IOException", ErrorCodeString(errorCode));
+}
+
+static void throwOutOfMemoryError(JNIEnv* env) {
+   jniThrowException(env, "java/lang/OutOfMemoryError", "");
 }
 
 static jobject newZipEntry(JNIEnv* env, const ZipEntry& entry, jstring entryName) {
@@ -50,6 +65,55 @@ static jobject newZipEntry(JNIEnv* env, const ZipEntry& entry, jstring entryName
                         NULL,  // byte[] extra
                         static_cast<jlong>(-1),  // local header offset
                         static_cast<jlong>(entry.offset));
+}
+
+static ZipEntryName* newZipEntryName(JNIEnv* env, ZipArchiveHandle handle, jstring name) {
+  if (!env->EnsureLocalCapacity(3)) {
+    return NULL;
+  }
+  ZipEntryName* result = NULL;
+  ScopedLocalRef<jclass> string_class(env, env->FindClass("java/lang/String"));
+  if (string_class.get() == NULL) {
+    // ClassFormatError, ClassCircularityError, NoClassDefFoundError or OutOfMemoryError
+    return NULL;
+  }
+  ScopedLocalRef<jstring> encoding(
+      env,
+      env->NewStringUTF(UsesUTF8ForNamesEncoding(handle) ? "UTF-8" : "Cp437"));
+  jmethodID get_bytes_method_id = env->GetMethodID(string_class.get(), "getBytes",
+                                                   "(Ljava/lang/String;)[B");
+  if (get_bytes_method_id == NULL) {
+    // NoSuchMethodError, ExceptionInInitializerError or OutOfMemoryError
+    return NULL;
+  }
+  ScopedLocalRef<jbyteArray> bytes(
+      env,
+      reinterpret_cast<jbyteArray>(env->CallObjectMethod(name,
+                                                         get_bytes_method_id, encoding.get())));
+  if (!env->ExceptionCheck()) {
+    // Exception from method
+    result = new(std::nothrow) ZipEntryName;
+    if (result == NULL) {
+      throwOutOfMemoryError(env);
+      return NULL;
+    }
+    result->name_length = env->GetArrayLength(bytes.get());
+    result->name = new(std::nothrow) uint8_t[result->name_length];
+    if (result->name == NULL) {
+      delete result;
+      throwOutOfMemoryError(env);
+      return NULL;
+    }
+    env->GetByteArrayRegion(bytes.get(), 0, result->name_length,
+                            reinterpret_cast<jbyte*>(const_cast<uint8_t*>(result->name)));
+    if (env->ExceptionCheck()) {
+      // ArrayIndexOutOfBoundsException
+      delete[] result->name;
+      delete result;
+      return NULL;
+    }
+  }
+  return result;
 }
 
 static jlong StrictJarFile_nativeOpenJarFile(JNIEnv* env, jobject, jstring fileName) {
@@ -89,19 +153,18 @@ class IterationHandle {
 
 static jlong StrictJarFile_nativeStartIteration(JNIEnv* env, jobject, jlong nativeHandle,
                                                 jstring prefix) {
-  ScopedUtfChars prefixChars(env, prefix);
-  if (prefixChars.c_str() == NULL) {
+  ZipArchiveHandle handle = reinterpret_cast<ZipArchiveHandle>(nativeHandle);
+  UniqueEntryNamePtr prefix_name(newZipEntryName(env, handle, prefix));
+  if (prefix_name.get() == NULL) {
     return static_cast<jlong>(-1);
   }
 
-  IterationHandle* handle = new IterationHandle();
+  IterationHandle* result = new IterationHandle();
   int32_t error = 0;
-  if (prefixChars.size() == 0) {
-    error = StartIteration(reinterpret_cast<ZipArchiveHandle>(nativeHandle),
-                           handle->CookieAddress(), NULL);
+  if (prefix_name->name_length == 0) {
+    error = StartIteration(handle, result->CookieAddress(), NULL);
   } else {
-    error = StartIteration(reinterpret_cast<ZipArchiveHandle>(nativeHandle),
-                           handle->CookieAddress(), prefixChars.c_str());
+    error = StartIteration(handle, result->CookieAddress(), prefix_name.get());
   }
 
   if (error) {
@@ -113,34 +176,73 @@ static jlong StrictJarFile_nativeStartIteration(JNIEnv* env, jobject, jlong nati
 }
 
 static jobject StrictJarFile_nativeNextEntry(JNIEnv* env, jobject, jlong iterationHandle) {
+  IterationHandle* handle = reinterpret_cast<IterationHandle*>(iterationHandle);
+  if (!env->EnsureLocalCapacity(3)) {
+    delete handle;
+    return NULL;
+  }
+  ScopedLocalRef<jclass> string_class(env, env->FindClass("java/lang/String"));
+  if (string_class.get() == NULL) {
+    // ClassFormatError, ClassCircularityError, NoClassDefFoundError or OutOfMemoryError
+    delete handle;
+    return NULL;
+  }
+  ScopedLocalRef<jstring> encoding(
+      env,
+      env->NewStringUTF(UsesUTF8ForNamesEncoding(handle) ? "UTF-8" : "Cp437"));
+  jmethodID string_constructor_method_id = env->GetMethodID(string_class.get(), "<init>",
+                                                   "([BLjava/lang/String;)V");
+  if (string_constructor_method_id == NULL) {
+    // NoSuchMethodError, ExceptionInInitializerError or OutOfMemoryError
+    delete handle;
+    return NULL;
+  }
+
   ZipEntry data;
   ZipEntryName entryName;
 
-  IterationHandle* handle = reinterpret_cast<IterationHandle*>(iterationHandle);
   const int32_t error = Next(*handle->CookieAddress(), &data, &entryName);
   if (error) {
     delete handle;
     return NULL;
   }
-
-  UniquePtr<char[]> entryNameCString(new char[entryName.name_length + 1]);
-  memcpy(entryNameCString.get(), entryName.name, entryName.name_length);
-  entryNameCString[entryName.name_length] = '\0';
-  ScopedLocalRef<jstring> entryNameString(env, env->NewStringUTF(entryNameCString.get()));
+  ScopedLocalRef<jbyteArray> bytes (env, env->NewByteArray(entryName.name_length));
+  if (bytes.get() == NULL) {
+    throwOutOfMemoryError(env);
+    delete handle;
+    return NULL;
+  }
+  env->SetByteArrayRegion(bytes.get(), 0, entryName.name_length,
+                          reinterpret_cast<jbyte*>(const_cast<uint8_t*>(entryName.name)));
+  if (env->ExceptionCheck()) {
+    // ArrayIndexOutOfBoundsException
+    delete handle;
+    return NULL;
+  }
+  ScopedLocalRef<jstring> entryNameString(
+      env,
+      reinterpret_cast<jstring>(env->NewObject(string_class.get(),
+                                              string_constructor_method_id,
+                                              bytes.get(),
+                                              encoding.get())));
+  if (env->ExceptionCheck()) {
+    delete handle;
+    return NULL;
+  }
 
   return newZipEntry(env, data, entryNameString.get());
 }
 
 static jobject StrictJarFile_nativeFindEntry(JNIEnv* env, jobject, jlong nativeHandle,
                                              jstring entryName) {
-  ScopedUtfChars entryNameChars(env, entryName);
-  if (entryNameChars.c_str() == NULL) {
+  ZipArchiveHandle handle = reinterpret_cast<ZipArchiveHandle>(nativeHandle);
+  UniqueEntryNamePtr entry_name(newZipEntryName(env, handle, entryName));
+  if (entry_name.get() == NULL) {
     return NULL;
   }
 
   ZipEntry data;
-  const int32_t error = FindEntry(reinterpret_cast<ZipArchiveHandle>(nativeHandle),
-                                  entryNameChars.c_str(), &data);
+  const int32_t error = FindEntry(handle, *entry_name, &data);
   if (error) {
     return NULL;
   }
