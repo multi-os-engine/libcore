@@ -60,6 +60,7 @@
 #include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
+#include <dlfcn.h>
 
 
 #ifndef __unused
@@ -1030,12 +1031,28 @@ static void Posix_munmap(JNIEnv* env, jobject, jlong address, jlong byteCount) {
     throwIfMinusOne(env, "munmap", TEMP_FAILURE_RETRY(munmap(ptr, byteCount)));
 }
 
+typedef int (*NativeBridgeHelper_open)(const char* path, int flags, int mode);
+
 static jobject Posix_open(JNIEnv* env, jobject, jstring javaPath, jint flags, jint mode) {
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return NULL;
     }
-    int fd = throwIfMinusOne(env, "open", TEMP_FAILURE_RETRY(open(path.c_str(), flags, mode)));
+
+    int fd = -1;
+    void* handle = dlopen("libnativebridgehelper.so", RTLD_LAZY);
+    if (handle != NULL) {
+        NativeBridgeHelper_open NBH_open = reinterpret_cast<NativeBridgeHelper_open>
+            (dlsym(handle, "NativeBridgeHelperOpen"));
+        if (NBH_open != NULL) {
+            fd = throwIfMinusOne(env, "open", NBH_open(path.c_str(), flags, mode));
+            dlclose(handle);
+            return fd != -1 ? jniCreateFileDescriptor(env, fd) : NULL;
+        }
+        dlclose(handle);
+    }
+
+    fd = throwIfMinusOne(env, "open", TEMP_FAILURE_RETRY(open(path.c_str(), flags, mode)));
     return fd != -1 ? jniCreateFileDescriptor(env, fd) : NULL;
 }
 
