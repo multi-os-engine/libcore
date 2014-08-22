@@ -95,7 +95,7 @@ public class OldSocketTest extends OldSocketTestCase {
         }
 
         try {
-            new Socket("unknown.host", 0);
+            new Socket("host.unknown", 0);
             fail("UnknownHostException was not thrown.");
         } catch(UnknownHostException uhe) {
             //expected

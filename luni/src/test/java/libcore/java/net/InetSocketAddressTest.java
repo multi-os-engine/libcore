@@ -140,7 +140,7 @@ public class InetSocketAddressTest extends TestCase {
         InetSocketAddress isa1 = new InetSocketAddress("localhost", 80);
         assertFalse(isa1.isUnresolved());
 
-        InetSocketAddress sockAddr = new InetSocketAddress("unknown.host", 1000);
+        InetSocketAddress sockAddr = new InetSocketAddress("host.unknown", 1000);
         assertTrue(sockAddr.isUnresolved());
     }
 
