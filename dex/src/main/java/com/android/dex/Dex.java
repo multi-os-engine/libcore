@@ -465,7 +465,7 @@ public final class Dex {
     public int typeIndexFromClassDefIndex(int classDefIndex) {
         checkBounds(classDefIndex, tableOfContents.classDefs.size);
         int position = tableOfContents.classDefs.off + (SizeOf.CLASS_DEF_ITEM * classDefIndex);
-        return data.getInt(position);
+        return data.getChar(position);
     }
 
     /**

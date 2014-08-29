@@ -120,8 +120,8 @@ import libcore.util.SneakyThrow;
  * </ul>
  */
 public final class Class<T> implements Serializable, AnnotatedElement, GenericDeclaration, Type {
-
     private static final long serialVersionUID = 3206093459760846163L;
+    private static final char invalidDexIndex = 0xFFFF;
 
     /** defining class loader, or NULL for the "bootstrap" system loader. */
     private transient ClassLoader classLoader;
@@ -206,20 +206,6 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
      */
     private transient int clinitThreadId;
 
-    /**
-     * Class def index from dex file. An index of 65535 indicates that there is no class definition,
-     * for example for an array type.
-     * TODO: really 16bits as type indices are 16bit.
-     */
-    private transient int dexClassDefIndex;
-
-    /**
-     * Class type index from dex file, lazily computed. An index of 65535 indicates that the type
-     * index isn't known. Volatile to avoid double-checked locking bugs.
-     * TODO: really 16bits as type indices are 16bit.
-     */
-    private transient volatile int dexTypeIndex;
-
     /** Number of instance fields that are object references. */
     private transient int numReferenceInstanceFields;
 
@@ -232,17 +218,33 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
      */
     private transient int objectSize;
 
-    /** Primitive type value, or 0 if not a primitive type; set for generated primitive classes. */
-    private transient int primitiveType;
-
     /** Bitmap of offsets of iFields. */
     private transient int referenceInstanceOffsets;
 
     /** Bitmap of offsets of sFields. */
     private transient int referenceStaticOffsets;
 
+    /**
+     * Class def index from dex file. An index of invalidDexIndex indicates that there is no class definition,
+     * for example for an array type.
+     */
+    private transient char dexClassDefIndex;
+
+    /**
+     * Class type index from dex file, lazily computed. An index of invalidDexIndex indicates that the type
+     * index isn't known. Volatile to avoid double-checked locking bugs.
+     */
+    private transient volatile char dexTypeIndex;
+
+    /** Primitive type value, or 0 if not a primitive type; set for generated primitive classes. */
+    private transient byte primitiveType;
+
     /** State of class initialization */
-    private transient int status;
+    private transient byte status;
+
+    /** Paddings used to keep the start of VTable aligned. */
+    private transient byte xPadding1;
+    private transient byte xPadding2;
 
     private Class() {
         // Prevent this class to be instantiated, instance should be created by JVM only
@@ -1703,36 +1705,33 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
      * @hide
      */
     public int getDexClassDefIndex() {
-        return (dexClassDefIndex == 65535) ? -1 : dexClassDefIndex;
+        return (dexClassDefIndex == invalidDexIndex) ? -1 : dexClassDefIndex;
     }
 
     /**
      * The type index of this class in its own Dex, or -1 if it is unknown. If a class is referenced
      * by multiple Dex files, it will have a different type index in each. Dex files support 65534
-     * type indices, with 65535 representing no index.
+     * type indices, with invalidDexIndex representing no index.
      *
      * @hide
      */
     public int getDexTypeIndex() {
-        int typeIndex = dexTypeIndex;
-        if (typeIndex != 65535) {
+        char typeIndex = dexTypeIndex;
+        if (typeIndex != invalidDexIndex) {
             return typeIndex;
         }
         synchronized (this) {
             typeIndex = dexTypeIndex;
-            if (typeIndex == 65535) {
-                if (dexClassDefIndex >= 0) {
-                    typeIndex = getDex().typeIndexFromClassDefIndex(dexClassDefIndex);
+            if (typeIndex == invalidDexIndex) {
+                if (dexClassDefIndex != invalidDexIndex) {
+                    typeIndex = (char)getDex().typeIndexFromClassDefIndex(dexClassDefIndex);
                 } else {
-                    typeIndex = getDex().findTypeIndex(InternalNames.getInternalName(this));
-                    if (typeIndex < 0) {
-                        typeIndex = -1;
-                    }
+                    typeIndex = (char)getDex().findTypeIndex(InternalNames.getInternalName(this));
                 }
                 dexTypeIndex = typeIndex;
             }
         }
-        return typeIndex;
+        return (typeIndex == invalidDexIndex) ? -1 : typeIndex;
     }
 
     /**
