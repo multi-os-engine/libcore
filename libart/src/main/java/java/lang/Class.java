@@ -120,7 +120,6 @@ import libcore.util.SneakyThrow;
  * </ul>
  */
 public final class Class<T> implements Serializable, AnnotatedElement, GenericDeclaration, Type {
-
     private static final long serialVersionUID = 3206093459760846163L;
 
     /** defining class loader, or NULL for the "bootstrap" system loader. */
@@ -206,20 +205,6 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
      */
     private transient int clinitThreadId;
 
-    /**
-     * Class def index from dex file. An index of 65535 indicates that there is no class definition,
-     * for example for an array type.
-     * TODO: really 16bits as type indices are 16bit.
-     */
-    private transient int dexClassDefIndex;
-
-    /**
-     * Class type index from dex file, lazily computed. An index of 65535 indicates that the type
-     * index isn't known. Volatile to avoid double-checked locking bugs.
-     * TODO: really 16bits as type indices are 16bit.
-     */
-    private transient volatile int dexTypeIndex;
-
     /** Number of instance fields that are object references. */
     private transient int numReferenceInstanceFields;
 
@@ -232,17 +217,32 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
      */
     private transient int objectSize;
 
-    /** Primitive type value, or 0 if not a primitive type; set for generated primitive classes. */
-    private transient int primitiveType;
-
     /** Bitmap of offsets of iFields. */
     private transient int referenceInstanceOffsets;
 
     /** Bitmap of offsets of sFields. */
     private transient int referenceStaticOffsets;
 
+    /**
+     * Class def index from dex file. An index of 65535 indicates that there is no class definition,
+     * for example for an array type.
+     */
+    private transient char dexClassDefIndex;
+
+    /**
+     * Class type index from dex file, lazily computed. An index of 65535 indicates that the type
+     * index isn't known. Volatile to avoid double-checked locking bugs.
+     */
+    private transient volatile char dexTypeIndex;
+
+    /** Primitive type value, or 0 if not a primitive type; set for generated primitive classes. */
+    private transient byte primitiveType;
+
     /** State of class initialization */
-    private transient int status;
+    private transient byte status;
+
+    private transient byte xPadding1;
+    private transient byte xPadding2;
 
     private Class() {
         // Prevent this class to be instantiated, instance should be created by JVM only
@@ -1714,20 +1714,17 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
      * @hide
      */
     public int getDexTypeIndex() {
-        int typeIndex = dexTypeIndex;
+        char typeIndex = dexTypeIndex;
         if (typeIndex != 65535) {
             return typeIndex;
         }
         synchronized (this) {
             typeIndex = dexTypeIndex;
             if (typeIndex == 65535) {
-                if (dexClassDefIndex >= 0) {
-                    typeIndex = getDex().typeIndexFromClassDefIndex(dexClassDefIndex);
+                if (dexClassDefIndex != 65535) {
+                    typeIndex = (char)getDex().typeIndexFromClassDefIndex(dexClassDefIndex);
                 } else {
-                    typeIndex = getDex().findTypeIndex(InternalNames.getInternalName(this));
-                    if (typeIndex < 0) {
-                        typeIndex = -1;
-                    }
+                    typeIndex = (char)getDex().findTypeIndex(InternalNames.getInternalName(this));
                 }
                 dexTypeIndex = typeIndex;
             }
