@@ -28,6 +28,17 @@
 #include <openssl/err.h>
 #include <stdio.h>
 
+/* BN_BYTES used to be exported by OpenSSL and this code assumes that it is
+ * provided. */
+#if !defined(BN_BYTES)
+#define BN_BYTES sizeof(BN_ULONG)
+#endif
+
+#if defined(OPENSSL_IS_BORINGSSL)
+/* BoringSSL no longer exports |bn_check_top|. */
+#define bn_check_top(x)
+#endif
+
 struct BN_CTX_Deleter {
   void operator()(BN_CTX* p) const {
     BN_CTX_free(p);
@@ -109,28 +120,35 @@ static void NativeBN_BN_copy(JNIEnv* env, jclass, jlong to, jlong from) {
 }
 
 static void NativeBN_putULongInt(JNIEnv* env, jclass, jlong a0, jlong java_dw, jboolean neg) {
-    if (!oneValidHandle(env, a0)) return;
+  if (!oneValidHandle(env, a0)) return;
 
-    uint64_t dw = java_dw;
+  uint64_t dw = java_dw;
+  BIGNUM* a = toBigNum(a0);
+  int ok;
 
-    // cf. litEndInts2bn:
-    BIGNUM* a = toBigNum(a0);
-    bn_check_top(a);
-    if (bn_wexpand(a, 8/BN_BYTES) != NULL) {
-#ifdef __LP64__
+  if (sizeof(dw) == sizeof(BN_ULONG)) {
+    ok = BN_set_word(a, dw);
+  } else if (sizeof(dw) == 2 * sizeof(BN_ULONG)) {
+    ok = (NULL != bn_wexpand(a, 2));
+    if (ok) {
       a->d[0] = dw;
-#else
-      unsigned int hi = dw >> 32; // This shifts without sign extension.
-      int lo = (int)dw; // This truncates implicitly.
-      a->d[0] = lo;
-      a->d[1] = hi;
-#endif
-      a->top = 8 / BN_BYTES;
-      a->neg = neg;
+      a->d[1] = dw >> 32;
+      a->top = 2;
       bn_correct_top(a);
-    } else {
-      throwExceptionIfNecessary(env);
     }
+  } else {
+    uint8_t big_endian_bytes[sizeof(dw)];
+    for (size_t i = 0; i < sizeof(dw); i++) {
+      big_endian_bytes[sizeof(dw) - 1 - i] = dw & 0xff;
+      dw >>= 8;
+    }
+    ok = (NULL != BN_bin2bn(big_endian_bytes, sizeof(dw), a));
+  }
+  BN_set_negative(a, neg);
+
+  if (!ok) {
+    throwExceptionIfNecessary(env);
+  }
 }
 
 static void NativeBN_putLongInt(JNIEnv* env, jclass cls, jlong a, jlong dw) {
