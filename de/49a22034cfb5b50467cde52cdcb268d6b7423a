@@ -1,0 +1,7 @@
+Code-Review+2: Ian Rogers <irogers@google.com>
+Verified+1: Mathieu Chartier <mathieuc@google.com>
+Submitted-by: Mathieu Chartier <mathieuc@google.com>
+Submitted-at: Thu, 04 Sep 2014 22:28:53 +0000
+Reviewed-on: https://android-review.googlesource.com/106690
+Project: platform/libcore
+Branch: refs/heads/master
