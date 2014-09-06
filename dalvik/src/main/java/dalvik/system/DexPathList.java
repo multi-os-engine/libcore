@@ -147,6 +147,17 @@ import static android.system.OsConstants.*;
      * do not refer to existing and readable directories.
      */
     private static File[] splitLibraryPath(String path) {
+        String javaLibPath = System.getProperty("java.library.path");
+        // If native bridge support is needed, the library path of native bridge
+        // should be appended to the library path list.
+        String nativeBridgeLibPath = System.getProperty("native.bridge.libpath");
+        if ((nativeBridgeLibPath != null) && (!nativeBridgeLibPath.isEmpty())) {
+            if (javaLibPath == null) {
+                javaLibPath = nativeBridgeLibPath;
+            } else {
+                javaLibPath += ":" + nativeBridgeLibPath;
+            }
+        }
         // Native libraries may exist in both the system and
         // application library paths, and we use this search order:
         //
@@ -154,7 +165,7 @@ import static android.system.OsConstants.*;
         //   2. the VM's library path from the system property for system libraries
         //
         // This order was reversed prior to Gingerbread; see http://b/2933456.
-        ArrayList<File> result = splitPaths(path, System.getProperty("java.library.path"), true);
+        ArrayList<File> result = splitPaths(path, javaLibPath, true);
         return result.toArray(new File[result.size()]);
     }
 
