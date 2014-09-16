@@ -38,6 +38,7 @@ import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.util.Arrays;
@@ -107,6 +108,43 @@ public class HttpsURLConnectionTest extends TestCase {
         }
     }
 
+    public void testLargePost() throws Exception {
+        String postData = createLargeString(400 * 1024);
+
+        // set up the properties pointing to the key/trust stores
+        setUpStoreProperties();
+
+        SSLContext ctx = getContext();
+
+        // set the HostnameVerifier required to satisfy SSL - always returns "verified".
+        HttpsURLConnection.setDefaultHostnameVerifier(new TestHostnameVerifier());
+
+        // create a webserver to check and respond to requests
+        SingleRequestDispatcher dispatcher = createPostDispatcher(OK_CODE, postData);
+        MockWebServer webServer = createWebServer(ctx, dispatcher);
+
+        // create url connection to be tested
+        URL url = webServer.getUrl("/");
+        HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+        connection.setSSLSocketFactory(ctx.getSocketFactory());
+
+        executeClientRequest(connection, postData);
+
+        checkConnectionStateParameters(connection, dispatcher.getLastRequest());
+
+        connection.disconnect();
+
+        webServer.shutdown();
+    }
+
+    private String createLargeString(int length) {
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append((char) ('A' + (i % 26)));
+        }
+        return sb.toString();
+    }
+
     /**
      * Checks that HttpsURLConnection's default SSLSocketFactory is operable.
      */
@@ -132,7 +170,7 @@ public class HttpsURLConnectionTest extends TestCase {
         HttpsURLConnection.setDefaultHostnameVerifier(new TestHostnameVerifier());
 
         // create a webserver to check and respond to requests
-        SingleRequestDispatcher dispatcher = new SingleRequestDispatcher(GET_METHOD, OK_CODE);
+        SingleRequestDispatcher dispatcher = createGetDispatcher(OK_CODE);
         MockWebServer webServer = createWebServer(ctx, dispatcher);
 
         // create url connection to be tested
@@ -141,7 +179,7 @@ public class HttpsURLConnectionTest extends TestCase {
         connection.setSSLSocketFactory(ctx.getSocketFactory());
 
         // perform the interaction between the peers
-        executeClientRequest(connection, false /* doOutput */);
+        executeClientRequest(connection, null /* requestData */);
 
         checkConnectionStateParameters(connection, dispatcher.getLastRequest());
 
@@ -164,8 +202,7 @@ public class HttpsURLConnectionTest extends TestCase {
         HttpsURLConnection.setDefaultHostnameVerifier(new TestHostnameVerifier());
 
         // create a webserver to check and respond to requests
-        SingleRequestDispatcher dispatcher =
-                new SingleRequestDispatcher(GET_METHOD, NOT_FOUND_CODE);
+        SingleRequestDispatcher dispatcher = createGetDispatcher(NOT_FOUND_CODE);
         MockWebServer webServer = createWebServer(ctx, dispatcher);
 
         // create url connection to be tested
@@ -174,7 +211,7 @@ public class HttpsURLConnectionTest extends TestCase {
         connection.setSSLSocketFactory(ctx.getSocketFactory());
 
         try {
-            executeClientRequest(connection, false /* doOutput */);
+            executeClientRequest(connection, null /* requestData */);
             fail("Expected exception was not thrown.");
         } catch (FileNotFoundException e) {
             if (DO_LOG) {
@@ -185,6 +222,8 @@ public class HttpsURLConnectionTest extends TestCase {
 
         // should silently exit
         connection.connect();
+
+        connection.disconnect();
 
         webServer.shutdown();
     }
@@ -210,7 +249,7 @@ public class HttpsURLConnectionTest extends TestCase {
         HttpsURLConnection.setDefaultHostnameVerifier(initialHostnameVerifier);
 
         // create a webserver to check and respond to requests
-        SingleRequestDispatcher dispatcher = new SingleRequestDispatcher(GET_METHOD, OK_CODE);
+        SingleRequestDispatcher dispatcher = createGetDispatcher(OK_CODE);
         MockWebServer webServer = createWebServer(ctx, dispatcher);
 
         // create HttpsURLConnection to be tested
@@ -222,7 +261,7 @@ public class HttpsURLConnectionTest extends TestCase {
         HttpsURLConnection.setDefaultHostnameVerifier(lateHostnameVerifier);
 
         // perform the interaction between the peers
-        executeClientRequest(connection, false /* doOutput */);
+        executeClientRequest(connection, null /* requestData */);
         checkConnectionStateParameters(connection, dispatcher.getLastRequest());
 
         // check the verification process
@@ -233,6 +272,8 @@ public class HttpsURLConnectionTest extends TestCase {
         assertSame("Default SSLSocketFactory should be used",
                 HttpsURLConnection.getDefaultSSLSocketFactory(),
                 connection.getSSLSocketFactory());
+
+        connection.disconnect();
 
         webServer.shutdown();
     }
@@ -250,7 +291,7 @@ public class HttpsURLConnectionTest extends TestCase {
         HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
 
         // create a webserver to check and respond to requests
-        SingleRequestDispatcher dispatcher = new SingleRequestDispatcher(GET_METHOD, OK_CODE);
+        SingleRequestDispatcher dispatcher = createGetDispatcher(OK_CODE);
         MockWebServer webServer = createWebServer(ctx, dispatcher);
 
         // create HttpsURLConnection to be tested
@@ -266,7 +307,7 @@ public class HttpsURLConnectionTest extends TestCase {
         HttpsURLConnection.setDefaultHostnameVerifier(lateHostnameVerifier);
 
         // perform the interaction between the peers
-        executeClientRequest(connection, false /* doOutput */);
+        executeClientRequest(connection, null /* requestData */);
         checkConnectionStateParameters(connection, dispatcher.getLastRequest());
         // check the verification process
         assertTrue("Hostname verification was not done", hostnameVerifier.verified);
@@ -277,6 +318,8 @@ public class HttpsURLConnectionTest extends TestCase {
                 HttpsURLConnection.getDefaultSSLSocketFactory(),
                 connection.getSSLSocketFactory());
         assertSame("Result differs from expected", socketFactory, connection.getSSLSocketFactory());
+
+        connection.disconnect();
 
         webServer.shutdown();
     }
@@ -326,7 +369,7 @@ public class HttpsURLConnectionTest extends TestCase {
         HttpsURLConnection.setDefaultHostnameVerifier(defaultHostnameVerifier);
 
         // create a webserver to check and respond to requests
-        SingleRequestDispatcher dispatcher = new SingleRequestDispatcher(GET_METHOD, OK_CODE);
+        SingleRequestDispatcher dispatcher = createGetDispatcher(OK_CODE);
         MockWebServer webServer = createWebServer(ctx, dispatcher);
 
         // create HttpsURLConnection to be tested
@@ -339,12 +382,14 @@ public class HttpsURLConnectionTest extends TestCase {
         connection.setHostnameVerifier(connectionHostnameVerifier);
 
         // perform the interaction between the peers and check the results
-        executeClientRequest(connection, false /* doOutput */);
+        executeClientRequest(connection, null /* requestData */);
         assertTrue("Hostname verification was not done", connectionHostnameVerifier.verified);
         assertFalse("Hostname verification should not be done by this verifier",
                 defaultHostnameVerifier.verified);
 
         checkConnectionStateParameters(connection, dispatcher.getLastRequest());
+
+        connection.disconnect();
 
         webServer.shutdown();
     }
@@ -359,7 +404,7 @@ public class HttpsURLConnectionTest extends TestCase {
         SSLContext ctx = getContext();
 
         // create a webserver to check and respond to requests
-        SingleRequestDispatcher dispatcher = new SingleRequestDispatcher(POST_METHOD, OK_CODE);
+        SingleRequestDispatcher dispatcher = createPostDispatcher(OK_CODE);
         MockWebServer webServer = createWebServer(ctx, dispatcher);
 
         // set the HostnameVerifier required to satisfy SSL - always returns "verified".
@@ -371,7 +416,7 @@ public class HttpsURLConnectionTest extends TestCase {
         connection.setSSLSocketFactory(getContext().getSocketFactory());
 
         // perform the interaction between the peers and check the results
-        executeClientRequest(connection, true /* doOutput */);
+        executeClientRequest(connection, POST_DATA);
         checkConnectionStateParameters(connection, dispatcher.getLastRequest());
 
         // should silently exit
@@ -397,7 +442,7 @@ public class HttpsURLConnectionTest extends TestCase {
         ProxyConnectDispatcher proxyConnectDispatcher =
                 new ProxyConnectDispatcher(false /* authenticationRequired */);
         // request 2: tunnelled GET, respond with OK
-        SingleRequestDispatcher getDispatcher = new SingleRequestDispatcher(GET_METHOD, OK_CODE);
+        SingleRequestDispatcher getDispatcher = createGetDispatcher(OK_CODE);
         DelegatingDispatcher delegatingDispatcher =
                 new DelegatingDispatcher(proxyConnectDispatcher, getDispatcher);
         MockWebServer proxyAndWebServer = createProxyAndWebServer(ctx, delegatingDispatcher);
@@ -411,7 +456,7 @@ public class HttpsURLConnectionTest extends TestCase {
         connection.setSSLSocketFactory(getContext().getSocketFactory());
 
         // perform the interaction between the peers and check the results
-        executeClientRequest(connection, false /* doOutput */);
+        executeClientRequest(connection, null /* requestData */);
         checkConnectionStateParameters(connection, getDispatcher.getLastRequest());
 
         // should silently exit
@@ -446,7 +491,7 @@ public class HttpsURLConnectionTest extends TestCase {
         ProxyConnectDispatcher proxyConnectDispatcher =
                 new ProxyConnectDispatcher(true /* authenticationRequired */);
         // request 3: tunnelled GET, respond with OK
-        SingleRequestDispatcher getDispatcher = new SingleRequestDispatcher(GET_METHOD, OK_CODE);
+        SingleRequestDispatcher getDispatcher = createGetDispatcher(OK_CODE);
         DelegatingDispatcher delegatingDispatcher = new DelegatingDispatcher(
                 authFailDispatcher, proxyConnectDispatcher, getDispatcher);
         MockWebServer proxyAndWebServer = createProxyAndWebServer(ctx, delegatingDispatcher);
@@ -460,7 +505,7 @@ public class HttpsURLConnectionTest extends TestCase {
         connection.setSSLSocketFactory(getContext().getSocketFactory());
 
         // perform the interaction between the peers and check the results
-        executeClientRequest(connection, false /* doOutput */);
+        executeClientRequest(connection, null /* requestData */);
         checkConnectionStateParameters(connection, getDispatcher.getLastRequest());
 
         // should silently exit
@@ -482,7 +527,7 @@ public class HttpsURLConnectionTest extends TestCase {
         HttpsURLConnection.setDefaultHostnameVerifier(new TestHostnameVerifier());
 
         // create a server that pretends to be both a proxy and then the webserver
-        SingleRequestDispatcher getDispatcher1 = new SingleRequestDispatcher(GET_METHOD, OK_CODE);
+        SingleRequestDispatcher getDispatcher1 = createGetDispatcher(OK_CODE);
         MockWebServer proxyAndWebServer1 = createProxiedServer(getDispatcher1);
 
         // create HttpsURLConnection to be tested
@@ -492,13 +537,15 @@ public class HttpsURLConnectionTest extends TestCase {
         HttpsURLConnection connection = (HttpsURLConnection)
                 url.openConnection(new Proxy(Proxy.Type.HTTP, proxyAddress));
         connection.setSSLSocketFactory(getContext().getSocketFactory());
-         executeClientRequest(connection, false /* doOutput */);
+        executeClientRequest(connection, null /* requestData */);
         checkConnectionStateParameters(connection, getDispatcher1.getLastRequest());
+
+        connection.disconnect();
 
         proxyAndWebServer1.shutdown();
 
         // create another server
-        SingleRequestDispatcher getDispatcher2 = new SingleRequestDispatcher(GET_METHOD, OK_CODE);
+        SingleRequestDispatcher getDispatcher2 = createGetDispatcher(OK_CODE);
         MockWebServer proxyAndWebServer2 = createProxiedServer(getDispatcher2);
 
         // create another HttpsURLConnection to be tested
@@ -509,8 +556,10 @@ public class HttpsURLConnectionTest extends TestCase {
         connection2.setSSLSocketFactory(getContext().getSocketFactory());
 
         // perform the interaction between the peers and check the results
-        executeClientRequest(connection2, false /* doOutput */);
+        executeClientRequest(connection2, null /* requestData */);
         checkConnectionStateParameters(connection2, getDispatcher2.getLastRequest());
+
+        connection2.disconnect();
 
         proxyAndWebServer2.shutdown();
     }
@@ -553,7 +602,7 @@ public class HttpsURLConnectionTest extends TestCase {
         ProxyConnectDispatcher proxyConnectDispatcher =
                 new ProxyConnectDispatcher(true /* authenticationRequired */);
         // request 3: tunnelled POST, respond with OK
-        SingleRequestDispatcher postDispatcher = new SingleRequestDispatcher(POST_METHOD, OK_CODE);
+        SingleRequestDispatcher postDispatcher = createPostDispatcher(OK_CODE, POST_DATA);
         DelegatingDispatcher delegatingDispatcher = new DelegatingDispatcher(
                 authFailDispatcher, proxyConnectDispatcher, postDispatcher);
         MockWebServer proxyAndWebServer = createProxyAndWebServer(ctx, delegatingDispatcher);
@@ -566,7 +615,7 @@ public class HttpsURLConnectionTest extends TestCase {
         connection.setSSLSocketFactory(getContext().getSocketFactory());
 
         // perform the interaction between the peers and check the results
-        executeClientRequest(connection, true /* doOutput */);
+        executeClientRequest(connection, POST_DATA);
         checkConnectionStateParameters(connection, postDispatcher.getLastRequest());
 
         // should silently exit
@@ -603,7 +652,7 @@ public class HttpsURLConnectionTest extends TestCase {
 
         // perform the interaction between the peers and check the results
         try {
-            executeClientRequest(connection, false);
+            executeClientRequest(connection, null /* requestData */);
         } catch (IOException e) {
             // SSL Tunnelling failed
             if (DO_LOG) {
@@ -628,8 +677,7 @@ public class HttpsURLConnectionTest extends TestCase {
         // create a server that pretends to be a proxy
         ProxyConnectDispatcher proxyConnectDispatcher =
                 new ProxyConnectDispatcher(false /* authenticationRequired */);
-        SingleRequestDispatcher notFoundDispatcher =
-                new SingleRequestDispatcher(GET_METHOD, NOT_FOUND_CODE);
+        SingleRequestDispatcher notFoundDispatcher = createGetDispatcher(NOT_FOUND_CODE);
         DelegatingDispatcher delegatingDispatcher =
                 new DelegatingDispatcher(proxyConnectDispatcher, notFoundDispatcher);
         MockWebServer proxyAndWebServer = createProxyAndWebServer(ctx, delegatingDispatcher);
@@ -643,13 +691,15 @@ public class HttpsURLConnectionTest extends TestCase {
         connection.setSSLSocketFactory(getContext().getSocketFactory());
 
         try {
-            executeClientRequest(connection, false /* doOutput */);
+            executeClientRequest(connection, null /* requestData */);
             fail("Expected exception was not thrown.");
         } catch (FileNotFoundException e) {
             if (DO_LOG) {
                 System.out.println("Expected exception was thrown: " + e.getMessage());
             }
         }
+
+        connection.disconnect();
     }
 
     public void setUp() throws Exception {
@@ -897,6 +947,19 @@ public class HttpsURLConnectionTest extends TestCase {
         }
     }
 
+    public static SingleRequestDispatcher createPostDispatcher(int responseCode) {
+        return new SingleRequestDispatcher(POST_METHOD, responseCode, POST_DATA);
+    }
+
+    public static SingleRequestDispatcher createPostDispatcher(
+            int responseCode, String expectedPostData) {
+        return new SingleRequestDispatcher(POST_METHOD, responseCode, expectedPostData);
+    }
+
+    public static SingleRequestDispatcher createGetDispatcher(int responseCode) {
+        return new SingleRequestDispatcher(GET_METHOD, responseCode, null);
+    }
+
     /**
      * Handles a request: Answers with a response with a specified status code.
      * If the {@code expectedMethod} is {@code POST} a hardcoded response body {@link #POST_DATA}
@@ -905,13 +968,16 @@ public class HttpsURLConnectionTest extends TestCase {
     private static class SingleRequestDispatcher extends Dispatcher {
 
         private final String expectedMethod;
+        private final String expectedRequestData;
         private final int responseCode;
 
         private RecordedRequest lastRequest;
 
-        private SingleRequestDispatcher(String expectedMethod, int responseCode) {
-            this.responseCode = responseCode;
+        private SingleRequestDispatcher(
+                String expectedMethod, int responseCode, String expectedRequestData) {
             this.expectedMethod = expectedMethod;
+            this.responseCode = responseCode;
+            this.expectedRequestData = expectedRequestData;
         }
 
         @Override
@@ -922,8 +988,8 @@ public class HttpsURLConnectionTest extends TestCase {
             log("Request received: " + request);
             lastRequest = request;
             assertEquals(expectedMethod, request.getMethod());
-            if (POST_METHOD.equals(expectedMethod)) {
-                assertEquals(POST_DATA, request.getUtf8Body());
+            if (expectedRequestData != null) {
+                assertEquals(expectedRequestData, request.getUtf8Body());
             }
 
             MockResponse response = new MockResponse();
@@ -955,7 +1021,9 @@ public class HttpsURLConnectionTest extends TestCase {
      * success with a body {@link #RESPONSE_CONTENT}.
      */
     private static void executeClientRequest(
-            HttpsURLConnection connection, boolean doOutput) throws IOException {
+            HttpsURLConnection connection, String requestData) throws IOException {
+
+        boolean doOutput = (requestData != null);
 
         // set up the connection
         connection.setDoInput(true);
@@ -970,7 +1038,7 @@ public class HttpsURLConnectionTest extends TestCase {
             log("Client", "Posting data");
             // connection configured to post data, do so
             OutputStream os = connection.getOutputStream();
-            os.write(POST_DATA.getBytes());
+            os.write(requestData.getBytes(StandardCharsets.UTF_8));
         }
         // read the content of HTTP(s) response
         InputStream is = connection.getInputStream();
