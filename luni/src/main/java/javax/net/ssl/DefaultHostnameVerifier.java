@@ -137,6 +137,10 @@ public final class DefaultHostnameVerifier implements HostnameVerifier {
             return hostName.equals(cn);
         }
 
+        if (countDomainNameLabelsExcludingRoot(cn) < 3) {
+            return false; // "*" and "*.com" are rejected, but "*.foo.com" is permitted.
+        }
+
         if (cn.startsWith("*.") && hostName.regionMatches(0, cn, 2, cn.length() - 2)) {
             return true; // "*.foo.com" matches "foo.com"
         }
@@ -162,5 +166,22 @@ public final class DefaultHostnameVerifier implements HostnameVerifier {
         }
 
         return true;
+    }
+
+    /**
+     * Gets the number of domain name labels comprising the provided hostname, excluding the root
+     * label.
+     *
+     * <p>For example, for {@code www.android.com} this method returns {@code 3}.
+     */
+    private static int countDomainNameLabelsExcludingRoot(String hostname) {
+        int result = 1;
+        int hostnameLength = hostname.length();
+        int delimiterIndex = hostname.indexOf('.');
+        while ((delimiterIndex != -1) && (delimiterIndex != hostnameLength - 1)) {
+            result++;
+            delimiterIndex = hostname.indexOf('.', delimiterIndex + 1);
+        }
+        return result;
     }
 }
