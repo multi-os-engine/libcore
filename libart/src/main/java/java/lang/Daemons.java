@@ -143,19 +143,14 @@ public final class Daemons {
         }
 
         private void enqueue(Reference<?> list) {
-            while (list != null) {
-                Reference<?> reference;
-                // pendingNext is owned by the GC so no synchronization is required
-                if (list == list.pendingNext) {
-                    reference = list;
-                    reference.pendingNext = null;
-                    list = null;
-                } else {
-                    reference = list.pendingNext;
-                    list.pendingNext = reference.pendingNext;
-                    reference.pendingNext = null;
-                }
-                reference.enqueueInternal();
+            if (list != null) {
+                Reference<?> start = list;
+                do {
+                    Reference<?> next = list.pendingNext;
+                    list.pendingNext = null;
+                    list.enqueueInternal();
+                    list = next;
+                } while (list != start);
             }
         }
     }
