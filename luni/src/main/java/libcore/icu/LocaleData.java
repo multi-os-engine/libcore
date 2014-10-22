@@ -175,7 +175,11 @@ public final class LocaleData {
     public String getTimeFormat(int style) {
         switch (style) {
         case DateFormat.SHORT:
-            return shortTimeFormat;
+            if (DateFormat.is24Hour == null) {
+                return shortTimeFormat;
+            } else {
+                return DateFormat.is24Hour ? timeFormat24 : timeFormat12;
+            }
         case DateFormat.MEDIUM:
             return mediumTimeFormat;
         case DateFormat.LONG:
