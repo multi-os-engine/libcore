@@ -1,0 +1,7 @@
+Code-Review+2: Kenny Root <kroot@android.com>
+Verified+1: Deckard Autoverifier <deckard@android.com>
+Submitted-by: Neil Fuller <nfuller@google.com>
+Submitted-at: Fri, 24 Oct 2014 08:15:15 +0000
+Reviewed-on: https://android-review.googlesource.com/111686
+Project: platform/libcore
+Branch: refs/heads/master
