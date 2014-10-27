@@ -571,7 +571,7 @@ public final class URI implements Comparable<URI>, Serializable {
 
     private boolean isValidDomainName(String host) {
         try {
-            UriCodec.validateSimple(host, "-.");
+            UriCodec.validateSimple(host, "_-.");
         } catch (URISyntaxException e) {
             return false;
         }
