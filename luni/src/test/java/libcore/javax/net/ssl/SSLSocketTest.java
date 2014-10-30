@@ -262,6 +262,15 @@ public class SSLSocketTest extends TestCase {
         assertEquals(originalFirstElement, ssl.getEnabledProtocols()[0]);
     }
 
+    public void test_SSLSocket_getEnabledProtocols_correctVersionsEnabled() throws Exception {
+        for (String tlsVersion : StandardNames.TLS_VERSIONS.keySet()) {
+            SSLContext context = SSLContext.getInstance(tlsVersion);
+            context.init(null, null, null);
+            SSLSocket ssl = (SSLSocket) context.getSocketFactory().createSocket();
+            StandardNames.assertTlsVersions(tlsVersion, ssl.getEnabledProtocols());
+        }
+    }
+
     public void test_SSLSocket_setEnabledProtocols() throws Exception {
         SSLSocketFactory sf = (SSLSocketFactory) SSLSocketFactory.getDefault();
         SSLSocket ssl = (SSLSocket) sf.createSocket();
