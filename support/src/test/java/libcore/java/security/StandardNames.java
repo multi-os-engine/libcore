@@ -101,6 +101,9 @@ public final class StandardNames extends Assert {
     public static final Map<String,Set<String>> CIPHER_PADDINGS
             = new HashMap<String,Set<String>>();
 
+    public static final Map<String,String[]> TLS_VERSIONS
+            = new HashMap<String,String[]>();
+
     private static void provide(String type, String algorithm) {
         Set<String> algorithms = PROVIDER_ALGORITHMS.get(type);
         if (algorithms == null) {
@@ -133,6 +136,17 @@ public final class StandardNames extends Assert {
             CIPHER_PADDINGS.put(algorithm, paddings);
         }
         paddings.addAll(Arrays.asList(newPaddings));
+    }
+    private static void provideTlsVersions(String algorithm, TLSVersion minimum, TLSVersion maximum) {
+        if (minimum.ordinal() > maximum.ordinal()) {
+            throw new RuntimeException("TLS version: minimum > maximum");
+        }
+        int versionsLength = maximum.ordinal() - minimum.ordinal() + 1;
+        String[] versionNames = new String[versionsLength];
+        for (int i = 0; i < versionsLength; i++) {
+            versionNames[i] = TLSVersion.values()[i + minimum.ordinal()].name;
+        }
+        TLS_VERSIONS.put(algorithm, versionNames);
     }
     static {
         provide("AlgorithmParameterGenerator", "DSA");
@@ -533,6 +547,22 @@ public final class StandardNames extends Assert {
             }
 
         }
+
+        if (IS_RI) {
+            provideTlsVersions("SSL", TLSVersion.SSLv3, TLSVersion.TLSv1);
+            provideTlsVersions("SSLv3", TLSVersion.SSLv3, TLSVersion.TLSv1);
+            provideTlsVersions("TLS", TLSVersion.SSLv3, TLSVersion.TLSv1);
+            provideTlsVersions("TLSv1", TLSVersion.SSLv3, TLSVersion.TLSv1);
+            provideTlsVersions("TLSv1.1", TLSVersion.SSLv3, TLSVersion.TLSv11);
+            provideTlsVersions("TLSv1.2", TLSVersion.SSLv3, TLSVersion.TLSv12);
+        } else {
+            provideTlsVersions("SSL", TLSVersion.SSLv3, TLSVersion.TLSv12);
+            provideTlsVersions("SSLv3", TLSVersion.SSLv3, TLSVersion.TLSv12);
+            provideTlsVersions("TLS", TLSVersion.SSLv3, TLSVersion.TLSv12);
+            provideTlsVersions("TLSv1", TLSVersion.SSLv3, TLSVersion.TLSv12);
+            provideTlsVersions("TLSv1.1", TLSVersion.SSLv3, TLSVersion.TLSv12);
+            provideTlsVersions("TLSv1.2", TLSVersion.SSLv3, TLSVersion.TLSv12);
+        }
     }
 
     public static final String SSL_CONTEXT_PROTOCOLS_DEFAULT = "Default";
@@ -592,6 +622,19 @@ public final class StandardNames extends Assert {
             SSL_SOCKET_PROTOCOLS.add("SSLv2Hello");
         }
     }
+
+    private static enum TLSVersion {
+        SSLv3("SSLv3"),
+        TLSv1("TLSv1"),
+        TLSv11("TLSv1.1"),
+        TLSv12("TLSv1.2");
+
+        private final String name;
+
+        TLSVersion(String name) {
+            this.name = name;
+        }
+    };
 
     /**
      * Valid values for X509TrustManager.checkClientTrusted authType,
@@ -1082,6 +1125,12 @@ public final class StandardNames extends Assert {
             }
             assertEquals(Collections.EMPTY_LIST, disallowedDefaultCipherSuites);
         }
+    }
+
+    public static void assertTlsVersions(String version, String[] protocols) {
+        assertEquals("For protocol \"" + version + "\"",
+                Arrays.toString(TLS_VERSIONS.get(version)),
+                Arrays.toString(protocols));
     }
 
     private static boolean isPermittedDefaultCipherSuite(String cipherSuite) {

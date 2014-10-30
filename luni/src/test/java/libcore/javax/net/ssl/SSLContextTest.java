@@ -149,6 +149,15 @@ public class SSLContextTest extends TestCase {
                 sslContext);
     }
 
+    public void test_SSLContext_getEnabledProtocols_correctVersionsEnabled() throws Exception {
+        for (String tlsVersion : StandardNames.TLS_VERSIONS.keySet()) {
+            SSLContext context = SSLContext.getInstance(tlsVersion);
+            context.init(null, null, null);
+            SSLSocket ssl = (SSLSocket) context.getSocketFactory().createSocket();
+            StandardNames.assertTlsVersions(tlsVersion, ssl.getEnabledProtocols());
+        }
+    }
+
     private static void assertEnabledCipherSuites(
             List<String> expectedCipherSuites, SSLContext sslContext) throws Exception {
         assertContentsInOrder(
