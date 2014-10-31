@@ -558,10 +558,10 @@ public final class StandardNames extends Assert {
         } else {
             provideTlsVersions("SSL", TLSVersion.SSLv3, TLSVersion.TLSv12);
             provideTlsVersions("SSLv3", TLSVersion.SSLv3, TLSVersion.TLSv12);
-            provideTlsVersions("TLS", TLSVersion.SSLv3, TLSVersion.TLSv12);
-            provideTlsVersions("TLSv1", TLSVersion.SSLv3, TLSVersion.TLSv12);
-            provideTlsVersions("TLSv1.1", TLSVersion.SSLv3, TLSVersion.TLSv12);
-            provideTlsVersions("TLSv1.2", TLSVersion.SSLv3, TLSVersion.TLSv12);
+            provideTlsVersions("TLS", TLSVersion.TLSv1, TLSVersion.TLSv12);
+            provideTlsVersions("TLSv1", TLSVersion.TLSv1, TLSVersion.TLSv12);
+            provideTlsVersions("TLSv1.1", TLSVersion.TLSv1, TLSVersion.TLSv12);
+            provideTlsVersions("TLSv1.2", TLSVersion.TLSv1, TLSVersion.TLSv12);
         }
     }
 
@@ -601,13 +601,11 @@ public final class StandardNames extends Assert {
         "TLSv1.2"));
     public static final Set<String> SSL_SOCKET_PROTOCOLS_CLIENT_DEFAULT =
             new HashSet<String>(Arrays.asList(
-                "SSLv3",
                 "TLSv1",
                 "TLSv1.1",
                 "TLSv1.2"));
     public static final Set<String> SSL_SOCKET_PROTOCOLS_SERVER_DEFAULT =
             new HashSet<String>(Arrays.asList(
-                "SSLv3",
                 "TLSv1",
                 "TLSv1.1",
                 "TLSv1.2"));
@@ -620,6 +618,10 @@ public final class StandardNames extends Assert {
              * do to disable general use of SSLv2.
              */
             SSL_SOCKET_PROTOCOLS.add("SSLv2Hello");
+
+            /* The RI still has SSLv3 as a default protocol. */
+            SSL_SOCKET_PROTOCOLS_CLIENT_DEFAULT.add("SSLv3");
+            SSL_SOCKET_PROTOCOLS_SERVER_DEFAULT.add("SSLv3");
         }
     }
 
