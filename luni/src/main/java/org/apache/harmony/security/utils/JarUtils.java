@@ -119,30 +119,13 @@ public class JarUtils {
 
         // Get Signature instance
         final String daOid = sigInfo.getDigestAlgorithm();
-        final String daName = sigInfo.getDigestAlgorithmName();
         final String deaOid = sigInfo.getDigestEncryptionAlgorithm();
+        final String deaName = sigInfo.getDigestEncryptionAlgorithmName();
 
         String alg = null;
         Signature sig = null;
 
-        if (deaOid != null) {
-            alg = deaOid;
-            try {
-                sig = Signature.getInstance(alg);
-            } catch (NoSuchAlgorithmException e) {
-            }
-
-            final String deaName = sigInfo.getDigestEncryptionAlgorithmName();
-            if (sig == null && deaName != null) {
-                alg = deaName;
-                try {
-                    sig = Signature.getInstance(alg);
-                } catch (NoSuchAlgorithmException e) {
-                }
-            }
-        }
-
-        if (sig == null && daOid != null && deaOid != null) {
+        if (daOid != null && deaOid != null) {
             alg = daOid + "with" + deaOid;
             try {
                 sig = Signature.getInstance(alg);
@@ -150,9 +133,25 @@ public class JarUtils {
             }
 
             // Try to convert to names instead of OID.
-            if (sig == null) {
-                final String deaName = sigInfo.getDigestEncryptionAlgorithmName();
+            final String daName = sigInfo.getDigestAlgorithmName();
+            if (sig == null && daName != null && deaName != null) {
                 alg = daName + "with" + deaName;
+                try {
+                    sig = Signature.getInstance(alg);
+                } catch (NoSuchAlgorithmException e) {
+                }
+            }
+        }
+
+        if (sig == null && deaOid != null) {
+            alg = deaOid;
+            try {
+                sig = Signature.getInstance(alg);
+            } catch (NoSuchAlgorithmException e) {
+            }
+
+            if (sig == null) {
+                alg = deaName;
                 try {
                     sig = Signature.getInstance(alg);
                 } catch (NoSuchAlgorithmException e) {
