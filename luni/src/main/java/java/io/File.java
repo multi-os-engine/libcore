@@ -56,11 +56,13 @@ public class File implements Serializable, Comparable<File> {
 
     private static final long serialVersionUID = 301077366599181567L;
 
-    /**
-     * Reusing a Random makes temporary filenames slightly harder to predict.
-     * (Random is thread-safe.)
-     */
-    private static final Random tempFileRandom = new Random();
+//  BEGIN android-removed
+//  /**
+//   * Reusing a Random makes temporary filenames slightly harder to predict.
+//   * (Random is thread-safe.)
+//   */
+//  private static final Random tempFileRandom = new Random();
+//  END android-removed
 
     /**
      * The system-dependent character used to separate components in filenames ('/').
@@ -1002,7 +1004,7 @@ public class File implements Serializable, Comparable<File> {
         }
         File result;
         do {
-            result = new File(tmpDirFile, prefix + tempFileRandom.nextInt() + suffix);
+            result = new File(tmpDirFile, prefix + Math.randomIntInternal() + suffix);
         } while (!result.createNewFile());
         return result;
     }
