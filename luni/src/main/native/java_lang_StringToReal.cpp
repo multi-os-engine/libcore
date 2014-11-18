@@ -15,6 +15,9 @@
  *  limitations under the License.
  */
 
+extern "C" {
+extern double ieee_pow(double, double);
+}
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -270,7 +273,7 @@ static jdouble createDouble1(JNIEnv* env, uint64_t* f, int32_t length, jint e) {
     }
   else if (e >= 0 && e < APPROX_MAX_MAGNITUDE)
     {
-      result = toDoubleHighPrecision (f, length) * pow (10.0, e);
+      result = toDoubleHighPrecision (f, length) * ieee_pow (10.0, e);
     }
   else if (e >= APPROX_MAX_MAGNITUDE)
     {
@@ -294,14 +297,14 @@ static jdouble createDouble1(JNIEnv* env, uint64_t* f, int32_t length, jint e) {
     }
   else if (e > APPROX_MIN_MAGNITUDE)
     {
-      result = toDoubleHighPrecision (f, length) / pow (10.0, -e);
+      result = toDoubleHighPrecision (f, length) / ieee_pow (10.0, -e);
     }
 
   if (e <= APPROX_MIN_MAGNITUDE)
     {
 
-      result = toDoubleHighPrecision (f, length) * pow (10.0, e + 52);
-      result = result * pow (10.0, -52);
+      result = toDoubleHighPrecision (f, length) * ieee_pow (10.0, e + 52);
+      result = result * ieee_pow (10.0, -52);
 
     }
 
@@ -701,7 +704,7 @@ static jfloat createFloat1 (JNIEnv* env, uint64_t* f, int32_t length, jint e) {
     }
   else if (e >= 0 && e < 39)
     {
-      result = (jfloat) (toDoubleHighPrecision (f, length) * pow (10.0, (double) e));
+      result = (jfloat) (toDoubleHighPrecision (f, length) * ieee_pow (10.0, (double) e));
     }
   else if (e >= 39)
     {
@@ -721,7 +724,7 @@ static jfloat createFloat1 (JNIEnv* env, uint64_t* f, int32_t length, jint e) {
       int dexp;
       uint32_t fmant, fovfl;
       uint64_t dmant;
-      dresult = toDoubleHighPrecision (f, length) / pow (10.0, (double) -e);
+      dresult = toDoubleHighPrecision (f, length) / ieee_pow (10.0, (double) -e);
       if (IS_DENORMAL_DBL (dresult))
         {
           FLOAT_TO_INTBITS (result) = 0;
