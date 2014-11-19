@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.text.DecimalFormatSymbols;
+import java.util.Currency;
 import java.util.Locale;
 
 public class DecimalFormatSymbolsTest extends junit.framework.TestCase {
@@ -56,5 +57,16 @@ public class DecimalFormatSymbolsTest extends junit.framework.TestCase {
 
         // The two objects should claim to be equal.
         assertEquals(originalDfs, deserializedDfs);
+    }
+
+    // https://code.google.com/p/android/issues/detail?id=79925
+    public void testSetSameCurrency() throws Exception {
+        DecimalFormatSymbols dfs = new DecimalFormatSymbols(Locale.US);
+        dfs.setCurrency(Currency.getInstance("USD"));
+        assertEquals("$", dfs.getCurrencySymbol());
+        dfs.setCurrencySymbol("poop");
+        assertEquals("poop", dfs.getCurrencySymbol());
+        dfs.setCurrency(Currency.getInstance("USD"));
+        assertEquals("$", dfs.getCurrencySymbol());
     }
 }
