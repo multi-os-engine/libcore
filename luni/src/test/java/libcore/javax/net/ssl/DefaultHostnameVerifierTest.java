@@ -111,25 +111,47 @@ public final class DefaultHostnameVerifierTest extends TestCase {
                 .addSubjectAlternativeName(ALT_UNKNOWN, "random string 3")));
     }
 
-    public void testWildcardMatchesWildcardSuffix() {
-        assertTrue(verifier.verifyHostName("b.c.d", "*.b.c.d"));
-        assertTrue(verifier.verifyHostName("imap.google.com", "*.imap.google.com"));
+    public void testWildcardsRejectedForIpAddress() {
+        assertFalse(verifier.verify("1.2.3.4", new StubX509Certificate("cn=*.2.3.4")));
+        assertFalse(verifier.verify("1.2.3.4", new StubX509Certificate("cn=*.2.3.4")
+                .addSubjectAlternativeName(ALT_IPA_NAME, "*.2.3.4")
+                .addSubjectAlternativeName(ALT_DNS_NAME, "*.2.3.4")));
+        assertFalse(verifier.verify("2001:1234::1", new StubX509Certificate("cn=*:1234::1")));
+        assertFalse(verifier.verify("2001:1234::1", new StubX509Certificate("cn=*:1234::1")
+                .addSubjectAlternativeName(ALT_IPA_NAME, "*:1234::1")
+                .addSubjectAlternativeName(ALT_DNS_NAME, "*:1234::1")));
     }
 
-    public void testWildcardMatchingSubstring() {
-        assertTrue(verifier.verifyHostName("b.c.d", "b*.c.d"));
-        assertTrue(verifier.verifyHostName("imap.google.com", "ima*.google.com"));
+    public void testInvalidDomainNames() {
+        assertFalse(verifier.verifyHostName(null, null));
+        assertFalse(verifier.verifyHostName("", ""));
+        assertFalse(verifier.verifyHostName(".test.example.com", ".test.example.com"));
+        assertFalse(verifier.verifyHostName("ex*ample.com", "ex*ample.com"));
+        assertFalse(verifier.verifyHostName("example.com..", "example.com."));
+        assertFalse(verifier.verifyHostName("example.com.", "example.com.."));
     }
 
-    public void testWildcardMatchingEmptySubstring() {
-        assertTrue(verifier.verifyHostName("imap.google.com", "imap*.google.com"));
+    public void testWildcardCharacterMustBeLeftMostLabelOnly() {
+        assertFalse(verifier.verifyHostName("test.www.example.com", "test.*.example.com"));
+        assertFalse(verifier.verifyHostName("www.example.com", "www.*.com"));
+        assertFalse(verifier.verifyHostName("www.example.com", "www.example.*"));
+        assertFalse(verifier.verifyHostName("www.example.com", "*www.example.com"));
+        assertFalse(verifier.verifyHostName("www.example.com", "*w.example.com"));
+        assertFalse(verifier.verifyHostName("www.example.com", "w*w.example.com"));
+        assertFalse(verifier.verifyHostName("www.example.com", "w*.example.com"));
+        assertFalse(verifier.verifyHostName("www.example.com", "www*.example.com"));
     }
 
-    public void testWildcardMatchesChildDomain() {
-        assertFalse(verifier.verifyHostName("a.b.c.d", "*.c.d"));
+    public void testWildcardCannotMatchEmptyLabel() {
+        assertFalse(verifier.verifyHostName("example.com", "*.example.com"));
+        assertFalse(verifier.verifyHostName(".example.com", "*.example.com"));
     }
 
-    public void testWildcardsRejectedForSingleLabelPatterns() {
+    public void testWildcardCannotMatchChildDomain() {
+        assertFalse(verifier.verifyHostName("sub.www.example.com", "*.example.com"));
+    }
+
+    public void testWildcardRejectedForSingleLabelPatterns() {
         assertFalse(verifier.verifyHostName("d", "*"));
         assertFalse(verifier.verifyHostName("d.", "*."));
         assertFalse(verifier.verifyHostName("d", "d*"));
@@ -154,7 +176,7 @@ public final class DefaultHostnameVerifierTest extends TestCase {
         assertFalse(verifier.verifyHostName("imap.google.com", "ix*.google.com"));
         assertTrue(verifier.verifyHostName("imap.google.com", "iMap.Google.Com"));
         assertTrue(verifier.verifyHostName("weird", "weird"));
-        assertFalse(verifier.verifyHostName("weird", "weird."));
+        assertTrue(verifier.verifyHostName("weird", "weird."));
 
         // Wildcards rejected for domain names consisting of fewer than two labels (excluding root).
         assertFalse(verifier.verifyHostName("weird", "weird*"));
