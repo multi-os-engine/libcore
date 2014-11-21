@@ -91,7 +91,7 @@ public final class Field extends AccessibleObject implements Member {
      * @see Modifier
      */
     @Override public int getModifiers() {
-        return artField.getAccessFlags() & 0xffff;  // mask out bits not used by Java
+        return artField.getAccessFlags() & Modifier.fieldModifiers();
     }
 
     /**

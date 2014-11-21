@@ -98,7 +98,7 @@ public final class Method extends AbstractMethod implements GenericDeclaration, 
      * @see Modifier
      */
     @Override public int getModifiers() {
-        return super.getModifiers();
+        return super.getModifiers() & Modifier.methodModifiers();
     }
 
     /**

@@ -86,7 +86,7 @@ public abstract class AbstractMethod extends AccessibleObject {
         if ((flags & ACC_DECLARED_SYNCHRONIZED) != 0) {
             flags |= Modifier.SYNCHRONIZED;
         }
-        return flags & 0xffff;  // mask out bits not used by Java
+        return flags;
     }
 
     int getModifiers() {

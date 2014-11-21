@@ -1088,7 +1088,7 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
         // search superclasses
         for (Class<?> c = this; c != null; c = c.superClass) {
             Field result = c.getDeclaredFieldInternal(name);
-            if (result != null && (result.getModifiers() & Modifier.PUBLIC) != 0) {
+            if (result != null && Modifier.isPublic(result.getModifiers())) {
                 return result;
             }
         }
@@ -1098,7 +1098,7 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
             for (int i = 0; i < ifTable.length; i += 2) {
                 Class<?> ifc = (Class<?>) ifTable[i];
                 Field result = ifc.getPublicFieldRecursive(name);
-                if (result != null && (result.getModifiers() & Modifier.PUBLIC) != 0) {
+                if (result != null && Modifier.isPublic(result.getModifiers())) {
                     return result;
                 }
             }
@@ -1244,9 +1244,8 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
             }
             return Modifier.ABSTRACT | Modifier.FINAL | componentModifiers;
         }
-        int JAVA_FLAGS_MASK = 0xffff;
-        int modifiers = AnnotationAccess.getInnerClassFlags(this, accessFlags & JAVA_FLAGS_MASK);
-        return modifiers & JAVA_FLAGS_MASK;
+        int modifiers = AnnotationAccess.getInnerClassFlags(this, accessFlags);
+        return modifiers & (Modifier.classModifiers() | Modifier.INTERFACE);
     }
 
     /**
@@ -1609,7 +1608,7 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
     }
 
     private boolean canAccess(Class<?> c) {
-        if(Modifier.isPublic(c.accessFlags)) {
+        if (Modifier.isPublic(c.accessFlags)) {
             return true;
         }
         return inSamePackage(c);

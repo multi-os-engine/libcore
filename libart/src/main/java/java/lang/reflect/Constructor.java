@@ -65,7 +65,7 @@ public final class Constructor<T> extends AbstractMethod implements GenericDecla
      * should be used to decode the result.
      */
     @Override public int getModifiers() {
-        return super.getModifiers();
+        return super.getModifiers() & Modifier.constructorModifiers();
     }
 
     /**
