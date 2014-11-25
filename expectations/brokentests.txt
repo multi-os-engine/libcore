@@ -100,6 +100,7 @@
 {
   description: "Fails in CTS, passes in CoreTestRunner.",
   result: EXEC_FAILED,
+  modes: [device],
   names: [
       "org.apache.harmony.tests.java.net.URLConnection#test_getContentEncoding",
       "libcore.java.text.OldNumberFormatTest#test_parseLjava_lang_String",
@@ -159,6 +160,7 @@
 {
   description: "Causes open dex file error",
   result: EXEC_FAILED,
+  modes: [device],
   names: [
       "org.apache.harmony.tests.java.lang.reflect.GenericSignatureFormatErrorTest#test_signatureFormatError"
   ]

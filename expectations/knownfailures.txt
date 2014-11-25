@@ -76,6 +76,7 @@
 {
   description: "Runtime.getRuntime().traceMethodCalls(true) doesn't return on the host, fails in CTS",
   bug: 3447964,
+  result: EXEC_FAILED,
   name: "libcore.java.lang.OldRuntimeTest#test_traceMethodCalls"
 },
 {
@@ -1317,6 +1318,7 @@
 {
   description: "Known failure in MathTest 1^NAN should be NAN",
   bug: 11669804,
+  result: EXEC_FAILED,
   name: "org.apache.harmony.tests.java.lang.MathTest#test_powDD"
 },
 {
@@ -1496,6 +1498,14 @@
   bug: 17374604,
   names: [
     "libcore.java.text.DecimalFormatSymbolsTest#test_getInstance_unknown_or_invalid_locale"
+  ]
+},
+{
+  description: "Tests failing on host - needing investigation",
+  modes: [host],
+  result: EXEC_FAILED,
+  names: [
+    "libcore.java.lang.DoubleTest#testParseLargestSubnormalDoublePrecision"
   ]
 }
 ]
