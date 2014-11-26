@@ -98,6 +98,7 @@ public final class DateIntervalFormat {
     }
 
     String skeleton = toSkeleton(startCalendar, endCalendar, flags);
+    System.err.println("Format skeleton: " + skeleton);
     synchronized (CACHED_FORMATTERS) {
       return formatDateInterval(getFormatter(skeleton, locale.toString(), tz.getID()), startMs, endMs);
     }
