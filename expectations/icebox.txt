@@ -73,6 +73,7 @@
 {
   description: "Dalvik doesn't support XML Schemas, DTDs or validation",
   bug: 3268630,
+  result: EXEC_FAILED,
   name: "tests.api.javax.xml.parsers.DocumentBuilderTest#testSetEntityResolver",
   substring: "java.lang.ClassCastException: org.apache.harmony.xml.dom.EntityReferenceImpl"
 },

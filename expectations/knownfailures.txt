@@ -25,17 +25,23 @@
 },
 {
   description: "ICU seems to treat unknown and invalid locales differently",
+  result: EXEC_FAILED,
   name: "libcore.java.text.DateFormatSymbolsTest#test_getInstance_unknown_locale",
   bug: 2541757
 },
 {
   description: "NaN character not found when deserializing DecimalFormatSymbols",
+  result: EXEC_FAILED,
   name: "libcore.java.text.OldDecimalFormatSymbolsTest#test_RIHarmony_compatible",
   bug: 3056792
 },
 {
   description: "DecimalFormat is limited to 127 digits",
-  name: "libcore.java.text.DecimalFormatTest#test_setMaximumIntegerDigits",
+  result: EXEC_FAILED,
+  names: [
+    "libcore.java.text.DecimalFormatTest#test_setMaximumIntegerDigits",
+    "libcore.java.text.OldNumberFormatTest#test_setMaximumIntegerDigits"
+  ],
   bug: 2400429
 },
 {
@@ -1443,6 +1449,7 @@
 {
   description: "Known precision issue in DecimalFormat",
   bug: 17656132,
+  result: EXEC_FAILED,
   names: [
     "org.apache.harmony.tests.java.text.DecimalFormatTest#test_formatDouble_bug17656132",
     "org.apache.harmony.tests.java.text.DecimalFormatTest#test_formatDouble_roundingProblemCases"
