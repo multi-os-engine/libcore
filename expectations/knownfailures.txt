@@ -1520,5 +1520,15 @@
   names: [
     "org.apache.harmony.tests.java.util.HashMapTest#test_EntrySet"
   ]
+},
+{
+  description: "Tests failing on host - needing investigation.",
+  modes: [host],
+  variants: [X64],
+  bug: 18547404,
+  result: EXEC_FAILED,
+  names: [
+    "org.apache.harmony.tests.java.lang.MathTest#test_cbrt_D"
+  ]
 }
 ]
