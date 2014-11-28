@@ -1518,6 +1518,7 @@
   bug: 18547404,
   result: EXEC_FAILED,
   names: [
+    "libcore.java.util.OldTimeZoneTest#test_getDisplayNameZILjava_util_Locale",
     "org.apache.harmony.tests.java.util.HashMapTest#test_EntrySet"
   ]
 }
