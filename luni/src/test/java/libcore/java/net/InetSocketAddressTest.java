@@ -150,6 +150,20 @@ public class InetSocketAddressTest extends TestCase {
         assertTrue(hasHostname.isUnresolved());
         assertEquals("some host", hasHostname.getHostString());
         assertEquals("some host", hasHostname.getHostName());
+
+        InetSocketAddress hasHostnameAndAddress = new InetSocketAddress(
+                InetAddress.getByAddress("some host", new byte[] { 127, 0, 0, 1 }),
+                1234);
+        assertFalse(hasHostnameAndAddress.isUnresolved());
+        assertEquals("some host", hasHostnameAndAddress.getHostString());
+        assertEquals("some host", hasHostnameAndAddress.getHostName());
+
+        // Using a host name that is actually an IP.
+        InetSocketAddress hostnameIsIp = InetSocketAddress.createUnresolved("127.0.0.1", 1234);
+        assertTrue(hostnameIsIp.isUnresolved());
+        assertEquals("127.0.0.1", hostnameIsIp.getHostString());
+        assertEquals("127.0.0.1", hostnameIsIp.getHostName());
+
         // When we don't have a hostname, whether or not we do the reverse lookup is the difference
         // between getHostString and getHostName...
         InetAddress address = InetAddress.getByAddress(new byte[] { 127, 0, 0, 1 });
