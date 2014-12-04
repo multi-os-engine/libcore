@@ -50,51 +50,11 @@ public class Support_Configuration {
 
     public static int SocksServerTestPort = 1080;
 
-    // Need an IP address that does not resolve to a host name
-    public static String UnresolvedIP = "192.168.99.99";
-
     // the bytes for an address which represents an address which is not
     // one of the addresses for any of our machines on which tests will run
     // it is used to verify we get the expected error when we try to bind
     // to an address that is not one of the machines local addresses
     public static byte nonLocalAddressBytes[] = { 1, 0, 0, 0 };
-
-    public static String InetTestAddress = "localhost";
-
-    public static String InetTestIP = "127.0.0.1";
-
-    // BEGIN android-added
-    public static byte[] InetTestAddr = {127, 0, 0, 1};
-    // END android-added
-
-    public static String InetTestAddress2 = "localhost";
-
-    public static String InetTestIP2 = "127.0.0.1";
-
-    public static byte[] InetTestCaddr = { 9, 26, -56, -111 };
-
-    public static String IPv6GlobalAddressJcl4 = "2001:4860:8004::67"; // ipv6.google.com
-
-    // BEGIN android-changed
-    /**
-     * An address that resolves to more than one IP address so that the
-     * getAllByName test has something to test.
-     */
-    public static String SpecialInetTestAddress = "www.google.com";
-    // changed from jcltestmultiple.apache.org to www.google.com since
-    // the old address vaished from the net. www.google.com has also more
-    // than one addresses returned for this host name as needed by a test
-    // END android-changed
-
-    public static int SpecialInetTestAddressNumber = 4;
-
-    /**
-     * InetAlias1 and InetAlias2 must be different host names that resolve to
-     * the same IP address.
-     */
-    public static String InetAlias1 = "alias1.apache.org";
-
-    public static String InetAlias2 = "alias2.apache.org";
 
     public static String FTPTestAddress = "jcltest:jclpass@localhost";
 
@@ -104,7 +64,6 @@ public class Support_Configuration {
 
     public static long URLConnectionDate = 929106872000L;
 
-    static Hashtable<String, String> props = null;
     static {
         loadProperties();
         HomeAddress = WebName + DomainAddress;
@@ -178,37 +137,6 @@ public class Support_Configuration {
             SocksServerTestPort = Integer.parseInt(value);
         }
 
-        value = props.get("UnresolvedIP");
-        if (value != null) {
-            UnresolvedIP = value;
-        }
-
-        value = props.get("InetTestAddress");
-        if (value != null) {
-            InetTestAddress = value;
-        }
-
-        value = props.get("InetTestIP");
-        if (value != null) {
-            InetTestIP = value;
-            byte[] addr = new byte[4];
-            int last = 0;
-            try {
-                for (int i = 0; i < 3; i++) {
-                    int dot = InetTestIP.indexOf('.', last);
-                    addr[i] = (byte) Integer.parseInt(InetTestIP.substring(
-                            last, dot));
-                    last = dot + 1;
-                }
-                addr[3] = (byte) Integer.parseInt(InetTestIP.substring(last));
-                InetTestCaddr = addr;
-            } catch (RuntimeException e) {
-                System.out.println("Error parsing InetTestIP (" + InetTestIP
-                        + ")");
-                System.out.println(e);
-            }
-        }
-
         value = props.get("NonLocalAddressBytes");
         if (value != null) {
             String nonLocalAddressBytesString = value;
@@ -232,26 +160,6 @@ public class Support_Configuration {
             }
         }
 
-        value = props.get("InetTestAddress2");
-        if (value != null) {
-            InetTestAddress2 = value;
-        }
-
-        value = props.get("InetTestIP2");
-        if (value != null) {
-            InetTestIP2 = value;
-        }
-
-        value = props.get("SpecialInetTestAddress");
-        if (value != null) {
-            SpecialInetTestAddress = value;
-        }
-
-        value = props.get("SpecialInetTestAddressNumber");
-        if (value != null) {
-            SpecialInetTestAddressNumber = Integer.parseInt(value);
-        }
-
         value = props.get("FTPTestAddress");
         if (value != null) {
             FTPTestAddress = value;
@@ -271,22 +179,6 @@ public class Support_Configuration {
         if (value != null) {
             URLConnectionDate = Long.parseLong(value);
         }
-
-        value = props.get("InetAlias1");
-        if (value != null) {
-            InetAlias1 = value;
-        }
-
-        value = props.get("InetAlias2");
-        if (value != null) {
-            InetAlias2 = value;
-        }
-
-        value = props.get("IPv6GlobalAddressJcl4");
-        if (value != null) {
-            IPv6GlobalAddressJcl4 = value;
-        }
-
     }
 
     static void load(InputStream in, Hashtable<String, String> result) throws IOException {
