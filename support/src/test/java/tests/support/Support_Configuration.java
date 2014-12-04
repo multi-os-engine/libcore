@@ -75,17 +75,6 @@ public class Support_Configuration {
 
     public static String IPv6GlobalAddressJcl4 = "2001:4860:8004::67"; // ipv6.google.com
 
-    // BEGIN android-changed
-    /**
-     * An address that resolves to more than one IP address so that the
-     * getAllByName test has something to test.
-     */
-    public static String SpecialInetTestAddress = "www.google.com";
-    // changed from jcltestmultiple.apache.org to www.google.com since
-    // the old address vaished from the net. www.google.com has also more
-    // than one addresses returned for this host name as needed by a test
-    // END android-changed
-
     public static int SpecialInetTestAddressNumber = 4;
 
     /**
