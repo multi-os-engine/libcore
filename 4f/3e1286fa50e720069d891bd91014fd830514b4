@@ -1,0 +1,7 @@
+Verified+1: Deckard Autoverifier <deckard@android.com>
+Code-Review+2: Narayan Kamath <narayan@google.com>
+Submitted-by: Alex Klyubin <klyubin@google.com>
+Submitted-at: Mon, 08 Dec 2014 17:13:32 +0000
+Reviewed-on: https://android-review.googlesource.com/116140
+Project: platform/libcore
+Branch: refs/heads/master
