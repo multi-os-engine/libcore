@@ -25,7 +25,6 @@
 #include "NetworkUtilities.h"
 #include "Portability.h"
 #include "readlink.h"
-#include "../../bionic/libc/dns/include/resolv_netid.h"  // For android_getaddrinfofornet.
 #include "ScopedBytes.h"
 #include "ScopedLocalRef.h"
 #include "ScopedPrimitiveArray.h"
@@ -690,7 +689,7 @@ static jobjectArray Posix_android_getaddrinfo(JNIEnv* env, jobject, jstring java
         if (ai->ai_family == AF_INET || ai->ai_family == AF_INET6) {
             ++addressCount;
         } else {
-            ALOGE("android_getaddrinfo unexpected ai_family %i", ai->ai_family);
+            ALOGE("android_getaddrinfofornet unexpected ai_family %i", ai->ai_family);
         }
     }
     if (addressCount == 0) {
@@ -708,7 +707,7 @@ static jobjectArray Posix_android_getaddrinfo(JNIEnv* env, jobject, jstring java
     for (addrinfo* ai = addressList; ai != NULL; ai = ai->ai_next) {
         if (ai->ai_family != AF_INET && ai->ai_family != AF_INET6) {
             // Unknown address family. Skip this address.
-            ALOGE("android_getaddrinfo unexpected ai_family %i", ai->ai_family);
+            ALOGE("android_getaddrinfofornet unexpected ai_family %i", ai->ai_family);
             continue;
         }
 
