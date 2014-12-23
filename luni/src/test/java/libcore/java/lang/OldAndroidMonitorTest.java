@@ -168,7 +168,7 @@ public class OldAndroidMonitorTest extends TestCase {
 
     private class Waiter extends Thread {
             Object interrupterLock = new Object();
-            Boolean spin = false;
+            volatile Boolean spin = false;
 
             Waiter(String name) {
                 super(name);
