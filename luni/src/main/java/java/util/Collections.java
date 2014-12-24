@@ -1864,13 +1864,19 @@ public class Collections {
      */
     @SuppressWarnings("unchecked")
     public static <T extends Comparable<? super T>> void sort(List<T> list) {
-        Object[] array = list.toArray();
-        Arrays.sort(array);
-        int i = 0;
-        ListIterator<T> it = list.listIterator();
-        while (it.hasNext()) {
-            it.next();
-            it.set((T) array[i++]);
+        if (list instanceof ArrayList) {
+            Object[] array = ((ArrayList) list).array;
+            int end = list.size();
+            Arrays.sort(array, 0, end);
+        } else {
+            Object[] array = list.toArray();
+            Arrays.sort(array);
+            int i = 0;
+            ListIterator<T> it = list.listIterator();
+            while (it.hasNext()) {
+                it.next();
+                it.set((T) array[i++]);
+            }
         }
     }
 
