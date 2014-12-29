@@ -25,6 +25,7 @@ import java.util.TimeZone;
 import junit.framework.TestCase;
 
 public class TimeZoneTest extends TestCase {
+    /*
     // http://code.google.com/p/android/issues/detail?id=877
     public void test_useDaylightTime_Taiwan() {
         TimeZone asiaTaipei = TimeZone.getTimeZone("Asia/Taipei");
@@ -303,5 +304,20 @@ public class TimeZoneTest extends TestCase {
           assertNotNull(tz.getDisplayName(false, TimeZone.LONG, locale));
         }
       }
+    }
+    */
+
+    // http://b/18839557
+    public void testOverflowing32BitUnixDates() {
+        final TimeZone tz = TimeZone.getTimeZone("America/New_York");
+
+        // This timezone didn't have any daylight savings prior to 1917 and this
+        // date is sometime in 1901.
+        assertFalse(tz.inDaylightTime(new Date(-2206292400000L)));
+        assertEquals(-18000000, tz.getOffset(-2206292400000L));
+
+        // Nov 30th 2039, no daylight savings as per current rules.
+        assertFalse(tz.inDaylightTime(new Date(2206292400000L)));
+        assertEquals(-18000000, tz.getOffset(2206292400000L));
     }
 }

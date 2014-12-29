@@ -54,7 +54,7 @@ public final class ZoneInfo extends TimeZone {
     private final boolean mUseDst;
     private final int mDstSavings; // Implements TimeZone.getDSTSavings.
 
-    private final int[] mTransitions;
+    private final long[] mTransitions;
     private final int[] mOffsets;
     private final byte[] mTypes;
     private final byte[] mIsDsts;
@@ -76,8 +76,13 @@ public final class ZoneInfo extends TimeZone {
 
         it.skip(4); // Skip tzh_charcnt.
 
-        int[] transitions = new int[tzh_timecnt];
-        it.readIntArray(transitions, 0, transitions.length);
+        int[] transitions32 = new int[tzh_timecnt];
+        it.readIntArray(transitions32, 0, transitions32.length);
+
+        long[] transitions64 = new long[tzh_timecnt];
+        for (int i = 0; i < tzh_timecnt; ++i) {
+            transitions64[i] = transitions32[i];
+        }
 
         byte[] type = new byte[tzh_timecnt];
         it.readByteArray(type, 0, type.length);
@@ -97,10 +102,10 @@ public final class ZoneInfo extends TimeZone {
             it.skip(1);
         }
 
-        return new ZoneInfo(id, transitions, type, gmtOffsets, isDsts);
+        return new ZoneInfo(id, transitions64, type, gmtOffsets, isDsts);
     }
 
-    private ZoneInfo(String name, int[] transitions, byte[] types, int[] gmtOffsets, byte[] isDsts) {
+    private ZoneInfo(String name, long[] transitions, byte[] types, int[] gmtOffsets, byte[] isDsts) {
         mTransitions = transitions;
         mTypes = types;
         mIsDsts = isDsts;
@@ -210,7 +215,7 @@ public final class ZoneInfo extends TimeZone {
 
     @Override
     public int getOffset(long when) {
-        int unix = (int) (when / 1000);
+        long unix = when / 1000;
         int transition = Arrays.binarySearch(mTransitions, unix);
         if (transition < 0) {
             transition = ~transition - 1;
@@ -226,7 +231,7 @@ public final class ZoneInfo extends TimeZone {
 
     @Override public boolean inDaylightTime(Date time) {
         long when = time.getTime();
-        int unix = (int) (when / 1000);
+        long unix = when / 1000;
         int transition = Arrays.binarySearch(mTransitions, unix);
         if (transition < 0) {
             transition = ~transition - 1;
@@ -952,9 +957,9 @@ public final class ZoneInfo extends TimeZone {
      *
      * @throws CheckedArithmeticException if overflow or underflow occurs
      */
-    private static int checkedAdd(int a, int b) throws CheckedArithmeticException {
+    private static int checkedAdd(long a, int b) throws CheckedArithmeticException {
         // Adapted from Guava IntMath.checkedAdd();
-        long result = (long) a + b;
+        long result = a + b;
         if (result != (int) result) {
             throw new CheckedArithmeticException();
         }
