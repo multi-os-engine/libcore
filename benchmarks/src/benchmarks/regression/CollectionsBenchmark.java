@@ -20,6 +20,7 @@ import com.google.caliper.Param;
 import com.google.caliper.SimpleBenchmark;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.Vector;
@@ -35,10 +36,33 @@ public class CollectionsBenchmark extends SimpleBenchmark {
         }
     }
 
+    public static Comparator<Integer> REVERSE = new Comparator<Integer>() {
+        @Override
+        public int compare(Integer lhs, Integer rhs) {
+            int lhsAsInt = lhs.intValue();
+            int rhsAsInt = rhs.intValue();
+            return rhsAsInt < lhsAsInt ? -1 : (lhsAsInt == rhsAsInt ? 0 : 1);
+        }
+    };
+
+    public void timeSortWithComparator_arrayList(int nreps) {
+        List<Integer> input = buildList(arrayListLength, true /* use array list */);
+        for (int i = 0; i < nreps; ++i) {
+            Collections.sort(input, REVERSE);
+        }
+    }
+
     public void timeSort_vector(int nreps) {
         List<Integer> input = buildList(arrayListLength, false /* use array list */);
         for (int i = 0; i < nreps; ++i) {
             Collections.sort(input);
+        }
+    }
+
+    public void timeSortWithComparator_vector(int nreps) {
+        List<Integer> input = buildList(arrayListLength, false /* use array list */);
+        for (int i = 0; i < nreps; ++i) {
+            Collections.sort(input, REVERSE);
         }
     }
 
