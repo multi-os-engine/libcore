@@ -1,0 +1,7 @@
+Code-Review+2: Elliott Hughes <enh@google.com>
+Verified+1: Deckard Autoverifier <deckard@android.com>
+Submitted-by: Narayan Kamath <narayan@google.com>
+Submitted-at: Fri, 02 Jan 2015 11:08:32 +0000
+Reviewed-on: https://android-review.googlesource.com/121170
+Project: platform/libcore
+Branch: refs/heads/master
