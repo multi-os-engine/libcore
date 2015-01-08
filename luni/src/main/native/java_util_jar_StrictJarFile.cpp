@@ -163,5 +163,4 @@ static JNINativeMethod gMethods[] = {
 
 void register_java_util_jar_StrictJarFile(JNIEnv* env) {
   jniRegisterNativeMethods(env, "java/util/jar/StrictJarFile", gMethods, NELEM(gMethods));
-
 }
