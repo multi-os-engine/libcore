@@ -50,6 +50,7 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -751,9 +752,6 @@ public final class System {
         p.put("java.vm.vendor.url", projectUrl);
 
         p.put("file.encoding", "UTF-8");
-        p.put("user.language", "en");
-        p.put("user.region", "US");
-        p.put("user.locale", "en-US");
 
         try {
             StructPasswd passwd = Libcore.os.getpwuid(Libcore.os.getuid());
@@ -776,6 +774,27 @@ public final class System {
 
         // Override built-in properties with settings from the command line.
         parsePropertyAssignments(p, runtime.properties());
+
+        final String locale = p.getProperty("user.locale", "");
+        if (!locale.isEmpty()) {
+            Locale l = Locale.forLanguageTag(locale);
+            p.put("user.language", l.getLanguage());
+            p.put("user.region", l.getCountry());
+            p.put("user.variant", l.getVariant());
+        } else {
+            final String language = p.getProperty("user.language", "");
+            final String region = p.getProperty("user.region", "");
+            final String variant = p.getProperty("user.variant", "");
+
+            // NOTE: Constructing a locale here will transform obsolete / grandfathered
+            // language tags into their modern replacements in their language tag. This shouldn't
+            // be an issue in practice since standalone VM invocations that don't set "user.locale"
+            // can safely be assumed not to care about the property value, and the default locale
+            // would've transformed these fields in the same way anyway.
+            final Locale localeFromComponents = new Locale(language, region, variant);
+            p.put("user.locale", localeFromComponents.toLanguageTag());
+        }
+
         return p;
     }
 
