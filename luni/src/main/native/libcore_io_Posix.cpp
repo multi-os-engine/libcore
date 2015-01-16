@@ -588,6 +588,11 @@ static jint Posix_fcntlLong(JNIEnv* env, jobject, jobject javaFd, jint cmd, jlon
     return throwIfMinusOne(env, "fcntl", TEMP_FAILURE_RETRY(fcntl(fd, cmd, arg)));
 }
 
+static jint Posix_fcntlInt(JNIEnv* env, jobject, jobject javaFd, jint cmd, jint arg) {
+    int fd = jniGetFDFromFileDescriptor(env, javaFd);
+    return throwIfMinusOne(env, "fcntl", TEMP_FAILURE_RETRY(fcntl(fd, cmd, arg)));
+}
+
 static jint Posix_fcntlFlock(JNIEnv* env, jobject, jobject javaFd, jint cmd, jobject javaFlock) {
     static jfieldID typeFid = env->GetFieldID(JniConstants::structFlockClass, "l_type", "S");
     static jfieldID whenceFid = env->GetFieldID(JniConstants::structFlockClass, "l_whence", "S");
@@ -1603,9 +1608,10 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(Posix, execve, "(Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V"),
     NATIVE_METHOD(Posix, fchmod, "(Ljava/io/FileDescriptor;I)V"),
     NATIVE_METHOD(Posix, fchown, "(Ljava/io/FileDescriptor;II)V"),
-    NATIVE_METHOD(Posix, fcntlVoid, "(Ljava/io/FileDescriptor;I)I"),
-    NATIVE_METHOD(Posix, fcntlLong, "(Ljava/io/FileDescriptor;IJ)I"),
     NATIVE_METHOD(Posix, fcntlFlock, "(Ljava/io/FileDescriptor;ILandroid/system/StructFlock;)I"),
+    NATIVE_METHOD(Posix, fcntlInt, "(Ljava/io/FileDescriptor;II)I"),
+    NATIVE_METHOD(Posix, fcntlLong, "(Ljava/io/FileDescriptor;IJ)I"),
+    NATIVE_METHOD(Posix, fcntlVoid, "(Ljava/io/FileDescriptor;I)I"),
     NATIVE_METHOD(Posix, fdatasync, "(Ljava/io/FileDescriptor;)V"),
     NATIVE_METHOD(Posix, fstat, "(Ljava/io/FileDescriptor;)Landroid/system/StructStat;"),
     NATIVE_METHOD(Posix, fstatvfs, "(Ljava/io/FileDescriptor;)Landroid/system/StructStatVfs;"),
