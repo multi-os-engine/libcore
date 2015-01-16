@@ -50,6 +50,7 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -751,9 +752,6 @@ public final class System {
         p.put("java.vm.vendor.url", projectUrl);
 
         p.put("file.encoding", "UTF-8");
-        p.put("user.language", "en");
-        p.put("user.region", "US");
-        p.put("user.locale", "en-US");
 
         try {
             StructPasswd passwd = Libcore.os.getpwuid(Libcore.os.getuid());
@@ -776,6 +774,28 @@ public final class System {
 
         // Override built-in properties with settings from the command line.
         parsePropertyAssignments(p, runtime.properties());
+
+        final String locale = p.getProperty("user.locale", "");
+        if (!locale.isEmpty()) {
+            Locale l = Locale.forLanguageTag(locale);
+            p.put("user.language", l.getLanguage());
+            p.put("user.region", l.getCountry());
+            p.put("user.variant", l.getVariant());
+        } else {
+            final String language = p.getProperty("user.language", "");
+            final String region = p.getProperty("user.region", "");
+
+            if (language.isEmpty()) {
+                p.put("user.language", "en");
+            }
+
+            if (region.isEmpty()) {
+                p.put("user.region", "US");
+            }
+
+            // user.variant is left unset.
+        }
+
         return p;
     }
 
