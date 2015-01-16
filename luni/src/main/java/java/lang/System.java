@@ -50,6 +50,7 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -776,6 +777,14 @@ public final class System {
 
         // Override built-in properties with settings from the command line.
         parsePropertyAssignments(p, runtime.properties());
+
+        final String locale = p.getProperty("user.locale");
+        if (!"en-US".equals(locale)) {
+            Locale l = Locale.forLanguageTag(locale);
+            p.put("user.region", l.getCountry());
+            p.put("user.language", l.getLanguage());
+        }
+
         return p;
     }
 
