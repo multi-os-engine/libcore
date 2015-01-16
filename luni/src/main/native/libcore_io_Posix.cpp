@@ -77,6 +77,87 @@ struct addrinfo_deleter {
     }
 };
 
+// Helper functions for NET_IPV4_FALLBACK.
+static bool isIPv4MappedAddress(const sockaddr *sa) {
+    const sockaddr_in6 *sin6 = reinterpret_cast<const sockaddr_in6*>(sa);
+    return sa->sa_family == AF_INET6 &&
+           (IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr) ||
+            IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr));  // We map 0.0.0.0 to ::, so :: is mapped.
+}
+
+static bool isIPv4Socket(int fd) {
+  int family;
+  socklen_t size = sizeof(family);
+  int ret = TEMP_FAILURE_RETRY(getsockopt(fd, SOL_SOCKET, SO_DOMAIN, &family, &size));
+  return ret == 0 && family == AF_INET;
+}
+
+static bool shouldRetryIPv4(const sockaddr *sa, int err, int fd) {
+    if (sa == NULL || !isIPv4MappedAddress(sa)) {
+        // There is no destination address, or the destination was not an IPv4-mapped address.
+        // No point retrying using a verbatim IPv4 address.
+        return false;
+    }
+
+    if (err == EINTR) {
+        // The socket was closed and we've thrown a "socket is closed" exception.
+        return false;
+    }
+
+    if (err == EAFNOSUPPORT) {
+        // Someone passed in a mapped address, and this was not an AF_INET6 socket. If it's AF_INET,
+        // we need to retry. If it isn't (e.g., AF_UNIX or anything else), then retrying is harmless
+        // - we'll just get EAFNOSUPPORT again.
+        return true;
+    }
+
+    // Some socket types (e.g.., the IPv4 ping socket) do not return EAFNOSUPPORT when passed an
+    // IPv4-mapped address. To determine if we need to retry, see if this is an AF_INET socket. We
+    // leave this check for last because it causes a system call and context switch.
+    return isIPv4Socket(fd);
+}
+
+/**
+ * Perform a socket operation that specifies an IP address, potentially falling back from specifying
+ * the address as an IPv4-mapped IPv6 address in a struct sockaddr_in6 to specifying it as an IPv4
+ * address in a struct sockaddr_in.
+ *
+ * This is needed because all sockets created by the java.net APIs are IPv6 sockets, and on those
+ * sockets, IPv4 operations use IPv4-mapped addresses stored in a struct sockaddr_in6. But sockets
+ * created using Libcore.Os.socket(AF_INET, ...) are IPv4 sockets and only support operations using
+ * IPv4 socket addresses structures.
+ *
+ * An alternative to this retry logic would be to call getsockopt(SOL_SOCKET, SO_DOMAIN) on the
+ * socket filedescriptor to determine whether it's an IPv6 or IPv4 socket before invoking system
+ * calls. But that would cause every socket operation to perform two context switches and two system
+ * calls every time, which is not worth it because AF_INET sockets created using Libcore.os.socket
+ * are expected to be much rarer than the AF_INET6 sockets created by the Java API.
+ */
+#define NET_IPV4_FALLBACK(jni_env, return_type, syscall_name, java_fd, java_addr, port, null_addr_ok, args...) ({ \
+    return_type _rc = -1; \
+    do { \
+        sockaddr_storage _ss; \
+        socklen_t _salen; \
+        if (java_addr == NULL && null_addr_ok) { \
+            _salen = 0; \
+        } else if (!inetAddressToSockaddr(jni_env, java_addr, port, _ss, _salen)) { \
+            break; \
+        } \
+        sockaddr* _sa = _salen ? reinterpret_cast<sockaddr*>(&_ss) : NULL; \
+        int _fd = jniGetFDFromFileDescriptor(jni_env, java_fd); \
+        _rc = NET_FAILURE_RETRY(jni_env, return_type, syscall_name, _fd, ##args, _sa, _salen); \
+        if (_rc == -1 && shouldRetryIPv4(_sa, errno, _fd)) { \
+            jni_env->ExceptionClear(); \
+            if (!inetAddressToSockaddrVerbatim(jni_env, java_addr, port, _ss, _salen)) { \
+                break; \
+            } \
+            _sa = reinterpret_cast<sockaddr*>(&_ss); \
+            _fd = jniGetFDFromFileDescriptor(jni_env, java_fd); \
+            _rc = NET_FAILURE_RETRY(jni_env, return_type, syscall_name, _fd, ##args, _sa, _salen); \
+        } \
+    } while (0); \
+    _rc; }) \
+
 /**
  * Used to retry networking system calls that can be interrupted with a signal. Unlike
  * TEMP_FAILURE_RETRY, this also handles the case where
@@ -88,13 +169,12 @@ struct addrinfo_deleter {
  * -1:  a SocketException if signaled via AsynchronousCloseMonitor, or ErrnoException for other
  * failures.
  */
-#define NET_FAILURE_RETRY(jni_env, return_type, syscall_name, java_fd, ...) ({ \
+#define NET_FAILURE_RETRY(jni_env, return_type, syscall_name, _fd, ...) ({ \
     return_type _rc = -1; \
     do { \
         bool _wasSignaled; \
         int _syscallErrno; \
         { \
-            int _fd = jniGetFDFromFileDescriptor(jni_env, java_fd); \
             AsynchronousCloseMonitor _monitor(_fd); \
             _rc = syscall_name(_fd, __VA_ARGS__); \
             _syscallErrno = errno; \
@@ -103,6 +183,7 @@ struct addrinfo_deleter {
         if (_wasSignaled) { \
             jniThrowException(jni_env, "java/net/SocketException", "Socket closed"); \
             _rc = -1; \
+            errno = EINTR; \
             break; \
         } \
         if (_rc == -1 && _syscallErrno != EINTR) { \
@@ -456,7 +537,8 @@ static jobject Posix_accept(JNIEnv* env, jobject, jobject javaFd, jobject javaIn
     memset(&ss, 0, sizeof(ss));
     sockaddr* peer = (javaInetSocketAddress != NULL) ? reinterpret_cast<sockaddr*>(&ss) : NULL;
     socklen_t* peerLength = (javaInetSocketAddress != NULL) ? &sl : 0;
-    jint clientFd = NET_FAILURE_RETRY(env, int, accept, javaFd, peer, peerLength);
+    int fd = jniGetFDFromFileDescriptor(env, javaFd);
+    jint clientFd = NET_FAILURE_RETRY(env, int, accept, fd, peer, peerLength);
     if (clientFd == -1 || !fillInetSocketAddress(env, clientFd, javaInetSocketAddress, ss)) {
         close(clientFd);
         return NULL;
@@ -477,14 +559,8 @@ static jboolean Posix_access(JNIEnv* env, jobject, jstring javaPath, jint mode) 
 }
 
 static void Posix_bind(JNIEnv* env, jobject, jobject javaFd, jobject javaAddress, jint port) {
-    sockaddr_storage ss;
-    socklen_t sa_len;
-    if (!inetAddressToSockaddr(env, javaAddress, port, ss, sa_len)) {
-        return;
-    }
-    const sockaddr* sa = reinterpret_cast<const sockaddr*>(&ss);
     // We don't need the return value because we'll already have thrown.
-    (void) NET_FAILURE_RETRY(env, int, bind, javaFd, sa, sa_len);
+    (void) NET_IPV4_FALLBACK(env, int, bind, javaFd, javaAddress, port, false /* null_addr_ok */);
 }
 
 static void Posix_chmod(JNIEnv* env, jobject, jstring javaPath, jint mode) {
@@ -516,14 +592,8 @@ static void Posix_close(JNIEnv* env, jobject, jobject javaFd) {
 }
 
 static void Posix_connect(JNIEnv* env, jobject, jobject javaFd, jobject javaAddress, jint port) {
-    sockaddr_storage ss;
-    socklen_t sa_len;
-    if (!inetAddressToSockaddr(env, javaAddress, port, ss, sa_len)) {
-        return;
-    }
-    const sockaddr* sa = reinterpret_cast<const sockaddr*>(&ss);
-    // We don't need the return value because we'll already have thrown.
-    (void) NET_FAILURE_RETRY(env, int, connect, javaFd, sa, sa_len);
+    (void) NET_IPV4_FALLBACK(env, int, connect, javaFd, javaAddress, port,
+                             false /* null_addr_ok */);
 }
 
 static jobject Posix_dup(JNIEnv* env, jobject, jobject javaOldFd) {
@@ -1231,7 +1301,8 @@ static jint Posix_recvfromBytes(JNIEnv* env, jobject, jobject javaFd, jobject ja
     memset(&ss, 0, sizeof(ss));
     sockaddr* from = (javaInetSocketAddress != NULL) ? reinterpret_cast<sockaddr*>(&ss) : NULL;
     socklen_t* fromLength = (javaInetSocketAddress != NULL) ? &sl : 0;
-    jint recvCount = NET_FAILURE_RETRY(env, ssize_t, recvfrom, javaFd, bytes.get() + byteOffset, byteCount, flags, from, fromLength);
+    int fd = jniGetFDFromFileDescriptor(env, javaFd);
+    jint recvCount = NET_FAILURE_RETRY(env, ssize_t, recvfrom, fd, bytes.get() + byteOffset, byteCount, flags, from, fromLength);
     fillInetSocketAddress(env, recvCount, javaInetSocketAddress, ss);
     return recvCount;
 }
@@ -1279,13 +1350,9 @@ static jint Posix_sendtoBytes(JNIEnv* env, jobject, jobject javaFd, jobject java
     if (bytes.get() == NULL) {
         return -1;
     }
-    sockaddr_storage ss;
-    socklen_t sa_len = 0;
-    if (javaInetAddress != NULL && !inetAddressToSockaddr(env, javaInetAddress, port, ss, sa_len)) {
-        return -1;
-    }
-    const sockaddr* to = (javaInetAddress != NULL) ? reinterpret_cast<const sockaddr*>(&ss) : NULL;
-    return NET_FAILURE_RETRY(env, ssize_t, sendto, javaFd, bytes.get() + byteOffset, byteCount, flags, to, sa_len);
+
+    return NET_IPV4_FALLBACK(env, ssize_t, sendto, javaFd, javaInetAddress, port,
+                             true  /* null_addr_ok */, bytes.get() + byteOffset, byteCount, flags);
 }
 
 static void Posix_setegid(JNIEnv* env, jobject, jint egid) {
