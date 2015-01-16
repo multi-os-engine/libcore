@@ -59,7 +59,7 @@ public class InetSocketAddress extends SocketAddress {
      * Creates a socket endpoint with the given port number {@code port} and
      * {@code address}. The range for valid port numbers is between 0 and 65535
      * inclusive. If {@code address} is {@code null} this socket is bound to the
-     * IPv4 wildcard address.
+     * IPv6 wildcard address.
      *
      * @param port
      *            the specified port number to which this socket is bound.
@@ -70,7 +70,7 @@ public class InetSocketAddress extends SocketAddress {
         if (port < 0 || port > 65535) {
             throw new IllegalArgumentException("port=" + port);
         }
-        this.addr = (address == null) ? Inet4Address.ANY : address;
+        this.addr = (address == null) ? Inet6Address.ANY : address;
         this.hostname = null;
         this.port = port;
     }
