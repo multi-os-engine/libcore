@@ -443,7 +443,8 @@ static jdouble doubleAlgorithm(JNIEnv* env, uint64_t* f, int32_t length, jint e,
       comparison2 = compareHighPrecision (D2, D2Length, y, yLength);
       if (comparison2 < 0)
         {
-          if (comparison < 0 && m == DOUBLE_NORMAL_MASK)
+          if (comparison < 0 && m == DOUBLE_NORMAL_MASK
+		&& DOUBLE_TO_LONGBITS(z) != DOUBLE_NORMAL_MASK)
             {
               simpleShiftLeftHighPrecision (D2, D2Length, 1);
               if (compareHighPrecision (D2, D2Length, y, yLength) > 0)
