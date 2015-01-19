@@ -121,4 +121,15 @@ public class FloatTest extends junit.framework.TestCase {
       }
       assertEquals(f1, 0f);
     }
+
+    // Float equivalent of testParseLargestSubnormalDoublePrecision, even though there's
+    // never been a problem with floats.
+    public void testParseLargestSubnormalFloatPrecision() {
+        assertEquals(1.1754943508222875E-38f, Float.parseFloat("1.1754943508222875e-38"));
+        assertEquals(1.1754943508222875E-38f, Float.parseFloat("0.00011754943508222875e-34f"));
+        assertEquals(1.1754943508222875E-38f, Float.parseFloat("00000001.1754943508222875e-38f"));
+        assertEquals(1.1754943508222875E-38f, Float.parseFloat("1.17549435082228750000e-38f"));
+        assertEquals(1.1754943508222875E-38f, Float.parseFloat("1.1754943508222875e-0038f"));
+        assertEquals(-1.1754943508222875E-38f, Float.parseFloat("-1.1754943508222875e-38f"));
+    }
 }
