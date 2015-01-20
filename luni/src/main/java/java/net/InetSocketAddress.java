@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 
 /**
- * This class represents a socket endpoint described by a IP address and a port
+ * This class represents the address of a socket endpoint described by a IP address and a port
  * number. It is a concrete implementation of {@code SocketAddress} for IP.
  */
 public class InetSocketAddress extends SocketAddress {
@@ -49,7 +49,7 @@ public class InetSocketAddress extends SocketAddress {
      * 65535 inclusive.
      *
      * @param port
-     *            the specified port number to which this socket is bound.
+     *            the specified port number to which the socket is bound.
      */
     public InetSocketAddress(int port) {
         this((InetAddress) null, port);
@@ -58,13 +58,13 @@ public class InetSocketAddress extends SocketAddress {
     /**
      * Creates a socket endpoint with the given port number {@code port} and
      * {@code address}. The range for valid port numbers is between 0 and 65535
-     * inclusive. If {@code address} is {@code null} this socket is bound to the
-     * IPv4 wildcard address.
+     * inclusive. If {@code address} is {@code null} the address is set to a
+     * wildcard address.
      *
      * @param port
-     *            the specified port number to which this socket is bound.
+     *            the specified port number to which the socket is bound.
      * @param address
-     *            the specified address to which this socket is bound.
+     *            the specified address to which the socket is bound.
      */
     public InetSocketAddress(InetAddress address, int port) {
         if (port < 0 || port > 65535) {
@@ -82,9 +82,9 @@ public class InetSocketAddress extends SocketAddress {
      * inclusive.
      *
      * @param port
-     *            the specified port number to which this socket is bound.
+     *            the specified port number to which the socket is bound.
      * @param host
-     *            the specified hostname to which this socket is bound.
+     *            the specified hostname to which the socket is bound.
      */
     public InetSocketAddress(String host, int port) {
         this(host, port, true);
@@ -118,9 +118,9 @@ public class InetSocketAddress extends SocketAddress {
      * unresolved.
      *
      * @param host
-     *            the specified hostname to which this socket is bound.
+     *            the specified hostname to which the socket is bound.
      * @param port
-     *            the specified port number to which this socket is bound.
+     *            the specified port number to which the socket is bound.
      * @return the created InetSocketAddress instance.
      * @throws IllegalArgumentException
      *             if the hostname {@code host} is {@code null} or the port is
@@ -131,14 +131,14 @@ public class InetSocketAddress extends SocketAddress {
     }
 
     /**
-     * Returns this socket address' port.
+     * Returns the socket endpoint's port.
      */
     public final int getPort() {
         return port;
     }
 
     /**
-     * Returns this socket address' address.
+     * Returns the socket endpoint's address.
      */
     public final InetAddress getAddress() {
         return addr;
@@ -188,7 +188,7 @@ public class InetSocketAddress extends SocketAddress {
      *
      * @param socketAddr
      *            the object to be tested for equality.
-     * @return {@code true} if this socket and the given socket object {@code
+     * @return {@code true} if this socket endpoint and the given socket endpoint {@code
      *         socketAddr} are equal, {@code false} otherwise.
      */
     @Override
