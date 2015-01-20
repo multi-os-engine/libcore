@@ -127,7 +127,6 @@ LOCAL_JAVACFLAGS := $(local_javac_flags)
 LOCAL_MODULE := jsr166-tests
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/JavaLibrary.mk
 include $(BUILD_STATIC_JAVA_LIBRARY)
-endif
 
 # This one's tricky. One of our tests needs to have a
 # resource with a "#" in its name, but Perforce doesn't
@@ -143,6 +142,7 @@ $(TMP_RESOURCE_DIR)$(TMP_RESOURCE_FILE):
 $(LOCAL_INTERMEDIATE_TARGETS): PRIVATE_EXTRA_JAR_ARGS := $(extra_jar_args) -C "$(TMP_RESOURCE_DIR)" "$(TMP_RESOURCE_FILE)"
 $(LOCAL_INTERMEDIATE_TARGETS): $(TMP_RESOURCE_DIR)$(TMP_RESOURCE_FILE)
 
+endif # !LIBCORE_SKIP_TESTS
 
 #
 # Build for the host.
