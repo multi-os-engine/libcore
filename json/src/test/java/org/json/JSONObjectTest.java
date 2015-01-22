@@ -1029,4 +1029,12 @@ public class JSONObjectTest extends TestCase {
         } catch (JSONException e) {
         }
     }
+
+    public void testInvalidUnicodeEscape() {
+        try {
+            new JSONObject("{\"q\":\"\\u\", \"r\":[]}");
+            fail();
+        } catch (JSONException expected) {
+        }
+    }
 }
