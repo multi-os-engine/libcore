@@ -521,6 +521,13 @@ public class Cipher {
     }
 
     /**
+     * Checks whether this is a block cipher.
+     */
+    private boolean isBlockCipher() {
+        return (getSpi().engineGetBlockSize() != 0);
+    }
+
+    /**
      * Returns the length in bytes an output buffer needs to be when this cipher
      * is updated with {@code inputLen} bytes.
      *
@@ -975,7 +982,8 @@ public class Cipher {
      * @param input
      *            the input bytes to transform.
      * @return the transformed bytes in a new buffer, or {@code null} if the
-     *         input has zero length.
+     *         input has zero length or if this is a block cipher and the input was too short to
+     *         produce a new block of output.
      * @throws IllegalStateException
      *             if this cipher instance is not initialized for encryption or
      *             decryption.
@@ -992,7 +1000,13 @@ public class Cipher {
         if (input.length == 0) {
             return null;
         }
-        return getSpi().engineUpdate(input, 0, input.length);
+
+        byte[] result = getSpi().engineUpdate(input, 0, input.length);
+        if ((result != null) && (result.length == 0) && (isBlockCipher())) {
+            // This is a block cipher and the input was too short to produce a new block of output.
+            return null;
+        }
+        return result;
     }
 
     /**
@@ -1006,7 +1020,8 @@ public class Cipher {
      * @param inputLen
      *            the length of the input to transform.
      * @return the transformed bytes in a new buffer, or {@code null} if the
-     *         input has zero length.
+     *         input has zero length or if this is a block cipher and the input was too short to
+     *         produce a new block of output
      * @throws IllegalStateException
      *             if this cipher instance is not initialized for encryption or
      *             decryption.
@@ -1026,7 +1041,13 @@ public class Cipher {
         if (input.length == 0) {
             return null;
         }
-        return getSpi().engineUpdate(input, inputOffset, inputLen);
+
+        byte[] result = getSpi().engineUpdate(input, inputOffset, inputLen);
+        if ((result != null) && (result.length == 0) && (isBlockCipher())) {
+            // This is a block cipher and the input was too short to produce a new block of output.
+            return null;
+        }
+        return result;
     }
 
     private static void checkInputOffsetAndCount(int inputArrayLength,
