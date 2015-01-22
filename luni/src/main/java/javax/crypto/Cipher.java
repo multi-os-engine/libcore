@@ -123,6 +123,9 @@ public class Cipher {
     /** The attribute used for supported modes. */
     private static final String ATTRIBUTE_MODES = "SupportedModes";
 
+    /** Empty byte array. */
+    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
     /**
      * The provider.
      */
@@ -1275,7 +1278,7 @@ public class Cipher {
         if (mode != ENCRYPT_MODE && mode != DECRYPT_MODE) {
             throw new IllegalStateException();
         }
-        return getSpi().engineDoFinal(null, 0, 0);
+        return getSpi().engineDoFinal(EMPTY_BYTE_ARRAY, 0, 0);
     }
 
     /**
@@ -1311,7 +1314,7 @@ public class Cipher {
         if (outputOffset < 0) {
             throw new IllegalArgumentException("outputOffset < 0. outputOffset=" + outputOffset);
         }
-        return getSpi().engineDoFinal(null, 0, 0, output, outputOffset);
+        return getSpi().engineDoFinal(EMPTY_BYTE_ARRAY, 0, 0, output, outputOffset);
     }
 
     /**
