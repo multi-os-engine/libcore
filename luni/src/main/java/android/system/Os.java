@@ -54,6 +54,8 @@ public final class Os {
    */
   public static void bind(FileDescriptor fd, InetAddress address, int port) throws ErrnoException, SocketException { Libcore.os.bind(fd, address, port); }
 
+  /** @hide */ public static void bindSocketAddress(FileDescriptor fd, SocketAddress address) throws ErrnoException, SocketException { Libcore.os.bindSocketAddress(fd, address); }
+
   /**
    * See <a href="http://man7.org/linux/man-pages/man2/chmod.2.html">chmod(2)</a>.
    */
@@ -73,6 +75,8 @@ public final class Os {
    * See <a href="http://man7.org/linux/man-pages/man2/connect.2.html">connect(2)</a>.
    */
   public static void connect(FileDescriptor fd, InetAddress address, int port) throws ErrnoException, SocketException { Libcore.os.connect(fd, address, port); }
+
+  /** @hide */ public static void connectSocketAddress(FileDescriptor fd, SocketAddress address) throws ErrnoException, SocketException { Libcore.os.connectSocketAddress(fd, address); }
 
   /**
    * See <a href="http://man7.org/linux/man-pages/man2/dup.2.html">dup(2)</a>.
