@@ -380,7 +380,8 @@ public class ZipEntry implements ZipConstants, Cloneable {
      * On exit, "in" will be positioned at the start of the next entry
      * in the Central Directory.
      */
-    ZipEntry(byte[] cdeHdrBuf, InputStream cdStream, Charset defaultCharset) throws IOException {
+    ZipEntry(byte[] cdeHdrBuf, InputStream cdStream, Charset defaultCharset,
+             boolean isZip64) throws IOException {
         Streams.readFully(cdStream, cdeHdrBuf, 0, cdeHdrBuf.length);
 
         BufferIterator it = HeapBufferIterator.iterator(cdeHdrBuf, 0, cdeHdrBuf.length,
@@ -438,6 +439,10 @@ public class ZipEntry implements ZipConstants, Cloneable {
             byte[] commentBytes = new byte[commentByteCount];
             Streams.readFully(cdStream, commentBytes, 0, commentByteCount);
             comment = new String(commentBytes, 0, commentBytes.length, charset);
+        }
+
+        if (isZip64) {
+            Zip64.parseZip64ExtendedInfo(this);
         }
     }
 
