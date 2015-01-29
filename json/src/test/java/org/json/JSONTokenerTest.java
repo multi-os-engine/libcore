@@ -413,13 +413,13 @@ public class JSONTokenerTest extends TestCase {
         try {
             new JSONTokener("abc\\u    \"").nextString('"');
             fail();
-        } catch (NumberFormatException e) {
+        } catch (JSONException e) {
         }
         assertEquals("abc\"def", new JSONTokener("abc\\u0022def\"ghi").nextString('"'));
         try {
             new JSONTokener("abc\\u000G\"").nextString('"');
             fail();
-        } catch (NumberFormatException e) {
+        } catch (JSONException e) {
         }
     }
 
