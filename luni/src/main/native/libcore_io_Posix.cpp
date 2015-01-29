@@ -967,7 +967,19 @@ static void Posix_listen(JNIEnv* env, jobject, jobject javaFd, jint backlog) {
 
 static jlong Posix_lseek(JNIEnv* env, jobject, jobject javaFd, jlong offset, jint whence) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
-    return throwIfMinusOne(env, "lseek", TEMP_FAILURE_RETRY(lseek64(fd, offset, whence)));
+#if defined(__GLIBC__) && !defined(__LP64__)
+    // 32 bit GLIBC hardcodes a "long int" as the return type for
+    // TEMP_FAILURE_RETRY so the return value here gets truncated for
+    // offsets > 2GB (remember that off6_t types are signed).
+    off64_t off = -1;
+    do {
+        off = lseek64(fd, offset, whence);
+    } while ((off == -1) && (errno == EINTR));
+#else
+    const off64_t off = TEMP_FAILURE_RETRY(lseek64(fd, offset, whence));
+#endif
+
+    return throwIfMinusOne(env, "lseek", off);
 }
 
 static jobject Posix_lstat(JNIEnv* env, jobject, jstring javaPath) {
