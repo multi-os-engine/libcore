@@ -467,6 +467,9 @@ public abstract class CharsetEncoder {
         if (state != FLUSHED && state != END_OF_INPUT) {
             throw illegalStateException();
         }
+        if (state == FLUSHED) {
+            return CoderResult.UNDERFLOW;
+        }
         CoderResult result = implFlush(out);
         if (result == CoderResult.UNDERFLOW) {
             state = FLUSHED;
