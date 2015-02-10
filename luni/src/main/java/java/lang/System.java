@@ -809,8 +809,10 @@ public final class System {
      *
      * This is called from native code when the environment needs to change under native
      * bridge emulation.
+     *
+     * @hide also visible for tests.
      */
-    private static void initUnchangeableSystemProperty(String name, String value) {
+    public static void initUnchangeableSystemProperty(String name, String value) {
         checkPropertyName(name);
         unchangeableSystemProperties.put(name, value);
     }
