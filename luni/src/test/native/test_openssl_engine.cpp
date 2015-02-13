@@ -24,6 +24,10 @@
 #include <openssl/pem.h>
 #include <memory>
 
+/* Engines work very differently in BoringSSL and this test code no longer
+ * applies. */
+#if !defined(OPENSSL_IS_BORINGSSL)
+
 #define DYNAMIC_ENGINE
 #define TEST_ENGINE_ID   "javacoretests"
 #define TEST_ENGINE_NAME "libcore test engine"
@@ -129,3 +133,5 @@ extern "C" {
 IMPLEMENT_DYNAMIC_CHECK_FN()
 IMPLEMENT_DYNAMIC_BIND_FN(test_engine_bind_fn)
 };
+
+#endif  /* OPENSSL_IS_BORINGSSL */
