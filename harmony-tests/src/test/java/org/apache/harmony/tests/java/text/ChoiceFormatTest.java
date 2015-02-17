@@ -21,6 +21,7 @@ import java.text.ChoiceFormat;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.text.ParsePosition;
+import java.util.Locale;
 
 import junit.framework.TestCase;
 
@@ -466,4 +467,15 @@ public class ChoiceFormatTest extends TestCase {
 		assertEquals("GREATER_THAN_ONE", fmt.format(999999999D));
 		assertEquals("GREATER_THAN_ONE", fmt.format(Double.POSITIVE_INFINITY));
 	}
+
+    // http://b/19011159
+    public void testEscapedPatternWithConsecutiveQuotes() {
+        ChoiceFormat format = new ChoiceFormat("0#1'2''3'''4''''.");
+        String formatted = format.format(0);
+        assertEquals("12'3'4''.", formatted);
+
+        format = new ChoiceFormat("0#1'2''3'''''4''''.");
+        formatted = format.format(0);
+        assertEquals("12'3''4''.", formatted);
+    }
 }
