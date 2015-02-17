@@ -311,17 +311,7 @@ public class ChoiceFormat extends NumberFormat {
      * @return the next larger double value.
      */
     public static final double nextDouble(double value) {
-        if (value == Double.POSITIVE_INFINITY) {
-            return value;
-        }
-        long bits;
-        // Handle -0.0
-        if (value == 0) {
-            bits = 0;
-        } else {
-            bits = Double.doubleToLongBits(value);
-        }
-        return Double.longBitsToDouble(value < 0 ? bits - 1 : bits + 1);
+        return Math.nextUp(value);
     }
 
     /**
@@ -393,17 +383,7 @@ public class ChoiceFormat extends NumberFormat {
      * @return the next smaller double value.
      */
     public static final double previousDouble(double value) {
-        if (value == Double.NEGATIVE_INFINITY) {
-            return value;
-        }
-        long bits;
-        // Handle 0.0
-        if (value == 0) {
-            bits = 0x8000000000000000L;
-        } else {
-            bits = Double.doubleToLongBits(value);
-        }
-        return Double.longBitsToDouble(value <= 0 ? bits + 1 : bits - 1);
+        return Math.nextAfter(value, Double.NEGATIVE_INFINITY);
     }
 
     /**
@@ -453,9 +433,30 @@ public class ChoiceFormat extends NumberFormat {
             if (i != 0) {
                 buffer.append('|');
             }
-            String previous = String.valueOf(previousDouble(choiceLimits[i]));
-            String limit = String.valueOf(choiceLimits[i]);
-            if (previous.length() < limit.length()) {
+
+            final String previous = String.valueOf(previousDouble(choiceLimits[i]));
+            final String limit = String.valueOf(choiceLimits[i]);
+
+            // Hack to make the output of toPattern parseable by another ChoiceFormat.
+            // String.valueOf() will emit "Infinity", which isn't parseable by our NumberFormat
+            // instances.
+            //
+            // Ideally, we'd just use NumberFormat.format() to emit output (to be symmetric with
+            // our usage of NumberFormat.parse()) but it's hard set the right number of significant
+            // digits in order to output a format string that's equivalent to the original input.
+            if (Double.isInfinite(choiceLimits[i]) ||
+                    Double.isInfinite(previousDouble(choiceLimits[i]))) {
+                if (choiceLimits[i] < 0) {
+                    buffer.append("-\u221E");
+                    buffer.append('<');
+                } else {
+                    buffer.append('\u221E');
+                    buffer.append('<');
+                }
+            } else if (previous.length() < limit.length()) {
+                // What the... i don't even.... sigh. This is trying to figure out whether the
+                // element was a "<" or a "#". The idea being that users will specify "reasonable"
+                // quantities and calling nextDouble will result in a "longer" number in most cases.
                 buffer.append(previous);
                 buffer.append('<');
             } else {
