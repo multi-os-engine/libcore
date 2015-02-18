@@ -198,27 +198,51 @@ public class ReferenceQueueTest extends junit.framework.TestCase {
         assertNull(rq.poll());
 
         class RemoveThread extends Thread {
+            private Object inBlockObject = new Object(), outOfBlockObject = new Object();
+            private boolean inBlock = false, outOfBlock = false;
+            public void waitUntilInBlock() {
+              synchronized (inBlockObject) {
+                  while (!inBlock) {
+                      try {
+                          inBlockObject.wait();
+                      } catch(InterruptedException ie) {}
+                  }
+              }
+            }
+            public void waitUntilOutOfBlock() {
+              synchronized (outOfBlockObject) {
+                  while (!outOfBlock) {
+                      try {
+                          outOfBlockObject.wait();
+                      } catch(InterruptedException ie) {}
+                  }
+              }
+            }
             public void run() {
                 try {
+                    synchronized (inBlockObject) {
+                        inBlock = true;
+                        inBlockObject.notify();
+                    }
                     rq.remove(1000L);
                 } catch(InterruptedException ie) {
                     isThrown = true;
+                }
+                synchronized (outOfBlockObject) {
+                    outOfBlock = true;
+                    outOfBlockObject.notify();
                 }
             }
         }
         RemoveThread rt = new RemoveThread();
         rt.start();
+        rt.waitUntilInBlock();
         try {
+            // Try to be inside of rq.remove(1000L) if possible.
             Thread.sleep(10);
-        } catch(InterruptedException ie) {
-
-        }
+        } catch(InterruptedException ie) {}
         rt.interrupt();
-        try {
-            Thread.sleep(10);
-        } catch(InterruptedException ie) {
-
-        }
+        rt.waitUntilOutOfBlock();
         assertTrue(isThrown);
         assertNull(rq.poll());
 
