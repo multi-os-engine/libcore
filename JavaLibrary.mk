@@ -82,6 +82,7 @@ LOCAL_JAVACFLAGS := $(local_javac_flags)
 LOCAL_DX_FLAGS := --core-library
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := core-libart
+LOCAL_STATIC_JAVA_LIBRARIES := icu4j
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/JavaLibrary.mk
 LOCAL_REQUIRED_MODULES := tzdata
 # Should not be dex-preopted as it isn't really a Dalvik boot jar or a
@@ -150,6 +151,7 @@ LOCAL_JAVACFLAGS := $(local_javac_flags)
 LOCAL_DX_FLAGS := --core-library
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := core-libart-hostdex
+LOCAL_STATIC_JAVA_LIBRARIES := icu4j
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/JavaLibrary.mk
 LOCAL_REQUIRED_MODULES := tzdata-host
 # Should not be dex-preopted as it isn't really a Dalvik boot jar or a
