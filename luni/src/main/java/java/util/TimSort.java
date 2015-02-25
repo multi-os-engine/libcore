@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * Copyright (C) 2008 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -154,7 +155,7 @@ class TimSort<T> {
          */
         int stackLen = (len <    120  ?  5 :
                         len <   1542  ? 10 :
-                        len < 119151  ? 19 : 40);
+                        len < 119151  ? 24 : 49);
         runBase = new int[stackLen];
         runLen = new int[stackLen];
     }
