@@ -200,6 +200,7 @@ public final class MethodTest extends TestCase {
     }
 
     public static class MethodTestHelper {
+        // Silly change to test access to gerrit.
         public void m1() throws IndexOutOfBoundsException { }
         public void m2(Object o) { }
     }
