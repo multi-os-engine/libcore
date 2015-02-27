@@ -44,23 +44,9 @@ public final class Security {
     private static final Properties secprops = new Properties();
 
     // static initialization
-    // - load security properties files
-    // - load statically registered providers
-    // - if no provider description file found then load default providers
+    // - default providers from the class to aid in preloading classes
     static {
-        boolean loaded = false;
-        try {
-            InputStream configStream = Security.class.getResourceAsStream("security.properties");
-            InputStream input = new BufferedInputStream(configStream);
-            secprops.load(input);
-            loaded = true;
-            configStream.close();
-        } catch (Exception ex) {
-            System.logE("Could not load 'security.properties'", ex);
-        }
-        if (!loaded) {
-            registerDefaultProviders();
-        }
+        registerDefaultProviders();
         Engine.door = new SecurityDoor();
     }
 
