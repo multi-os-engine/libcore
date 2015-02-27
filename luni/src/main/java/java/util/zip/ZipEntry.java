@@ -271,6 +271,10 @@ public class ZipEntry implements ZipConstants, Cloneable {
      * @param value the uncompressed size for this entry.
      */
     public void setSize(long value) {
+        if (value < 0) {
+            throw new IllegalArgumentException("Bad size: " + value);
+        }
+
         size = value;
     }
 
