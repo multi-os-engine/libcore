@@ -57,41 +57,43 @@ public class Services {
      */
     private static int cacheVersion = 1;
 
-    /**
-     * Registered providers.
-     */
-    private static final ArrayList<Provider> providers = new ArrayList<Provider>(20);
+    private static class NoPreloadHolder {
+        /**
+         * Registered providers.
+         */
+        private static final ArrayList<Provider> providers = new ArrayList<Provider>(20);
 
-    /**
-     * Hash for quick provider access by name.
-     */
-    private static final HashMap<String, Provider> providersNames
-            = new HashMap<String, Provider>(20);
-    static {
-        String providerClassName = null;
-        int i = 1;
-        ClassLoader cl = ClassLoader.getSystemClassLoader();
+        /**
+         * Hash for quick provider access by name.
+         */
+        private static final HashMap<String, Provider> providersNames
+                = new HashMap<String, Provider>(20);
+        static {
+            String providerClassName = null;
+            int i = 1;
+            ClassLoader cl = ClassLoader.getSystemClassLoader();
 
-        while ((providerClassName = Security.getProperty("security.provider." + i++)) != null) {
-            try {
-                Class<?> providerClass = Class.forName(providerClassName.trim(), true, cl);
-                Provider p = (Provider) providerClass.newInstance();
-                providers.add(p);
-                providersNames.put(p.getName(), p);
-                initServiceInfo(p);
-            } catch (ClassNotFoundException ignored) {
-            } catch (IllegalAccessException ignored) {
-            } catch (InstantiationException ignored) {
+            while ((providerClassName = Security.getProperty("security.provider." + i++)) != null) {
+                try {
+                    Class<?> providerClass = Class.forName(providerClassName.trim(), true, cl);
+                    Provider p = (Provider) providerClass.newInstance();
+                    providers.add(p);
+                    providersNames.put(p.getName(), p);
+                    initServiceInfo(p);
+                } catch (ClassNotFoundException ignored) {
+                } catch (IllegalAccessException ignored) {
+                } catch (InstantiationException ignored) {
+                }
             }
+            Engine.door.renumProviders();
         }
-        Engine.door.renumProviders();
     }
 
     /**
      * Returns a copy of the registered providers as an array.
      */
     public static synchronized ArrayList<Provider> getProviders() {
-        return providers;
+        return NoPreloadHolder.providers;
     }
 
     /**
@@ -101,19 +103,19 @@ public class Services {
         if (name == null) {
             return null;
         }
-        return providersNames.get(name);
+        return NoPreloadHolder.providersNames.get(name);
     }
 
     /**
      * Inserts a provider at a specified 1-based position.
      */
     public static synchronized int insertProviderAt(Provider provider, int position) {
-        int size = providers.size();
+        int size = NoPreloadHolder.providers.size();
         if ((position < 1) || (position > size)) {
             position = size + 1;
         }
-        providers.add(position - 1, provider);
-        providersNames.put(provider.getName(), provider);
+        NoPreloadHolder.providers.add(position - 1, provider);
+        NoPreloadHolder.providersNames.put(provider.getName(), provider);
         setNeedRefresh();
         return position;
     }
@@ -122,8 +124,8 @@ public class Services {
      * Removes the provider at the specified 1-based position.
      */
     public static synchronized void removeProvider(int providerNumber) {
-        Provider p = providers.remove(providerNumber - 1);
-        providersNames.remove(p.getName());
+        Provider p = NoPreloadHolder.providers.remove(providerNumber - 1);
+        NoPreloadHolder.providersNames.remove(p.getName());
         setNeedRefresh();
     }
 
@@ -207,7 +209,7 @@ public class Services {
                 services.clear();
             }
             cachedSecureRandomService = null;
-            for (Provider p : providers) {
+            for (Provider p : NoPreloadHolder.providers) {
                 initServiceInfo(p);
             }
             needRefresh = false;
