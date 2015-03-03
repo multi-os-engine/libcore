@@ -186,29 +186,38 @@ public class ExemptionMechanismTest extends TestCase {
 
     // Side Effect: Causes OutOfMemoryError to test finalization
     public void test_finalize () {
-        Mock_ExemptionMechanism mem = new Mock_ExemptionMechanism(null, null, "Name");
-        assertNotNull(mem);
-        mem = null;
-        assertFalse(flag);
-        Vector v = new Vector();
-        int capacity;
-        try {
-            while(true) {
-                v.add(this);
-            }
-        } catch (OutOfMemoryError e) {
-            capacity = v.size();
-            v = null;
-        }
+        newMock_ExemptionMechanism();
+        int capacity = makeOOME();
 
-        v = new Vector();
-        for (int i = 0; i < capacity/2; i++) {
-            v.add(this);
-        }
-        v = null;
+        consumeMemory(capacity/2);
         assertTrue(flag);
     }
 
+    private void newMock_ExemptionMechanism() {
+      Mock_ExemptionMechanism mem = new Mock_ExemptionMechanism(null, null, "Name");
+      assertNotNull(mem);
+      assertFalse(flag);
+    }
+
+    private int makeOOME() {
+      Vector v = new Vector();
+      int capacity;
+      try {
+          while(true) {
+              v.add(this);
+          }
+      } catch (OutOfMemoryError e) {
+          capacity = v.size();
+      }
+      return capacity;
+    }
+
+    private void consumeMemory(int capacity) {
+      Vector v = new Vector();
+      for (int i = 0; i < capacity; i++) {
+          v.add(this);
+      }
+   }
     class Mock_ExemptionMechanismSpi extends MyExemptionMechanismSpi {
         @Override
         protected byte[] engineGenExemptionBlob()
