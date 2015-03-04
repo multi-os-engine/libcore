@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 import static libcore.icu.RelativeDateTimeFormatter.getRelativeDateTimeString;
 import static libcore.icu.RelativeDateTimeFormatter.getRelativeTimeSpanString;
+import static libcore.icu.RelativeDateTimeFormatter.getToday;
 import static libcore.icu.RelativeDateTimeFormatter.FORMAT_ABBREV_ALL;
 import static libcore.icu.RelativeDateTimeFormatter.FORMAT_ABBREV_RELATIVE;
 import static libcore.icu.RelativeDateTimeFormatter.FORMAT_NUMERIC_DATE;
@@ -108,6 +109,10 @@ public class RelativeDateTimeFormatterTest extends junit.framework.TestCase {
                                                      String expectedInPast,
                                                      String expectedInFuture) throws Exception {
     test_getRelativeTimeSpanString_helper(delta, minResolution, 0, expectedInPast, expectedInFuture);
+  }
+
+  public void test_getToday() throws Exception {
+    assertEquals("today", getToday());
   }
 
   public void test_getRelativeTimeSpanString() throws Exception {

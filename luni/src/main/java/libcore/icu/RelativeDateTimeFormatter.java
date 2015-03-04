@@ -241,6 +241,12 @@ public final class RelativeDateTimeFormatter {
     }
   }
 
+  public static String getToday() {
+    com.ibm.icu.text.RelativeDateTimeFormatter fmt = com.ibm.icu.text.RelativeDateTimeFormatter.getInstance();
+    return fmt.format(com.ibm.icu.text.RelativeDateTimeFormatter.Direction.THIS,
+            com.ibm.icu.text.RelativeDateTimeFormatter.AbsoluteUnit.DAY);
+  }
+
   /**
    * This is the internal API that implements
    * DateUtils.getRelativeDateTimeString(long, long, long, long, int), which is
