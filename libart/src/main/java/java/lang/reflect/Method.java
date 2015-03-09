@@ -398,7 +398,14 @@ public final class Method extends AbstractMethod implements GenericDeclaration, 
      */
     @Override
     public String toString() {
-        StringBuilder result = new StringBuilder(Modifier.toString(getModifiers()));
+        int modifiers = getModifiers();
+        // Limit modifier bits to the ones that toString should return for constructors and methods,
+        // e.g. excluding "bridge".
+        int modifiersMasked = modifiers & (
+                Modifier.isConstructor(modifiers)
+                        ? Modifier.constructorModifiers()
+                        : Modifier.methodModifiers());
+        StringBuilder result = new StringBuilder(Modifier.toString(modifiersMasked));
 
         if (result.length() != 0) {
             result.append(' ');
