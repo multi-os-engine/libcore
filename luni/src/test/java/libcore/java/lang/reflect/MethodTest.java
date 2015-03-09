@@ -197,6 +197,8 @@ public final class MethodTest extends TestCase {
         assertEquals( "public java.lang.Process java.lang.Runtime.exec(java.lang.String[])"
                 + " throws java.io.IOException",
                 Runtime.class.getMethod("exec", new Class[] { String[].class }).toString());
+        assertEquals("public int java.lang.String.compareTo(java.lang.Object)",
+                String.class.getMethod("compareTo", Object.class).toString());
     }
 
     public static class MethodTestHelper {
