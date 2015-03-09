@@ -183,6 +183,7 @@ public final class MethodTest extends TestCase {
 
     // http://b/1045939
     public void testMethodToString() throws Exception {
+        System.out.println("******************\n*****************\nAAAAAAAAHHHHHHHHH\n********\n******");
         assertEquals("public final native void java.lang.Object.notify()",
                 Object.class.getMethod("notify", new Class[] { }).toString());
         assertEquals("public java.lang.String java.lang.Object.toString()",
@@ -197,6 +198,8 @@ public final class MethodTest extends TestCase {
         assertEquals( "public java.lang.Process java.lang.Runtime.exec(java.lang.String[])"
                 + " throws java.io.IOException",
                 Runtime.class.getMethod("exec", new Class[] { String[].class }).toString());
+        assertEquals("public int java.lang.String.compareTo(java.lang.Object)",
+                String.class.getMethod("compareTo", Object.class).toString());
     }
 
     public static class MethodTestHelper {
