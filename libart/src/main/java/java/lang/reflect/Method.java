@@ -398,7 +398,9 @@ public final class Method extends AbstractMethod implements GenericDeclaration, 
      */
     @Override
     public String toString() {
-        StringBuilder result = new StringBuilder(Modifier.toString(getModifiers()));
+        int modifiers = getModifiers();
+        StringBuilder result = new StringBuilder(
+                Modifier.toString(Modifier.getDeclarationMethodModifiers(getModifiers())));
 
         if (result.length() != 0) {
             result.append(' ');

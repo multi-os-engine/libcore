@@ -302,4 +302,27 @@ public class Modifier {
         buf.setLength(buf.length() - 1);
         return buf.toString();
     }
+
+    /**
+     * Returns the modifiers for fields that can be present in a declaration.
+     *
+     * Thus hiding bits used for internal purposes.
+     * @hide
+     */
+    static int getDeclarationFieldModifiers(int modifiers) {
+        return modifiers & fieldModifiers();
+    }
+
+    /**
+     * Returns the modifiers for methods that can be present in a declaration.
+     *
+     * Thus hiding bits used for internal purposes.
+     * @hide
+     */
+    static int getDeclarationMethodModifiers(int modifiers) {
+        return modifiers & (
+                Modifier.isConstructor(modifiers)
+                        ? Modifier.constructorModifiers()
+                        : Modifier.methodModifiers());
+    }
 }
