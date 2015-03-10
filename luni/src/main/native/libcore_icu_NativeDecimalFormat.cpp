@@ -62,7 +62,12 @@ static icu::DecimalFormatSymbols* makeDecimalFormatSymbols(JNIEnv* env,
     ScopedJavaUnicodeString percent(env, percent0);
     icu::UnicodeString groupingSeparator(groupingSeparator0);
 
-    icu::DecimalFormatSymbols* result = new icu::DecimalFormatSymbols;
+    UErrorCode status = U_ZERO_ERROR;
+    icu::DecimalFormatSymbols* result = icu::DecimalFormatSymbols::createWithLastResortData(status);
+    if (maybeThrowIcuException(env, "DecimalFormatSymbols::createWithLastResortData", status)) {
+      return NULL;
+    }
+
     result->setSymbol(icu::DecimalFormatSymbols::kCurrencySymbol, currencySymbol.unicodeString());
     result->setSymbol(icu::DecimalFormatSymbols::kDecimalSeparatorSymbol, icu::UnicodeString(decimalSeparator));
     result->setSymbol(icu::DecimalFormatSymbols::kDigitSymbol, icu::UnicodeString(digit));
