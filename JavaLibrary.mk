@@ -147,6 +147,7 @@ LOCAL_JAVACFLAGS := $(local_javac_flags)
 LOCAL_DX_FLAGS := --core-library
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := core-libart-hostdex
+LOCAL_STATIC_JAVA_LIBRARIES := icu4j-host
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/JavaLibrary.mk
 LOCAL_REQUIRED_MODULES := tzdata-host
 include $(BUILD_HOST_DALVIK_JAVA_LIBRARY)
