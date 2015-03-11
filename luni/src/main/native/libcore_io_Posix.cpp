@@ -38,6 +38,7 @@
 #include <net/if.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <netpacket/packet.h>
 #include <poll.h>
 #include <pwd.h>
 #include <signal.h>
@@ -323,6 +324,18 @@ static jobject makeSocketAddress(JNIEnv* env, const sockaddr_storage& ss) {
         return env->NewObject(JniConstants::netlinkSocketAddressClass, ctor, 
                 static_cast<jint>(nl_addr->nl_pid), 
                 static_cast<jint>(nl_addr->nl_groups));
+    } else if (ss.ss_family == AF_PACKET) {
+        const struct sockaddr_ll* sll = reinterpret_cast<const struct sockaddr_ll*>(&ss);
+        static jmethodID ctor = env->GetMethodID(JniConstants::packetSocketAddressClass,
+                "<init>", "(SISSB[B)V");
+        return env->NewObject(JniConstants::netlinkSocketAddressClass, ctor,
+                static_cast<jshort>(sll->sll_family),
+                static_cast<jshort>(sll->sll_protocol),
+                static_cast<jint>(sll->sll_ifindex),
+                static_cast<jshort>(sll->sll_hatype),
+                static_cast<jbyte>(sll->sll_pkttype),
+                static_cast<jbyte>(sll->sll_halen),
+                NULL);  // XXX
     }
     jniThrowException(env, "java/lang/IllegalArgumentException", "unsupported ss_family");
     return NULL;
@@ -1393,6 +1406,23 @@ static jint Posix_sendtoBytes(JNIEnv* env, jobject, jobject javaFd, jobject java
                              true  /* null_addr_ok */, bytes.get() + byteOffset, byteCount, flags);
 }
 
+static jint Posix_sendtoBytesSocketAddress(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jint flags, jobject javaSocketAddress) {
+    ScopedBytesRO bytes(env, javaBytes);
+    if (bytes.get() == NULL) {
+        return -1;
+    }
+
+    sockaddr_storage ss;
+    socklen_t sa_len;
+    if (!javaSocketAddressToSockaddr(env, javaSocketAddress, ss, sa_len)) {
+        return -1;
+    }
+
+    const sockaddr* sa = reinterpret_cast<const sockaddr*>(&ss);
+    // We don't need the return value because we'll already have thrown.
+    return NET_FAILURE_RETRY(env, ssize_t, sendto, javaFd, bytes.get() + byteOffset, byteCount, flags, sa, sa_len);
+}
+
 static void Posix_setegid(JNIEnv* env, jobject, jint egid) {
     throwIfMinusOne(env, "setegid", TEMP_FAILURE_RETRY(setegid(egid)));
 }
@@ -1776,6 +1806,7 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(Posix, rename, "(Ljava/lang/String;Ljava/lang/String;)V"),
     NATIVE_METHOD(Posix, sendfile, "(Ljava/io/FileDescriptor;Ljava/io/FileDescriptor;Landroid/util/MutableLong;J)J"),
     NATIVE_METHOD(Posix, sendtoBytes, "(Ljava/io/FileDescriptor;Ljava/lang/Object;IIILjava/net/InetAddress;I)I"),
+    NATIVE_METHOD_OVERLOAD(Posix, sendtoBytes, "(Ljava/io/FileDescriptor;Ljava/lang/Object;IIILjava/net/SocketAddress;)I", SocketAddress),
     NATIVE_METHOD(Posix, setegid, "(I)V"),
     NATIVE_METHOD(Posix, setenv, "(Ljava/lang/String;Ljava/lang/String;Z)V"),
     NATIVE_METHOD(Posix, seteuid, "(I)V"),
