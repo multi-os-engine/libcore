@@ -18,6 +18,7 @@ package libcore.io;
 
 import android.system.ErrnoException;
 import android.system.NetlinkSocketAddress;
+import android.system.PacketSocketAddress;
 import android.system.StructTimeval;
 import android.system.StructUcred;
 import java.io.File;
@@ -29,6 +30,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.InetUnixAddress;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -289,6 +291,32 @@ public class OsTest extends TestCase {
     assertEquals(0, nlPeer.getPortId());
     assertEquals(0, nlPeer.getGroupsMask());
     Libcore.os.close(nlSocket);
+  }
+
+  public void test_PacketSocketAddress() throws Exception {
+    // TODO: move these to OsConstants.
+    final short AF_PACKET = 17;
+    final short ETH_P_IPV6 = (short) 0x86dd;
+    final short ARPHRD_LOOPBACK = 772;
+
+    NetworkInterface lo = NetworkInterface.getByName("lo");
+    FileDescriptor fd = Libcore.os.socket(AF_PACKET, SOCK_DGRAM, ETH_P_IPV6);
+    PacketSocketAddress addr = new PacketSocketAddress(ETH_P_IPV6, 1);
+    Libcore.os.bind(fd, addr);
+
+    PacketSocketAddress bound = (PacketSocketAddress) Libcore.os.getsockname(fd);
+    assertEquals(ETH_P_IPV6, bound.getProtocol());
+    assertEquals(lo.getIndex(), bound.getIfindex());
+    assertEquals(ARPHRD_LOOPBACK, bound.getHatype());
+    assertEquals(0, bound.getPkttype());
+
+    // The loopback address is ETH_ALEN bytes long and is all zeros.
+    // http://lxr.free-electrons.com/source/drivers/net/loopback.c?v=3.10#L167
+    byte[] boundAddr = bound.getAddr();
+    assertEquals(6, boundAddr.length);
+    for (int i = 0; i < 6; i++) {
+      assertEquals(0, boundAddr[i]);
+    }
   }
 
   public void test_byteBufferPositions_sendto_recvfrom_af_inet() throws Exception {
