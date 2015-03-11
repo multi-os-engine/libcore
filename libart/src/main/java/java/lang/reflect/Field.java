@@ -182,10 +182,12 @@ public final class Field extends AccessibleObject implements Member {
      */
     public String toGenericString() {
         StringBuilder sb = new StringBuilder(80);
+        // Limit modifier bits to the ones that toStringGeneric should return for fields.
+
+        int modifiers = Modifier.getDeclarationFieldModifiers(Modifier.fieldModifiers());
         // append modifiers if any
-        int modifier = getModifiers();
-        if (modifier != 0) {
-            sb.append(Modifier.toString(modifier)).append(' ');
+        if (modifiers != 0) {
+            sb.append(Modifier.toString(modifiers)).append(' ');
         }
         // append generic type
         Types.appendGenericType(sb, getGenericType());
@@ -861,7 +863,8 @@ public final class Field extends AccessibleObject implements Member {
      */
     @Override
     public String toString() {
-        StringBuilder result = new StringBuilder(Modifier.toString(getModifiers()));
+        StringBuilder result = new StringBuilder(
+                Modifier.toString(Modifier.getDeclarationFieldModifiers(getModifiers())));
         if (result.length() != 0) {
             result.append(' ');
         }
