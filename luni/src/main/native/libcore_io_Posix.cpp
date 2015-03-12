@@ -324,8 +324,28 @@ static jobject makeSocketAddress(JNIEnv* env, const sockaddr_storage& ss) {
         return env->NewObject(JniConstants::netlinkSocketAddressClass, ctor, 
                 static_cast<jint>(nl_addr->nl_pid), 
                 static_cast<jint>(nl_addr->nl_groups));
+    } else if (ss.ss_family == AF_PACKET) {
+        const struct sockaddr_ll* sll = reinterpret_cast<const struct sockaddr_ll*>(&ss);
+        static jmethodID ctor = env->GetMethodID(JniConstants::packetSocketAddressClass,
+                "<init>", "(SISSB[B)V");
+        ScopedLocalRef<jbyteArray> byteArray(env, env->NewByteArray(sll->sll_halen));
+        if (byteArray.get() == NULL) {
+            return NULL;
+        }
+        env->SetByteArrayRegion(byteArray.get(), 0, sll->sll_halen,
+                reinterpret_cast<const jbyte*>(sll->sll_addr));
+        jobject packetSocketAddress = env->NewObject(JniConstants::packetSocketAddressClass, ctor,
+                static_cast<jshort>(sll->sll_family),
+                static_cast<jshort>(sll->sll_protocol),
+                static_cast<jint>(sll->sll_ifindex),
+                static_cast<jshort>(sll->sll_hatype),
+                static_cast<jbyte>(sll->sll_pkttype),
+                static_cast<jbyte>(sll->sll_halen),
+                byteArray.get());
+        return packetSocketAddress;
     }
-    jniThrowException(env, "java/lang/IllegalArgumentException", "unsupported ss_family");
+    jniThrowExceptionFmt(env, "java/lang/IllegalArgumentException", "unsupported ss_family: %d",
+            ss.ss_family);
     return NULL;
 }
 
