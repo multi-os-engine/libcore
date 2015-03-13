@@ -346,16 +346,26 @@ public final class DexFile {
     public static final byte DEXOPT_NEEDED = 2;
 
     /**
+     * See {@link #isDexOptNeededInternal(String, String, String, boolean)}.
+     *
+     * @hide
+     */
+    public static final byte SELF_PATCHOAT_NEEDED = 3;
+
+    /**
      * Returns UP_TO_DATE if the VM believes that the apk/jar file
      * is up to date, PATCHOAT_NEEDED if it believes that the file is up
      * to date but it must be relocated to match the base address offset,
-     * and DEXOPT_NEEDED if it believes that it is out of date and should
-     * be passed through "dexopt" again.
+     * DEXOPT_NEEDED if it believes that it is out of date and should
+     * be passed through "dexopt" again, and SELF_PATCHOAT_NEEDED if the
+     * file is already copied in the dalvik-cache but need to be patched
+     * to match the base address offset.
      *
      * @param fileName the absolute path to the apk/jar file to examine.
      * @return DEXOPT_NEEDED if dexopt should be called on the file,
-     *         PATCHOAT_NEEDED if we need to run "patchoat" on it and
-     *         UP_TO_DATE otherwise.
+     *         PATCHOAT_NEEDED if we need to run "patchoat" on it,
+     *         SELF_PATCHOAT_NEEDED if we need to run "patchoat" directly
+     *         in the dalvik-cache and UP_TO_DATE otherwise.
      * @throws java.io.FileNotFoundException if fileName is not readable,
      *         not a file, or not present.
      * @throws java.io.IOException if fileName is not a valid apk/jar file or
