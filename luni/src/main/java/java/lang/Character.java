@@ -20,6 +20,12 @@ package java.lang;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import com.ibm.icu.impl.UCharacterName;
+import com.ibm.icu.impl.UCharacterNameChoice;
+import com.ibm.icu.lang.UCharacter;
+import com.ibm.icu.impl.UCharacterProperty;
+import com.ibm.icu.lang.UProperty;
+
 /**
  * The wrapper for the primitive type {@code char}. This class also provides a
  * number of utility methods for working with characters.
@@ -543,7 +549,7 @@ public final class Character implements Serializable, Comparable<Character> {
 
         /**
          * Returns this subset's hash code, which is the hash code computed by
-         *         {@link java.lang.Object#hashCode()}.
+         *         {@link Object#hashCode()}.
          */
         @Override public final int hashCode() {
             return super.hashCode();
@@ -1522,14 +1528,48 @@ public final class Character implements Serializable, Comparable<Character> {
         }
     }
 
-    private static native int unicodeBlockForName(String blockName);
+    private static int unicodeBlockForName(String blockName) {
+        return UCharacter.getPropertyValueEnum(UProperty.BLOCK, blockName);
+    }
 
-    private static native int unicodeBlockForCodePoint(int codePoint);
 
-    private static native int unicodeScriptForName(String blockName);
+    // java_lang_Character.cpp:
+    // static int Character_unicodeBlockForCodePoint(JNIEnv*, jclass, jint codePoint) {
+    //   return ublock_getCode(codePoint);
+    // }
+    //
+    // uchar.c:
+    // U_CAPI UBlockCode U_EXPORT2
+    // ublock_getCode(UChar32 c) {
+    //   return (UBlockCode)((u_getUnicodeProperties(c, 0)&UPROPS_BLOCK_MASK)>>UPROPS_BLOCK_SHIFT);
+    // }
+    // UCharacter.java:
+    // /**
+    //  * Integer properties mask and shift values for blocks.
+    //  * Equivalent to icu4c UPROPS_BLOCK_MASK
+    //  */
+    // private static final int BLOCK_MASK_ = 0x0001ff00;
+    // UCharacterProperty.java:
+    // IntProperty intProps[]={
+    //        new BiDiIntProperty() {  // BIDI_CLASS
+    //            int getValue(int c) {
+    //                return UBiDiProps.INSTANCE.getClass(c);
+    //            }
+    //        },
+     //       new IntProperty(0, BLOCK_MASK_, BLOCK_SHIFT_),
+    // /**
+    //  * Gets the unicode additional properties.
+    // * Java version of C u_getUnicodeProperties().
+    // * @param codepoint codepoint whose additional properties is to be
+    // *                  retrieved
+    // * @param column The column index.
+    // * @return unicode properties
+    // */
+    // public int getAdditional(int codepoint, int column) {
 
-    private static native int unicodeScriptForCodePoint(int codePoint);
-
+    private static int unicodeBlockForCodePoint(int codePoint) {
+        return UCharacterProperty.INSTANCE.getIntPropertyValue(UProperty.BLOCK, codePoint);
+    }
 
     /**
      * Constructs a new {@code Character} with the specified primitive char
@@ -2352,10 +2392,8 @@ public final class Character implements Serializable, Comparable<Character> {
             }
             return result < radix ? result : -1;
         }
-        return digitImpl(codePoint, radix);
+        return UCharacter.digit(codePoint, radix);
     }
-
-    private static native int digitImpl(int codePoint, int radix);
 
     /**
      * Compares this object with the specified object and indicates if they are
@@ -2429,7 +2467,13 @@ public final class Character implements Serializable, Comparable<Character> {
         return result;
     }
 
-    private static native String getNameImpl(int codePoint);
+    private static String getNameImpl(int codePoint) {
+        boolean isControl = (codePoint <= 0x1f || (codePoint >= 0x7f && codePoint <= 0x9f));
+        int choice =
+                isControl ? UCharacterNameChoice.EXTENDED_CHAR_NAME
+                        : UCharacterNameChoice.UNICODE_CHAR_NAME;
+        return UCharacterName.INSTANCE.getName(codePoint, choice);
+    }
 
     /**
      * Returns the numeric value of the specified Unicode character.
@@ -2487,7 +2531,15 @@ public final class Character implements Serializable, Comparable<Character> {
         return getNumericValueImpl(codePoint);
     }
 
-    private static native int getNumericValueImpl(int codePoint);
+    private static int getNumericValueImpl(int codePoint) {
+        double result = UCharacter.getNumericValue(codePoint);
+        if (result == UCharacter.NO_NUMERIC_VALUE) {
+            return -1;
+        } else if (result < 0 || Math.floor(result + 0.5) != result) {
+            return -2;
+        }
+        return (int) result;
+    }
 
     /**
      * Gets the general Unicode category of the specified character.
@@ -2508,15 +2560,13 @@ public final class Character implements Serializable, Comparable<Character> {
      * @return the Unicode category of {@code codePoint}.
      */
     public static int getType(int codePoint) {
-        int type = getTypeImpl(codePoint);
+        int type = UCharacter.getType(codePoint);
         // The type values returned by ICU are not RI-compatible. The RI skips the value 17.
         if (type <= Character.FORMAT) {
             return type;
         }
         return (type + 1);
     }
-
-    private static native int getTypeImpl(int codePoint);
 
     /**
      * Gets the Unicode directionality of the specified character.
@@ -2551,7 +2601,9 @@ public final class Character implements Serializable, Comparable<Character> {
     /**
      * @hide - internal use only.
      */
-    public static native byte getIcuDirectionality(int codePoint);
+    public static byte getIcuDirectionality(int codePoint) {
+        return UCharacter.getDirectionality(codePoint);
+    }
 
     /**
      * Indicates whether the specified character is mirrored.
@@ -2574,10 +2626,8 @@ public final class Character implements Serializable, Comparable<Character> {
      *         otherwise.
      */
     public static boolean isMirrored(int codePoint) {
-        return isMirroredImpl(codePoint);
+        return UCharacter.isMirrored(codePoint);
     }
-
-    private static native boolean isMirroredImpl(int codePoint);
 
     @Override
     public int hashCode() {
@@ -2607,7 +2657,9 @@ public final class Character implements Serializable, Comparable<Character> {
      * if it is in any of the Lu, Ll, Lt, Lm, Lo, Nl, or Other_Alphabetic categories.
      * @since 1.7
      */
-    public static native boolean isAlphabetic(int codePoint);
+    public static boolean isAlphabetic(int codePoint) {
+        return UCharacter.isUAlphabetic(codePoint);
+    }
 
     /**
      * Returns true if the given code point is in the Basic Multilingual Plane (BMP).
@@ -2644,7 +2696,9 @@ public final class Character implements Serializable, Comparable<Character> {
         return isDefinedImpl(codePoint);
     }
 
-    private static native boolean isDefinedImpl(int codePoint);
+    private static boolean isDefinedImpl(int codePoint) {
+        return UCharacter.isDefined(codePoint);
+    }
 
     /**
      * Indicates whether the specified character is a digit.
@@ -2674,10 +2728,8 @@ public final class Character implements Serializable, Comparable<Character> {
         if (codePoint < 1632) {
             return false;
         }
-        return isDigitImpl(codePoint);
+        return UCharacter.isDigit(codePoint);
     }
-
-    private static native boolean isDigitImpl(int codePoint);
 
     /**
      * Indicates whether the specified character is ignorable in a Java or
@@ -2695,7 +2747,9 @@ public final class Character implements Serializable, Comparable<Character> {
      * Returns true if the given code point is a CJKV ideographic character.
      * @since 1.7
      */
-    public static native boolean isIdeographic(int codePoint);
+    public static boolean isIdeographic(int codePoint) {
+        return UCharacter.hasBinaryProperty(codePoint, UProperty.IDEOGRAPHIC);
+    }
 
     /**
      * Indicates whether the specified code point is ignorable in a Java or
@@ -2715,7 +2769,9 @@ public final class Character implements Serializable, Comparable<Character> {
         return isIdentifierIgnorableImpl(codePoint);
     }
 
-    private static native boolean isIdentifierIgnorableImpl(int codePoint);
+    private static boolean isIdentifierIgnorableImpl(int codePoint) {
+        return UCharacter.isIdentifierIgnorable(codePoint);
+    }
 
     /**
      * Indicates whether the specified character is an ISO control character.
@@ -2868,7 +2924,7 @@ public final class Character implements Serializable, Comparable<Character> {
         if (codePoint < 128) {
             return false;
         }
-        return isLetterImpl(codePoint);
+        return UCharacter.isLetter(codePoint);
     }
 
     private static native boolean isLetterImpl(int codePoint);
@@ -2904,7 +2960,15 @@ public final class Character implements Serializable, Comparable<Character> {
         if (codePoint < 128) {
             return false;
         }
-        return isLetterOrDigitImpl(codePoint);
+        // TODO(sgiro): probably a comment pasted improperly from somewhere, but
+        // in the ICU isLetterOrDigitImpl:
+        // << [icu] Note: This method, unlike java.lang.Character does not regard the ascii characters
+        // 'A' - 'Z' and 'a' - 'z' as digits.>>
+        // There seems to have been a discrepancy about whether single letter were considered digits
+        // between ICU and Java and the past. Probably this comment had to do with that.
+        // In addition, the native method was using u_isalnum , which considers the same masks
+        // as isLetterOrDigit
+        return UCharacter.isLetterOrDigit(codePoint);
     }
 
     private static native boolean isLetterOrDigitImpl(int codePoint);
@@ -2937,10 +3001,8 @@ public final class Character implements Serializable, Comparable<Character> {
         if (codePoint < 128) {
             return false;
         }
-        return isLowerCaseImpl(codePoint);
+        return UCharacter.isLowerCase(codePoint);
     }
-
-    private static native boolean isLowerCaseImpl(int codePoint);
 
     /**
      * Use {@link #isWhitespace(char)} instead.
@@ -2987,10 +3049,8 @@ public final class Character implements Serializable, Comparable<Character> {
                 codePoint == 0x3000; // ...or CJK Symbols and Punctuation?
         }
         // Let icu4c worry about non-BMP code points.
-        return isSpaceCharImpl(codePoint);
+        return UCharacter.isSpaceChar(codePoint);
     }
-
-    private static native boolean isSpaceCharImpl(int codePoint);
 
     /**
      * Indicates whether the specified character is a titlecase character.
@@ -3001,7 +3061,7 @@ public final class Character implements Serializable, Comparable<Character> {
      *         otherwise.
      */
     public static boolean isTitleCase(char c) {
-        return isTitleCaseImpl(c);
+        return UCharacter.isTitleCase(c);
     }
 
     /**
@@ -3013,10 +3073,8 @@ public final class Character implements Serializable, Comparable<Character> {
      *         {@code false} otherwise.
      */
     public static boolean isTitleCase(int codePoint) {
-        return isTitleCaseImpl(codePoint);
+        return UCharacter.isTitleCase(codePoint);
     }
-
-    private static native boolean isTitleCaseImpl(int codePoint);
 
     /**
      * Indicates whether the specified character is valid as part of a Unicode
@@ -3028,7 +3086,7 @@ public final class Character implements Serializable, Comparable<Character> {
      *         identifier; {@code false} otherwise.
      */
     public static boolean isUnicodeIdentifierPart(char c) {
-        return isUnicodeIdentifierPartImpl(c);
+        return UCharacter.isUnicodeIdentifierPart(c);
     }
 
     /**
@@ -3041,10 +3099,8 @@ public final class Character implements Serializable, Comparable<Character> {
      *         identifier; {@code false} otherwise.
      */
     public static boolean isUnicodeIdentifierPart(int codePoint) {
-        return isUnicodeIdentifierPartImpl(codePoint);
+        return UCharacter.isUnicodeIdentifierPart(codePoint);
     }
-
-    private static native boolean isUnicodeIdentifierPartImpl(int codePoint);
 
     /**
      * Indicates whether the specified character is a valid initial character
@@ -3056,7 +3112,7 @@ public final class Character implements Serializable, Comparable<Character> {
      *         Unicode identifier; {@code false} otherwise.
      */
     public static boolean isUnicodeIdentifierStart(char c) {
-        return isUnicodeIdentifierStartImpl(c);
+        return UCharacter.isUnicodeIdentifierStart(c);
     }
 
     /**
@@ -3069,10 +3125,8 @@ public final class Character implements Serializable, Comparable<Character> {
      *         a Unicode identifier; {@code false} otherwise.
      */
     public static boolean isUnicodeIdentifierStart(int codePoint) {
-        return isUnicodeIdentifierStartImpl(codePoint);
+        return UCharacter.isUnicodeIdentifierStart(codePoint);
     }
-
-    private static native boolean isUnicodeIdentifierStartImpl(int codePoint);
 
     /**
      * Indicates whether the specified character is an upper case letter.
@@ -3196,10 +3250,8 @@ public final class Character implements Serializable, Comparable<Character> {
         if (codePoint < 192) {
             return codePoint;
         }
-        return toLowerCaseImpl(codePoint);
+        return UCharacter.toLowerCase(codePoint);
     }
-
-    private static native int toLowerCaseImpl(int codePoint);
 
     @Override
     public String toString() {
@@ -3227,7 +3279,7 @@ public final class Character implements Serializable, Comparable<Character> {
      *         {@code c}.
      */
     public static char toTitleCase(char c) {
-        return (char) toTitleCaseImpl(c);
+        return (char) UCharacter.toTitleCase(c);
     }
 
     /**
@@ -3240,10 +3292,8 @@ public final class Character implements Serializable, Comparable<Character> {
      *         otherwise {@code codePoint}.
      */
     public static int toTitleCase(int codePoint) {
-        return toTitleCaseImpl(codePoint);
+        return UCharacter.toTitleCase(codePoint);
     }
-
-    private static native int toTitleCaseImpl(int codePoint);
 
     /**
      * Returns the upper case equivalent for the specified character if the
@@ -3277,8 +3327,6 @@ public final class Character implements Serializable, Comparable<Character> {
         if (codePoint < 181) {
             return codePoint;
         }
-        return toUpperCaseImpl(codePoint);
+        return UCharacter.toUpperCase(codePoint);
     }
-
-    private static native int toUpperCaseImpl(int codePoint);
 }
