@@ -37,7 +37,6 @@ jint JNI_OnLoad(JavaVM* vm, void*) {
     REGISTER(register_java_io_File);
     REGISTER(register_java_io_FileDescriptor);
     REGISTER(register_java_io_ObjectStreamClass);
-    REGISTER(register_java_lang_Character);
     REGISTER(register_java_lang_Double);
     REGISTER(register_java_lang_Float);
     REGISTER(register_java_lang_Math);
