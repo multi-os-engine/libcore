@@ -81,6 +81,8 @@ public final class URL implements Serializable {
     private static final Hashtable<String, URLStreamHandler> streamHandlers
             = new Hashtable<String, URLStreamHandler>();
 
+    private static boolean cleartextTrafficPermitted = true;
+
     private String protocol;
     private String authority;
     private String host;
@@ -671,5 +673,23 @@ public final class URL implements Serializable {
         this.userInfo = userInfo;
         this.path = path;
         this.query = query;
+    }
+
+    /**
+     * Sets whether cleartext network traffic (e.g., HTTP) is permitted for this process.
+     *
+     * @hide
+     */
+    public static synchronized void setCleartextTrafficPermitted(boolean permitted) {
+        cleartextTrafficPermitted = permitted;
+    }
+
+    /**
+     * Returns whether cleartext network traffic (e.g., HTTP) is permitted for this process.
+     *
+     * @hide
+     */
+    public static synchronized boolean isCleartextTrafficPermitted() {
+        return cleartextTrafficPermitted;
     }
 }
