@@ -130,7 +130,8 @@ import libcore.icu.ICU;
  * This is the correct behavior for Turkish text (such as user input), but inappropriate for, say,
  * HTTP headers.
  */
-public final class Locale implements Cloneable, Serializable {
+public final class
+        Locale implements Cloneable, Serializable {
 
     private static final long serialVersionUID = 9149081749638150636L;
 
