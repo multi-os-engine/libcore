@@ -72,14 +72,14 @@ public class AccessibleObject implements AnnotatedElement {
      */
     public void setAccessible(boolean flag) {
         try {
-          if (equals(Class.class.getDeclaredConstructor())) {
-            throw new SecurityException("Can't make class constructor accessible");
-          }
+            if (equals(Class.class.getDeclaredConstructor())) {
+                throw new SecurityException("Can't make class constructor accessible");
+            }
         } catch (NoSuchMethodException e) {
-          throw new AssertionError("Couldn't find class constructor");
+            throw new AssertionError("Couldn't find class constructor");
         }
         this.flag = flag;
-     }
+    }
 
     /**
      * Attempts to set the accessible flag for all objects in {@code objects}.
