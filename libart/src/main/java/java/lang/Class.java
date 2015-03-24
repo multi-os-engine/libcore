@@ -888,8 +888,6 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
         Field result = getDeclaredFieldInternal(name);
         if (result == null) {
             throw new NoSuchFieldException(name);
-        } else {
-            result.getType();  // Throw NoClassDefFoundError if type cannot be resolved.
         }
         return result;
     }
@@ -903,15 +901,7 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
      * @see #getFields()
      */
     public Field[] getDeclaredFields() {
-        int initial_size = sFields == null ? 0 : sFields.length;
-        initial_size += iFields == null ? 0 : iFields.length;
-        ArrayList<Field> fields = new ArrayList(initial_size);
-        getDeclaredFieldsUnchecked(false, fields);
-        Field[] result = fields.toArray(new Field[fields.size()]);
-        for (Field f : result) {
-            f.getType();  // Throw NoClassDefFoundError if type cannot be resolved.
-        }
-        return result;
+        return getDeclaredFieldsUnchecked(false);
     }
 
     /**
@@ -922,66 +912,13 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
      * @param fields A list to populate with declared fields.
      * @hide
      */
-    public void getDeclaredFieldsUnchecked(boolean publicOnly, List<Field> fields) {
-        if (iFields != null) {
-            for (ArtField f : iFields) {
-                if (!publicOnly || Modifier.isPublic(f.getAccessFlags())) {
-                    fields.add(new Field(f));
-                }
-            }
-        }
-        if (sFields != null) {
-            for (ArtField f : sFields) {
-                if (!publicOnly || Modifier.isPublic(f.getAccessFlags())) {
-                    fields.add(new Field(f));
-                }
-            }
-        }
-    }
+    public native Field[] getDeclaredFieldsUnchecked(boolean publicOnly);
 
     /**
      * Returns the field if it is defined by this class; null otherwise. This
      * may return a non-public member.
      */
-    private Field getDeclaredFieldInternal(String name) {
-
-        if (iFields != null) {
-            final ArtField matched = findByName(name, iFields);
-            if (matched != null) {
-                return new Field(matched);
-            }
-        }
-        if (sFields != null) {
-            final ArtField matched = findByName(name, sFields);
-            if (matched != null) {
-                return new Field(matched);
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Performs a binary search through {@code fields} for a field whose name
-     * is {@code name}. Returns {@code null} if no matching field exists.
-     */
-    private static ArtField findByName(String name, ArtField[] fields) {
-        int low = 0, high = fields.length - 1;
-        while (low <= high) {
-            final int mid = (low + high) >>> 1;
-            final ArtField f = fields[mid];
-            final int result = f.getName().compareTo(name);
-            if (result < 0) {
-                low = mid + 1;
-            } else if (result == 0) {
-                return f;
-            } else {
-                high = mid - 1;
-            }
-        }
-
-        return null;
-    }
+    private native Field getDeclaredFieldInternal(String name);
 
     /**
      * Returns the class that this class is a member of, or {@code null} if this
@@ -1080,8 +1017,6 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
         Field result = getPublicFieldRecursive(name);
         if (result == null) {
             throw new NoSuchFieldException(name);
-        } else {
-            result.getType();  // Throw NoClassDefFoundError if type cannot be resolved.
         }
         return result;
     }
@@ -1098,8 +1033,7 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
         // search iftable which has a flattened and uniqued list of interfaces
         if (ifTable != null) {
             for (int i = 0; i < ifTable.length; i += 2) {
-                Class<?> ifc = (Class<?>) ifTable[i];
-                Field result = ifc.getPublicFieldRecursive(name);
+                Field result = ((Class<?>) ifTable[i]).getPublicFieldRecursive(name);
                 if (result != null && (result.getModifiers() & Modifier.PUBLIC) != 0) {
                     return result;
                 }
@@ -1123,11 +1057,7 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
     public Field[] getFields() {
         List<Field> fields = new ArrayList<Field>();
         getPublicFieldsRecursive(fields);
-        Field[] result = fields.toArray(new Field[fields.size()]);
-        for (Field f : result) {
-            f.getType();  // Throw NoClassDefFoundError if type cannot be resolved.
-        }
-        return result;
+        return fields.toArray(new Field[fields.size()]);
     }
 
     /**
@@ -1137,15 +1067,18 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
     private void getPublicFieldsRecursive(List<Field> result) {
         // search superclasses
         for (Class<?> c = this; c != null; c = c.superClass) {
-            c.getDeclaredFieldsUnchecked(true, result);
+            for (Field field : c.getDeclaredFieldsUnchecked(true)) {
+                result.add(field);
+            }
         }
 
         // search iftable which has a flattened and uniqued list of interfaces
         Object[] iftable = ifTable;
         if (iftable != null) {
             for (int i = 0; i < iftable.length; i += 2) {
-                Class<?> ifc = (Class<?>) iftable[i];
-                ifc.getDeclaredFieldsUnchecked(true, result);
+                for (Field field : ((Class<?>) iftable[i]).getDeclaredFieldsUnchecked(true)) {
+                    result.add(field);
+                }
             }
         }
     }
