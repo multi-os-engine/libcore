@@ -25,10 +25,16 @@ import libcore.icu.NativeBreakIterator;
  * and we don't have Java implementations of those methods (other than the current ones, which
  * forward to the wrapped NativeBreakIterator).
  */
-class RuleBasedBreakIterator extends BreakIterator {
+class IcuIteratorWrapper extends BreakIterator {
 
-    RuleBasedBreakIterator(NativeBreakIterator iterator) {
-        super(iterator);
+    /* The wrapped ICU implementation. non-final for clone */
+    private com.android.ibm.icu.text.BreakIterator wrapped;
+
+    /*
+     * wrapping constructor
+     */
+    IcuIteratorWrapper(com.android.ibm.icu.text.BreakIterator iterator) {
+        wrapped = iterator;
     }
 
     @Override public int current() {
@@ -40,19 +46,10 @@ class RuleBasedBreakIterator extends BreakIterator {
     }
 
     @Override public int following(int offset) {
-        checkOffset(offset);
+        if (offset < 0) {
+            throw new IllegalArgumentException("offset < 0");
+        }
         return wrapped.following(offset);
-    }
-
-    private void checkOffset(int offset) {
-        if (!wrapped.hasText()) {
-            throw new IllegalArgumentException("BreakIterator has no text");
-        }
-        CharacterIterator it = wrapped.getText();
-        if (offset < it.getBeginIndex() || offset > it.getEndIndex()) {
-            String message = "Valid range is [" + it.getBeginIndex() + " " + it.getEndIndex() + "]";
-            throw new IllegalArgumentException(message);
-        }
     }
 
     @Override public CharacterIterator getText() {
@@ -75,29 +72,36 @@ class RuleBasedBreakIterator extends BreakIterator {
         return wrapped.previous();
     }
 
+    @Override public void setText(String newText) {
+        wrapped.setText(newText);
+    }
+
     @Override public void setText(CharacterIterator newText) {
-        if (newText == null) {
-            throw new NullPointerException("newText == null");
-        }
         newText.current();
         wrapped.setText(newText);
     }
 
     @Override public boolean isBoundary(int offset) {
-        checkOffset(offset);
+        if (offset < 0) {
+            throw new IllegalArgumentException("offset < 0");
+        }
+
         return wrapped.isBoundary(offset);
     }
 
     @Override public int preceding(int offset) {
-        checkOffset(offset);
+        if (offset < 0) {
+            throw new IllegalArgumentException("offset < 0");
+        }
+
         return wrapped.preceding(offset);
     }
 
     @Override public boolean equals(Object o) {
-        if (!(o instanceof RuleBasedBreakIterator)) {
+        if (!(o instanceof IcuIteratorWrapper)) {
             return false;
         }
-        return wrapped.equals(((RuleBasedBreakIterator) o).wrapped);
+        return wrapped.equals(((IcuIteratorWrapper) o).wrapped);
     }
 
     @Override public String toString() {
@@ -109,8 +113,8 @@ class RuleBasedBreakIterator extends BreakIterator {
     }
 
     @Override public Object clone() {
-        RuleBasedBreakIterator cloned = (RuleBasedBreakIterator) super.clone();
-        cloned.wrapped = (NativeBreakIterator) wrapped.clone();
+        IcuIteratorWrapper cloned = (IcuIteratorWrapper) super.clone();
+        cloned.wrapped = (com.android.ibm.icu.text.BreakIterator) wrapped.clone();
         return cloned;
     }
 }
