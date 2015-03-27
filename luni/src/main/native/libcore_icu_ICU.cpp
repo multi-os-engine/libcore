@@ -38,6 +38,7 @@
 #include "unicode/locid.h"
 #include "unicode/numfmt.h"
 #include "unicode/strenum.h"
+#include "unicode/timezone.h"
 #include "unicode/ubrk.h"
 #include "unicode/ucal.h"
 #include "unicode/uclean.h"
@@ -708,10 +709,10 @@ static jstring versionString(JNIEnv* env, const UVersionInfo& version) {
 }
 
 static jstring ICU_getCldrVersion(JNIEnv* env, jclass) {
-  UErrorCode status = U_ZERO_ERROR;
-  UVersionInfo cldrVersion;
-  ulocdata_getCLDRVersion(cldrVersion, &status);
-  return versionString(env, cldrVersion);
+    UErrorCode status = U_ZERO_ERROR;
+    UVersionInfo cldrVersion;
+    ulocdata_getCLDRVersion(cldrVersion, &status);
+    return versionString(env, cldrVersion);
 }
 
 static jstring ICU_getIcuVersion(JNIEnv* env, jclass) {
@@ -724,6 +725,12 @@ static jstring ICU_getUnicodeVersion(JNIEnv* env, jclass) {
     UVersionInfo unicodeVersion;
     u_getUnicodeVersion(unicodeVersion);
     return versionString(env, unicodeVersion);
+}
+
+static jstring ICU_getTZDataVersion(JNIEnv* env, jclass) {
+    UErrorCode status = U_ZERO_ERROR;
+    const char* version = icu::TimeZone::getTZDataVersion(status);
+    return env->NewStringUTF(version);
 }
 
 static jobject ICU_getAvailableCurrencyCodes(JNIEnv* env, jclass) {
@@ -798,6 +805,7 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(ICU, getISOLanguagesNative, "()[Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getIcuVersion, "()Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getScript, "(Ljava/lang/String;)Ljava/lang/String;"),
+    NATIVE_METHOD(ICU, getTZDataVersion, "()Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getUnicodeVersion, "()Ljava/lang/String;"),
     NATIVE_METHOD(ICU, initLocaleDataNative, "(Ljava/lang/String;Llibcore/icu/LocaleData;)Z"),
     NATIVE_METHOD(ICU, setDefaultLocale, "(Ljava/lang/String;)V"),
