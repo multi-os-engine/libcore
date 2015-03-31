@@ -44,6 +44,10 @@ public class KeyGeneratorTest extends TestCase {
                 if (!type.equals("KeyGenerator")) {
                     continue;
                 }
+                // AndroidKeyStore is tested in CTS.
+                if ("AndroidKeyStore".equals(provider.getName())) {
+                    continue;
+                }
                 String algorithm = service.getAlgorithm();
                 try {
                     // KeyGenerator.getInstance(String)
