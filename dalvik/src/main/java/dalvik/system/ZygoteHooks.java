@@ -72,9 +72,7 @@ public final class ZygoteHooks {
         File tasks = new File("/proc/self/task");
         while (tasks.list().length > 1) {
             try {
-                // Experimentally, booting and playing about with a stingray, I never saw us
-                // go round this loop more than once with a 10ms sleep.
-                Thread.sleep(10);
+                Thread.sleep(1);
             } catch (InterruptedException ignored) {
             }
         }
