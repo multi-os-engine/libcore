@@ -1,0 +1,225 @@
+// Copyright (C) 2007 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+//
+// Definitions for building the Java library and associated tests.
+//
+
+//
+// Common definitions for host and target.
+//
+
+// libcore is divided into modules.
+//
+// The structure of each module is:
+//
+//   src/
+//       main/               # To be shipped on every device.
+//            java/          # Java source for library code.
+//            native/        # C++ source for library code.
+//            resources/     # Support files.
+//       test/               # Built only on demand, for testing.
+//            java/          # Java source for tests.
+//            native/        # C++ source for tests (rare).
+//            resources/     # Support files.
+//
+// All subdirectories are optional
+
+// The Java files and their associated resources.
+common_core_src_files = [
+    "dalvik/src/main/java/**/*.java",
+    "dex/src/main/java/**/*.java",
+    "json/src/main/java/**/*.java",
+    "luni/src/main/java/**/*.java",
+    "xml/src/main/java/**/*.java",
+]
+
+core_resource_dirs = [
+    "dalvik/src/main/java",
+    "dex/src/main/java",
+    "json/src/main/java",
+    "luni/src/main/java",
+    "xml/src/main/java",
+]
+
+test_resource_dirs = [
+    "dalvik/src/test/java",
+    "dex/src/test/java",
+    "dom/src/test/java",
+    "harmony-tests/src/test/java",
+    "json/src/test/java",
+    "jsr166-tests/src/test/java",
+    "luni/src/test/java",
+    "support/src/test/java",
+    "dom/src/test/resources",
+    "harmony-tests/src/test/resources",
+    "luni/src/test/resources",
+]
+
+test_src_files = [
+    "dalvik/src/test/java/**/*.java",
+    "dom/src/test/java/**/*.java",
+    "harmony-tests/src/test/java/**/*.java",
+    "json/src/test/java/**/*.java",
+    "luni/src/test/java/**/*.java",
+    "xml/src/test/java/**/*.java",
+]
+
+// ANDROIDMK TRANSLATION ERROR: unsupported conditional
+// ifeq ($(EMMA_INSTRUMENT),true)
+// ANDROIDMK TRANSLATION ERROR: unsupported conditional
+// ifneq ($(EMMA_INSTRUMENT_STATIC),true)
+/*common_core_src_files += call all-java-files-under, ../external/emma/core ../external/emma/pregenerated
+core_resource_dirs += [
+    "../external/emma/core/res",
+    "../external/emma/pregenerated/res",
+]
+// ANDROIDMK TRANSLATION ERROR: endif from unsupported contitional
+// endif
+// ANDROIDMK TRANSLATION ERROR: endif from unsupported contitional
+// endif*/
+libart_core_src_files = common_core_src_files + ["libart/src/main/**/*.java"]
+
+local_javac_flags = [
+    "-Xmaxwarns 9999999",
+]
+//local_javac_flags+=-Xlint:all -Xlint:-serial,-deprecation,-unchecked
+
+// Definitions to make the core library.
+
+java_library {
+    srcs: libart_core_src_files,
+    resource_dirs: core_resource_dirs,
+    no_standard_libraries: true,
+    javacopts: local_javac_flags,
+    dxopts: ["--core-library"],
+    name: "core-libart",
+    host_supported: true,
+
+    //required: ["tzdata"],
+    //required: ["tzdata-host"],
+}
+
+// ANDROIDMK TRANSLATION ERROR: unsupported conditional
+// ifeq ($(LIBCORE_SKIP_TESTS),)
+// Make the core-tests library.
+
+// TODO: needs okhttp, bouncycastle, sqlite-jdbc, mockwebserver, nist-pkix-tests
+//java_library_static {
+//    srcs: test_src_files,
+//    resource_dirs: test_resource_dirs,
+//    no_standard_libraries: true,
+//    java_libs: [
+//        "core-libart",
+//        "okhttp",
+//        "core-junit",
+//        "bouncycastle",
+//    ],
+//    java_static_libs: [
+//        "core-tests-support",
+//        "sqlite-jdbc",
+//        "mockwebserver",
+//        "nist-pkix-tests",
+//    ],
+//    javacopts: local_javac_flags,
+//    name: "core-tests",
+//}
+
+// ANDROIDMK TRANSLATION ERROR: endif from unsupported contitional
+// endif
+// ANDROIDMK TRANSLATION ERROR: unsupported conditional
+// ifeq ($(LIBCORE_SKIP_TESTS),)
+// Make the core-tests-support library.
+
+// TODO: needs bouncycastle
+//java_library_static {
+//    srcs: ["support/src/test/java/**/*.java"],
+//    resource_dirs: test_resource_dirs,
+//    no_standard_libraries: true,
+//    java_libs: [
+//        "core-libart",
+//        "core-junit",
+//        "bouncycastle",
+//    ],
+//    javacopts: local_javac_flags,
+//    name: "core-tests-support",
+//}
+
+// ANDROIDMK TRANSLATION ERROR: endif from unsupported contitional
+// endif
+// ANDROIDMK TRANSLATION ERROR: unsupported conditional
+// ifeq ($(LIBCORE_SKIP_TESTS),)
+// Make the jsr166-tests library.
+java_library_static {
+    srcs: ["jsr166-tests/src/test/java/**/*.java"],
+    resource_dirs: test_resource_dirs,
+    no_standard_libraries: true,
+    java_libs: [
+        "core-libart",
+        "core-junit",
+    ],
+    javacopts: local_javac_flags,
+    name: "jsr166-tests",
+
+}
+
+// ANDROIDMK TRANSLATION ERROR: endif from unsupported contitional
+// endif
+//
+// Build for the host.
+//
+
+java_library_host {
+    srcs: ["dex/src/main/java/**/*.java"],
+    tags: ["optional"],
+    name: "dex-host",
+    target: {
+        darwin: {
+            disabled: true,
+        },
+    },
+}
+
+//
+// Local droiddoc for faster libcore testing
+//
+//
+// Run with:
+//     mm -j32 libcore-docs
+//
+// Main output:
+//     ../out/target/common/docs/libcore/reference/packages.html
+//
+// All text for proofreading (or running tools over):
+//     ../out/target/common/docs/libcore-proofread.txt
+//
+// TODO list of missing javadoc, etc:
+//     ../out/target/common/docs/libcore-docs-todo.html
+//
+// Rerun:
+//     rm -rf ../out/target/common/docs/libcore-timestamp && mm -j32 libcore-docs
+//
+
+// for shared defintion of libcore_to_document
+// ANDROIDMK TRANSLATION ERROR: unsupported include
+// include $(LOCAL_PATH)/Docs.mk
+
+// rerun doc generation without recompiling the java
+
+// ANDROIDMK TRANSLATION ERROR: unsupported assignment to LOCAL_DROIDDOC_OPTIONS
+// LOCAL_DROIDDOC_OPTIONS:=-offlinemode   -title "libcore"   -proofread $(OUT_DOCS)/$(LOCAL_MODULE)-proofread.txt   -todo ../$(LOCAL_MODULE)-docs-todo.html   -hdf android.whichdoc offline
+// ANDROIDMK TRANSLATION ERROR: unsupported assignment to LOCAL_DROIDDOC_CUSTOM_TEMPLATE_DIR
+// LOCAL_DROIDDOC_CUSTOM_TEMPLATE_DIR:=build/tools/droiddoc/templates-sdk
+// ANDROIDMK TRANSLATION ERROR: unsupported include
+// include $(BUILD_DROIDDOC)
