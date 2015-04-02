@@ -389,4 +389,86 @@ public final class VMDebug {
      * @param data the array into which the stats are written.
      */
     public static native void getHeapSpaceStats(long[] data);
+
+    /* The IDs/names of the runtime stats supported by getRuntimeStat(). */
+    private static final int RUNTIME_STAT_ID_ART_GC_GC_COUNT = 0;
+    private static final int RUNTIME_STAT_ID_ART_GC_GC_TIME = 1;
+    private static final int RUNTIME_STAT_ID_ART_GC_BYTES_ALLOCATED = 2;
+    private static final int RUNTIME_STAT_ID_ART_GC_BYTES_FREED = 3;
+    private static final int RUNTIME_STAT_ID_ART_GC_BLOCKING_GC_COUNT = 4;
+    private static final int RUNTIME_STAT_ID_ART_GC_BLOCKING_GC_TIME = 5;
+    private static final int RUNTIME_STAT_ID_ART_GC_GC_COUNT_RATE_HISTOGRAM = 6;
+    private static final int RUNTIME_STAT_ID_ART_GC_BLOCKING_GC_COUNT_RATE_HISTOGRAM = 7;
+    private static final String RUNTIME_STAT_NAME_ART_GC_GC_COUNT =
+        "art.gc.gc-count";
+    private static final String RUNTIME_STAT_NAME_ART_GC_GC_TIME =
+        "art.gc.gc-time";
+    private static final String RUNTIME_STAT_NAME_ART_GC_BYTES_ALLOCATED =
+        "art.gc.bytes-allocated";
+    private static final String RUNTIME_STAT_NAME_ART_GC_BYTES_FREED =
+        "art.gc.bytes-freed";
+    private static final String RUNTIME_STAT_NAME_ART_GC_BLOCKING_GC_COUNT =
+        "art.gc.blocking-gc-count";
+    private static final String RUNTIME_STAT_NAME_ART_GC_BLOCKING_GC_TIME =
+        "art.gc.blocking-gc-time";
+    private static final String RUNTIME_STAT_NAME_ART_GC_GC_COUNT_RATE_HISTOGRAM =
+        "art.gc.gc-count-rate-histogram";
+    private static final String RUNTIME_STAT_NAME_ART_GC_BLOCKING_GC_COUNT_RATE_HISTOGRAM =
+        "art.gc.blocking-gc-count-rate-histogram";
+
+    /**
+     * Returns the value of a particular runtime statistic or {@code null} if no
+     * such runtime statistic exists.
+     *
+     * @param statName
+     *            the name of the runtime statistic to look up.
+     * @return the value of the specified runtime statistic or {@code null} if the
+     *         runtime statistic doesn't exist.
+     */
+    public static String getRuntimeStat(String statName) {
+        if (statName == null) {
+            return null;
+        }
+        switch (statName) {
+            case RUNTIME_STAT_NAME_ART_GC_GC_COUNT:
+                return getRuntimeStatInternal(RUNTIME_STAT_ID_ART_GC_GC_COUNT);
+            case RUNTIME_STAT_NAME_ART_GC_GC_TIME:
+                return getRuntimeStatInternal(RUNTIME_STAT_ID_ART_GC_GC_TIME);
+            case RUNTIME_STAT_NAME_ART_GC_BYTES_ALLOCATED:
+                return getRuntimeStatInternal(RUNTIME_STAT_ID_ART_GC_BYTES_ALLOCATED);
+            case RUNTIME_STAT_NAME_ART_GC_BYTES_FREED:
+                return getRuntimeStatInternal(RUNTIME_STAT_ID_ART_GC_BYTES_FREED);
+            case RUNTIME_STAT_NAME_ART_GC_BLOCKING_GC_COUNT:
+                return getRuntimeStatInternal(RUNTIME_STAT_ID_ART_GC_BLOCKING_GC_COUNT);
+            case RUNTIME_STAT_NAME_ART_GC_BLOCKING_GC_TIME:
+                return getRuntimeStatInternal(RUNTIME_STAT_ID_ART_GC_BLOCKING_GC_TIME);
+            case RUNTIME_STAT_NAME_ART_GC_GC_COUNT_RATE_HISTOGRAM:
+                return getRuntimeStatInternal(RUNTIME_STAT_ID_ART_GC_GC_COUNT_RATE_HISTOGRAM);
+            case RUNTIME_STAT_NAME_ART_GC_BLOCKING_GC_COUNT_RATE_HISTOGRAM:
+                return getRuntimeStatInternal(
+                    RUNTIME_STAT_ID_ART_GC_BLOCKING_GC_COUNT_RATE_HISTOGRAM);
+            default:
+                return null;
+        }
+    }
+
+    private static native String getRuntimeStatInternal(int statId);
+
+    /**
+     * Returns the names of the runtime statistics that {@link #getRuntimeStat()} supports.
+     *
+     * @return an array of the names of the supported runtime statistics.
+     */
+    public static String[] getRuntimeStatNames() {
+        String[] names = new String[8];
+        names[0] = RUNTIME_STAT_NAME_ART_GC_GC_COUNT;
+        names[1] = RUNTIME_STAT_NAME_ART_GC_GC_TIME;
+        names[2] = RUNTIME_STAT_NAME_ART_GC_BYTES_ALLOCATED;
+        names[3] = RUNTIME_STAT_NAME_ART_GC_BYTES_FREED;
+        names[4] = RUNTIME_STAT_NAME_ART_GC_BLOCKING_GC_COUNT;
+        names[5] = RUNTIME_STAT_NAME_ART_GC_BLOCKING_GC_TIME;
+        names[6] = RUNTIME_STAT_NAME_ART_GC_GC_COUNT_RATE_HISTOGRAM;
+        names[7] = RUNTIME_STAT_NAME_ART_GC_BLOCKING_GC_COUNT_RATE_HISTOGRAM;
+        return names;
+    }
 }
