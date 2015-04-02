@@ -18,6 +18,7 @@ package dalvik.system;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.util.HashMap;
 
 /**
  * Provides access to some VM-specific debug features. Though this class and
@@ -389,4 +390,50 @@ public final class VMDebug {
      * @param data the array into which the stats are written.
      */
     public static native void getHeapSpaceStats(long[] data);
+
+    /* Map from the names of the runtime stats supported by getRuntimeStat() to their IDs */
+    private static final HashMap<String, Integer> runtime_stats_map = new HashMap<>();
+
+    static {
+        runtime_stats_map.put("art.gc.gc-count", 0);
+        runtime_stats_map.put("art.gc.gc-time", 1);
+        runtime_stats_map.put("art.gc.bytes-allocated", 2);
+        runtime_stats_map.put("art.gc.bytes-freed", 3);
+        runtime_stats_map.put("art.gc.blocking-gc-count", 4);
+        runtime_stats_map.put("art.gc.blocking-gc-time", 5);
+        runtime_stats_map.put("art.gc.gc-count-rate-histogram", 6);
+        runtime_stats_map.put("art.gc.blocking-gc-count-rate-histogram", 7);
+    }
+
+    /**
+     * Returns the value of a particular runtime statistic or {@code null} if no
+     * such runtime statistic exists.
+     *
+     * @param statName
+     *            the name of the runtime statistic to look up.
+     * @return the value of the specified runtime statistic or {@code null} if the
+     *         runtime statistic doesn't exist.
+     */
+    public static String getRuntimeStat(String statName) {
+        if (statName == null) {
+            return null;
+        }
+        Integer statId = runtime_stats_map.get(statName);
+        if (statId != null) {
+          return getRuntimeStatInternal(statId);
+        }
+        return null;
+    }
+
+    private static native String getRuntimeStatInternal(int statId);
+
+    /**
+     * Returns the names of the runtime statistics that {@link #getRuntimeStat()} supports.
+     *
+     * @return an array of the names of the supported runtime statistics.
+     */
+    public static String[] getRuntimeStatNames() {
+        String[] names = new String[runtime_stats_map.size()];
+        return runtime_stats_map.keySet().toArray(names);
+    }
 }
