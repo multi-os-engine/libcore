@@ -35,12 +35,26 @@ import libcore.io.Streams;
 public final class GZIPInputStreamTest extends TestCase {
 
     private static final byte[] HELLO_WORLD_GZIPPED = new byte[] {
-        31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -13, 72, -51, -55, -55, 87, 8, -49,
-        47, -54, 73, 1, 0, 86, -79, 23, 74, 11, 0, 0, 0
+        31, -117, 8, 0, 0, 0, 0, 0, 0, 0,  // 10 byte header
+        -13, 72, -51, -55, -55, 87, 8, -49, 47, -54, 73, 1, 0, 86, -79, 23, 74, 11, 0, 0, 0  // data
+    };
+
+    /**
+     * This is the same as the above except that the 4th header byte is 4 (FEXTRA flag)
+     * and that the 8 bytes after the header make up the extra.
+     */
+    private static final byte[] HELLO_WORLD_GZIPPED_WITH_EXTRA = new byte[] {
+        31, -117, 8, 4, 0, 0, 0, 0, 0, 0,  // 10 byte header
+        6, 0, 4, 2, 4, 2, 4, 2,  // 2 byte extra length + 6 byte extra.
+        -13, 72, -51, -55, -55, 87, 8, -49, 47, -54, 73, 1, 0, 86, -79, 23, 74, 11, 0, 0, 0  // data
     };
 
     public void testShortMessage() throws IOException {
         assertEquals("Hello World", new String(gunzip(HELLO_WORLD_GZIPPED), "UTF-8"));
+    }
+
+    public void testShortMessageWithHeaderExtra() throws IOException {
+        assertEquals("Hello World", new String(gunzip(HELLO_WORLD_GZIPPED_WITH_EXTRA), "UTF-8"));
     }
 
     public void testLongMessage() throws IOException {
