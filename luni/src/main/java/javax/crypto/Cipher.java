@@ -671,10 +671,12 @@ public class Cipher {
      * The cipher is initialized for the specified operational mode (one of:
      * encryption, decryption, key wrapping or key unwrapping).
      * <p>
-     * If this cipher instance needs any algorithm parameters and {@code params}
-     * is {@code null}, the underlying implementation of this cipher is supposed
-     * to generate the required parameters (using its provider or random
-     * values).
+     * For encrypt or wrap if this cipher instance needs algorithm parameters
+     * and {@code params} is {@code null}, the underlying implementation of this
+     * cipher is supposed to generate the required parameters (using its
+     * provider or random values). For decrypt or unwrap if {@code params} is
+     * {@code null}, then {@code InvalidAlgorithmParameterException} will be
+     * thrown.
      * <p>
      * When a cipher instance is initialized by a call to any of the {@code
      * init} methods, the state of the instance is overridden, means it is
@@ -692,8 +694,9 @@ public class Cipher {
      *             if the specified key can not be used to initialize this
      *             cipher instance.
      * @throws InvalidAlgorithmParameterException
-     *             it the specified parameters are inappropriate for this
-     *             cipher.
+     *             if the specified parameters are inappropriate for encrypting
+     *             or wrapping using this cipher or if the parameters are
+     *             {@code null} and the mode is decrypting or unwrapping.
      */
     public final void init(int opmode, Key key, AlgorithmParameterSpec params)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
@@ -711,10 +714,12 @@ public class Cipher {
      * encryption, decryption, key wrapping or key unwrapping) depending on
      * {@code opmode}.
      * <p>
-     * If this cipher instance needs any algorithm parameters and {@code params}
-     * is {@code null}, the underlying implementation of this cipher is supposed
-     * to generate the required parameters (using its provider or random
-     * values). Random values are generated using {@code random};
+     * For encrypt or wrap if this cipher instance needs algorithm parameters
+     * and {@code params} is {@code null}, the underlying implementation of this
+     * cipher is supposed to generate the required parameters (using its
+     * provider or random values). For decrypt or unwrap if {@code params} is
+     * {@code null}, then {@code InvalidAlgorithmParameterException} will be
+     * thrown.
      * <p>
      * When a cipher instance is initialized by a call to any of the {@code
      * init} methods, the state of the instance is overridden, meaning that it
@@ -735,8 +740,9 @@ public class Cipher {
      *             if the specified key can not be used to initialize this
      *             cipher instance.
      * @throws InvalidAlgorithmParameterException
-     *             it the specified parameters are inappropriate for this
-     *             cipher.
+     *             if the specified parameters are inappropriate for encrypting
+     *             or wrapping using this cipher or if the parameters are
+     *             {@code null} and the mode is decrypting or unwrapping.
      * @throws InvalidParameterException
      *             if the specified {@code opmode} is invalid.
      */
@@ -762,10 +768,12 @@ public class Cipher {
      * encryption, decryption, key wrapping or key unwrapping) depending on
      * {@code opmode}.
      * <p>
-     * If this cipher instance needs any algorithm parameters and {@code params}
-     * is {@code null}, the underlying implementation of this cipher is supposed
-     * to generate the required parameters (using its provider or random
-     * values).
+     * For encrypt or wrap if this cipher instance needs algorithm parameters
+     * and {@code params} is {@code null}, the underlying implementation of this
+     * cipher is supposed to generate the required parameters (using its
+     * provider or random values). For decrypt or unwrap if {@code params} is
+     * {@code null}, then {@code InvalidAlgorithmParameterException} will be
+     * thrown.
      * <p>
      * When a cipher instance is initialized by a call to any of the {@code
      * init} methods, the state of the instance is overridden, meaning that it
@@ -784,8 +792,9 @@ public class Cipher {
      *             if the specified key can not be used to initialize this
      *             cipher instance.
      * @throws InvalidAlgorithmParameterException
-     *             it the specified parameters are inappropriate for this
-     *             cipher.
+     *             if the specified parameters are inappropriate for encrypting
+     *             or wrapping using this cipher or if the parameters are
+     *             {@code null} and the mode is decrypting or unwrapping.
      */
     public final void init(int opmode, Key key, AlgorithmParameters params)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
@@ -803,10 +812,12 @@ public class Cipher {
      * encryption, decryption, key wrapping or key unwrapping) depending on
      * {@code opmode}.
      * <p>
-     * If this cipher instance needs any algorithm parameters and {@code params}
-     * is {@code null}, the underlying implementation of this cipher is supposed
-     * to generate the required parameters (using its provider or random
-     * values). Random values are generated using {@code random}.
+     * For encrypt or wrap if this cipher instance needs algorithm parameters
+     * and {@code params} is {@code null}, the underlying implementation of this
+     * cipher is supposed to generate the required parameters (using its
+     * provider or random values). For decrypt or unwrap if {@code params} is
+     * {@code null}, then {@code InvalidAlgorithmParameterException} will be
+     * thrown.
      * <p>
      * When a cipher instance is initialized by a call to any of the {@code
      * init} methods, the state of the instance is overridden, means it is
@@ -826,8 +837,9 @@ public class Cipher {
      *             if the specified key can not be used to initialize this
      *             cipher instance.
      * @throws InvalidAlgorithmParameterException
-     *             if the specified parameters are inappropriate for this
-     *             cipher.
+     *             if the specified parameters are inappropriate for encrypting
+     *             or wrapping using this cipher or if the parameters are
+     *             {@code null} and the mode is decrypting or unwrapping.
      * @throws InvalidParameterException
      *             if the specified {@code opmode} is invalid.
      */
