@@ -39,6 +39,7 @@ import dalvik.system.VMRuntime;
 import dalvik.system.VMStack;
 import java.io.BufferedInputStream;
 import java.io.Console;
+import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -801,7 +802,10 @@ public final class System {
         // is prioritized over the properties in ICUConfig.properties. The issue with using
         // that is that it doesn't play well with jarjar and it needs complicated build rules
         // to change its default value.
-        p.put("com.android.ibm.icu.impl.ICUBinary.dataPath", getenv("ANDROID_ROOT") + "/usr/icu");
+        String systemIcuDataPath = getenv("ANDROID_ROOT") + "/usr/icu";
+        String dataIcuDataPath = getenv("ANDROID_DATA") + "/misc/zoneinfo/current/icu";
+        String icuDataPath=  dataIcuDataPath + File.pathSeparator + systemIcuDataPath;
+        p.put("com.android.ibm.icu.impl.ICUBinary.dataPath", icuDataPath);
 
         parsePropertyAssignments(p, specialProperties());
 
