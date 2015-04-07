@@ -846,8 +846,19 @@ public final class System {
 
     private static String generateIcuDataPath() {
         StringBuilder icuDataPathBuilder = new StringBuilder();
+        // ICU should first look in ANDROID_DATA. This is used for (optional) timezone data.
+        String dataIcuDataPath = getEnvironmentPath("ANDROID_DATA", "/misc/zoneinfo/current/icu");
+        if (dataIcuDataPath != null) {
+            icuDataPathBuilder.append(dataIcuDataPath);
+        }
+
+        // ICU should always look in ANDROID_ROOT.
         String systemIcuDataPath = getEnvironmentPath("ANDROID_ROOT", "/usr/icu");
         if (systemIcuDataPath != null) {
+            if (dataIcuDataPath != null) {
+                // Cannot depend on File.pathSeparator from System.
+                icuDataPathBuilder.append(PATH_SEPARATOR);
+            }
             icuDataPathBuilder.append(systemIcuDataPath);
         }
         return icuDataPathBuilder.toString();
