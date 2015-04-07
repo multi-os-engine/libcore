@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 import junit.framework.Assert;
 
@@ -132,6 +133,19 @@ public final class TestSSLEnginePair extends Assert {
 
     public static class Hooks {
         void beforeBeginHandshake(SSLEngine client, SSLEngine server) {}
+    }
+
+    public void close() throws SSLException {
+        close(new SSLEngine[] { client, server });
+    }
+
+    public static void close(SSLEngine[] engines) throws SSLException {
+        for (SSLEngine engine : engines) {
+            if (engine != null) {
+                engine.closeInbound();
+                engine.closeOutbound();
+            }
+        }
     }
 
     private static boolean handshakeCompleted(SSLEngine engine,
