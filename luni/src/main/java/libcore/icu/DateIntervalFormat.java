@@ -16,6 +16,7 @@
 
 package libcore.icu;
 
+import java.text.FieldPosition;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -49,15 +50,11 @@ public final class DateIntervalFormat {
 
   private static final FormatterCache CACHED_FORMATTERS = new FormatterCache();
 
-  static class FormatterCache extends BasicLruCache<String, Long> {
+  static class FormatterCache extends BasicLruCache<String, com.ibm.icu.text.DateIntervalFormat> {
     FormatterCache() {
       super(8);
     }
-
-    protected void entryEvicted(String key, Long value) {
-      destroyDateIntervalFormat(value);
-    }
-  };
+  }
 
   private DateIntervalFormat() {
   }
@@ -99,19 +96,24 @@ public final class DateIntervalFormat {
 
     String skeleton = toSkeleton(startCalendar, endCalendar, flags);
     synchronized (CACHED_FORMATTERS) {
-      return formatDateInterval(getFormatter(skeleton, locale.toString(), tz.getID()), startMs, endMs);
+      com.ibm.icu.text.DateIntervalFormat fmtter = getFormatter(skeleton, locale, tz);
+      com.ibm.icu.util.Calendar scal = icuCalendar(startCalendar);
+      com.ibm.icu.util.Calendar ecal = icuCalendar(endCalendar);
+      String result = fmtter.format(scal, ecal, new StringBuffer(), new FieldPosition(0)).toString();
+      return result;
     }
   }
 
-  private static long getFormatter(String skeleton, String localeName, String tzName) {
-    String key = skeleton + "\t" + localeName + "\t" + tzName;
-    Long formatter = CACHED_FORMATTERS.get(key);
+  private static com.ibm.icu.text.DateIntervalFormat getFormatter(String skeleton, Locale locale, TimeZone tz) {
+    String key = skeleton + "\t" + locale + "\t" + tz;
+    com.ibm.icu.text.DateIntervalFormat formatter = CACHED_FORMATTERS.get(key);
     if (formatter != null) {
       return formatter;
     }
-    long address = createDateIntervalFormat(skeleton, localeName, tzName);
-    CACHED_FORMATTERS.put(key, address);
-    return address;
+    formatter = com.ibm.icu.text.DateIntervalFormat.getInstance(skeleton, locale);
+    formatter.setTimeZone(icuTimeZone(tz));
+    CACHED_FORMATTERS.put(key, formatter);
+    return formatter;
   }
 
   private static String toSkeleton(Calendar startCalendar, Calendar endCalendar, int flags) {
@@ -243,7 +245,14 @@ public final class DateIntervalFormat {
     return (int) (utcMs / DAY_IN_MS) + EPOCH_JULIAN_DAY;
   }
 
-  private static native long createDateIntervalFormat(String skeleton, String localeName, String tzName);
-  private static native void destroyDateIntervalFormat(long address);
-  private static native String formatDateInterval(long address, long fromDate, long toDate);
+  private static com.ibm.icu.util.TimeZone icuTimeZone(TimeZone tz) {
+    return com.ibm.icu.util.TimeZone.getTimeZone(tz.getID(), com.ibm.icu.util.TimeZone.TIMEZONE_JDK);
+  }
+
+  private static com.ibm.icu.util.Calendar icuCalendar(Calendar cal) {
+    com.ibm.icu.util.Calendar result = com.ibm.icu.util.Calendar.getInstance(icuTimeZone(cal.getTimeZone()));
+    result.setTime(cal.getTime());
+    return result;
+  }
+
 }
