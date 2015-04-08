@@ -142,19 +142,18 @@ java_library {
 // ifeq ($(LIBCORE_SKIP_TESTS),)
 // Make the core-tests-support library.
 
-// TODO: needs bouncycastle
-//java_library_static {
-//    srcs: ["support/src/test/java/**/*.java"],
-//    resource_dirs: test_resource_dirs,
-//    no_standard_libraries: true,
-//    java_libs: [
-//        "core-libart",
-//        "core-junit",
-//        "bouncycastle",
-//    ],
-//    javacflags: local_javac_flags,
-//    name: "core-tests-support",
-//}
+java_library_static {
+    srcs: ["support/src/test/java/**/*.java"],
+    resource_dirs: test_resource_dirs,
+    no_standard_libraries: true,
+    java_libs: [
+        "core-libart",
+        "core-junit",
+        "bouncycastle",
+    ],
+    javacflags: local_javac_flags,
+    name: "core-tests-support",
+}
 
 // ANDROIDMK TRANSLATION ERROR: endif from unsupported contitional
 // endif
