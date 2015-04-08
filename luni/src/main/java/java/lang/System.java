@@ -82,7 +82,8 @@ public final class System {
      */
     public static final PrintStream err;
 
-    private static final String lineSeparator;
+    private static final String PATH_SEPARATOR = ":";
+    private static final String LINE_SEPARATOR = "\n";
     private static final Properties unchangeableSystemProperties;
     private static Properties systemProperties;
 
@@ -108,7 +109,6 @@ public final class System {
         in = new BufferedInputStream(new FileInputStream(FileDescriptor.in));
         unchangeableSystemProperties = initUnchangeableSystemProperties();
         systemProperties = createSystemProperties();
-        lineSeparator = System.getProperty("line.separator");
 
         addLegacyLocaleSystemProperties();
     }
@@ -771,8 +771,8 @@ public final class System {
         p.put("java.vm.version", runtime.vmVersion());
 
         p.put("file.separator", "/");
-        p.put("line.separator", "\n");
-        p.put("path.separator", ":");
+        p.put("line.separator", LINE_SEPARATOR);
+        p.put("path.separator", PATH_SEPARATOR);
 
         p.put("java.runtime.name", "Android Runtime");
         p.put("java.runtime.version", "0.9");
@@ -801,7 +801,8 @@ public final class System {
         // is prioritized over the properties in ICUConfig.properties. The issue with using
         // that is that it doesn't play well with jarjar and it needs complicated build rules
         // to change its default value.
-        p.put("android.icu.impl.ICUBinary.dataPath", getenv("ANDROID_ROOT") + "/usr/icu");
+        String icuDataPath = generateIcuDataPath();
+        p.put("android.icu.impl.ICUBinary.dataPath", icuDataPath);
 
         parsePropertyAssignments(p, specialProperties());
 
@@ -841,6 +842,27 @@ public final class System {
         Properties p = new PropertiesWithNonOverrideableDefaults(unchangeableSystemProperties);
         setDefaultChangeableProperties(p);
         return p;
+    }
+
+    private static String generateIcuDataPath() {
+        StringBuilder icuDataPathBuilder = new StringBuilder();
+        String systemIcuDataPath = getEnvironmentPath("ANDROID_ROOT", "/usr/icu");
+        if (systemIcuDataPath != null) {
+            icuDataPathBuilder.append(systemIcuDataPath);
+        }
+        return icuDataPathBuilder.toString();
+    }
+
+    /**
+     * Creates a path by combining the value of an environment variable with a relative path.
+     * Returns {@code null} if the environment variable is not set.
+     */
+    private static String getEnvironmentPath(String environmentVariable, String path) {
+        String variable = getenv(environmentVariable);
+        if (variable == null) {
+            return null;
+        }
+        return variable + path;
     }
 
     /**
@@ -1000,14 +1022,16 @@ public final class System {
     public static native int identityHashCode(Object anObject);
 
     /**
-     * Returns the system's line separator. On Android, this is {@code "\n"}. The value
-     * comes from the value of the {@code line.separator} system property when the VM
-     * starts. Later changes to the property will not affect the value returned by this
-     * method.
+     * Returns the system's line separator. On Android, this is {@code "\n"}. It is the same as the
+     * value of the {@code line.separator} system property.
+     *
+     * <p>On Android versions before Lollipop the {@code line.separator} system property can be
+     * modified but this method continues to return the original value. The system property cannot
+     * be modified on later versions of Android.
      * @since 1.7
      */
     public static String lineSeparator() {
-        return lineSeparator;
+        return LINE_SEPARATOR;
     }
 
     /**
