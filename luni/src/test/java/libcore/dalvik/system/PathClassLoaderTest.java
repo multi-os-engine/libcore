@@ -17,12 +17,31 @@
 package libcore.dalvik.system;
 
 import dalvik.system.PathClassLoader;
+import java.lang.reflect.Method;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import libcore.io.Streams;
 import junit.framework.TestCase;
 
 public final class PathClassLoaderTest extends TestCase {
+
+    private static final File WORKING_DIR;
+    static {
+        // First try to use the test runner directory for cts, fall back to
+        // shell-writable directory for vogar
+        File runner_dir = new File("/data/data/android.core.tests.runner");
+        if (runner_dir.exists()) {
+            WORKING_DIR = runner_dir;
+        } else {
+            WORKING_DIR = new File("/data/local/tmp");
+        }
+    }
+    private static final File TMP_DIR = new File(WORKING_DIR, "loading-test");
+    private static final String PACKAGE_PATH = "dalvik/system/";
+    private static final String JAR_NAME = "loading-test.jar";
+    private static final File JAR_FILE = new File(TMP_DIR, JAR_NAME);
 
     /**
      * Make sure we're searching the application library path first.
@@ -43,6 +62,15 @@ public final class PathClassLoaderTest extends TestCase {
         assertEquals(applicationLib.toString(), path);
     }
 
+    public void testAppUseOfPathClassLoader() throws Exception {
+        PathClassLoader cl = new PathClassLoader(JAR_FILE.getPath(),
+                ClassLoader.getSystemClassLoader());
+        Class c = cl.loadClass("test.Test1");
+        Method m = c.getMethod("test", (Class[]) null);
+        String result = (String) m.invoke(null, (Object[]) null);
+        assertSame("blort", result);
+    }
+
     private File makeTempFile(File directory, String name) throws IOException {
         directory.mkdirs();
         File result = new File(directory, name);
@@ -54,9 +82,31 @@ public final class PathClassLoaderTest extends TestCase {
 
     @Override protected void setUp() throws Exception {
         super.setUp();
+
+        assertTrue(TMP_DIR.exists() || TMP_DIR.mkdirs());
+        ClassLoader cl = PathClassLoaderTest.class.getClassLoader();
+        copyResource(cl, JAR_NAME, JAR_FILE);
     }
 
     @Override protected void tearDown() throws Exception {
         super.tearDown();
+    }
+
+    /**
+     * Copy a resource in the package directory to the indicated
+     * target file, but only if the target file doesn't exist.
+     */
+    private static void copyResource(ClassLoader loader, String resourceName,
+            File destination) throws IOException {
+        if (destination.exists()) {
+            return;
+        }
+
+        InputStream in =
+            loader.getResourceAsStream(PACKAGE_PATH + resourceName);
+        FileOutputStream out = new FileOutputStream(destination);
+        Streams.copy(in, out);
+        in.close();
+        out.close();
     }
 }
