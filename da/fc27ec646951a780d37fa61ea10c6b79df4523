@@ -1,0 +1,7 @@
+Code-Review+2: Elliott Hughes <enh@google.com>
+Verified+1: Colin Cross <ccross@google.com>
+Submitted-by: Colin Cross <ccross@google.com>
+Submitted-at: Wed, 08 Apr 2015 00:17:17 +0000
+Reviewed-on: https://android-review.googlesource.com/145241
+Project: platform/libcore
+Branch: refs/heads/master-soong
