@@ -139,7 +139,7 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
      */
     private transient DexCache dexCache;
 
-    /** Short-cut to dexCache.strings */
+    /** Short-cut to dexCache.strings. Reserved for use by compiled code. */
     private transient String[] dexCacheStrings;
 
     /** static, private, and &lt;init&gt; methods. */
@@ -457,10 +457,10 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
      * @hide
      */
     public String getDexCacheString(Dex dex, int dexStringIndex) {
-        String s = dexCacheStrings[dexStringIndex];
+        String s = dexCache.getResolvedString(dexStringIndex);
         if (s == null) {
             s = dex.strings().get(dexStringIndex).intern();
-            dexCacheStrings[dexStringIndex] = s;
+            dexCache.setResolvedString(dexStringIndex, s);
         }
         return s;
     }
@@ -472,15 +472,23 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
      * @hide
      */
     public Class<?> getDexCacheType(Dex dex, int dexTypeIndex) {
-        Class<?>[] dexCacheResolvedTypes = dexCache.resolvedTypes;
-        Class<?> resolvedType = dexCacheResolvedTypes[dexTypeIndex];
+        Class<?> resolvedType = dexCache.getResolvedType(dexTypeIndex);
         if (resolvedType == null) {
             int descriptorIndex = dex.typeIds().get(dexTypeIndex);
             String descriptor = getDexCacheString(dex, descriptorIndex);
             resolvedType = InternalNames.getClass(getClassLoader(), descriptor);
-            dexCacheResolvedTypes[dexTypeIndex] = resolvedType;
+            dexCache.setResolvedType(dexTypeIndex, resolvedType);
         }
         return resolvedType;
+    }
+
+    /**
+     * Returns a resolved method from the dex cache or null if it's not yet resolved.
+     *
+     * @hide
+     */
+    public ArtMethod getDexCacheResolvedMethod(int dexMethodIndex) {
+      return dexCache.getResolvedMethod(dexMethodIndex);
     }
 
     /**
