@@ -1176,7 +1176,9 @@ public final class System {
      * named by the argument. On Android, this would turn {@code "MyLibrary"} into
      * {@code "libMyLibrary.so"}.
      */
-    public static native String mapLibraryName(String nickname);
+    public static String mapLibraryName(String nickname) {
+        return "lib" + nickname + ".so";
+    }
 
     /**
      * Used to set System.err, System.in, and System.out.
