@@ -49,11 +49,7 @@ public final class Constructor<T> extends AbstractMethod implements GenericDecla
 
     private static final Comparator<Method> ORDER_BY_SIGNATURE = null; // Unused; must match Method.
 
-    /**
-     * @hide
-     */
-    public Constructor(ArtMethod artMethod) {
-        super(artMethod);
+    private Constructor() {
     }
 
     public Annotation[] getAnnotations() {
@@ -213,7 +209,7 @@ public final class Constructor<T> extends AbstractMethod implements GenericDecla
      * @return an array of arrays of {@code Annotation} instances
      */
     public Annotation[][] getParameterAnnotations() {
-        return artMethod.getParameterAnnotations();
+        return super.getParameterAnnotations();
     }
 
     /**
