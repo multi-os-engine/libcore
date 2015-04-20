@@ -100,7 +100,7 @@ local_javac_flags = [
 
 java_library {
     srcs: libart_core_src_files,
-    resource_dirs: core_resource_dirs,
+    java_resource_dirs: core_resource_dirs,
     no_standard_libraries: true,
     javacflags: local_javac_flags,
     dxflags: ["--core-library"],
@@ -118,7 +118,7 @@ java_library {
 // TODO: needs okhttp, bouncycastle, sqlite-jdbc, mockwebserver, nist-pkix-tests
 //java_library_static {
 //    srcs: test_src_files,
-//    resource_dirs: test_resource_dirs,
+//    java_resource_dirs: test_resource_dirs,
 //    no_standard_libraries: true,
 //    java_libs: [
 //        "core-libart",
@@ -145,7 +145,7 @@ java_library {
 // TODO: needs bouncycastle
 //java_library_static {
 //    srcs: ["support/src/test/java/**/*.java"],
-//    resource_dirs: test_resource_dirs,
+//    java_resource_dirs: test_resource_dirs,
 //    no_standard_libraries: true,
 //    java_libs: [
 //        "core-libart",
@@ -163,7 +163,7 @@ java_library {
 // Make the jsr166-tests library.
 java_library_static {
     srcs: ["jsr166-tests/src/test/java/**/*.java"],
-    resource_dirs: test_resource_dirs,
+    java_resource_dirs: test_resource_dirs,
     no_standard_libraries: true,
     java_libs: [
         "core-libart",
