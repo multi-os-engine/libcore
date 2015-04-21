@@ -96,7 +96,12 @@ public class Package implements AnnotatedElement {
      */
     public Annotation[] getAnnotations() {
         try {
-            Class<?> c = Class.forName(getName() + ".package-info");
+            ClassLoader classloader = VMStack.getCallingClassLoader();
+            if (classloader == null) {
+                classloader = ClassLoader.getSystemClassLoader();
+            }
+            Class<?> c = Class.forName(getName() + ".package-info", true,
+                                       classloader);
             return c.getAnnotations();
         } catch (Exception ex) {
             return NO_ANNOTATIONS;

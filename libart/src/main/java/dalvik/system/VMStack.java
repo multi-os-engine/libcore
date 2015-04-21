@@ -51,8 +51,7 @@ public final class VMStack {
      * Returns the first ClassLoader on the call stack that isn't either of
      * the passed-in ClassLoaders.
      */
-    public native static ClassLoader getClosestUserClassLoader(ClassLoader bootstrap,
-                                                               ClassLoader system);
+    public native static ClassLoader getClosestUserClassLoader(ClassLoader bootstrap);
 
     /**
      * Retrieves the stack trace from the specified thread.
