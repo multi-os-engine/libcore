@@ -307,7 +307,7 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
             ClassLoader classLoader) throws ClassNotFoundException {
 
         if (classLoader == null) {
-            classLoader = ClassLoader.getSystemClassLoader();
+            classLoader = BootClassLoader.getInstance();
         }
         // Catch an Exception thrown by the underlying native code. It wraps
         // up everything inside a ClassNotFoundException, even if e.g. an
