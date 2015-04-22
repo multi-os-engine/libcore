@@ -18,6 +18,7 @@ package libcore.java.net;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.Inet4Address;
@@ -34,6 +35,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 public class SocketTest extends junit.framework.TestCase {
     // See http://b/2980559.
@@ -351,6 +354,38 @@ public class SocketTest extends junit.framework.TestCase {
         InetSocketAddress localAddressAfterClose = (InetSocketAddress) s.getLocalSocketAddress();
         assertTrue(localAddressAfterClose.getAddress().isAnyLocalAddress());
         assertEquals(boundAddress.getPort(), localAddressAfterClose.getPort());
+    }
+
+    public void testCloseDuringConnect() throws Exception {
+        final Semaphore signal = new Semaphore(1);
+        signal.acquire();
+
+        final Socket s = new Socket();
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    // This address is reserved for documentation: should never be reachable.
+                    InetSocketAddress unreachableIp = new InetSocketAddress("192.0.2.0", 80);
+                    // This should never return.
+                    s.connect(unreachableIp, 0 /* infinite */);
+                    fail("Connect returned unexpectedly for: " + unreachableIp);
+                } catch (SocketException expected) {
+                    assertTrue(expected.getMessage().contains("Socket closed"));
+                    signal.release();
+                } catch (IOException e) {
+                    fail("Unexpected exception: " + e);
+                }
+            }
+        }.start();
+
+        // Wait for the connect() thread to run and start connect()
+        Thread.sleep(2000);
+
+        s.close();
+
+        boolean connectUnblocked = signal.tryAcquire(1, 2000, TimeUnit.MILLISECONDS);
+        assertTrue(connectUnblocked);
     }
 
     static class MockServer {
