@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+
 import junit.framework.TestCase;
 import libcore.java.lang.ref.FinalizationTester;
 
@@ -73,6 +75,28 @@ public final class RandomAccessFileTest extends TestCase {
             FinalizationTester.induceFinalization();
         }
     }
+
+    // http://b/19892782
+    public void testCloseRafAndGetNewChannel_channelIsOpen() throws Exception {
+        RandomAccessFile raf = new RandomAccessFile(file, "rw");
+
+        FileChannel fileChannelBeforeClosing = raf.getChannel();
+        raf.close();
+        assertFalse(fileChannelBeforeClosing.isOpen());
+        // A new open channel is returned
+        assertTrue(raf.getChannel().isOpen());
+    }
+
+    // http://b/19892782
+    public void testCloseFileChannelAndGetNewOne_returnsOpenChannel() throws Exception {
+        RandomAccessFile raf = new RandomAccessFile(file, "rw");
+
+        FileChannel fileChannelBeforeClosing = raf.getChannel();
+        fileChannelBeforeClosing.close();
+        // A new open channel is returned
+        assertTrue(raf.getChannel().isOpen());
+    }
+
     private void createRandomAccessFile(File file) throws Exception {
         // TODO: fix our register maps and remove this otherwise unnecessary
         // indirection! (http://b/5412580)
