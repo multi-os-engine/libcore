@@ -160,7 +160,6 @@ public class RandomAccessFile implements DataInput, DataOutput, Closeable {
         synchronized (this) {
             if (channel != null && channel.isOpen()) {
                 channel.close();
-                channel = null;
             }
             IoBridge.closeAndSignalBlockedThreads(fd);
         }
