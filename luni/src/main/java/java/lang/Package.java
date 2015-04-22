@@ -100,10 +100,8 @@ public class Package implements AnnotatedElement {
             if (classLoader == null) {
                 classLoader = ClassLoader.getSystemClassLoader();
             }
-            Class<?> c = Class.forName(getName() + ".package-info",
-                                       // TODO: It is unclear if we need to initialize here.
-                                       true,
-                                       classLoader);
+            Class<?> c = Class.forName(getName() + ".package-info", false /* initialize */,
+                    classLoader);
             return c.getAnnotations();
         } catch (Exception ex) {
             return NO_ANNOTATIONS;
