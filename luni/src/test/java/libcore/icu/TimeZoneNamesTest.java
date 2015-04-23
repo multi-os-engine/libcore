@@ -61,9 +61,17 @@ public class TimeZoneNamesTest extends junit.framework.TestCase {
   }
 
   public void test_getExemplarLocation() throws Exception {
-    assertEquals("Moscow", TimeZoneNames.getExemplarLocation("en_US", "Europe/Moscow"));
-    assertEquals("Moskau", TimeZoneNames.getExemplarLocation("de_DE", "Europe/Moscow"));
-    assertEquals("Seoul", TimeZoneNames.getExemplarLocation("en_US", "Asia/Seoul"));
-    assertEquals("서울", TimeZoneNames.getExemplarLocation("ko_KR", "Asia/Seoul"));
+    assertEquals("Moscow",
+            TimeZoneNames.getExemplarLocation(new Locale("en", "US"),
+                    TimeZone.getTimeZone("Europe/Moscow")));
+    assertEquals("Moskau",
+            TimeZoneNames.getExemplarLocation(new Locale("de", "DE"),
+                    TimeZone.getTimeZone("Europe/Moscow")));
+    assertEquals("Seoul",
+            TimeZoneNames.getExemplarLocation(new Locale("en", "US"),
+                    TimeZone.getTimeZone("Asia/Seoul")));
+    assertEquals("서울",
+            TimeZoneNames.getExemplarLocation(new Locale("ko", "KR"),
+                    TimeZone.getTimeZone("Asia/Seoul")));
   }
 }
