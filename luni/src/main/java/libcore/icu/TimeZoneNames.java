@@ -16,6 +16,8 @@
 
 package libcore.icu;
 
+import com.ibm.icu.text.TimeZoneNames.NameType;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -58,44 +60,7 @@ public final class TimeZoneNames {
         }
 
         @Override protected String[][] create(Locale locale) {
-            long start = System.currentTimeMillis();
-
-            // Set up the 2D array used to hold the names. The first column contains the Olson ids.
-            String[][] result = new String[availableTimeZoneIds.length][5];
-            for (int i = 0; i < availableTimeZoneIds.length; ++i) {
-                result[i][0] = availableTimeZoneIds[i];
-            }
-
-            long nativeStart = System.currentTimeMillis();
-            fillZoneStrings(locale.toString(), result);
-            long nativeEnd = System.currentTimeMillis();
-
-            internStrings(result);
-            // Ending up in this method too often is an easy way to make your app slow, so we ensure
-            // it's easy to tell from the log (a) what we were doing, (b) how long it took, and
-            // (c) that it's all ICU's fault.
-            long end = System.currentTimeMillis();
-            long nativeDuration = nativeEnd - nativeStart;
-            long duration = end - start;
-            System.logI("Loaded time zone names for \"" + locale + "\" in " + duration + "ms" +
-                        " (" + nativeDuration + "ms in ICU)");
-            return result;
-        }
-
-        // De-duplicate the strings (http://b/2672057).
-        private synchronized void internStrings(String[][] result) {
-            HashMap<String, String> internTable = new HashMap<String, String>();
-            for (int i = 0; i < result.length; ++i) {
-                for (int j = 1; j < NAME_COUNT; ++j) {
-                    String original = result[i][j];
-                    String nonDuplicate = internTable.get(original);
-                    if (nonDuplicate == null) {
-                        internTable.put(original, original);
-                    } else {
-                        result[i][j] = nonDuplicate;
-                    }
-                }
-            }
+            return createZoneStrings(locale);
         }
     }
 
@@ -157,7 +122,102 @@ public final class TimeZoneNames {
         return ids.toArray(new String[ids.size()]);
     }
 
-    public static native String getExemplarLocation(String locale, String tz);
+    public static String getExemplarLocation(Locale locale, TimeZone timeZone) {
+        com.ibm.icu.text.TimeZoneNames timeZoneNames =
+                com.ibm.icu.text.TimeZoneNames.getInstance(locale);
+        long now = System.currentTimeMillis();
+        String name =
+                timeZoneNames.getDisplayName(timeZone.getID(), NameType.EXEMPLAR_LOCATION, now);
+        return name == null ? "" : name;
+    }
 
-    private static native void fillZoneStrings(String locale, String[][] result);
+    private static String[][] createZoneStrings(Locale locale) {
+        long start = System.currentTimeMillis();
+
+        // Set up the 2D array used to hold the names. The first column contains the Olson ids.
+        String[][] result = new String[availableTimeZoneIds.length][5];
+        for (int i = 0; i < availableTimeZoneIds.length; ++i) {
+            result[i][0] = availableTimeZoneIds[i];
+        }
+
+        long icuStart = System.currentTimeMillis();
+        fillZoneStrings(locale, result);
+        long icuEnd = System.currentTimeMillis();
+
+        internStrings(result);
+        // Ending up in this method too often is an easy way to make your app slow, so we ensure
+        // it's easy to tell from the log (a) what we were doing, (b) how long it took, and
+        // (c) that it's all ICU's fault.
+        long end = System.currentTimeMillis();
+        long icuDuration = icuEnd - icuStart;
+        long duration = end - start;
+        System.logI("Loaded time zone names for \"" + locale + "\" in " + duration + "ms" +
+                " (" + icuDuration + "ms in ICU)");
+        return result;
+    }
+
+    // De-duplicate the strings (http://b/2672057).
+    private static synchronized void internStrings(String[][] result) {
+        HashMap<String, String> internTable = new HashMap<String, String>();
+        for (int i = 0; i < result.length; ++i) {
+            for (int j = 1; j < NAME_COUNT; ++j) {
+                String original = result[i][j];
+                String nonDuplicate = internTable.get(original);
+                if (nonDuplicate == null) {
+                    internTable.put(original, original);
+                } else {
+                    result[i][j] = nonDuplicate;
+                }
+            }
+        }
+    }
+
+    private static void fillZoneStrings(Locale locale, String[][] result) {
+        long now = System.currentTimeMillis();
+        com.ibm.icu.text.TimeZoneNames timeZoneNames =
+                com.ibm.icu.text.TimeZoneNames.getInstance(locale);
+        for (String[] row : result) {
+            String zoneId = row[0];
+            if (isUtc(zoneId)) {
+                // TODO: check CLDR doesn't actually have this somewhere.
+                row[1] = row[2] = row[3] = row[4] = "UTC";
+            } else {
+                String longStd = timeZoneNames.getDisplayName(zoneId,
+                        NameType.LONG_STANDARD, now);
+                String shortStd = timeZoneNames.getDisplayName(zoneId,
+                        NameType.SHORT_STANDARD, now);
+                String longDst = timeZoneNames.getDisplayName(zoneId,
+                        NameType.LONG_DAYLIGHT, now);
+                String shortDst = timeZoneNames.getDisplayName(zoneId,
+                        NameType.SHORT_DAYLIGHT, now);
+                row[1] = filterGmt(longStd);
+                row[2] = filterGmt(shortStd);
+                row[3] = filterGmt(longDst);
+                row[4] = filterGmt(shortDst);
+            }
+        }
+    }
+
+    private static String filterGmt(String name) {
+        // We don't use the display names if they're "GMT[+-]xx:xx" because icu doesn't use the
+        // up-to-date time zone transition data, so it gets these wrong. TimeZone.getDisplayName
+        // creates accurate names on demand.
+        if (name == null || name.startsWith("GMT")) {
+            return null;
+        }
+        return name;
+    }
+
+    private static boolean isUtc(String zoneId) {
+        // At the time of writing performing 8 string comparisons is faster than using a single
+        // regexp by a significant margin.
+        return "Etc/UCT".equals(zoneId)
+                || "Etc/UTC".equals(zoneId)
+                || "Etc/Universal".equals(zoneId)
+                || "Etc/Zulu".equals(zoneId)
+                || "UCT".equals(zoneId)
+                || "UTC".equals(zoneId)
+                || "Universal".equals(zoneId)
+                || "Zulu".equals(zoneId);
+    }
 }
