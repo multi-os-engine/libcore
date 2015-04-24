@@ -302,4 +302,28 @@ public class BufferedWriter extends Writer {
             }
         }
     }
+    
+     /**
+     * Appends the character {@code c} to the target. If the buffer
+     * gets full by writing this character, this writer is flushed.
+     * This method works the same way as {@link #write(int)}.
+     *
+     * @param c
+     *            the character to append to the target stream.
+     * @return this writer.
+     * @throws IOException
+     *             if this writer is closed or another I/O error occurs.
+     */
+    @Override
+    public Writer append(char c) throws IOException {
+        synchronized (lock) {
+            checkNotClosed();
+            if (pos >= buf.length) {
+                out.write(buf, 0, buf.length);
+                pos = 0;
+            }
+            buf[pos++] = c;
+        }
+        return this;
+    }
 }
