@@ -9,6 +9,10 @@ package java.util.concurrent;
 import java.util.List;
 import java.util.Collection;
 
+// BEGIN android-note
+// removed security manager docs
+// END android-note
+
 /**
  * An {@link Executor} that provides methods to manage termination and
  * methods that can produce a {@link Future} for tracking progress of
@@ -116,14 +120,6 @@ public interface ExecutorService extends Executor {
      * <p>This method does not wait for previously submitted tasks to
      * complete execution.  Use {@link #awaitTermination awaitTermination}
      * to do that.
-     *
-     * @throws SecurityException if a security manager exists and
-     *         shutting down this ExecutorService may manipulate
-     *         threads that the caller is not permitted to modify
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")},
-     *         or the security manager's {@code checkAccess} method
-     *         denies access.
      */
     void shutdown();
 
@@ -142,13 +138,6 @@ public interface ExecutorService extends Executor {
      * task that fails to respond to interrupts may never terminate.
      *
      * @return list of tasks that never commenced execution
-     * @throws SecurityException if a security manager exists and
-     *         shutting down this ExecutorService may manipulate
-     *         threads that the caller is not permitted to modify
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")},
-     *         or the security manager's {@code checkAccess} method
-     *         denies access.
      */
     List<Runnable> shutdownNow();
 

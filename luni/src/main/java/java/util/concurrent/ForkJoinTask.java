@@ -937,6 +937,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * invocations of {@code join} and related operations.
      *
      * @since 1.8
+     * @hide
      */
     public final void quietlyComplete() {
         setCompletion(NORMAL);
@@ -1290,6 +1291,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      *
      * @return the tag for this task
      * @since 1.8
+     * @hide
      */
     public final short getForkJoinTaskTag() {
         return (short)status;
@@ -1301,6 +1303,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @param tag the tag value
      * @return the previous value of the tag
      * @since 1.8
+     * @hide
      */
     public final short setForkJoinTaskTag(short tag) {
         for (int s;;) {
@@ -1323,6 +1326,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return {@code true} if successful; i.e., the current value was
      * equal to e and is now tag.
      * @since 1.8
+     * @hide
      */
     public final boolean compareAndSetForkJoinTaskTag(short e, short tag) {
         for (int s;;) {

@@ -11,6 +11,10 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.*;
 
+// BEGIN android-note
+// removed link to collections framework docs
+// END android-note
+
 /**
  * A {@linkplain BlockingQueue blocking queue} in which each insert
  * operation must wait for a corresponding remove operation by another
@@ -42,10 +46,6 @@ import java.util.*;
  * <p>This class and its iterator implement all of the
  * <em>optional</em> methods of the {@link Collection} and {@link
  * Iterator} interfaces.
- *
- * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
- * Java Collections Framework</a>.
  *
  * @since 1.5
  * @author Doug Lea and Bill Scherer and Michael Scott

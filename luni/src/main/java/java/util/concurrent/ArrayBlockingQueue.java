@@ -15,6 +15,10 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+// BEGIN android-note
+// removed link to collections framework docs
+// END android-note
+
 /**
  * A bounded {@linkplain BlockingQueue blocking queue} backed by an
  * array.  This queue orders elements FIFO (first-in-first-out).  The
@@ -41,10 +45,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p>This class and its iterator implement all of the
  * <em>optional</em> methods of the {@link Collection} and {@link
  * Iterator} interfaces.
- *
- * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
- * Java Collections Framework</a>.
  *
  * @since 1.5
  * @author Doug Lea

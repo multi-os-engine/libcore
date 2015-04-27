@@ -8,6 +8,10 @@ package java.util.concurrent;
 
 import java.util.*;
 
+// BEGIN android-note
+// removed link to collections framework docs
+// END android-note
+
 /**
  * A scalable concurrent {@link ConcurrentNavigableMap} implementation.
  * The map is sorted according to the {@linkplain Comparable natural
@@ -51,10 +55,6 @@ import java.util.*;
  * <em>not</em> permit the use of {@code null} keys or values because some
  * null return values cannot be reliably distinguished from the absence of
  * elements.
- *
- * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
- * Java Collections Framework</a>.
  *
  * @author Doug Lea
  * @param <K> the type of keys maintained by this map

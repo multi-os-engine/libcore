@@ -14,6 +14,10 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 
+// BEGIN android-note
+// removed link to collections framework docs
+// END android-note
+
 /**
  * An unbounded concurrent {@linkplain Deque deque} based on linked nodes.
  * Concurrent insertion, removal, and access operations execute safely
@@ -51,10 +55,6 @@ import java.util.Queue;
  * <a href="package-summary.html#MemoryVisibility"><i>happen-before</i></a>
  * actions subsequent to the access or removal of that element from
  * the {@code ConcurrentLinkedDeque} in another thread.
- *
- * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
- * Java Collections Framework</a>.
  *
  * @since 1.7
  * @author Doug Lea

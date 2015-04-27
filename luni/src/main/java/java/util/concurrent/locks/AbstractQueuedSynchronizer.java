@@ -12,6 +12,10 @@ import java.util.Collection;
 import java.util.Date;
 import sun.misc.Unsafe;
 
+// BEGIN android-note
+// Use older class level documentation to not @link to hasQueuedPredecessors
+// END android-changed
+
 /**
  * Provides a framework for implementing blocking locks and related
  * synchronizers (semaphores, events, etc) that rely on
@@ -127,7 +131,7 @@ import sun.misc.Unsafe;
  * disable barging by internally invoking one or more of the inspection
  * methods, thereby providing a <em>fair</em> FIFO acquisition order.
  * In particular, most fair synchronizers can define {@code tryAcquire}
- * to return {@code false} if {@link #hasQueuedPredecessors} (a method
+ * to return {@code false} if {@code hasQueuedPredecessors} (a method
  * specifically designed to be used by fair synchronizers) returns
  * {@code true}.  Other variations are possible.
  *

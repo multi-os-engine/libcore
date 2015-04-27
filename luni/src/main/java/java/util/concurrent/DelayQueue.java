@@ -11,6 +11,10 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.*;
 
+// BEGIN android-note
+// removed link to collections framework docs
+// END android-note
+
 /**
  * An unbounded {@linkplain BlockingQueue blocking queue} of
  * {@code Delayed} elements, in which an element can only be taken
@@ -30,10 +34,6 @@ import java.util.*;
  * Iterator} interfaces.  The Iterator provided in method {@link
  * #iterator()} is <em>not</em> guaranteed to traverse the elements of
  * the DelayQueue in any particular order.
- *
- * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
- * Java Collections Framework</a>.
  *
  * @since 1.5
  * @author Doug Lea

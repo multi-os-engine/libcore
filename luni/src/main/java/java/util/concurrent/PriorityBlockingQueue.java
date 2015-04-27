@@ -10,6 +10,10 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.*;
 
+// BEGIN android-note
+// removed link to collections framework docs
+// END android-note
+
 /**
  * An unbounded {@linkplain BlockingQueue blocking queue} that uses
  * the same ordering rules as class {@link PriorityQueue} and supplies
@@ -57,10 +61,6 @@ import java.util.*;
  *     return res;
  *   }
  * }}</pre>
- *
- * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
- * Java Collections Framework</a>.
  *
  * @since 1.5
  * @author Doug Lea

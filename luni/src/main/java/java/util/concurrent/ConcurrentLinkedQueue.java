@@ -13,6 +13,10 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 
+// BEGIN android-note
+// removed link to collections framework docs
+// END android-note
+
 /**
  * An unbounded thread-safe {@linkplain Queue queue} based on linked nodes.
  * This queue orders elements FIFO (first-in-first-out).
@@ -61,10 +65,6 @@ import java.util.Queue;
  * <a href="package-summary.html#MemoryVisibility"><i>happen-before</i></a>
  * actions subsequent to the access or removal of that element from
  * the {@code ConcurrentLinkedQueue} in another thread.
- *
- * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
- * Java Collections Framework</a>.
  *
  * @since 1.5
  * @author Doug Lea

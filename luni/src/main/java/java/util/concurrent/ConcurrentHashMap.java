@@ -10,6 +10,7 @@ import java.io.ObjectStreamField;
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
@@ -24,6 +25,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
+
+// BEGIN android-note
+// removed link to collections framework docs
+// removed links to hidden api
+// END android-note
 
 /**
  * A hash table supporting full concurrency of retrievals and
@@ -93,16 +99,14 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p>Like {@link Hashtable} but unlike {@link HashMap}, this class
  * does <em>not</em> allow {@code null} to be used as a key or value.
  *
- * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
- * Java Collections Framework</a>.
- *
  * @since 1.5
  * @author Doug Lea
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
-public class ConcurrentHashMap<K,V> implements ConcurrentMap<K,V>, Serializable {
+// android-note: Added "extends AbstractMap<K, V>.
+public class ConcurrentHashMap<K,V> extends AbstractMap<K, V>
+        implements ConcurrentMap<K,V>, Serializable {
     private static final long serialVersionUID = 7249069246763182397L;
 
     /*
@@ -1063,7 +1067,8 @@ public class ConcurrentHashMap<K,V> implements ConcurrentMap<K,V>, Serializable 
      *
      * @return the set view
      */
-    public KeySetView<K,V> keySet() {
+    // android-note : changed KeySetView<K,V> to Set<K> to maintain API compatibility.
+    public Set<K> keySet() {
         KeySetView<K,V> ks;
         return (ks = keySet) != null ? ks : (keySet = new KeySetView<K,V>(this, null));
     }
@@ -1406,7 +1411,7 @@ public class ConcurrentHashMap<K,V> implements ConcurrentMap<K,V>, Serializable 
      * Legacy method testing if some key maps into the specified value
      * in this table.
      *
-     * @deprecated This method is identical in functionality to
+     * This method is identical in functionality to
      * {@link #containsValue(Object)}, and exists solely to ensure
      * full compatibility with class {@link java.util.Hashtable},
      * which supported this method prior to introduction of the
@@ -1419,7 +1424,11 @@ public class ConcurrentHashMap<K,V> implements ConcurrentMap<K,V>, Serializable 
      *         {@code false} otherwise
      * @throws NullPointerException if the specified value is null
      */
-    @Deprecated public boolean contains(Object value) {
+    // android-note : removed @deprecated tag from javadoc.
+    public boolean contains(Object value) {
+        // BEGIN android-note
+        // removed deprecation
+        // END android-note
         return containsValue(value);
     }
 
@@ -1458,6 +1467,8 @@ public class ConcurrentHashMap<K,V> implements ConcurrentMap<K,V>, Serializable 
      *
      * @return the number of mappings
      * @since 1.8
+     *
+     * @hide
      */
     public long mappingCount() {
         long n = sumCount();
@@ -1471,6 +1482,8 @@ public class ConcurrentHashMap<K,V> implements ConcurrentMap<K,V>, Serializable 
      * @param <K> the element type of the returned set
      * @return the new set
      * @since 1.8
+     *
+     * @hide
      */
     public static <K> KeySetView<K,Boolean> newKeySet() {
         return new KeySetView<K,Boolean>
@@ -1488,6 +1501,8 @@ public class ConcurrentHashMap<K,V> implements ConcurrentMap<K,V>, Serializable 
      * @throws IllegalArgumentException if the initial capacity of
      * elements is negative
      * @since 1.8
+     *
+     * @hide
      */
     public static <K> KeySetView<K,Boolean> newKeySet(int initialCapacity) {
         return new KeySetView<K,Boolean>
@@ -1504,6 +1519,8 @@ public class ConcurrentHashMap<K,V> implements ConcurrentMap<K,V>, Serializable 
      * @param mappedValue the mapped value to use for any additions
      * @return the set view
      * @throws NullPointerException if the mappedValue is null
+     *
+     * @hide
      */
     public KeySetView<K,V> keySet(V mappedValue) {
         if (mappedValue == null)
@@ -2922,6 +2939,8 @@ public class ConcurrentHashMap<K,V> implements ConcurrentMap<K,V>, Serializable 
      * {@link #newKeySet(int) newKeySet(int)}.
      *
      * @since 1.8
+     *
+     * @hide
      */
     public static class KeySetView<K,V> extends CollectionView<K,V,K>
         implements Set<K>, java.io.Serializable {

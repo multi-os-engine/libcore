@@ -9,6 +9,10 @@ package java.util.concurrent;
 import java.util.Collection;
 import java.util.Queue;
 
+// BEGIN android-note
+// removed link to collections framework docs
+// END android-note
+
 /**
  * A {@link java.util.Queue} that additionally supports operations
  * that wait for the queue to become non-empty when retrieving an
@@ -140,10 +144,6 @@ import java.util.Queue;
  * <a href="package-summary.html#MemoryVisibility"><i>happen-before</i></a>
  * actions subsequent to the access or removal of that element from
  * the {@code BlockingQueue} in another thread.
- *
- * <p>This interface is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
- * Java Collections Framework</a>.
  *
  * @since 1.5
  * @author Doug Lea

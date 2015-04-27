@@ -2469,6 +2469,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      *
      * @return the common pool instance
      * @since 1.8
+     * @hide
      */
     public static ForkJoinPool commonPool() {
         // assert common != null : "static init error";
@@ -2651,6 +2652,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      *
      * @return the targeted parallelism level of the common pool
      * @since 1.8
+     * @hide
      */
     public static int getCommonPoolParallelism() {
         return commonParallelism;

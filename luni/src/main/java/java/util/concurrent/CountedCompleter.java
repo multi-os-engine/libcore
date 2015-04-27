@@ -377,6 +377,7 @@ package java.util.concurrent;
  * }</pre>
  *
  * @since 1.8
+ * @hide
  * @author Doug Lea
  */
 public abstract class CountedCompleter<T> extends ForkJoinTask<T> {

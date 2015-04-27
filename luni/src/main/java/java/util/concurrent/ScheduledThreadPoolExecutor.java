@@ -13,6 +13,10 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.*;
 
+// BEGIN android-note
+// omit class-level docs on setRemoveOnCancelPolicy()
+// END android-note
+
 /**
  * A {@link ThreadPoolExecutor} that can additionally schedule
  * commands to run after a given delay, or to execute periodically.
@@ -28,12 +32,10 @@ import java.util.*;
  * submission.
  *
  * <p>When a submitted task is cancelled before it is run, execution
- * is suppressed.  By default, such a cancelled task is not
- * automatically removed from the work queue until its delay elapses.
- * While this enables further inspection and monitoring, it may also
- * cause unbounded retention of cancelled tasks.  To avoid this, use
- * {@link #setRemoveOnCancelPolicy} to cause tasks to be immediately
- * removed from the work queue at time of cancellation.
+ * is suppressed. By default, such a cancelled task is not
+ * automatically removed from the work queue until its delay
+ * elapses. While this enables further inspection and monitoring, it
+ * may also cause unbounded retention of cancelled tasks.
  *
  * <p>Successive executions of a periodic task scheduled via
  * {@link #scheduleAtFixedRate} or

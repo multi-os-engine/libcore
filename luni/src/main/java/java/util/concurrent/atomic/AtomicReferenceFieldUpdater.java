@@ -6,6 +6,7 @@
 
 package java.util.concurrent.atomic;
 
+import dalvik.system.VMStack; // android-added
 import sun.misc.Unsafe;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -186,25 +187,24 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
             final Class<?> caller;
             final int modifiers;
             try {
-                field = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Field>() {
-                        public Field run() throws NoSuchFieldException {
-                            return tclass.getDeclaredField(fieldName);
-                        }
-                    });
-                caller = sun.reflect.Reflection.getCallerClass(3);
+                field = tclass.getDeclaredField(fieldName); // android-changed
+                caller = VMStack.getStackClass2(); // android-changed
                 modifiers = field.getModifiers();
-                sun.reflect.misc.ReflectUtil.ensureMemberAccess(
-                    caller, tclass, null, modifiers);
-                ClassLoader cl = tclass.getClassLoader();
-                ClassLoader ccl = caller.getClassLoader();
-                if ((ccl != null) && (ccl != cl) &&
-                    ((cl == null) || !isAncestor(cl, ccl))) {
-                  sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
-                }
+            // BEGIN android-removed
+            //     sun.reflect.misc.ReflectUtil.ensureMemberAccess(
+            //         caller, tclass, null, modifiers);
+            //     ClassLoader cl = tclass.getClassLoader();
+            //     ClassLoader ccl = caller.getClassLoader();
+            //     if ((ccl != null) && (ccl != cl) &&
+            //         ((cl == null) || !isAncestor(cl, ccl))) {
+            //       sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
+            //     }
+            // END android-removed
                 fieldClass = field.getType();
-            } catch (PrivilegedActionException pae) {
-                throw new RuntimeException(pae.getException());
+            // BEGIN android-removed
+            // } catch (PrivilegedActionException pae) {
+            //     throw new RuntimeException(pae.getException());
+            // END android-removed
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
@@ -225,21 +225,24 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
             offset = unsafe.objectFieldOffset(field);
         }
 
-        /**
-         * Returns true if the second classloader can be found in the first
-         * classloader's delegation chain.
-         * Equivalent to the inaccessible: first.isAncestor(second).
-         */
-        private static boolean isAncestor(ClassLoader first, ClassLoader second) {
-            ClassLoader acl = first;
-            do {
-                acl = acl.getParent();
-                if (second == acl) {
-                    return true;
-                }
-            } while (acl != null);
-            return false;
-        }
+        // BEGIN android-removed
+        // /**
+        //  * Returns true if the second classloader can be found in the first
+        //  * classloader's delegation chain.
+        //  * Equivalent to the inaccessible: first.isAncestor(second).
+        //  */
+        //
+        // private static boolean isAncestor(ClassLoader first, ClassLoader second) {
+        //     ClassLoader acl = first;
+        //     do {
+        //         acl = acl.getParent();
+        //         if (second == acl) {
+        //             return true;
+        //        }
+        //     } while (acl != null);
+        //     return false;
+        // }
+        // END android-removed
 
         void targetCheck(T obj) {
             if (!tclass.isInstance(obj))

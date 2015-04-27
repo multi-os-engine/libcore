@@ -13,6 +13,10 @@ import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.concurrent.locks.LockSupport;
 
+// BEGIN android-note
+// removed link to collections framework docs
+// END android-note
+
 /**
  * An unbounded {@link TransferQueue} based on linked nodes.
  * This queue orders elements FIFO (first-in-first-out) with respect
@@ -43,10 +47,6 @@ import java.util.concurrent.locks.LockSupport;
  * <a href="package-summary.html#MemoryVisibility"><i>happen-before</i></a>
  * actions subsequent to the access or removal of that element from
  * the {@code LinkedTransferQueue} in another thread.
- *
- * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
- * Java Collections Framework</a>.
  *
  * @since 1.7
  * @author Doug Lea
