@@ -67,11 +67,14 @@
  * assists in coordinating the processing of groups of
  * asynchronous tasks.
  *
+ *
  * <h2>Queues</h2>
  *
  * The {@link java.util.concurrent.ConcurrentLinkedQueue} class
- * supplies an efficient scalable thread-safe non-blocking FIFO
- * queue.
+ * supplies an efficient scalable thread-safe non-blocking FIFO queue.
+ * The {@link java.util.concurrent.ConcurrentLinkedDeque} class is
+ * similar, but additionally supports the {@link java.util.Deque}
+ * interface.
  *
  * <p>Five implementations in {@code java.util.concurrent} support
  * the extended {@link java.util.concurrent.BlockingQueue}
@@ -176,7 +179,7 @@
  *
  * <h2 id="MemoryVisibility">Memory Consistency Properties</h2>
  *
- * <a href="http://java.sun.com/docs/books/jls/third_edition/html/memory.html">
+ * <a href="http://docs.oracle.com/javase/specs/jls/se7/html/jls-17.html#jls-17.4.5">
  * Chapter 17 of the Java Language Specification</a> defines the
  * <i>happens-before</i> relation on memory operations such as reads and
  * writes of shared variables.  The results of a write by one thread are
