@@ -5,14 +5,11 @@
  */
 
 package java.util.concurrent;
+
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.*;
-
-// BEGIN android-note
-// removed link to collections framework docs
-// END android-note
 
 /**
  * An unbounded {@linkplain BlockingQueue blocking queue} of
@@ -33,6 +30,10 @@ import java.util.*;
  * Iterator} interfaces.  The Iterator provided in method {@link
  * #iterator()} is <em>not</em> guaranteed to traverse the elements of
  * the DelayQueue in any particular order.
+ *
+ * <p>This class is a member of the
+ * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * Java Collections Framework</a>.
  *
  * @since 1.5
  * @author Doug Lea
@@ -60,7 +61,7 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
      * signalled.  So waiting threads must be prepared to acquire
      * and lose leadership while waiting.
      */
-    private Thread leader = null;
+    private Thread leader;
 
     /**
      * Condition signalled when a newer element becomes available

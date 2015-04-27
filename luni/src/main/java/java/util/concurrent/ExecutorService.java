@@ -5,12 +5,9 @@
  */
 
 package java.util.concurrent;
+
 import java.util.List;
 import java.util.Collection;
-
-// BEGIN android-note
-// removed security manager docs
-// END android-note
 
 /**
  * An {@link Executor} that provides methods to manage termination and
@@ -29,8 +26,8 @@ import java.util.Collection;
  * reclamation of its resources.
  *
  * <p>Method {@code submit} extends base method {@link
- * Executor#execute} by creating and returning a {@link Future} that
- * can be used to cancel execution and/or wait for completion.
+ * Executor#execute(Runnable)} by creating and returning a {@link Future}
+ * that can be used to cancel execution and/or wait for completion.
  * Methods {@code invokeAny} and {@code invokeAll} perform the most
  * commonly useful forms of bulk execution, executing a collection of
  * tasks and then waiting for at least one, or all, to
@@ -119,6 +116,14 @@ public interface ExecutorService extends Executor {
      * <p>This method does not wait for previously submitted tasks to
      * complete execution.  Use {@link #awaitTermination awaitTermination}
      * to do that.
+     *
+     * @throws SecurityException if a security manager exists and
+     *         shutting down this ExecutorService may manipulate
+     *         threads that the caller is not permitted to modify
+     *         because it does not hold {@link
+     *         java.lang.RuntimePermission}{@code ("modifyThread")},
+     *         or the security manager's {@code checkAccess} method
+     *         denies access.
      */
     void shutdown();
 
@@ -137,6 +142,13 @@ public interface ExecutorService extends Executor {
      * task that fails to respond to interrupts may never terminate.
      *
      * @return list of tasks that never commenced execution
+     * @throws SecurityException if a security manager exists and
+     *         shutting down this ExecutorService may manipulate
+     *         threads that the caller is not permitted to modify
+     *         because it does not hold {@link
+     *         java.lang.RuntimePermission}{@code ("modifyThread")},
+     *         or the security manager's {@code checkAccess} method
+     *         denies access.
      */
     List<Runnable> shutdownNow();
 
@@ -187,6 +199,7 @@ public interface ExecutorService extends Executor {
      * {@link Callable} form so they can be submitted.
      *
      * @param task the task to submit
+     * @param <T> the type of the task's result
      * @return a Future representing pending completion of the task
      * @throws RejectedExecutionException if the task cannot be
      *         scheduled for execution
@@ -201,6 +214,7 @@ public interface ExecutorService extends Executor {
      *
      * @param task the task to submit
      * @param result the result to return
+     * @param <T> the type of the result
      * @return a Future representing pending completion of the task
      * @throws RejectedExecutionException if the task cannot be
      *         scheduled for execution
@@ -232,6 +246,7 @@ public interface ExecutorService extends Executor {
      * collection is modified while this operation is in progress.
      *
      * @param tasks the collection of tasks
+     * @param <T> the type of the values returned from the tasks
      * @return a list of Futures representing the tasks, in the same
      *         sequential order as produced by the iterator for the
      *         given task list, each of which has completed
@@ -259,6 +274,7 @@ public interface ExecutorService extends Executor {
      * @param tasks the collection of tasks
      * @param timeout the maximum time to wait
      * @param unit the time unit of the timeout argument
+     * @param <T> the type of the values returned from the tasks
      * @return a list of Futures representing the tasks, in the same
      *         sequential order as produced by the iterator for the
      *         given task list. If the operation did not time out,
@@ -284,6 +300,7 @@ public interface ExecutorService extends Executor {
      * collection is modified while this operation is in progress.
      *
      * @param tasks the collection of tasks
+     * @param <T> the type of the values returned from the tasks
      * @return the result returned by one of the tasks
      * @throws InterruptedException if interrupted while waiting
      * @throws NullPointerException if tasks or any element task
@@ -308,6 +325,7 @@ public interface ExecutorService extends Executor {
      * @param tasks the collection of tasks
      * @param timeout the maximum time to wait
      * @param unit the time unit of the timeout argument
+     * @param <T> the type of the values returned from the tasks
      * @return the result returned by one of the tasks
      * @throws InterruptedException if interrupted while waiting
      * @throws NullPointerException if tasks, or unit, or any element

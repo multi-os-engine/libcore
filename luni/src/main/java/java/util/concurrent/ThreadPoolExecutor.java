@@ -5,15 +5,12 @@
  */
 
 package java.util.concurrent;
+
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.*;
-
-// BEGIN android-note
-// removed security manager docs
-// END android-note
 
 /**
  * An {@link ExecutorService} that executes each submitted task using
@@ -82,7 +79,12 @@ import java.util.*;
  * alter the thread's name, thread group, priority, daemon status,
  * etc. If a {@code ThreadFactory} fails to create a thread when asked
  * by returning null from {@code newThread}, the executor will
- * continue, but might not be able to execute any tasks.</dd>
+ * continue, but might not be able to execute any tasks. Threads
+ * should possess the "modifyThread" {@code RuntimePermission}. If
+ * worker threads or other threads using the pool do not possess this
+ * permission, service may be degraded: configuration changes may not
+ * take effect in a timely manner, and a shutdown pool may remain in a
+ * state in which termination is possible but not completed.</dd>
  *
  * <dt>Keep-alive times</dt>
  *
@@ -582,7 +584,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             this.thread = getThreadFactory().newThread(this);
         }
 
-        /** Delegates main run loop to outer runWorker  */
+        /** Delegates main run loop to outer runWorker. */
         public void run() {
             runWorker(this);
         }
@@ -1347,6 +1349,8 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * <p>This method does not wait for previously submitted tasks to
      * complete execution.  Use {@link #awaitTermination awaitTermination}
      * to do that.
+     *
+     * @throws SecurityException {@inheritDoc}
      */
     public void shutdown() {
         final ReentrantLock mainLock = this.mainLock;
@@ -1376,6 +1380,8 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * processing actively executing tasks.  This implementation
      * cancels tasks via {@link Thread#interrupt}, so any task that
      * fails to respond to interrupts may never terminate.
+     *
+     * @throws SecurityException {@inheritDoc}
      */
     public List<Runnable> shutdownNow() {
         List<Runnable> tasks;

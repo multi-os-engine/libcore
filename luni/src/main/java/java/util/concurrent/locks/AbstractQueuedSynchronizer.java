@@ -5,15 +5,12 @@
  */
 
 package java.util.concurrent.locks;
+
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import sun.misc.Unsafe;
-
-// BEGIN android-note
-// Use older class level documentation to not @link to hasQueuedPredecessors
-// END android-changed
 
 /**
  * Provides a framework for implementing blocking locks and related
@@ -128,15 +125,11 @@ import sun.misc.Unsafe;
  * others that are blocked and queued.  However, you can, if desired,
  * define {@code tryAcquire} and/or {@code tryAcquireShared} to
  * disable barging by internally invoking one or more of the inspection
- * methods. In particular, a strict FIFO lock can define
- * {@code tryAcquire} to immediately return {@code false} if {@link
- * #getFirstQueuedThread} does not return the current thread.  A
- * normally preferable non-strict fair version can immediately return
- * {@code false} only if {@link #hasQueuedThreads} returns
- * {@code true} and {@code getFirstQueuedThread} is not the current
- * thread; or equivalently, that {@code getFirstQueuedThread} is both
- * non-null and not the current thread. Further variations are
- * possible.
+ * methods, thereby providing a <em>fair</em> FIFO acquisition order.
+ * In particular, most fair synchronizers can define {@code tryAcquire}
+ * to return {@code false} if {@link #hasQueuedPredecessors} (a method
+ * specifically designed to be used by fair synchronizers) returns
+ * {@code true}.  Other variations are possible.
  *
  * <p>Throughput and scalability are generally highest for the
  * default barging (also known as <em>greedy</em>,
@@ -1461,7 +1454,7 @@ public abstract class AbstractQueuedSynchronizer
      * due to the queue being empty.
      *
      * <p>This method is designed to be used by a fair synchronizer to
-     * avoid <a href="AbstractQueuedSynchronizer#barging">barging</a>.
+     * avoid <a href="AbstractQueuedSynchronizer.html#barging">barging</a>.
      * Such a synchronizer's {@link #tryAcquire} method should return
      * {@code false}, and its {@link #tryAcquireShared} method should
      * return a negative value, if this method returns {@code true}
@@ -2042,6 +2035,7 @@ public abstract class AbstractQueuedSynchronizer
                 throws InterruptedException {
             if (Thread.interrupted())
                 throw new InterruptedException();
+            long initialNanos = nanosTimeout;
             Node node = addConditionWaiter();
             int savedState = fullyRelease(node);
             final long deadline = System.nanoTime() + nanosTimeout;
@@ -2063,7 +2057,8 @@ public abstract class AbstractQueuedSynchronizer
                 unlinkCancelledWaiters();
             if (interruptMode != 0)
                 reportInterruptAfterWait(interruptMode);
-            return deadline - System.nanoTime();
+            long remaining = deadline - System.nanoTime(); // avoid overflow
+            return (remaining < initialNanos) ? remaining : Long.MIN_VALUE;
         }
 
         /**
@@ -2255,6 +2250,10 @@ public abstract class AbstractQueuedSynchronizer
                 (Node.class.getDeclaredField("next"));
 
         } catch (Exception ex) { throw new Error(ex); }
+
+        // Reduce the risk of rare disastrous classloading in first call to
+        // LockSupport.park: https://bugs.openjdk.java.net/browse/JDK-8074773
+        Class<?> ensureLoaded = LockSupport.class;
     }
 
     /**

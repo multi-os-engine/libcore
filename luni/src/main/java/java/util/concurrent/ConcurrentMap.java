@@ -5,11 +5,8 @@
  */
 
 package java.util.concurrent;
-import java.util.Map;
 
-// BEGIN android-note
-// removed link to collections framework docs
-// END android-note
+import java.util.Map;
 
 /**
  * A {@link java.util.Map} providing additional atomic
@@ -21,6 +18,10 @@ import java.util.Map;
  * <a href="package-summary.html#MemoryVisibility"><i>happen-before</i></a>
  * actions subsequent to the access or removal of that object from
  * the {@code ConcurrentMap} in another thread.
+ *
+ * <p>This interface is a member of the
+ * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * Java Collections Framework</a>.
  *
  * @since 1.5
  * @author Doug Lea
