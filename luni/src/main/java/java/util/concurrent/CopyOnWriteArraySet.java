@@ -5,11 +5,8 @@
  */
 
 package java.util.concurrent;
-import java.util.*;
 
-// BEGIN android-note
-// removed link to collections framework docs
-// END android-note
+import java.util.*;
 
 /**
  * A {@link java.util.Set} that uses an internal {@link CopyOnWriteArrayList}
@@ -51,6 +48,10 @@ import java.util.*;
  *       handler.handle();
  *   }
  * }}</pre>
+ *
+ * <p>This class is a member of the
+ * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * Java Collections Framework</a>.
  *
  * @see CopyOnWriteArrayList
  * @since 1.5

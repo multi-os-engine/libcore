@@ -5,15 +5,16 @@
  */
 
 package java.util.concurrent;
-import java.util.*;
 
-// BEGIN android-note
-// removed link to collections framework docs
-// END android-note
+import java.util.*;
 
 /**
  * A {@link ConcurrentMap} supporting {@link NavigableMap} operations,
  * and recursively so for its navigable sub-maps.
+ *
+ * <p>This interface is a member of the
+ * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * Java Collections Framework</a>.
  *
  * @author Doug Lea
  * @param <K> the type of keys maintained by this map

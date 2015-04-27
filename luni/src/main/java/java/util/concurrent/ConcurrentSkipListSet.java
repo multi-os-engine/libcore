@@ -5,11 +5,8 @@
  */
 
 package java.util.concurrent;
-import java.util.*;
 
-// BEGIN android-note
-// removed link to collections framework docs
-// END android-note
+import java.util.*;
 
 /**
  * A scalable concurrent {@link NavigableSet} implementation based on
@@ -47,6 +44,10 @@ import java.util.*;
  * this class does not permit the use of {@code null} elements,
  * because {@code null} arguments and return values cannot be reliably
  * distinguished from the absence of elements.
+ *
+ * <p>This class is a member of the
+ * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * Java Collections Framework</a>.
  *
  * @author Doug Lea
  * @param <E> the type of elements maintained by this set
