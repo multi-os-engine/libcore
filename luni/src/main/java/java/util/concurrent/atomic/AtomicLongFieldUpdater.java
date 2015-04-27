@@ -37,6 +37,7 @@ public abstract class AtomicLongFieldUpdater<T> {
      *
      * @param tclass the class of the objects holding the field
      * @param fieldName the name of the field to be updated
+     * @param <U> the type of instances of tclass
      * @return the updater
      * @throws IllegalArgumentException if the field is not a
      * volatile long type
@@ -243,7 +244,7 @@ public abstract class AtomicLongFieldUpdater<T> {
         private final Class<T> tclass;
         private final Class<?> cclass;
 
-        CASUpdater(Class<T> tclass, String fieldName) {
+        CASUpdater(final Class<T> tclass, final String fieldName) {
             final Field field;
             final Class<?> caller;
             final int modifiers;
@@ -337,7 +338,7 @@ public abstract class AtomicLongFieldUpdater<T> {
         private final Class<T> tclass;
         private final Class<?> cclass;
 
-        LockedUpdater(Class<T> tclass, String fieldName) {
+        LockedUpdater(final Class<T> tclass, final String fieldName) {
             Field field = null;
             Class<?> caller = null;
             int modifiers = 0;
