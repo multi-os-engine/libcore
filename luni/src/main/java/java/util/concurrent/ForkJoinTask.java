@@ -12,14 +12,6 @@ import java.util.List;
 import java.util.RandomAccess;
 import java.lang.ref.WeakReference;
 import java.lang.ref.ReferenceQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.RunnableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
 import java.lang.reflect.Constructor;
 
@@ -32,8 +24,8 @@ import java.lang.reflect.Constructor;
  *
  * <p>A "main" {@code ForkJoinTask} begins execution when it is
  * explicitly submitted to a {@link ForkJoinPool}, or, if not already
- * engaged in a ForkJoin computation, commenced in the {@code
- * ForkJoinPool.commonPool()} via {@link #fork}, {@link #invoke}, or
+ * engaged in a ForkJoin computation, commenced in the {@link
+ * ForkJoinPool#commonPool()} via {@link #fork}, {@link #invoke}, or
  * related methods.  Once started, it will usually in turn start other
  * subtasks.  As indicated by the name of this class, many programs
  * using {@code ForkJoinTask} employ only methods {@link #fork} and
@@ -74,9 +66,10 @@ import java.lang.reflect.Constructor;
  * but doing do requires three further considerations: (1) Completion
  * of few if any <em>other</em> tasks should be dependent on a task
  * that blocks on external synchronization or I/O. Event-style async
- * tasks that are never joined often fall into this category.
- * (2) To minimize resource impact, tasks should be small; ideally
- * performing only the (possibly) blocking action. (3) Unless the {@link
+ * tasks that are never joined (for example, those subclassing {@link
+ * CountedCompleter}) often fall into this category.  (2) To minimize
+ * resource impact, tasks should be small; ideally performing only the
+ * (possibly) blocking action. (3) Unless the {@link
  * ForkJoinPool.ManagedBlocker} API is used, or the number of possibly
  * blocked tasks is known to be less than the pool's {@link
  * ForkJoinPool#getParallelism} level, the pool cannot guarantee that
@@ -119,11 +112,13 @@ import java.lang.reflect.Constructor;
  * <p>The ForkJoinTask class is not usually directly subclassed.
  * Instead, you subclass one of the abstract classes that support a
  * particular style of fork/join processing, typically {@link
- * RecursiveAction} for most computations that do not return results
- * and {@link RecursiveTask} for those that do. Normally, a concrete
- * ForkJoinTask subclass declares fields comprising its parameters,
- * established in a constructor, and then defines a {@code compute}
- * method that somehow uses the control methods supplied by this base class.
+ * RecursiveAction} for most computations that do not return results,
+ * {@link RecursiveTask} for those that do, and {@link
+ * CountedCompleter} for those in which completed actions trigger
+ * other actions.  Normally, a concrete ForkJoinTask subclass declares
+ * fields comprising its parameters, established in a constructor, and
+ * then defines a {@code compute} method that somehow uses the control
+ * methods supplied by this base class.
  *
  * <p>Method {@link #join} and its variants are appropriate for use
  * only when completion dependencies are acyclic; that is, the
@@ -135,9 +130,9 @@ import java.lang.reflect.Constructor;
  * may be of use in constructing custom subclasses for problems that
  * are not statically structured as DAGs. To support such usages, a
  * ForkJoinTask may be atomically <em>tagged</em> with a {@code short}
- * value using {@code setForkJoinTaskTag} or {@code
- * compareAndSetForkJoinTaskTag} and checked using {@code
- * getForkJoinTaskTag}. The ForkJoinTask implementation does not use
+ * value using {@link #setForkJoinTaskTag} or {@link
+ * #compareAndSetForkJoinTaskTag} and checked using {@link
+ * #getForkJoinTaskTag}. The ForkJoinTask implementation does not use
  * these {@code protected} methods or tags for any purpose, but they
  * may be of use in the construction of specialized subclasses.  For
  * example, parallel graph traversals can use the supplied methods to
@@ -407,11 +402,13 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         final Throwable ex;
         ExceptionNode next;
         final long thrower;  // use id not ref to avoid weak cycles
+        final int hashCode;  // store task hashCode before weak ref disappears
         ExceptionNode(ForkJoinTask<?> task, Throwable ex, ExceptionNode next) {
             super(task, exceptionTableRefQueue);
             this.ex = ex;
             this.next = next;
             this.thrower = Thread.currentThread().getId();
+            this.hashCode = System.identityHashCode(task);
         }
     }
 
@@ -573,9 +570,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     private static void expungeStaleExceptions() {
         for (Object x; (x = exceptionTableRefQueue.poll()) != null;) {
             if (x instanceof ExceptionNode) {
-                ForkJoinTask<?> key = ((ExceptionNode)x).get();
+                int hashCode = ((ExceptionNode)x).hashCode;
                 ExceptionNode[] t = exceptionTable;
-                int i = System.identityHashCode(key) & (t.length - 1);
+                int i = hashCode & (t.length - 1);
                 ExceptionNode e = t[i];
                 ExceptionNode pred = null;
                 while (e != null) {
@@ -641,8 +638,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
 
     /**
      * Arranges to asynchronously execute this task in the pool the
-     * current task is running in, if applicable, or using the {@code
-     * ForkJoinPool.commonPool()} if not {@link #inForkJoinPool}.  While
+     * current task is running in, if applicable, or using the {@link
+     * ForkJoinPool#commonPool()} if not {@link #inForkJoinPool}.  While
      * it is not necessarily enforced, it is a usage error to fork a
      * task more than once unless it has completed and been
      * reinitialized.  Subsequent modifications to the state of this
@@ -778,6 +775,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * unprocessed.
      *
      * @param tasks the collection of tasks
+     * @param <T> the type of the values returned from the tasks
      * @return the tasks argument, to simplify usage
      * @throws NullPointerException if tasks or any element are null
      */
@@ -1413,8 +1411,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             try {
                 result = callable.call();
                 return true;
-            } catch (Error err) {
-                throw err;
             } catch (RuntimeException rex) {
                 throw rex;
             } catch (Exception ex) {
@@ -1444,6 +1440,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      *
      * @param runnable the runnable action
      * @param result the result upon completion
+     * @param <T> the type of the result
      * @return the task
      */
     public static <T> ForkJoinTask<T> adapt(Runnable runnable, T result) {
@@ -1457,6 +1454,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * encountered into {@code RuntimeException}.
      *
      * @param callable the callable action
+     * @param <T> the type of the callable's result
      * @return the task
      */
     public static <T> ForkJoinTask<T> adapt(Callable<? extends T> callable) {

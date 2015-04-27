@@ -12,14 +12,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.AbstractExecutorService;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.RunnableFuture;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 
 /**
  * An {@link ExecutorService} for running {@link ForkJoinTask}s.
@@ -212,7 +204,8 @@ public class ForkJoinPool extends AbstractExecutorService {
      * choosing existing queues, and may be randomly repositioned upon
      * contention with other submitters.  In essence, submitters act
      * like workers except that they are restricted to executing local
-     * tasks that they submitted. However, because most
+     * tasks that they submitted (or in the case of CountedCompleters,
+     * others with the same root task).  However, because most
      * shared/external queue operations are more expensive than
      * internal, and because, at steady state, external submitters
      * will compete for CPU with workers, ForkJoinTask.join and
@@ -417,6 +410,12 @@ public class ForkJoinPool extends AbstractExecutorService {
      * to find work (see MAX_HELP) and fall back to suspending the
      * worker and if necessary replacing it with another.
      *
+     * Helping actions for CountedCompleters are much simpler: Method
+     * helpComplete can take and execute any task with the same root
+     * as the task being waited on. However, this still entails some
+     * traversal of completer chains, so is less efficient than using
+     * CountedCompleters without explicit joins.
+     *
      * It is impossible to keep exactly the target parallelism number
      * of threads running at any given time.  Determining the
      * existence of conservatively safe helping targets, the
@@ -524,8 +523,8 @@ public class ForkJoinPool extends AbstractExecutorService {
          * Returns a new worker thread operating in the given pool.
          *
          * @param pool the pool this thread works in
-         * @throws NullPointerException if the pool is null
          * @return the new worker thread
+         * @throws NullPointerException if the pool is null
          */
         public ForkJoinWorkerThread newThread(ForkJoinPool pool);
     }
@@ -2090,7 +2089,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     w.currentSteal = ps;
                 }
             }
-            else if (active) {       // decrement active count without queuing
+            else if (active) {      // decrement active count without queuing
                 long nc = ((c = ctl) & ~AC_MASK) | ((c & AC_MASK) - AC_UNIT);
                 if ((int)(nc >> AC_SHIFT) + parallelism == 0)
                     break;          // bypass decrement-then-increment
@@ -2477,6 +2476,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * minimally only the latter.
      *
      * @param task the task
+     * @param <T> the type of the task's result
      * @return the task's result
      * @throws NullPointerException if the task is null
      * @throws RejectedExecutionException if the task cannot be
@@ -2525,6 +2525,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Submits a ForkJoinTask for execution.
      *
      * @param task the task to submit
+     * @param <T> the type of the task's result
      * @return the task
      * @throws NullPointerException if the task is null
      * @throws RejectedExecutionException if the task cannot be
@@ -2899,7 +2900,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Possibly initiates an orderly shutdown in which previously
      * submitted tasks are executed, but no new tasks will be
      * accepted. Invocation has no effect on execution state if this
-     * is the {@code commonPool()}, and no additional effect if
+     * is the {@link #commonPool()}, and no additional effect if
      * already shut down.  Tasks that are in the process of being
      * submitted concurrently during the course of this method may or
      * may not be rejected.
@@ -2912,7 +2913,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     /**
      * Possibly attempts to cancel and/or stop all tasks, and reject
      * all subsequently submitted tasks.  Invocation has no effect on
-     * execution state if this is the {@code commonPool()}, and no
+     * execution state if this is the {@link #commonPool()}, and no
      * additional effect if already shut down. Otherwise, tasks that
      * are in the process of being submitted or executed concurrently
      * during the course of this method may or may not be
