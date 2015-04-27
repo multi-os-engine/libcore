@@ -13,10 +13,6 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 
-// BEGIN android-note
-// removed link to collections framework docs
-// END android-note
-
 /**
  * An unbounded thread-safe {@linkplain Queue queue} based on linked nodes.
  * This queue orders elements FIFO (first-in-first-out).
@@ -32,9 +28,9 @@ import java.util.Queue;
  * does not permit the use of {@code null} elements.
  *
  * <p>This implementation employs an efficient <em>non-blocking</em>
- * algorithm based on one described in <a
- * href="http://www.cs.rochester.edu/u/michael/PODC96.html"> Simple,
- * Fast, and Practical Non-Blocking and Blocking Concurrent Queue
+ * algorithm based on one described in
+ * <a href="http://www.cs.rochester.edu/~scott/papers/1996_PODC_queues.pdf">
+ * Simple, Fast, and Practical Non-Blocking and Blocking Concurrent Queue
  * Algorithms</a> by Maged M. Michael and Michael L. Scott.
  *
  * <p>Iterators are <i>weakly consistent</i>, returning elements
@@ -65,6 +61,10 @@ import java.util.Queue;
  * <a href="package-summary.html#MemoryVisibility"><i>happen-before</i></a>
  * actions subsequent to the access or removal of that element from
  * the {@code ConcurrentLinkedQueue} in another thread.
+ *
+ * <p>This class is a member of the
+ * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * Java Collections Framework</a>.
  *
  * @since 1.5
  * @author Doug Lea
