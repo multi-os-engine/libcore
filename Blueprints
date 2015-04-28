@@ -96,17 +96,45 @@ local_javac_flags = [
 ]
 //local_javac_flags+=-Xlint:all -Xlint:-serial,-deprecation,-unchecked
 
+
+//
+// ICU4J related rules.
+
+// We compile icu4j along with core-libart because we're implementing parts of core-libart
+// in terms of icu4j.
+icu4j_root = "../external/icu/icu4j"
+icu4j_src_files = [
+    icu4j_root + "/main/classes/**/*.java",
+    // Filter out bits of ICU4J we don't use yet : the SPIs (which we have limited support for),
+    // the charset encoders and the transliterators.
+    "-" + icu4j_root + "/main/classes/localespi/**/*.java",
+    "-" + icu4j_root + "/main/classes/charset/**/*.java",
+    "-" + icu4j_root + "/main/classes/translit/**/*.java",
+]
+
+// Not all src dirs contain resources, some instead contain other random files
+// that should not be included as resources. The ones that should be included
+// can be identifed by the fact that they contain particular subdir trees.
+//
+
+icu4j_resource_dirs = [
+    icu4j_root + "/main/classes/*/src",
+    "-" + icu4j_root + "/main/classes/localespi/src",
+    "-" + icu4j_root + "/main/classes/charset/src",
+    "-" + icu4j_root + "/main/classes/translit/src",
+]
+
 // Definitions to make the core library.
 
 java_library {
-    srcs: libart_core_src_files,
-    java_resource_dirs: core_resource_dirs,
+    srcs: libart_core_src_files + icu4j_src_files,
+    java_resource_dirs: core_resource_dirs + icu4j_resource_dirs,
     no_standard_libraries: true,
     javacflags: local_javac_flags,
     dxflags: ["--core-library"],
     name: "core-libart",
     host_supported: true,
-
+    jarjar_rules: "jarjar-rules.txt",
     //required: ["tzdata"],
     //required: ["tzdata-host"],
 }
