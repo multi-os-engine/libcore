@@ -81,11 +81,17 @@ public class NetworkInterfaceTest extends TestCase {
         // But eth0, if it exists, should...
         NetworkInterface eth0 = NetworkInterface.getByName("eth0");
         if (eth0 != null) {
-            assertEquals(6, eth0.getHardwareAddress().length);
-            for (InterfaceAddress ia : eth0.getInterfaceAddresses()) {
-                if (ia.getAddress() instanceof Inet4Address) {
-                    assertNotNull(ia.getBroadcast());
+            if (eth0.getHardwareAddress().length == 6)
+            {
+                for (InterfaceAddress ia : eth0.getInterfaceAddresses()) {
+                    if (ia.getAddress() instanceof Inet4Address) {
+                        assertNotNull(ia.getBroadcast());
+                    }
                 }
+            }
+            else {
+                // allow for ip tunnel 4-byte address
+                assertEquals(4, eth0.getHardwareAddress().length);
             }
         }
     }
