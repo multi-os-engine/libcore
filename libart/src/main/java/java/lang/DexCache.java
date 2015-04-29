@@ -33,7 +33,6 @@
 package java.lang;
 
 import com.android.dex.Dex;
-import java.lang.reflect.ArtField;
 import java.lang.reflect.ArtMethod;
 
 /**
@@ -47,16 +46,16 @@ final class DexCache {
     String location;
 
     /**
-     * References to fields as they become resolved following interpreter semantics. May refer to
-     * fields defined in other dex files.
-     */
-    ArtField[] resolvedFields;
-
-    /**
      * References to methods as they become resolved following interpreter semantics. May refer to
      * methods defined in other dex files.
      */
     ArtMethod[] resolvedMethods;
+
+    /**
+     * References to fields as they become resolved following interpreter semantics. May refer to
+     * fields defined in other dex files. Either an int array or long array.
+     */
+    private Object resolvedFields;
 
     /**
      * References to types as they become resolved following interpreter semantics. May refer to
@@ -89,6 +88,10 @@ final class DexCache {
         return result;
     }
 
+    native Class<?> getResolvedType(int typeIndex);
+    native String getResolvedString(int stringIndex);
+    native void setResolvedType(int typeIndex, Class<?> type);
+    native void setResolvedString(int stringIndex, String string);
     private native Dex getDexNative();
 }
 

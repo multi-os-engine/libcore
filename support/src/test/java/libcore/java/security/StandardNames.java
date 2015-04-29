@@ -394,6 +394,12 @@ public final class StandardNames extends Assert {
             provide("Signature", "NONEwithRSA");
             provide("Cipher", "RSA/ECB/NOPADDING");
             provide("Cipher", "RSA/ECB/PKCS1PADDING");
+            provide("SecretKeyFactory", "AES");
+            provide("SecretKeyFactory", "HmacSHA1");
+            provide("SecretKeyFactory", "HmacSHA224");
+            provide("SecretKeyFactory", "HmacSHA256");
+            provide("SecretKeyFactory", "HmacSHA384");
+            provide("SecretKeyFactory", "HmacSHA512");
 
             // different names: ARCFOUR vs ARC4
             unprovide("Cipher", "ARCFOUR");
@@ -801,7 +807,7 @@ public final class StandardNames extends Assert {
         addBoth(   "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA");
         addBoth(   "SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA");
 
-        // Android does not have Keberos support
+        // Android does not have Kerberos support
         addRi(     "TLS_KRB5_WITH_RC4_128_SHA");
         addRi(     "TLS_KRB5_WITH_RC4_128_MD5");
         addRi(     "TLS_KRB5_WITH_3DES_EDE_CBC_SHA");
