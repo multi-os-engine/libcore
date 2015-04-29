@@ -81,6 +81,10 @@ public class NetworkInterfaceTest extends TestCase {
         // But eth0, if it exists, should...
         NetworkInterface eth0 = NetworkInterface.getByName("eth0");
         if (eth0 != null) {
+            // Try to determine if this is a real Ethernet interace.
+            if (eth0.isPointToPoint()) {
+                return;
+            }
             assertEquals(6, eth0.getHardwareAddress().length);
             for (InterfaceAddress ia : eth0.getInterfaceAddresses()) {
                 if (ia.getAddress() instanceof Inet4Address) {
