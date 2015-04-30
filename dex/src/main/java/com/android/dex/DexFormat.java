@@ -16,6 +16,8 @@
 
 package com.android.dex;
 
+import java.util.regex.Pattern;
+
 /**
  * Constants that show up in and are otherwise related to {@code .dex}
  * files, and helper methods for same.
@@ -37,6 +39,11 @@ public final class DexFormat {
      * application or library {@code .jar} file
      */
     public static final String DEX_IN_JAR_NAME = "classes.dex";
+
+    /**
+     * Regular expression that matches the file names of DEX files in multidex APKs.
+     */
+    public static final Pattern MULTIDEX_IN_JAR_RX = Pattern.compile("classes[0-9]*.dex");
 
     /** common prefix for all dex file "magic numbers" */
     public static final String MAGIC_PREFIX = "dex\n";
