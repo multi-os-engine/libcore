@@ -20,6 +20,9 @@ import android.icu.util.Calendar;
 import android.icu.util.TimeZone;
 import android.icu.util.ULocale;
 
+import java.util.GregorianCalendar;
+import java.util.concurrent.TimeUnit;
+
 import static libcore.icu.DateIntervalFormat.formatDateRange;
 import static libcore.icu.DateUtilsBridge.*;
 
@@ -422,5 +425,14 @@ public class DateIntervalFormatTest extends junit.framework.TestCase {
     assertEquals("10 – 11 AM", formatDateRange(l, utc, 10*HOUR, 11*HOUR, flags));
     assertEquals("11 AM – 1 PM", formatDateRange(l, utc, 11*HOUR, 13*HOUR, flags));
     assertEquals("2 – 3 PM", formatDateRange(l, utc, 14*HOUR, 15*HOUR, flags));
+  }
+
+  // http://b/20708022
+  public void testEndOfDayOnLastDayOfMonth() throws Exception {
+    final ULocale locale = new ULocale("en");
+    final TimeZone timeZone = TimeZone.getTimeZone("UTC");
+
+    assertEquals("April 30, 11:00 PM – May 1, 12:00 AM", formatDateRange(locale, timeZone,
+            1430434800000L, 1430438400000L, FORMAT_SHOW_TIME));
   }
 }
