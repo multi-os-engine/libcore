@@ -20,6 +20,8 @@ import android.icu.util.Calendar;
 import android.icu.util.TimeZone;
 import android.icu.util.ULocale;
 
+import java.util.GregorianCalendar;
+
 import static libcore.icu.DateIntervalFormat.formatDateRange;
 import static libcore.icu.DateUtilsBridge.*;
 
@@ -422,5 +424,26 @@ public class DateIntervalFormatTest extends junit.framework.TestCase {
     assertEquals("10 – 11 AM", formatDateRange(l, utc, 10*HOUR, 11*HOUR, flags));
     assertEquals("11 AM – 1 PM", formatDateRange(l, utc, 11*HOUR, 13*HOUR, flags));
     assertEquals("2 – 3 PM", formatDateRange(l, utc, 14*HOUR, 15*HOUR, flags));
+  }
+
+  // http://b/20708022
+  public void testEndOfDay() throws Exception {
+    final ULocale locale = new ULocale("en");
+    final TimeZone timeZone = TimeZone.getTimeZone("UTC");
+
+    java.util.Calendar start = GregorianCalendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+    start.set(2015, java.util.Calendar.MAY, 4, 16, 00);
+    java.util.Calendar end = GregorianCalendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+
+    // Note that this is bogus because the end time is earlier than the start time. The behaviour
+    // is undefined, but ICU4J does a somewhat decent job of it...
+    //
+    // end.set(2015, java.util.Calendar.MAY, 4, 0, 0, 0);
+    // assertEquals("4:00 PM – 12:00 AM", formatDateRange(locale, timeZone,
+    //         start.getTimeInMillis(), end.getTimeInMillis(), FORMAT_SHOW_TIME));
+
+    end.set(2015, java.util.Calendar.MAY, 5, 0, 0, 0);
+    assertEquals("May 4, 4:00 PM – May 5, 12:00 AM", formatDateRange(locale, timeZone,
+            start.getTimeInMillis(), end.getTimeInMillis(), FORMAT_SHOW_TIME));
   }
 }
