@@ -250,3 +250,183 @@ java_library_host {
 // LOCAL_DROIDDOC_CUSTOM_TEMPLATE_DIR:=build/tools/droiddoc/templates-sdk
 // ANDROIDMK TRANSLATION ERROR: unsupported include
 // include $(BUILD_DROIDDOC)
+
+//
+// Definitions for building the native code needed for the core library.
+//
+
+cc_library_shared {
+    name: "libjavacore",
+    host_supported: true,
+    cflags: [
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+    ],
+    cppflags: [
+        "-std=gnu++11",
+        "-DU_USING_ICU_NAMESPACE=0",
+    ],
+    srcs: [
+        "dalvik/src/main/native/org_apache_harmony_dalvik_NativeTestTarget.cpp",
+
+        "luni/src/main/native/AsynchronousCloseMonitor.cpp",
+        "luni/src/main/native/ExecStrings.cpp",
+        "luni/src/main/native/IcuUtilities.cpp",
+        "luni/src/main/native/JniException.cpp",
+        "luni/src/main/native/NetworkUtilities.cpp",
+        "luni/src/main/native/Register.cpp",
+        "luni/src/main/native/ZipUtilities.cpp",
+        "luni/src/main/native/android_system_OsConstants.cpp",
+        "luni/src/main/native/canonicalize_path.cpp",
+        "luni/src/main/native/cbigint.cpp",
+        "luni/src/main/native/java_io_File.cpp",
+        "luni/src/main/native/java_io_FileDescriptor.cpp",
+        "luni/src/main/native/java_io_ObjectStreamClass.cpp",
+        "luni/src/main/native/java_lang_Character.cpp",
+        "luni/src/main/native/java_lang_Double.cpp",
+        "luni/src/main/native/java_lang_Float.cpp",
+        "luni/src/main/native/java_lang_Math.cpp",
+        "luni/src/main/native/java_lang_ProcessManager.cpp",
+        "luni/src/main/native/java_lang_RealToString.cpp",
+        "luni/src/main/native/java_lang_StrictMath.cpp",
+        "luni/src/main/native/java_lang_StringToReal.cpp",
+        "luni/src/main/native/java_lang_System.cpp",
+        "luni/src/main/native/java_math_NativeBN.cpp",
+        "luni/src/main/native/java_nio_ByteOrder.cpp",
+        "luni/src/main/native/java_text_Bidi.cpp",
+        "luni/src/main/native/java_util_jar_StrictJarFile.cpp",
+        "luni/src/main/native/java_util_regex_Matcher.cpp",
+        "luni/src/main/native/java_util_regex_Pattern.cpp",
+        "luni/src/main/native/java_util_zip_Adler32.cpp",
+        "luni/src/main/native/java_util_zip_CRC32.cpp",
+        "luni/src/main/native/java_util_zip_Deflater.cpp",
+        "luni/src/main/native/java_util_zip_Inflater.cpp",
+        "luni/src/main/native/libcore_icu_AlphabeticIndex.cpp",
+        "luni/src/main/native/libcore_icu_ICU.cpp",
+        "luni/src/main/native/libcore_icu_NativeCollation.cpp",
+        "luni/src/main/native/libcore_icu_NativeConverter.cpp",
+        "luni/src/main/native/libcore_icu_NativeDecimalFormat.cpp",
+        "luni/src/main/native/libcore_icu_NativeIDN.cpp",
+        "luni/src/main/native/libcore_icu_NativeNormalizer.cpp",
+        "luni/src/main/native/libcore_icu_NativePluralRules.cpp",
+        "luni/src/main/native/libcore_icu_TimeZoneNames.cpp",
+        "luni/src/main/native/libcore_icu_Transliterator.cpp",
+        "luni/src/main/native/libcore_io_AsynchronousCloseMonitor.cpp",
+        "luni/src/main/native/libcore_io_Memory.cpp",
+        "luni/src/main/native/libcore_io_Posix.cpp",
+        "luni/src/main/native/org_apache_harmony_xml_ExpatParser.cpp",
+        "luni/src/main/native/readlink.cpp",
+        "luni/src/main/native/sun_misc_Unsafe.cpp",
+        "luni/src/main/native/valueOf.cpp",
+    ],
+
+    static_libs: [
+        "libfdlibm",
+    ],
+
+    shared_libs: [
+        "libexpat",
+        "libicuuc",
+        "libicui18n",
+        "libcrypto",
+        "libz",
+        "libziparchive",
+        "libbase",
+    ],
+
+    target: {
+        android: {
+            shared_libs: [
+                "libdl",
+                "liblog",
+                "libnativehelper",
+                "libutils",
+            ],
+        },
+        host: {
+            host_ldlibs: [
+                "-ldl",
+                "-lpthread",
+            ],
+            static_libs: [
+                "libutils",
+            ],
+        },
+        darwin: {
+            disabled: true,
+        },
+    },
+    local_include_dirs: ["include"],
+
+    stl: "libc++",
+}
+
+// Test JNI library.
+// ANDROIDMK TRANSLATION ERROR: unsupported conditional
+// ifeq ($(LIBCORE_SKIP_TESTS),)
+cc_library_shared {
+    name: "libjavacoretests",
+    host_supported: true,
+    cflags: [
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+    ],
+    cppflags: [
+        "-std=gnu++11",
+        "-DU_USING_ICU_NAMESPACE=0",
+    ],
+    srcs: ["luni/src/test/native/dalvik_system_JniTest.cpp"],
+    local_include_dirs: ["include"],
+    shared_libs: ["libcrypto"],
+    target: {
+        host: {
+            host_ldlibs: [
+                "-ldl",
+                "-lpthread",
+            ],
+        },
+        darwin: {
+            disabled: true,
+        },
+    },
+    stl: "libc++",
+}
+
+// ANDROIDMK TRANSLATION ERROR: endif from unsupported contitional
+// endif
+// LIBCORE_SKIP_TESTS
+
+// Set of gtest unit tests.
+cc_test {
+    srcs: ["luni/src/test/native/libcore_io_Memory_test.cpp"],
+
+    local_include_dirs: ["include"],
+    tags: ["debug"],
+    name: "libjavacore-unit-tests",
+
+    stl: "libc++",
+}
+
+// Set of benchmarks for libjavacore functions.
+cc_benchmark {
+    srcs: ["luni/src/benchmark/native/libcore_io_Memory_bench.cpp"],
+
+    local_include_dirs: ["include"],
+    tags: ["debug"],
+    name: "libjavacore-benchmarks",
+
+    stl: "libc++",
+    compile_multilib: "both",
+    multilib: {
+        lib32: {
+            suffix: "32",
+        },
+        lib64: {
+            suffix: "64",
+        },
+    },
+}
+
+subdirs = ["benchmarks"]
