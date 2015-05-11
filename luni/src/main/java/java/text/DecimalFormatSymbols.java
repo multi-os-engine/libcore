@@ -611,17 +611,21 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         fields.put("exponential", exponentSeparator.charAt(0));
         fields.put("exponentialSeparator", exponentSeparator);
         fields.put("groupingSeparator", getGroupingSeparator());
-        fields.put("infinity", infinity);
+        fields.put("infinity", infinity);s
         fields.put("intlCurrencySymbol", intlCurrencySymbol);
-        fields.put("minusSign", getMinusSign());
+        // Hardcode a value here for backward compatibility
+        fields.put("minusSign", '-');
         fields.put("monetarySeparator", getMonetaryDecimalSeparator());
         fields.put("NaN", NaN);
         fields.put("patternSeparator", getPatternSeparator());
-        fields.put("percent", getPercent());
+        fields.put("percent", '%');
         fields.put("perMill", getPerMill());
         fields.put("serialVersionOnStream", 3);
         fields.put("zeroDigit", getZeroDigit());
         fields.put("locale", locale);
+
+        fields.put("minusSignStr", getMinusSignString());
+        fields.put("percentStr", getPercentString());
         stream.writeFields();
     }
 
@@ -634,10 +638,23 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         setGroupingSeparator(fields.get("groupingSeparator", ','));
         infinity = (String) fields.get("infinity", "");
         intlCurrencySymbol = (String) fields.get("intlCurrencySymbol", "");
-        setMinusSign(fields.get("minusSign", '-'));
+        final String minusSignStr = (String) fields.get("minusSignStr", null);
+        if (minusSignStr != null) {
+            minusSign = minusSignStr;
+        } else {
+            setMinusSign(fields.get("minusSign", '-'));
+        }
+
         NaN = (String) fields.get("NaN", "");
         setPatternSeparator(fields.get("patternSeparator", ';'));
-        setPercent(fields.get("percent", '%'));
+
+        final String percentStr = (String) fields.get("percentStr", null);
+        if (percentStr != null) {
+            percent = percentStr;
+        } else {
+            setPercent(fields.get("percent", '%'));
+        }
+
         setPerMill(fields.get("perMill", '\u2030'));
         setZeroDigit(fields.get("zeroDigit", '0'));
         locale = (Locale) fields.get("locale", null);
