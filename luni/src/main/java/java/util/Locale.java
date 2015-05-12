@@ -335,6 +335,9 @@ public final class Locale implements Cloneable, Serializable {
         final Locale defaultLocale;
         if (!languageTag.isEmpty()) {
             defaultLocale = Locale.forLanguageTag(languageTag);
+            if (defaultLocale.languageCode.isEmpty()) {
+              defaultLocale.languageCode = UNDETERMINED_LANGUAGE;
+            }
         } else {
             String language = System.getProperty("user.language", "en");
             String region = System.getProperty("user.region", "US");
@@ -2222,7 +2225,12 @@ public final class Locale implements Cloneable, Serializable {
             }
         }
 
-        final String languageCode = Builder.normalizeAndValidateLanguage(subtags[0], strict);
+        // The language code "und" is mapped to language "".
+        String languageCode = Builder.normalizeAndValidateLanguage(subtags[0], strict);
+        if (UNDETERMINED_LANGUAGE.equals(languageCode)) {
+          languageCode = "";
+        }
+
         String scriptCode = "";
         int nextSubtag = 1;
         if (lastSubtag > nextSubtag) {
