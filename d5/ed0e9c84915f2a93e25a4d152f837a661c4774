@@ -1,0 +1,8 @@
+Code-Review+1: Adam Langley <agl@google.com>
+Code-Review+2: Kenny Root <kroot@google.com>
+Verified+1: Kenny Root <kroot@google.com>
+Submitted-by: Kenny Root <kroot@google.com>
+Submitted-at: Tue, 12 May 2015 00:54:44 +0000
+Reviewed-on: https://android-review.googlesource.com/150163
+Project: platform/libcore
+Branch: refs/heads/master
