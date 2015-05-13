@@ -878,16 +878,21 @@ public final class OldAbstractPreferencesTest extends TestCase {
 
     class MockPreferenceChangeListener implements PreferenceChangeListener {
         private boolean flagChange = false;
+        private boolean notified = false;
 
         public synchronized void preferenceChange(PreferenceChangeEvent arg0) {
             flagChange = true;
+            notified = true;
             notifyAll();
         }
 
         public synchronized void assertChanged(boolean expected) throws InterruptedException {
-            wait(100);
+            while (!notified) {
+              wait();
+            }
             assertEquals(expected, flagChange);
             flagChange = false;
+            notified = false;
         }
     }
 
@@ -921,25 +926,34 @@ public final class OldAbstractPreferencesTest extends TestCase {
     class MockNodeChangeListener implements NodeChangeListener {
         private boolean flagAdded = false;
         private boolean flagRemoved = false;
+        private boolean notified = false;
 
         public synchronized void childAdded(NodeChangeEvent arg0) {
             flagAdded = true;
+            notified = true;
             notifyAll();
         }
 
         public synchronized void childRemoved(NodeChangeEvent arg0) {
             flagRemoved = true;
+            notified = true;
             notifyAll();
         }
 
         public synchronized void assertAdded(boolean expected) throws InterruptedException {
-            wait(100);
+            while (!notified) {
+              wait();
+            }
             assertEquals(expected, flagAdded);
+            notified = false;
         }
 
         public synchronized void assertRemoved(boolean expected) throws InterruptedException {
-            wait(100);
+            while (!notified) {
+              wait();
+            }
             assertEquals(expected, flagRemoved);
+            notified = false;
         }
     }
 
