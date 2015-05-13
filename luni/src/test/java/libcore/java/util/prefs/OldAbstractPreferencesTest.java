@@ -37,6 +37,9 @@ public final class OldAbstractPreferencesTest extends TestCase {
 
     static final String nodeName = "mock";
 
+    // Timeout this test uses for Object.wait.
+    static final long WAIT_TIMEOUT = 200;
+
     private PreferencesFactory defaultFactory;
 
     AbstractPreferences pref;
@@ -885,7 +888,9 @@ public final class OldAbstractPreferencesTest extends TestCase {
         }
 
         public synchronized void assertChanged(boolean expected) throws InterruptedException {
-            wait(100);
+            if (!flagChange) {
+              wait(expected ? 0 : WAIT_TIMEOUT);
+            }
             assertEquals(expected, flagChange);
             flagChange = false;
         }
@@ -933,12 +938,16 @@ public final class OldAbstractPreferencesTest extends TestCase {
         }
 
         public synchronized void assertAdded(boolean expected) throws InterruptedException {
-            wait(100);
+            if (!flagAdded) {
+              wait(expected ? 0 : WAIT_TIMEOUT);
+            }
             assertEquals(expected, flagAdded);
         }
 
         public synchronized void assertRemoved(boolean expected) throws InterruptedException {
-            wait(100);
+            if (!flagRemoved) {
+              wait(expected ? 0 : WAIT_TIMEOUT);
+            }
             assertEquals(expected, flagRemoved);
         }
     }
