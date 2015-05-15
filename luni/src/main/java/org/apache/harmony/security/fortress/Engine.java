@@ -164,7 +164,7 @@ public final class Engine {
             return cacheEntry.services;
         }
         String name = this.serviceName + "." + algoUC;
-        ArrayList<Provider.Service> services = Services.getServices(name);
+        ArrayList<Provider.Service> services = Services.getServices(serviceName, algoUC);
         this.serviceCache = new ServiceCacheEntry(algoUC, newCacheVersion, services);
         return services;
     }

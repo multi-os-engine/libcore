@@ -188,9 +188,6 @@ public final class Security {
         if (p == null) {
             return;
         }
-        Services.removeProvider(p.getProviderNumber());
-        renumProviders();
-        p.setProviderNumber(-1);
     }
 
     /**
