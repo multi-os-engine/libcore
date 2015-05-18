@@ -22,11 +22,6 @@
 // Mac OS.
 #include <AvailabilityMacros.h> // For MAC_OS_X_VERSION_MAX_ALLOWED
 
-#include <libkern/OSByteOrder.h>
-#define bswap_16 OSSwapInt16
-#define bswap_32 OSSwapInt32
-#define bswap_64 OSSwapInt64
-
 #include <crt_externs.h>
 #define environ (*_NSGetEnviron())
 
@@ -69,7 +64,6 @@ static inline int mincore(void* addr, size_t length, unsigned char* vec) {
 
 // Bionic or glibc.
 
-#include <byteswap.h>
 #include <sys/sendfile.h>
 #include <sys/statvfs.h>
 
