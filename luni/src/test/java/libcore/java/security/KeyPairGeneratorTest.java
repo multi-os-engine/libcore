@@ -302,6 +302,30 @@ public class KeyPairGeneratorTest extends TestCase {
         test_KeyWithAllKeyFactories(k);
     }
 
+    /* bytesIndex returns the first index at which |b| appears in |a|, or
+     * Integer.MAX_VALUE if no copies are found. */
+    private int bytesIndex(byte[] a, byte[] b) {
+        for (int offset = 0; offset < a.length; offset++) {
+            if (a.length < offset + b.length) {
+                break;
+            }
+
+            boolean found = true;
+            for (int i = 0; i < b.length; i++) {
+                if (a[offset + i] != b[i]) {
+                    found = false;
+                    break;
+                }
+            }
+
+            if (found) {
+                return offset;
+            }
+        }
+
+        return Integer.MAX_VALUE;
+    }
+
     private void test_KeyWithAllKeyFactories(Key k) throws Exception {
         byte[] encoded = k.getEncoded();
 
@@ -318,10 +342,57 @@ public class KeyPairGeneratorTest extends TestCase {
                     continue;
                 }
 
+                boolean shouldWork = true;
+                if (p.getName().equals("AndroidOpenSSL") && keyAlgo.equals("EC")) {
+                    // OpenSSL isn't expected to support every elliptic
+                    // curve under the sun, but BouncyCastle treats them
+                    // like Pokémon. If a recognised OID doesn't appear in
+                    // the PKCS#8 data then we expect OpenSSL to fail to
+                    // process the key.
+                    final byte[] oid224 = {
+                        (byte) 0x06, (byte) 0x05, (byte) 0x2b, (byte) 0x81,
+                        (byte) 0x04, (byte) 0x00, (byte) 0x21,
+                    };
+                    final byte[] oid256 = {
+                        (byte) 0x06, (byte) 0x08, (byte) 0x2a, (byte) 0x86,
+                        (byte) 0x48, (byte) 0xce, (byte) 0x3d, (byte) 0x03,
+                        (byte) 0x01, (byte) 0x07,
+                    };
+                    final byte[] oid384 = {
+                        (byte) 0x06, (byte) 0x05, (byte) 0x2b, (byte) 0x81,
+                        (byte) 0x04, (byte) 0x00, (byte) 0x22,
+                    };
+                    final byte[] oid521 = {
+                        (byte) 0x06, (byte) 0x05, (byte) 0x2b, (byte) 0x81,
+                        (byte) 0x04, (byte) 0x00, (byte) 0x23,
+                    };
+
+                    // offsetLimit is only roughly correct: the actual offsets
+                    // are between 13 and 17. However, given the limited amount
+                    // of flexibility in the PKCS#8 encoding and the contents
+                    // of the OIDs, it should be enough to prevent copies of an
+                    // OID that randomly appear in the point data from being
+                    // detected.
+                    final int offsetLimit = 17;
+                    shouldWork = bytesIndex(encoded, oid224) <= offsetLimit ||
+                                 bytesIndex(encoded, oid256) <= offsetLimit ||
+                                 bytesIndex(encoded, oid384) <= offsetLimit ||
+                                 bytesIndex(encoded, oid521) <= offsetLimit;
+                }
+
                 if ("PKCS#8".equals(k.getFormat())) {
                     PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(encoded);
                     KeyFactory kf = KeyFactory.getInstance(k.getAlgorithm(), p);
-                    PrivateKey privKey = kf.generatePrivate(spec);
+                    PrivateKey privKey;
+                    try {
+                        privKey = kf.generatePrivate(spec);
+                    } catch (Exception e) {
+                        if (shouldWork) {
+                            throw e;
+                        }
+                        continue;
+                    }
+                    assertTrue(shouldWork);
                     assertNotNull(k.getAlgorithm() + ", provider=" + p.getName(), privKey);
 
                     /*
@@ -338,7 +409,16 @@ public class KeyPairGeneratorTest extends TestCase {
                 } else if ("X.509".equals(k.getFormat())) {
                     X509EncodedKeySpec spec = new X509EncodedKeySpec(encoded);
                     KeyFactory kf = KeyFactory.getInstance(k.getAlgorithm(), p);
-                    PublicKey pubKey = kf.generatePublic(spec);
+                    PublicKey pubKey;
+                    try {
+                        pubKey = kf.generatePublic(spec);
+                    } catch (Exception e) {
+                        if (shouldWork) {
+                            throw e;
+                        }
+                        continue;
+                    }
+                    assertTrue(shouldWork);
                     assertNotNull(pubKey);
                     assertTrue(Arrays.equals(encoded, pubKey.getEncoded()));
                 }
