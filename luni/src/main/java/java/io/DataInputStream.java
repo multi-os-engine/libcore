@@ -17,7 +17,6 @@
 
 package java.io;
 
-import java.nio.ByteOrder;
 import java.nio.charset.ModifiedUtf8;
 import libcore.io.Memory;
 import libcore.io.Streams;
@@ -101,7 +100,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
 
     public final int readInt() throws IOException {
         Streams.readFully(in, scratch, 0, SizeOf.INT);
-        return Memory.peekInt(scratch, 0, ByteOrder.BIG_ENDIAN);
+        return Memory.unsafePeekInt(scratch, 0, true /* needs swap */);
     }
 
     /**
@@ -145,12 +144,12 @@ public class DataInputStream extends FilterInputStream implements DataInput {
 
     public final long readLong() throws IOException {
         Streams.readFully(in, scratch, 0, SizeOf.LONG);
-        return Memory.peekLong(scratch, 0, ByteOrder.BIG_ENDIAN);
+        return Memory.unsafePeekLong(scratch, 0, true /* needs swap */);
     }
 
     public final short readShort() throws IOException {
         Streams.readFully(in, scratch, 0, SizeOf.SHORT);
-        return Memory.peekShort(scratch, 0, ByteOrder.BIG_ENDIAN);
+        return Memory.unsafePeekShort(scratch, 0, true /* needs swap */);
     }
 
     public final int readUnsignedByte() throws IOException {

@@ -28,7 +28,6 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -874,7 +873,7 @@ public class InetAddress implements Serializable {
         if (ipaddress == null) {
             fields.put("address", 0);
         } else {
-            fields.put("address", Memory.peekInt(ipaddress, 0, ByteOrder.BIG_ENDIAN));
+            fields.put("address", Memory.unsafePeekInt(ipaddress, 0, true /* needsSwap */));
         }
         fields.put("family", family);
         fields.put("hostName", hostName);
@@ -886,7 +885,7 @@ public class InetAddress implements Serializable {
         ObjectInputStream.GetField fields = stream.readFields();
         int addr = fields.get("address", 0);
         ipaddress = new byte[4];
-        Memory.pokeInt(ipaddress, 0, addr, ByteOrder.BIG_ENDIAN);
+        Memory.unsafePokeInt(ipaddress, 0, addr, true /* needsSwap */);
         hostName = (String) fields.get("hostName", null);
         family = fields.get("family", 2);
     }

@@ -23,7 +23,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.nio.ByteOrder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -600,7 +599,7 @@ public class ObjectStreamClass implements Serializable {
 
         // now compute the UID based on the SHA
         byte[] hash = digest.digest(sha.toByteArray());
-        return Memory.peekLong(hash, 0, ByteOrder.LITTLE_ENDIAN);
+        return Memory.unsafePeekLong(hash, 0, false /* needs swap */);
     }
 
     /**

@@ -20,9 +20,7 @@ package java.util.zip;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
-import java.nio.ByteOrder;
 import java.nio.charset.ModifiedUtf8;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import libcore.io.Memory;
 import libcore.io.Streams;
@@ -195,20 +193,20 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                 Streams.readFully(in, hdrBuf, 0, EXTHDR);
             }
 
-            int sig = Memory.peekInt(hdrBuf, 0, ByteOrder.LITTLE_ENDIAN);
+            int sig = Memory.unsafePeekInt(hdrBuf, 0, false /* needsSwap */);
             if (sig != (int) EXTSIG) {
                 throw new ZipException(String.format("unknown format (EXTSIG=%x)", sig));
             }
-            currentEntry.crc = ((long) Memory.peekInt(hdrBuf, EXTCRC, ByteOrder.LITTLE_ENDIAN)) & 0xffffffffL;
+            currentEntry.crc = ((long) Memory.unsafePeekInt(hdrBuf, EXTCRC, false /* needsSwap */)) & 0xffffffffL;
 
             if (isZip64) {
-                currentEntry.compressedSize = Memory.peekLong(hdrBuf, EXTSIZ, ByteOrder.LITTLE_ENDIAN);
+                currentEntry.compressedSize = Memory.unsafePeekLong(hdrBuf, EXTSIZ, false /* needsSwap */);
                 // Note that we apply an adjustment of 4 bytes to the offset of EXTLEN to account
                 // for the 8 byte size for zip64.
-                currentEntry.size = Memory.peekLong(hdrBuf, EXTLEN + 4, ByteOrder.LITTLE_ENDIAN);
+                currentEntry.size = Memory.unsafePeekLong(hdrBuf, EXTLEN + 4, false /* needsSwap */);
             } else {
-                currentEntry.compressedSize = ((long) Memory.peekInt(hdrBuf, EXTSIZ, ByteOrder.LITTLE_ENDIAN)) & 0xffffffffL;
-                currentEntry.size = ((long) Memory.peekInt(hdrBuf, EXTLEN, ByteOrder.LITTLE_ENDIAN)) & 0xffffffffL;
+                currentEntry.compressedSize = ((long) Memory.unsafePeekInt(hdrBuf, EXTSIZ, false /* needsSwap */)) & 0xffffffffL;
+                currentEntry.size = ((long) Memory.unsafePeekInt(hdrBuf, EXTLEN, false /* needsSwap */)) & 0xffffffffL;
             }
         }
         if (currentEntry.crc != crc.getValue()) {
@@ -233,7 +231,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
 
         // Read the signature to see whether there's another local file header.
         Streams.readFully(in, hdrBuf, 0, 4);
-        int hdr = Memory.peekInt(hdrBuf, 0, ByteOrder.LITTLE_ENDIAN);
+        int hdr = Memory.unsafePeekInt(hdrBuf, 0, false /* needsSwap */);
         if (hdr == CENSIG) {
             entriesEnd = true;
             return null;
@@ -259,9 +257,9 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
         int ceCompressionMethod = peekShort(LOCHOW - LOCVER);
         long ceCrc = 0, ceCompressedSize = 0, ceSize = -1;
         if (!hasDD) {
-            ceCrc = ((long) Memory.peekInt(hdrBuf, LOCCRC - LOCVER, ByteOrder.LITTLE_ENDIAN)) & 0xffffffffL;
-            ceCompressedSize = ((long) Memory.peekInt(hdrBuf, LOCSIZ - LOCVER, ByteOrder.LITTLE_ENDIAN)) & 0xffffffffL;
-            ceSize = ((long) Memory.peekInt(hdrBuf, LOCLEN - LOCVER, ByteOrder.LITTLE_ENDIAN)) & 0xffffffffL;
+            ceCrc = ((long) Memory.unsafePeekInt(hdrBuf, LOCCRC - LOCVER, false /* needsSwap */)) & 0xffffffffL;
+            ceCompressedSize = ((long) Memory.unsafePeekInt(hdrBuf, LOCSIZ - LOCVER, false /* needsSwap */)) & 0xffffffffL;
+            ceSize = ((long) Memory.unsafePeekInt(hdrBuf, LOCLEN - LOCVER, false /* needsSwap */)) & 0xffffffffL;
         }
         int nameLength = peekShort(LOCNAM - LOCVER);
         if (nameLength == 0) {
@@ -308,7 +306,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
     }
 
     private int peekShort(int offset) {
-        return Memory.peekShort(hdrBuf, offset, ByteOrder.LITTLE_ENDIAN) & 0xffff;
+        return Memory.unsafePeekShort(hdrBuf, offset, false /* needsSwap */) & 0xffff;
     }
 
     /**

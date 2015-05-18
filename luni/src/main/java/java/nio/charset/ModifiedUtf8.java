@@ -18,7 +18,6 @@
 package java.nio.charset;
 
 import java.io.UTFDataFormatException;
-import java.nio.ByteOrder;
 import libcore.io.Memory;
 import libcore.io.SizeOf;
 
@@ -118,7 +117,7 @@ public class ModifiedUtf8 {
     public static byte[] encode(String s) throws UTFDataFormatException {
         int utfCount = (int) ModifiedUtf8.countBytes(s, true);
         byte[] result = new byte[SizeOf.SHORT + utfCount];
-        Memory.pokeShort(result, 0, (short) utfCount, ByteOrder.BIG_ENDIAN);
+        Memory.unsafePokeShort(result, 0, (short) utfCount, true /* needs swap */);
         ModifiedUtf8.encode(result, SizeOf.SHORT, s);
         return result;
     }

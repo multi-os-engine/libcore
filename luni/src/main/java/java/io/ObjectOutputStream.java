@@ -21,7 +21,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.nio.ByteOrder;
 import java.nio.charset.ModifiedUtf8;
 import java.util.List;
 import libcore.io.Memory;
@@ -1417,12 +1416,12 @@ public class ObjectOutputStream extends OutputStream implements ObjectOutput, Ob
         if (count <= 0xffff) {
             buffer = new byte[1 + SizeOf.SHORT + (int) count];
             buffer[offset++] = TC_STRING;
-            Memory.pokeShort(buffer, offset, (short) count, ByteOrder.BIG_ENDIAN);
+            Memory.unsafePokeShort(buffer, offset, (short) count, true /* needs swap */);
             offset += SizeOf.SHORT;
         } else {
             buffer = new byte[1 + SizeOf.LONG + (int) count];
             buffer[offset++] = TC_LONGSTRING;
-            Memory.pokeLong(buffer, offset, count, ByteOrder.BIG_ENDIAN);
+            Memory.unsafePokeLong(buffer, offset, count, true /* needs swap */);
             offset += SizeOf.LONG;
         }
         ModifiedUtf8.encode(buffer, offset, object);

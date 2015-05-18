@@ -20,7 +20,6 @@ package java.util;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.nio.ByteOrder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -153,8 +152,8 @@ public final class UUID implements Serializable, Comparable<UUID> {
     }
 
     private static UUID makeUuid(byte[] hash, int version) {
-        long msb = Memory.peekLong(hash, 0, ByteOrder.BIG_ENDIAN);
-        long lsb = Memory.peekLong(hash, 8, ByteOrder.BIG_ENDIAN);
+        long msb = Memory.unsafePeekLong(hash, 0, true /* needsSwap */);
+        long lsb = Memory.unsafePeekLong(hash, 8, true /* needsSwap */);
         // Set the version field.
         msb &= ~(0xfL << 12);
         msb |= ((long) version) << 12;

@@ -17,7 +17,6 @@
 
 package java.net;
 
-import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import libcore.io.Memory;
 
@@ -77,21 +76,21 @@ class Socks4Message {
      * Returns the request's port number.
      */
     public int getPort() {
-        return Memory.peekShort(buffer, INDEX_PORT, ByteOrder.BIG_ENDIAN);
+        return Memory.unsafePeekShort(buffer, INDEX_PORT, true /* needsSwap */);
     }
 
     /**
      * Set the request's port number.
      */
     public void setPort(int port) {
-        Memory.pokeShort(buffer, INDEX_PORT, (short) port, ByteOrder.BIG_ENDIAN);
+        Memory.unsafePokeShort(buffer, INDEX_PORT, (short) port, true /* needsSwap */);
     }
 
     /**
      * Returns the IP address of the request as an integer.
      */
     public int getIP() {
-        return Memory.peekInt(buffer, INDEX_IP, ByteOrder.BIG_ENDIAN);
+        return Memory.unsafePeekInt(buffer, INDEX_IP, true /* needsSwap */);
     }
 
     /**

@@ -164,14 +164,14 @@ final class ByteArrayBuffer extends ByteBuffer {
     if (newPosition > limit) {
       throw new BufferUnderflowException();
     }
-    char result = (char) Memory.peekShort(backingArray, arrayOffset + position, order);
+    char result = (char) Memory.unsafePeekShort(backingArray, arrayOffset + position, order.needsSwap);
     position = newPosition;
     return result;
   }
 
   @Override public final char getChar(int index) {
     checkIndex(index, SizeOf.CHAR);
-    return (char) Memory.peekShort(backingArray, arrayOffset + index, order);
+    return (char) Memory.unsafePeekShort(backingArray, arrayOffset + index, order.needsSwap);
   }
 
   @Override public final double getDouble() {
@@ -195,14 +195,14 @@ final class ByteArrayBuffer extends ByteBuffer {
     if (newPosition > limit) {
       throw new BufferUnderflowException();
     }
-    int result = Memory.peekInt(backingArray, arrayOffset + position, order);
+    int result = Memory.unsafePeekInt(backingArray, arrayOffset + position, order.needsSwap);
     position = newPosition;
     return result;
   }
 
   @Override public final int getInt(int index) {
     checkIndex(index, SizeOf.INT);
-    return Memory.peekInt(backingArray, arrayOffset + index, order);
+    return Memory.unsafePeekInt(backingArray, arrayOffset + index, order.needsSwap);
   }
 
   @Override public final long getLong() {
@@ -210,14 +210,14 @@ final class ByteArrayBuffer extends ByteBuffer {
     if (newPosition > limit) {
       throw new BufferUnderflowException();
     }
-    long result = Memory.peekLong(backingArray, arrayOffset + position, order);
+    long result = Memory.unsafePeekLong(backingArray, arrayOffset + position, order.needsSwap);
     position = newPosition;
     return result;
   }
 
   @Override public final long getLong(int index) {
     checkIndex(index, SizeOf.LONG);
-    return Memory.peekLong(backingArray, arrayOffset + index, order);
+    return Memory.unsafePeekLong(backingArray, arrayOffset + index, order.needsSwap);
   }
 
   @Override public final short getShort() {
@@ -225,14 +225,14 @@ final class ByteArrayBuffer extends ByteBuffer {
     if (newPosition > limit) {
       throw new BufferUnderflowException();
     }
-    short result = Memory.peekShort(backingArray, arrayOffset + position, order);
+    short result = Memory.unsafePeekShort(backingArray, arrayOffset + position, order.needsSwap);
     position = newPosition;
     return result;
   }
 
   @Override public final short getShort(int index) {
     checkIndex(index, SizeOf.SHORT);
-    return Memory.peekShort(backingArray, arrayOffset + index, order);
+    return Memory.unsafePeekShort(backingArray, arrayOffset + index, order.needsSwap);
   }
 
   @Override public final boolean isDirect() {
@@ -310,7 +310,7 @@ final class ByteArrayBuffer extends ByteBuffer {
       throw new ReadOnlyBufferException();
     }
     checkIndex(index, SizeOf.CHAR);
-    Memory.pokeShort(backingArray, arrayOffset + index, (short) value, order);
+    Memory.unsafePokeShort(backingArray, arrayOffset + index, (short) value, order.needsSwap);
     return this;
   }
 
@@ -322,7 +322,7 @@ final class ByteArrayBuffer extends ByteBuffer {
     if (newPosition > limit) {
       throw new BufferOverflowException();
     }
-    Memory.pokeShort(backingArray, arrayOffset + position, (short) value, order);
+    Memory.unsafePokeShort(backingArray, arrayOffset + position, (short) value, order.needsSwap);
     position = newPosition;
     return this;
   }
@@ -351,7 +351,7 @@ final class ByteArrayBuffer extends ByteBuffer {
     if (newPosition > limit) {
       throw new BufferOverflowException();
     }
-    Memory.pokeInt(backingArray, arrayOffset + position, value, order);
+    Memory.unsafePokeInt(backingArray, arrayOffset + position, value, order.needsSwap);
     position = newPosition;
     return this;
   }
@@ -361,7 +361,7 @@ final class ByteArrayBuffer extends ByteBuffer {
       throw new ReadOnlyBufferException();
     }
     checkIndex(index, SizeOf.INT);
-    Memory.pokeInt(backingArray, arrayOffset + index, value, order);
+    Memory.unsafePokeInt(backingArray, arrayOffset + index, value, order.needsSwap);
     return this;
   }
 
@@ -370,7 +370,7 @@ final class ByteArrayBuffer extends ByteBuffer {
       throw new ReadOnlyBufferException();
     }
     checkIndex(index, SizeOf.LONG);
-    Memory.pokeLong(backingArray, arrayOffset + index, value, order);
+    Memory.unsafePokeLong(backingArray, arrayOffset + index, value, order.needsSwap);
     return this;
   }
 
@@ -382,7 +382,7 @@ final class ByteArrayBuffer extends ByteBuffer {
     if (newPosition > limit) {
       throw new BufferOverflowException();
     }
-    Memory.pokeLong(backingArray, arrayOffset + position, value, order);
+    Memory.unsafePokeLong(backingArray, arrayOffset + position, value, order.needsSwap);
     position = newPosition;
     return this;
   }
@@ -392,7 +392,7 @@ final class ByteArrayBuffer extends ByteBuffer {
       throw new ReadOnlyBufferException();
     }
     checkIndex(index, SizeOf.SHORT);
-    Memory.pokeShort(backingArray, arrayOffset + index, value, order);
+    Memory.unsafePokeShort(backingArray, arrayOffset + index, value, order.needsSwap);
     return this;
   }
 
@@ -404,7 +404,7 @@ final class ByteArrayBuffer extends ByteBuffer {
     if (newPosition > limit) {
       throw new BufferOverflowException();
     }
-    Memory.pokeShort(backingArray, arrayOffset + position, value, order);
+    Memory.unsafePokeShort(backingArray, arrayOffset + position, value, order.needsSwap);
     position = newPosition;
     return this;
   }

@@ -23,7 +23,6 @@ import java.io.FileDescriptor;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 import libcore.io.IoBridge;
 import libcore.io.Libcore;
@@ -407,7 +406,7 @@ public class PlainSocketImpl extends SocketImpl {
             // currently the Socks4Message.getIP() only returns int,
             // so only works with IPv4 4byte addresses
             byte[] replyBytes = new byte[4];
-            Memory.pokeInt(replyBytes, 0, reply.getIP(), ByteOrder.BIG_ENDIAN);
+            Memory.unsafePokeInt(replyBytes, 0, reply.getIP(), true /* needs swap */);
             address = InetAddress.getByAddress(replyBytes);
         }
         localport = reply.getPort();

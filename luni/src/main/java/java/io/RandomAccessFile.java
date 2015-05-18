@@ -19,7 +19,6 @@ package java.io;
 
 import android.system.ErrnoException;
 import dalvik.system.CloseGuard;
-import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.charset.ModifiedUtf8;
 import java.nio.NioUtils;
@@ -436,7 +435,7 @@ public class RandomAccessFile implements DataInput, DataOutput, Closeable {
      */
     public final int readInt() throws IOException {
         readFully(scratch, 0, SizeOf.INT);
-        return Memory.peekInt(scratch, 0, ByteOrder.BIG_ENDIAN);
+        return Memory.unsafePeekInt(scratch, 0, true /* needs swap */);
     }
 
     /**
@@ -497,7 +496,7 @@ public class RandomAccessFile implements DataInput, DataOutput, Closeable {
      */
     public final long readLong() throws IOException {
         readFully(scratch, 0, SizeOf.LONG);
-        return Memory.peekLong(scratch, 0, ByteOrder.BIG_ENDIAN);
+        return Memory.unsafePeekLong(scratch, 0, true /* needs swap */);
     }
 
     /**
@@ -514,7 +513,7 @@ public class RandomAccessFile implements DataInput, DataOutput, Closeable {
      */
     public final short readShort() throws IOException {
         readFully(scratch, 0, SizeOf.SHORT);
-        return Memory.peekShort(scratch, 0, ByteOrder.BIG_ENDIAN);
+        return Memory.unsafePeekShort(scratch, 0, true /* needs swap */);
     }
 
     /**
@@ -826,7 +825,7 @@ public class RandomAccessFile implements DataInput, DataOutput, Closeable {
      * @see #readInt()
      */
     public final void writeInt(int val) throws IOException {
-        Memory.pokeInt(scratch, 0, val, ByteOrder.BIG_ENDIAN);
+        Memory.unsafePokeInt(scratch, 0, val, true /* needs swap */);
         write(scratch, 0, SizeOf.INT);
     }
 
@@ -841,7 +840,7 @@ public class RandomAccessFile implements DataInput, DataOutput, Closeable {
      * @see #readLong()
      */
     public final void writeLong(long val) throws IOException {
-        Memory.pokeLong(scratch, 0, val, ByteOrder.BIG_ENDIAN);
+        Memory.unsafePokeLong(scratch, 0, val, true /* needs swap */);
         write(scratch, 0, SizeOf.LONG);
     }
 
@@ -858,7 +857,7 @@ public class RandomAccessFile implements DataInput, DataOutput, Closeable {
      * @see DataInput#readUnsignedShort()
      */
     public final void writeShort(int val) throws IOException {
-        Memory.pokeShort(scratch, 0, (short) val, ByteOrder.BIG_ENDIAN);
+        Memory.unsafePokeShort(scratch, 0, (short) val, true /* needs swap */);
         write(scratch, 0, SizeOf.SHORT);
     }
 

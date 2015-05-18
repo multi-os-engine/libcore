@@ -59,7 +59,7 @@ public final class HeapBufferIterator extends BufferIterator {
     }
 
     public int readInt() {
-        int result = Memory.peekInt(buffer, offset + position, order);
+        int result = Memory.unsafePeekInt(buffer, offset + position, order.needsSwap);
         position += SizeOf.INT;
         return result;
     }
@@ -71,7 +71,7 @@ public final class HeapBufferIterator extends BufferIterator {
     }
 
     public short readShort() {
-        short result = Memory.peekShort(buffer, offset + position, order);
+        short result = Memory.unsafePeekShort(buffer, offset + position, order.needsSwap);
         position += SizeOf.SHORT;
         return result;
     }

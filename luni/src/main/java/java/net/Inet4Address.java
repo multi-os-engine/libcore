@@ -18,7 +18,6 @@
 package java.net;
 
 import java.io.ObjectStreamException;
-import java.nio.ByteOrder;
 import libcore.io.Memory;
 import static android.system.OsConstants.*;
 
@@ -71,7 +70,7 @@ public final class Inet4Address extends InetAddress {
             return false;
         }
 
-        int address = Memory.peekInt(ipaddress, 0, ByteOrder.BIG_ENDIAN);
+        int address = Memory.unsafePeekInt(ipaddress, 0, true /* needsSwap */);
         /*
          * Now check the boundaries of the global space if we have an address
          * that is prefixed by something less than 111000000000000000000001

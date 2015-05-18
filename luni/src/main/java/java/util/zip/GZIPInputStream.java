@@ -21,7 +21,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 import libcore.io.Memory;
 import libcore.io.Streams;
@@ -104,7 +103,7 @@ public class GZIPInputStream extends InflaterInputStream {
 
         try {
             byte[] header = readHeader(is);
-            final short magic = Memory.peekShort(header, 0, ByteOrder.LITTLE_ENDIAN);
+            final short magic = Memory.unsafePeekShort(header, 0, false /* needsSwap */);
             if (magic != (short) GZIP_MAGIC) {
                 throw new IOException(String.format("unknown format (magic number %x)", magic));
             }
@@ -191,7 +190,7 @@ public class GZIPInputStream extends InflaterInputStream {
             return true;
         }
 
-        final short magic = Memory.peekShort(buffer, 0, ByteOrder.LITTLE_ENDIAN);
+        final short magic = Memory.unsafePeekShort(buffer, 0, false /* needsSwap */);
         if (magic != (short) GZIP_MAGIC) {
             // Don't throw here because we've already read one valid member
             // from this stream.
@@ -222,7 +221,7 @@ public class GZIPInputStream extends InflaterInputStream {
             if (hcrc) {
                 crc.update(header, 0, 2);
             }
-            int length = Memory.peekShort(header, 0, ByteOrder.LITTLE_ENDIAN) & 0xffff;
+            int length = Memory.unsafePeekShort(header, 0, false /* needsSwap */) & 0xffff;
             while (length > 0) {
                 int max = length > scratch.length ? scratch.length : length;
                 int result = in.read(scratch, 0, max);
@@ -243,7 +242,7 @@ public class GZIPInputStream extends InflaterInputStream {
         }
         if (hcrc) {
             Streams.readFully(in, header, 0, 2);
-            short crc16 = Memory.peekShort(header, 0, ByteOrder.LITTLE_ENDIAN);
+            short crc16 = Memory.unsafePeekShort(header, 0, false /* needsSwap */);
             if ((short) crc.getValue() != crc16) {
                 throw new IOException("CRC mismatch");
             }
@@ -261,10 +260,10 @@ public class GZIPInputStream extends InflaterInputStream {
         System.arraycopy(buf, len - size, b, 0, copySize);
         Streams.readFully(in, b, copySize, trailerSize - copySize);
 
-        if (Memory.peekInt(b, 0, ByteOrder.LITTLE_ENDIAN) != (int) crc.getValue()) {
+        if (Memory.unsafePeekInt(b, 0, false /* needsSwap */) != (int) crc.getValue()) {
             throw new IOException("CRC mismatch");
         }
-        if (Memory.peekInt(b, 4, ByteOrder.LITTLE_ENDIAN) != inf.getTotalOut()) {
+        if (Memory.unsafePeekInt(b, 4, false /* needsSwap */) != inf.getTotalOut()) {
             throw new IOException("Size mismatch");
         }
     }

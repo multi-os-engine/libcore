@@ -17,7 +17,6 @@
 
 package java.security;
 
-import java.nio.ByteOrder;
 import java.util.Random;
 import libcore.io.Memory;
 import libcore.io.SizeOf;
@@ -255,7 +254,7 @@ public class SecureRandom extends Random {
             return;
         }
         byte[] byteSeed = new byte[SizeOf.LONG];
-        Memory.pokeLong(byteSeed, 0, seed, ByteOrder.BIG_ENDIAN);
+        Memory.unsafePokeLong(byteSeed, 0, seed, true /* needsSwap */);
         setSeed(byteSeed);
     }
 
