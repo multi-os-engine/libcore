@@ -393,16 +393,20 @@ public final class StandardNames extends Assert {
             unprovide("MessageDigest", "SHA");
             provide("MessageDigest", "SHA-1");
 
-            // Added to support Android KeyStore operations
+            // Originally added to support Android KeyStore operations
             provide("Signature", "NONEwithRSA");
             provide("Cipher", "RSA/ECB/NOPADDING");
             provide("Cipher", "RSA/ECB/PKCS1PADDING");
-            provide("SecretKeyFactory", "AES");
-            provide("SecretKeyFactory", "HmacSHA1");
-            provide("SecretKeyFactory", "HmacSHA224");
-            provide("SecretKeyFactory", "HmacSHA256");
-            provide("SecretKeyFactory", "HmacSHA384");
-            provide("SecretKeyFactory", "HmacSHA512");
+
+            if (Security.getProvider("AndroidKeyStore") != null) {
+                // These are only present in AndroidKeyStore
+                provide("SecretKeyFactory", "AES");
+                provide("SecretKeyFactory", "HmacSHA1");
+                provide("SecretKeyFactory", "HmacSHA224");
+                provide("SecretKeyFactory", "HmacSHA256");
+                provide("SecretKeyFactory", "HmacSHA384");
+                provide("SecretKeyFactory", "HmacSHA512");
+            }
 
             // different names: ARCFOUR vs ARC4
             unprovide("Cipher", "ARCFOUR");
