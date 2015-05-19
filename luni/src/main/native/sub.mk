@@ -59,3 +59,5 @@ LOCAL_STATIC_LIBRARIES += \
 LOCAL_SHARED_LIBRARIES += \
     liblog \
     libnativehelper \
+
+LOCAL_CFLAGS += -fno-strict-aliasing
