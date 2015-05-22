@@ -1713,6 +1713,10 @@ public class MathTest extends junit.framework.TestCase {
     public void test_sqrtD() {
         // Test for method double java.lang.Math.sqrt(double)
         assertEquals("Incorrect root returned2", 7, Math.sqrt(49), 0);
+
+        double d = Double.longBitsToDouble(4638648202453526795L /* approximately 127.15568 */);
+        assertEquals("Incorrect root returned3", 4622537629043927147L,
+                Double.doubleToRawLongBits(Math.sqrt(d)));
     }
 
     /**

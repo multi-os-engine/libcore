@@ -99,9 +99,33 @@ static jdouble Math_cbrt(JNIEnv*, jclass, jdouble a) {
     return cbrt(a);
 }
 
+#if defined(__i386__) && !defined(HAVE_ANDROID_OS)
+extern "C" {
+    extern jdouble ieee_sqrt(jdouble);
+}
+
+static jdouble Math_sqrt(JNIEnv*, jclass, jdouble a) {
+    /* This is just a workaround for inaccurate
+     * calculations produced by Math.sqrt() in
+     * x86 host mode.
+     *
+     * Math.sqrt() calls sqrt() from glibc libm.so.
+     * In some cases x86 sqrt() produces results
+     * different from x86_64 sqrt() when run in host
+     * mode. It also produces results different from
+     * x86 target mode. Such a behavior is unallowable
+     * because results must be the same regardless of
+     * mode. The ieee_sqrt() is supposed to be more
+     * accurate but slower. However, we may afford a
+     * bit of performance degradation in host mode.
+     */
+    return ieee_sqrt(a);
+}
+#else
 static jdouble Math_sqrt(JNIEnv*, jclass, jdouble a) {
     return sqrt(a);
 }
+#endif
 
 static jdouble Math_expm1(JNIEnv*, jclass, jdouble a) {
     return expm1(a);
