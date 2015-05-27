@@ -260,12 +260,13 @@ public class OldSystemTest extends junit.framework.TestCase {
         while(rt.freeMemory() < beforeTest * 2/3) {
              vec.add(new StringBuffer(1000));
         }
-        long beforeGC = rt.freeMemory();
-        System.gc();
-        long afterGC = rt.freeMemory();
+        vec = null;
+        long beforeGC = rt.totalMemory() - rt.freeMemory();
+        rt.gc();
+        long afterGC = rt.totalMemory() - rt.freeMemory();
         assertTrue("memory was not released after calling System.gc()." +
                 "before gc: " + beforeGC + "; after gc: " + afterGC,
-                beforeGC < afterGC);
+                beforeGC >= afterGC);
     }
 
     public void test_getenv() {
