@@ -682,6 +682,30 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
         ResponseCache.setDefault(cache);
     }
 
+    // https://code.google.com/p/android/issues/detail?id=174737
+    public void testVaryDoesNotClearContentLength() throws Exception {
+        initResponseCache();
+
+        server.enqueue(new MockResponse()
+                .addHeader("Cache-Control: max-age=60")
+                .addHeader("Vary: Accept-Language,Accept-Charset")
+                .setBody("A"));
+        server.play();
+
+        URL url = server.getUrl("/");
+        HttpURLConnection connection1 = (HttpURLConnection) url.openConnection();
+        connection1.setRequestProperty("Accept-Language", "fr-CA");
+        connection1.setRequestProperty("Accept-Charset", "UTF-8");
+        assertContent("A", connection1);
+        assertEquals("1", connection1.getHeaderField("Content-Length"));
+
+        HttpURLConnection connection2 = (HttpURLConnection) url.openConnection();
+        connection2.setRequestProperty("Accept-Language", "fr-CA");
+        connection2.setRequestProperty("Accept-Charset", "UTF-8");
+        assertContent("A", connection2);
+        assertEquals("1", connection2.getHeaderField("Content-Length"));
+    }
+
     /**
      * Test Etag headers are returned correctly when a client-side cache is not installed.
      * https://code.google.com/p/android/issues/detail?id=108949
