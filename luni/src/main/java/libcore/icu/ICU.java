@@ -17,6 +17,7 @@
 package libcore.icu;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -25,8 +26,23 @@ import java.util.Map;
 import java.util.Set;
 import libcore.util.BasicLruCache;
 
+import com.ibm.icu.text.BreakIterator;
+import com.ibm.icu.util.Calendar;
+import com.ibm.icu.text.Collator;
+import com.ibm.icu.util.Currency;
+import com.ibm.icu.text.DateFormat;
+import com.ibm.icu.text.DateFormatSymbols;
+import com.ibm.icu.text.DateTimePatternGenerator;
+import com.ibm.icu.text.DecimalFormat;
+import com.ibm.icu.text.DecimalFormatSymbols;
+import com.ibm.icu.text.NumberFormat;
+import com.ibm.icu.util.TimeZone;
+import com.ibm.icu.util.ULocale;
+import com.ibm.icu.lang.UCharacter;
+import com.ibm.icu.util.VersionInfo;
+
 /**
- * Makes ICU data accessible to Java.
+ * Makes ICU data accessible to Java via ICU4J.
  */
 public final class ICU {
   private static final BasicLruCache<String, String> CACHED_PATTERNS =
@@ -43,7 +59,7 @@ public final class ICU {
    */
   public static String[] getISOLanguages() {
     if (isoLanguages == null) {
-      isoLanguages = getISOLanguagesNative();
+      isoLanguages = ULocale.getISOLanguages();
     }
     return isoLanguages.clone();
   }
@@ -53,7 +69,8 @@ public final class ICU {
    */
   public static String[] getISOCountries() {
     if (isoCountries == null) {
-      isoCountries = getISOCountriesNative();
+
+      isoCountries = ULocale.getISOCountries();
     }
     return isoCountries.clone();
   }
@@ -227,50 +244,59 @@ public final class ICU {
         true /* has validated fields */);
   }
 
-  public static Locale[] localesFromStrings(String[] localeNames) {
+  public static Locale[] localesFromULocales(ULocale[] localeNames) {
     // We need to remove duplicates caused by the conversion of "he" to "iw", et cetera.
     // Java needs the obsolete code, ICU needs the modern code, but we let ICU know about
     // both so that we never need to convert back when talking to it.
     LinkedHashSet<Locale> set = new LinkedHashSet<Locale>();
-    for (String localeName : localeNames) {
-      set.add(localeFromIcuLocaleId(localeName));
+    for (ULocale uloc : localeNames) {
+      set.add(uloc.toLocale());
     }
     return set.toArray(new Locale[set.size()]);
   }
 
   public static Locale[] getAvailableLocales() {
     if (availableLocalesCache == null) {
-      availableLocalesCache = localesFromStrings(getAvailableLocalesNative());
+      // TODO(ccornelius): Do we still need this cache?
+      availableLocalesCache = localesFromULocales(
+          ULocale.getAvailableLocales());
     }
     return availableLocalesCache.clone();
   }
 
   public static Locale[] getAvailableBreakIteratorLocales() {
-    return localesFromStrings(getAvailableBreakIteratorLocalesNative());
+    return BreakIterator.getAvailableLocales();
   }
 
   public static Locale[] getAvailableCalendarLocales() {
-    return localesFromStrings(getAvailableCalendarLocalesNative());
+    return Calendar.getAvailableLocales();
   }
 
   public static Locale[] getAvailableCollatorLocales() {
-    return localesFromStrings(getAvailableCollatorLocalesNative());
+    return Collator.getAvailableLocales();
   }
 
   public static Locale[] getAvailableDateFormatLocales() {
-    return localesFromStrings(getAvailableDateFormatLocalesNative());
+    return DateFormat.getAvailableLocales();
   }
 
   public static Locale[] getAvailableDateFormatSymbolsLocales() {
-    return getAvailableDateFormatLocales();
+    return DateFormatSymbols.getAvailableLocales();
   }
 
   public static Locale[] getAvailableDecimalFormatSymbolsLocales() {
-    return getAvailableNumberFormatLocales();
+    return DecimalFormat.getAvailableLocales();
   }
 
   public static Locale[] getAvailableNumberFormatLocales() {
-    return localesFromStrings(getAvailableNumberFormatLocalesNative());
+    return NumberFormat.getAvailableLocales();
+  }
+
+  public static String[] getAvailableCurrencyCodes() {
+    // Currencies for the default locale today.
+    ULocale uLoc = ULocale.getDefault();
+    Date nowDate = new Date();
+    return Currency.getAvailableCurrencyCodes(uLoc, nowDate);
   }
 
   public static String getBestDateTimePattern(String skeleton, Locale locale) {
@@ -279,14 +305,14 @@ public final class ICU {
     synchronized (CACHED_PATTERNS) {
       String pattern = CACHED_PATTERNS.get(key);
       if (pattern == null) {
-        pattern = getBestDateTimePatternNative(skeleton, languageTag);
+        DateTimePatternGenerator gen =
+            DateTimePatternGenerator.getInstance(locale);
+        pattern = gen.getBestPattern(skeleton);
         CACHED_PATTERNS.put(key, pattern);
       }
       return pattern;
     }
   }
-
-  private static native String getBestDateTimePatternNative(String skeleton, String languageTag);
 
   public static char[] getDateFormatOrder(String pattern) {
     char[] result = new char[3];
@@ -332,31 +358,34 @@ public final class ICU {
   /**
    * Returns the version of the CLDR data in use, such as "22.1.1".
    */
-  public static native String getCldrVersion();
+  public static String getCldrVersion() {
+    // COnvert VersionInfo to string.
+    return com.ibm.icu.util.LocaleData.getCLDRVersion().toString();
+  }
 
   /**
-   * Returns the icu4c version in use, such as "50.1.1".
+   * Returns the icu4j version in use, such as "50.1.1".
    */
-  public static native String getIcuVersion();
+  public static String getIcuVersion() {
+    return VersionInfo.ICU_VERSION.toString();
+  }
 
   /**
    * Returns the Unicode version our ICU supports, such as "6.2".
    */
-  public static native String getUnicodeVersion();
+  public static String getUnicodeVersion() {
+    return UCharacter.getUnicodeVersion().toString();
+  }
 
   // --- Case mapping.
 
   public static String toLowerCase(String s, Locale locale) {
-    return toLowerCase(s, locale.toLanguageTag());
+    return UCharacter.toLowerCase(locale, s);
   }
-
-  private static native String toLowerCase(String s, String languageTag);
 
   public static String toUpperCase(String s, Locale locale) {
-    return toUpperCase(s, locale.toLanguageTag());
+    return UCharacter.toUpperCase(locale, s);
   }
-
-  private static native String toUpperCase(String s, String languageTag);
 
   // --- Errors.
 
@@ -371,93 +400,138 @@ public final class ICU {
     return error > U_ZERO_ERROR;
   }
 
-  // --- Native methods accessing ICU's database.
+  // TODO(ccornelius): Update comments.
 
-  private static native String[] getAvailableBreakIteratorLocalesNative();
-  private static native String[] getAvailableCalendarLocalesNative();
-  private static native String[] getAvailableCollatorLocalesNative();
-  private static native String[] getAvailableDateFormatLocalesNative();
-  private static native String[] getAvailableLocalesNative();
-  private static native String[] getAvailableNumberFormatLocalesNative();
-
-  public static native String[] getAvailableCurrencyCodes();
-  public static native String getCurrencyCode(String countryCode);
+  public static String getCurrencyCode(String countryCode) {
+    // TODO(ccornelius): Cache this?
+    // Returns ISO 4217 3-letter code for currency.
+    ULocale uLoc = new ULocale(countryCode);
+    Currency currencyObj = Currency.getInstance(uLoc);
+    return currencyObj.getCurrencyCode();
+  }
 
   public static String getCurrencyDisplayName(Locale locale, String currencyCode) {
-    return getCurrencyDisplayName(locale.toLanguageTag(), currencyCode);
+    Currency currencyObj = Currency.getInstance(currencyCode);
+    return currencyObj.getDisplayName(locale);
   }
 
-  private static native String getCurrencyDisplayName(String languageTag, String currencyCode);
+  public static int getCurrencyFractionDigits(String currencyCode) {
+    Currency currency = Currency.getInstance(currencyCode);
+    return currency.getDefaultFractionDigits();
+  }
 
-  public static native int getCurrencyFractionDigits(String currencyCode);
-  public static native int getCurrencyNumericCode(String currencyCode);
+  public static int getCurrencyNumericCode(String currencyCode) {
+    Currency currency = Currency.getInstance(currencyCode);
+    return currency.getNumericCode();
+  }
 
   public static String getCurrencySymbol(Locale locale, String currencyCode) {
-    return getCurrencySymbol(locale.toLanguageTag(), currencyCode);
+    DecimalFormatSymbols decFmtSyms = new DecimalFormatSymbols(locale);
+    return decFmtSyms.getCurrencySymbol();
   }
-
-  private static native String getCurrencySymbol(String languageTag, String currencyCode);
 
   public static String getDisplayCountry(Locale targetLocale, Locale locale) {
-    return getDisplayCountryNative(targetLocale.toLanguageTag(), locale.toLanguageTag());
+    return ULocale.getDisplayCountry(locale.toLanguageTag(), targetLocale.toLanguageTag());
   }
-
-  private static native String getDisplayCountryNative(String targetLanguageTag, String languageTag);
 
   public static String getDisplayLanguage(Locale targetLocale, Locale locale) {
-    return getDisplayLanguageNative(targetLocale.toLanguageTag(), locale.toLanguageTag());
+    return ULocale.getDisplayLanguage(locale.toLanguageTag(), targetLocale.toLanguageTag());
   }
-
-  private static native String getDisplayLanguageNative(String targetLanguageTag, String languageTag);
 
   public static String getDisplayVariant(Locale targetLocale, Locale locale) {
-    return getDisplayVariantNative(targetLocale.toLanguageTag(), locale.toLanguageTag());
+    return ULocale.getDisplayVariant(locale.toLanguageTag(), targetLocale.toLanguageTag());
   }
-
-  private static native String getDisplayVariantNative(String targetLanguageTag, String languageTag);
 
   public static String getDisplayScript(Locale targetLocale, Locale locale) {
-    return getDisplayScriptNative(targetLocale.toLanguageTag(), locale.toLanguageTag());
+    return ULocale.getDisplayScript(locale.toLanguageTag(), targetLocale.toLanguageTag());
   }
 
-  private static native String getDisplayScriptNative(String targetLanguageTag, String languageTag);
+  private String getDisplayScript(String targetLanguageTag, String languageTag) {
+    return ULocale.getDisplayScript(languageTag, targetLanguageTag);
+  }
 
-  public static native String getISO3Country(String languageTag);
+  public static String getISO3Country(String localeID) {
+    return ULocale.getISO3Country(localeID);
+  }
 
-  public static native String getISO3Language(String languageTag);
+  public static String getISO3Language(String localeID) {
+    return ULocale.getISO3Language(localeID);
+  }
 
   public static Locale addLikelySubtags(Locale locale) {
-      return Locale.forLanguageTag(addLikelySubtags(locale.toLanguageTag()).replace('_', '-'));
+    // TODO(ccornelius): This seems too complicated.
+    return Locale.forLanguageTag(addLikelySubtags(locale.toLanguageTag()).replace('_', '-'));
   }
 
   /**
-   * @deprecated use {@link #addLikelySubtags(java.util.Locale)} instead.
+   * @deprecated use {@link com.ibm.icu.util.ULocale#addLikelySubtags)} instead.
    */
   @Deprecated
-  public static native String addLikelySubtags(String locale);
+  public static String addLikelySubtags(String locale) {
+    ULocale uLoc = new ULocale(locale);
+    return ULocale.addLikelySubtags(uLoc).toLanguageTag();
+  }
 
   /**
-   * @deprecated use {@link java.util.Locale#getScript()} instead. This has been kept
+   * @deprecated use {@link com.ibm.icu.util.ULocale#getScript()} instead. This has been kept
    *     around only for the support library.
    */
   @Deprecated
-  public static native String getScript(String locale);
+  public static String getScript(String locale) {
+    return ULocale.getScript(locale);
+  }
 
-  private static native String[] getISOLanguagesNative();
-  private static native String[] getISOCountriesNative();
-
+  // TODO(ccornelius): Should we convert this. It caches locale data, which should be
+  // the same in ICU4C and ICU4J.
   static native boolean initLocaleDataNative(String languageTag, LocaleData result);
+
+  /**
+   * Get lots of locale data initialized for the current language and locale.
+   *
+   */
+  static boolean initLocaleData(String languageTag, LocaleData result) {
+    if (languageTag == "") {
+      return false;
+    }
+    if (result == null) {
+      return false;  // Check for validity, too.
+    }
+    // TODO(ccornelius): Does the native call intialize anything in ICU4C?
+
+    ULocale icuLocale = new ULocale(languageTag);
+
+    // DateTimePatterns. Check if patterns exist, and set them in the structure.
+
+    // TODO(ccornelius): Finish this.
+    return true;
+  }
 
   /**
    * Takes a BCP-47 language tag (Locale.toLanguageTag()). e.g. en-US, not en_US
    */
-  public static native void setDefaultLocale(String languageTag);
+  public static native void setDefaultLocaleNative(String languageTag);
+
+  /**
+   * Takes a BCP-47 language tag (Locale.toLanguageTag()). e.g. en-US, not en_US
+   */
+  public static void setDefaultLocale(String languageTag) {
+    ULocale uLoc = new ULocale(languageTag);
+    ULocale.setDefault(uLoc);
+
+    // Also set the C++ default locale, since ICU4C will still be used.
+    setDefaultLocaleNative(languageTag);
+  }
 
   /**
    * Returns a locale name, not a BCP-47 language tag. e.g. en_US not en-US.
    */
-  public static native String getDefaultLocale();
+  public static String getDefaultLocale() {
+    return ULocale.getDefault().toString();
+  }
 
   /** Returns the TZData version as reported by ICU4C. */
-  public static native String getTZDataVersion();
+  // TODO(ccornelius): Convert this.
+  public static String getTZDataVersion() {
+    return TimeZone.getTZDataVersion();
+  }
 }

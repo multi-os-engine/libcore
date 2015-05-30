@@ -201,6 +201,8 @@ static JNINativeMethod gImmutableIndexMethods[] = {
   NATIVE_METHOD(ImmutableIndex, getBucketLabel, "(JI)Ljava/lang/String;"),
 };
 void register_libcore_icu_AlphabeticIndex(JNIEnv* env) {
+  /*
   jniRegisterNativeMethods(env, "libcore/icu/AlphabeticIndex", gMethods, NELEM(gMethods));
   jniRegisterNativeMethods(env, "libcore/icu/AlphabeticIndex$ImmutableIndex", gImmutableIndexMethods, NELEM(gImmutableIndexMethods));
+  */
 }
