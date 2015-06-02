@@ -16,6 +16,7 @@
 
 package libcore.javax.crypto;
 
+import java.security.InvalidKeyException;
 import java.security.Provider;
 import java.security.Security;
 
@@ -54,7 +55,6 @@ public class KeyAgreementTest extends TestCase {
             public void setup() {
                 put("KeyAgreement.FOO", MockKeyAgreementSpi.AllKeyTypes.class.getName());
                 put("KeyAgreement.FOO SupportedKeyClasses", "none");
-
             }
         };
 
@@ -66,5 +66,27 @@ public class KeyAgreementTest extends TestCase {
         } finally {
             Security.removeProvider(mockProvider.getName());
         }
+    }
+
+    public void testKeyAgreement_init_DoesNotSupportKeyClass_throwsInvalidKeyException()
+            throws Exception {
+        Provider mockProvider = new MockProvider("MockProvider") {
+            public void setup() {
+                put("KeyAgreement.FOO", MockKeyAgreementSpi.AllKeyTypes.class.getName());
+                put("KeyAgreement.FOO SupportedKeyClasses", "none");
+
+            }
+        };
+
+        Security.addProvider(mockProvider);
+        try {
+            KeyAgreement c = KeyAgreement.getInstance("FOO");
+            c.init(new MockKey());
+        } catch (InvalidKeyException expected) {
+            return;
+        } finally {
+            Security.removeProvider(mockProvider.getName());
+        }
+        fail("Expected InvalidKeyException");
     }
 }
