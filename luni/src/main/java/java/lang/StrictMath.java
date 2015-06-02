@@ -599,8 +599,79 @@ public final class StrictMath {
      * <li>{@code ceil(-infinity) = -infinity}</li>
      * <li>{@code ceil(NaN) = NaN}</li>
      * </ul>
+     *
+     * @param d
+     *          the double value whose ceiling will be computed
+     * @return the ceiling of the argument
      */
-    public static native double ceil(double d);
+    public static double ceil(double d) {
+        final long bits = Double.doubleToRawLongBits(d);
+        int highBits = (int) (bits >>> 32); // high word of d
+        int lowBits = (int) bits; // low word of d
+        int exp = ((highBits >> 20) & 0x7ff) - 0x3ff; // value of exponent
+
+        /* negative exponent */
+        if (exp < 0) {
+            if (HUGE + d > 0.0) {
+                if (highBits < 0) { // if |d| < 1 return -0
+                    highBits = 0x80000000;
+                } else if ((highBits | lowBits) != 0) {
+                    // raise inexact if d != 0, this is ignored by Java
+                    highBits = 0x3ff00000; // return 1
+                }
+                lowBits = 0;
+            }
+        }
+        /* exponent in range [0, 20) */
+        else if (exp < 0x014) {
+            int i = (0x000fffff) >> exp; // careful, should be unsigned
+            /* d is integral */
+            if (((highBits & i) | lowBits) == 0) {
+                return d;
+            }
+            if (HUGE + d > 0.0) { // raise inexact flag: this is ignored by Java
+                if (highBits > 0) {
+                    highBits += (0x00100000) >> exp;
+                }
+                highBits &= (~i);
+                lowBits = 0;
+            }
+        }
+        /* exponent in range (51, inf) */
+        else if (exp > 51) {
+            /* inf or NaN */
+            if (exp == 0x400) {
+                return d + d;
+            }
+            return d; // d is integral
+        }
+        /* exponent in range [21,51] */
+        else {
+            int i = (0xffffffff) >>> (exp - 0x014); // careful, should be unsigned
+            /* d is integral */
+            if ((lowBits & i) == 0) {
+                return d;
+            }
+            /* raise inexact flag: this is ignored by Java */
+            if (HUGE + d > 0.0) {
+                if (highBits > 0) {
+                    if (exp == 0x014) {
+                        highBits += 1;
+                    } else {
+                        // careful, j should be unsigned
+                        int j = (int)(lowBits + (1 << (0x34 - exp)));
+                        if ((lowBits < 0) && (j >= 0)) {
+                             highBits += 0x1; // carry occurred
+                        }
+                        lowBits = j;
+                    }
+                }
+                lowBits &= (~i);
+            }
+        }
+        /* combine highBits and unsigned lowBits for final result */
+        return Double.longBitsToDouble(((long)highBits << 32) + (lowBits & 0xFFFFFFFFL));
+    }
 
     private static final long ONEBITS = Double.doubleToRawLongBits(1.00000000000000000000e+00)
             & 0x00000000ffffffffL;
@@ -930,8 +1001,79 @@ public final class StrictMath {
      * <li>{@code floor(-infinity) = -infinity}</li>
      * <li>{@code floor(NaN) = NaN}</li>
      * </ul>
+     *
+     * @param d
+     *          the double value whose floor will be computed
+     * @return the floor of the argument
      */
-    public static native double floor(double d);
+    public static double floor(double d) {
+        final long bits = Double.doubleToRawLongBits(d);
+        int highBits = (int) (bits >>> 32); // high word of d
+        int lowBits = (int) bits; // low word of d
+        int exp = ((highBits >> 20) & 0x7ff) - 0x3ff; // value of exponent
+
+        /* negative exponent */
+        if (exp < 0) {
+            if (HUGE + d > 0.0) {
+                if (highBits >= 0) { // if |d| < 1
+                    highBits = 0;
+                } else if (((highBits & 0x7fffffff) | lowBits) != 0) {
+                    // raise inexact if d != 0, this is ignored by Java
+                    highBits = 0xbff00000;
+                }
+                lowBits = 0;
+            }
+        }
+        /* exponent in range [0, 20) */
+        else if (exp < 0x14) {
+            int i = (0x000fffff) >> exp; // careful, should be unsigned
+            /* d is integral */
+            if (((highBits & i) | lowBits) == 0) {
+                return d;
+            }
+            if (HUGE + d > 0.0) { // raise inexact flag: this is ignored by Java
+                if (highBits < 0) {
+                    highBits += (0x00100000) >> exp;
+                }
+                highBits &= (~i);
+                lowBits = 0;
+            }
+        }
+        /* exponent in range (51, inf) */
+        else if (exp > 51) {
+            /* inf or NaN */
+            if (exp == 0x400) {
+                return d + d;
+            }
+            return d; // d is integral
+        }
+        /* exponent in range [21,51] */
+        else {
+            int i = (0xffffffff) >>> (exp - 0x14); // careful, should be unsigned
+            /* d is integral */
+            if ((lowBits & i) == 0) {
+                return d;
+            }
+            /* raise inexact flag: this is ignored by java */
+            if (HUGE + d > 0.0) {
+                if (highBits < 0) {
+                    if (exp == 0x14) {
+                        highBits += 1;
+                    } else {
+                        // careful, j should be unsigned
+                        int j = (int)(lowBits + (1 << (0x34 - exp)));
+                        if ((lowBits < 0) && (j >= 0)) {
+                             highBits += 1; // carry occurred
+                        }
+                        lowBits = j;
+                    }
+                }
+                lowBits &= (~i);
+            }
+        }
+        /* combine highBits and unsigned lowBits for final result */
+        return Double.longBitsToDouble(((long)highBits << 32) + (lowBits & 0xFFFFFFFFL));
+    }
 
     /**
      * Returns {@code sqrt(}<i>{@code x}</i><sup>{@code 2}</sup>{@code +} <i>
