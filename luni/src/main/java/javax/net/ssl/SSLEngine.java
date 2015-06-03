@@ -88,7 +88,7 @@ import java.nio.ByteBuffer;
  *         </tr>
  *         <tr>
  *             <td>SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA</td>
- *             <td>9+</td>
+ *             <td>9&ndash;22</td>
  *             <td>9&ndash;19</td>
  *         </tr>
  *         <tr>
