@@ -17,6 +17,9 @@
 
 package org.apache.harmony.crypto.tests.javax.crypto;
 
+import com.android.org.conscrypt.NativeCrypto;
+import com.android.org.conscrypt.OpenSSLCipher;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
@@ -373,6 +376,65 @@ public class CipherTest extends junit.framework.TestCase {
         } catch (IllegalStateException expected) {
         }
     }
+
+    /**
+     * Temporary test ensuring that buffering works correctly.
+     */
+    public void test_buffer() throws Exception {
+        Cipher c = Cipher.getInstance("DESEDE/CBC/PKCS5Padding");
+
+        byte[] keyMaterial = loadBytes("hyts_" + "des-ede3-cbc.test"
+                + 1 + ".key");
+        DESedeKeySpec keySpec = new DESedeKeySpec(keyMaterial);
+        SecretKeyFactory skf = SecretKeyFactory.getInstance("DESEDE");
+        Key k = skf.generateSecret(keySpec);
+
+        byte[] ivMaterial = loadBytes("hyts_" + "des-ede3-cbc.test" + 1
+                + ".iv");
+        IvParameterSpec iv = new IvParameterSpec(ivMaterial);
+
+        c.init(Cipher.DECRYPT_MODE, k, iv);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] input = new byte[256];
+        String resPath = "hyts_" + "des-ede3-cbc.test" + 1
+                + ".ciphertext";
+        File resources = Support_Resources.createTempFolder();
+        Support_Resources.copyFile(resources, null, resPath);
+        InputStream is = Support_Resources.getStream(resPath);
+
+        int bytesRead = is.read(input, 0, 256);
+        assertTrue(bytesRead >= 0);
+        byte[] output = c.update(input, 0, bytesRead);
+        System.out.println("Output of update: " + Arrays.toString(output));
+        if (output != null) {
+            baos.write(output);
+        }
+        bytesRead = is.read(input, 0, 256);
+        assertTrue(bytesRead < 0);
+
+        assertEquals(0, output.length);
+        // This assertion fails: the buffer length is 0 despite that update was called and the
+        // output was empty
+        assertTrue("Buffer is not 0, and output was empty",
+                NativeCrypto
+                        .get_EVP_CIPHER_CTX_buf_len(((OpenSSLCipher.EVP_CIPHER) c.getCurrentSpi()).getEvpCipherCtx()) != 0);
+
+        output = c.doFinal();
+        System.out.println("Output of final: " + Arrays.toString(output));
+        if (output != null) {
+            baos.write(output);
+        }
+
+        byte[] decipheredCipherText = baos.toByteArray();
+        is.close();
+
+        byte[] plaintextBytes = loadBytes("hyts_" + "des-ede3-cbc.test"
+                + 1 + ".plaintext");
+        assertEquals("Operation produced incorrect results",
+                Arrays.toString(plaintextBytes), Arrays.toString(decipheredCipherText));
+    }
+
 
     /**
      * javax.crypto.Cipher#doFinal()
