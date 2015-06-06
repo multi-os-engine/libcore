@@ -52,19 +52,38 @@ public class ClassPathURLStreamHandler extends JarHandler {
     this.fileUri = new File(jarFileName).toURI().toString();
   }
 
+  private URL convertEntryToUrl(String entryName) {
+    try {
+      // We rely on the URL/the stream handler to deal with any url encoding necessary here, and
+      // we assume it is completely reversible.
+      return new URL("jar", null, -1, fileUri + "!/" + entryName, this);
+    } catch (MalformedURLException e) {
+      throw new RuntimeException("Invalid entry name", e);
+    }
+  }
+
   /**
    * Returns a URL backed by this stream handler for the named resource, or {@code null} if the
-   * resource cannot be found under the exact name presented.
+   * entry cannot be found under the exact name presented.
    */
   public URL getEntryUrlOrNull(String entryName) {
     if (jarFile.findEntry(entryName) != null) {
-      try {
-        // We rely on the URL/the stream handler to deal with any url encoding necessary here, and
-        // we assume it is completely reversible.
-        return new URL("jar", null, -1, fileUri + "!/" + entryName, this);
-      } catch (MalformedURLException e) {
-        throw new RuntimeException("Invalid entry name", e);
-      }
+      return convertEntryToUrl(entryName);
+    }
+    return null;
+  }
+
+  /**
+   * Returns a URL backed by this stream handler for the named resource, or {@code null} if the
+   * entry cannot be found under the exact name or has different compression method.
+   *
+   * @param entryName entry name
+   * @param method compression method ({@link ZipEntry#STORED} or {@link ZipEntry#DEFLATED})
+   */
+  public URL getEntryUrlOrNull(String entryName, int method) {
+    ZipEntry entry = jarFile.findEntry(entryName);
+    if (entry != null && entry.getMethod() == method) {
+      return convertEntryToUrl(entryName);
     }
     return null;
   }
