@@ -824,7 +824,9 @@ public final class Math {
      * <li>{@code sqrt(NaN) = NaN}</li>
      * </ul>
      */
-    public static native double sqrt(double d);
+    public static double sqrt(double d) {
+        return StrictMath.sqrt(d);
+    }
 
     /**
      * Returns the closest double approximation of the tangent of the argument.
