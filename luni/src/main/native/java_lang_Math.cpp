@@ -99,10 +99,6 @@ static jdouble Math_cbrt(JNIEnv*, jclass, jdouble a) {
     return cbrt(a);
 }
 
-static jdouble Math_sqrt(JNIEnv*, jclass, jdouble a) {
-    return sqrt(a);
-}
-
 static jdouble Math_expm1(JNIEnv*, jclass, jdouble a) {
     return expm1(a);
 }
@@ -141,7 +137,6 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(Math, rint, "!(D)D"),
     NATIVE_METHOD(Math, sin, "!(D)D"),
     NATIVE_METHOD(Math, sinh, "!(D)D"),
-    NATIVE_METHOD(Math, sqrt, "!(D)D"),
     NATIVE_METHOD(Math, tan, "!(D)D"),
     NATIVE_METHOD(Math, tanh, "!(D)D"),
 };
