@@ -1824,7 +1824,8 @@ public class SSLSocketTest extends TestCase {
                         Throwable cause = expected.getCause();
                         assertEquals(SSLProtocolException.class, cause.getClass());
                         assertTrue(cause.getMessage(),
-                                cause.getMessage().contains("inappropriate fallback"));
+                            cause.getMessage().contains("inappropriate fallback")
+                                    || cause.getMessage().contains("INAPPROPRIATE_FALLBACK"));
                     }
                     return null;
                 }
@@ -1840,7 +1841,8 @@ public class SSLSocketTest extends TestCase {
                         Throwable cause = expected.getCause();
                         assertEquals(SSLProtocolException.class, cause.getClass());
                         assertTrue(cause.getMessage(),
-                                cause.getMessage().contains("inappropriate fallback"));
+                            cause.getMessage().contains("inappropriate fallback")
+                                    || cause.getMessage().contains("INAPPROPRIATE_FALLBACK"));
                     }
                     return null;
                 }
