@@ -31,8 +31,7 @@ import com.android.org.bouncycastle.x509.X509V3CertificateGenerator;
 import java.io.ByteArrayInputStream;
 import java.io.PrintStream;
 import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.Inet4Address;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -156,16 +155,12 @@ public final class TestKeyStore extends Assert {
                 .signer(ROOT_CA.getPrivateKey("RSA", "RSA"))
                 .rootCa(ROOT_CA.getRootCertificate("RSA"))
                 .build();
-        try {
-            SERVER = new Builder()
-                    .aliasPrefix("server")
-                    .signer(INTERMEDIATE_CA.getPrivateKey("RSA", "RSA"))
-                    .rootCa(INTERMEDIATE_CA.getRootCertificate("RSA"))
-                    .addSubjectAltNameIpAddress(InetAddress.getLocalHost().getAddress())
-                    .build();
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
+        SERVER = new Builder()
+                .aliasPrefix("server")
+                .signer(INTERMEDIATE_CA.getPrivateKey("RSA", "RSA"))
+                .rootCa(INTERMEDIATE_CA.getRootCertificate("RSA"))
+                .addSubjectAltNameIpAddress(Inet4Address.LOOPBACK.getAddress())
+                .build();
         CLIENT = new TestKeyStore(createClient(INTERMEDIATE_CA.keyStore), null, null);
         CLIENT_CERTIFICATE = new Builder()
                 .aliasPrefix("client")
@@ -529,11 +524,7 @@ public final class TestKeyStore extends Assert {
         }
 
         private X500Principal localhost() {
-            try {
-                return new X500Principal("CN=" + InetAddress.getLocalHost().getHostName());
-            } catch (UnknownHostException e) {
-                throw new RuntimeException(e);
-            }
+            return new X500Principal("CN=" + Inet4Address.LOOPBACK.getHostName());
         }
     }
 
