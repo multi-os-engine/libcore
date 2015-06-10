@@ -393,7 +393,6 @@ public final class String implements Serializable, Comparable<String>, CharSeque
      * Creates a new string by copying the given subsequence of the given {@code char[]}.
      * Modifying the array after creating the string has no
      * effect on the string.
-
      * @throws NullPointerException
      *             if {@code data} is {@code null}.
      * @throws IndexOutOfBoundsException
@@ -420,35 +419,7 @@ public final class String implements Serializable, Comparable<String>, CharSeque
      * equal. The object must be an instance of {@code String} with the same length,
      * where for every index, {@code charAt} on each string returns the same value.
      */
-    @Override public boolean equals(Object other) {
-        if (other == this) {
-          return true;
-        }
-        if (other instanceof String) {
-            String s = (String)other;
-            int count = this.count;
-            if (s.count != count) {
-                return false;
-            }
-            // TODO: we want to avoid many boundchecks in the loop below
-            // for long Strings until we have array equality intrinsic.
-            // Bad benchmarks just push .equals without first getting a
-            // hashCode hit (unlike real world use in a Hashtable). Filter
-            // out these long strings here. When we get the array equality
-            // intrinsic then remove this use of hashCode.
-            if (hashCode() != s.hashCode()) {
-                return false;
-            }
-            for (int i = 0; i < count; ++i) {
-                if (charAt(i) != s.charAt(i)) {
-                    return false;
-                }
-            }
-            return true;
-        } else {
-            return false;
-        }
-    }
+    public native boolean equals(Object other);
 
     /**
      * Compares the given string to this string ignoring case.
