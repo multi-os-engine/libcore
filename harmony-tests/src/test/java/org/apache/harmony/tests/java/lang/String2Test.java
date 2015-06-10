@@ -36,6 +36,62 @@ public class String2Test extends junit.framework.TestCase {
 
     String comp11 = "Test String";
 
+    String veryShort1 = "a";
+
+    String veryShort2 = "abcd";
+
+    String short1 = "testtesttesttesttesttest";
+
+    String short2 = "asdklf230498usdfkj(*&*&#4asdjfhlakjdshf@#$#$#@$%    a;sldkfj;asldkfj";
+
+    String long1 = "Ahead-of-time (AOT) compilation is always possible as the compiler may just"
+        + "convert an instruction thus: dex code: add-int v1000, v2000, v3000 C code: setIntRegter"
+        + "(1000, call_dex_add_int(getIntRegister(2000), getIntRegister(3000)) This means even lid"
+        + "instructions may have code generated, however, it is not expected that code generate in"
+        + "this way will perform well. The job of AOT verification is to tell the compiler that"
+        + "instructions are sound and provide tests to detect unsound sequences so slow path code"
+        + "may be generated. Other than for totally invalid code, the verification may fail at AOr"
+        + "run-time. At AOT time it can be because of incomplete information, at run-time it can e"
+        + "that code in a different apk that the application depends upon has changed. The Dalvik"
+        + "verifier would return a bool to state whether a Class were good or bad. In ART the fail"
+        + "case becomes either a soft or hard failure. Classes have new states to represent that a"
+        + "soft failure occurred at compile time and should be re-verified at run-time.";
+
+    String veryLong1 = "Garbage collection works in two basic phases.  The first is distinguishing"
+        + "live objects from garbage objects.  The second is reclaiming the rage of garbage object"
+        + "In the mark-sweep algorithm used by Dalvik, the first phase is achievd by computing the"
+        + "closure of all reachable objects in a process known as tracing from theoots.  After the"
+        + "trace has completed, garbage objects are reclaimed.  Each of these operations can be"
+        + "parallelized and can be interleaved with the operation of the applicationTraditionally,"
+        + "the tracing phase dominates the time spent in garbage collection.  The greatreduction i"
+        + "pause time can be achieved by interleaving as much of this phase as possible with the"
+        + "application. If we simply ran the GC in a separate thread with no other changes, normal"
+        + "operation of an application would confound the trace.  Abstractly, the GC walks the h o"
+        + "all reachable objects.  When the application is paused, the object graph cannot change."
+        + "The GC can therefore walk this structure and assume that all reachable objects re live."
+        + "When the application is running, this graph may be altered. New nodes may be addnd edge"
+        + "may be changed.  These changes may cause live objects to be hidden and falsely recla by"
+        + "the GC.  To avoid this problem a write barrier is used to intercept and record modifion"
+        + "to objects in a separate structure.  After performing its walk, the GC will revisit the"
+        + "updated objects and re-validate its assumptions.  Without a card table, the garbage"
+        + "collector would have to visit all objects reached during the trace looking for dirtied"
+        + "objects.  The cost of this operation would be proportional to the amount of live data."
+        + "With a card table, the cost of this operation is proportional to the amount of updateat"
+        + "The write barrier in Dalvik is a card marking write barrier.  Card marking is the proce"
+        + "of noting the location of object connectivity changes on a sub-page granularity.  A car"
+        + "is merely a colorful term for a contiguous extent of memory smaller than a page, common"
+        + "somewhere between 128- and 512-bytes.  Card marking is implemented by instrumenting all"
+        + "locations in the virtual machine which can assign a pointer to an object.  After themal"
+        + "pointer assignment has occurred, a byte is written to a byte-map spanning the heap whic"
+        + "corresponds to the location of the updated object.  This byte map is known as a card ta"
+        + "The garbage collector visits this card table and looks for written bytes to reckon the"
+        + "location of updated objects.  It then rescans all objects located on the dirty card,"
+        + "correcting liveness assumptions that were invalidated by the application.  While card"
+        + "marking imposes a small burden on the application outside of a garbage collection, the"
+        + "overhead of maintaining the card table is paid for by the reduced time spent inside"
+        + "garbage collection. With the concurrent garbage collection thread and a write barrier"
+        + "supported by the interpreter, JIT, and VM we are able to modify our garbage collection";
+
     Object obj = new Object();
 
     char[] buf = { 'W', 'o', 'r', 'l', 'd' };
@@ -329,9 +385,23 @@ public class String2Test extends junit.framework.TestCase {
         assertEquals("String not equal", hw1, hw2);
         assertEquals("Empty string equals check", "", "");
         assertEquals("Null string equals check", (String) null, (String) null);
+        assertEquals("string with space equal", "Hello World", "Hello World");
+        assertEquals("other characters equal", "~!@#$%^&*()_+=-", "~!@#$%^&*()_+=-");
+        assertEquals("very short equals", veryShort1, "a");
+        assertEquals("very short equals", veryShort2, new String(veryShort2));
+        assertEquals("short equals", short1, new String(short1));
+        assertEquals("long equals", long1, new String(long1));
+        assertEquals("very long equals", veryLong1, new String(veryLong1));
 
         assertFalse("Unequal strings reports as equal", hw1.equals(comp11));
         assertFalse("Null string comparison failed", hw1.equals((String) null));
+        assertFalse("too many spaces", "hi ".equals("hi  "));
+        assertFalse("Empty string and short string", "".equals("a"));
+
+        assertFalse("very short not equals", veryShort1.equals(veryShort2));
+        assertFalse("short not equals", short1.equals(long1));
+        assertFalse("long not equals", long1.equals(veryLong1));
+        assertFalse("very long not equals", veryLong1.equals((new String(veryLong1)) + " "));
     }
 
     /**
