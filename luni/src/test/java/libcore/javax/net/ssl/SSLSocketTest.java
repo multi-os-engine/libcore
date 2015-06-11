@@ -16,7 +16,11 @@
 
 package libcore.javax.net.ssl;
 
+import com.android.org.bouncycastle.jce.provider.BouncyCastleProvider;
+import com.android.org.bouncycastle.x509.X509V3CertificateGenerator;
+
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -24,21 +28,32 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -53,6 +68,7 @@ import javax.net.SocketFactory;
 import javax.net.ssl.HandshakeCompletedEvent;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
@@ -64,8 +80,11 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
+import javax.security.auth.x500.X500Principal;
+
 import junit.framework.TestCase;
 import libcore.io.IoUtils;
 import libcore.io.Streams;
@@ -2027,6 +2046,73 @@ public class SSLSocketTest extends TestCase {
             // test.close();
 
         }
+    }
+
+    public void testNpnTaint() throws Exception {
+        TestKeyStore serverKeyStore = TestKeyStore.getServer();
+        final SSLContext sslContext = TestSSLContext.createSSLContext(
+                "TLS",
+                serverKeyStore.keyManagers,
+                TestKeyStore.createTrustManagers(serverKeyStore.keyStore));
+        final Method setNpnProtocolsMethods = sslContext.getSocketFactory().createSocket()
+                .getClass().getMethod("setNpnProtocols", byte[].class);
+        final SSLSocketFactory socketFactory = sslContext.getSocketFactory();
+        final ServerSocket serverSocket = new ServerSocket();
+        serverSocket.bind(null);
+        int port = serverSocket.getLocalPort();
+
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    while (true) {
+                        Socket s = serverSocket.accept();
+                        SSLSocket sslSocket = (SSLSocket) socketFactory
+                                .createSocket(s, s.getInetAddress().getHostAddress(), s.getPort(),
+                                        true);
+                        sslSocket.setUseClientMode(false);
+                        setNpnProtocolsMethods.invoke(sslSocket,
+                                concatLengthPrefixed(Collections.singletonList("http/1.1")));
+                        sslSocket.startHandshake();
+                        sslSocket.close();
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        Socket s = new Socket("localhost", port);
+        SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket(
+                s, s.getInetAddress().getHostAddress(), s.getPort(), true);
+        setNpnProtocolsMethods.invoke(sslSocket,
+                concatLengthPrefixed(Collections.singletonList("http/1.1")));
+        sslSocket.startHandshake();
+        sslSocket.close();
+
+        // This shouldn't fail.
+        Socket s2 = new Socket("localhost", port);
+        SSLSocket sslSocket2 = (SSLSocket) socketFactory.createSocket(
+                s2, s2.getInetAddress().getHostAddress(), s2.getPort(), true);
+        sslSocket2.startHandshake();
+        sslSocket2.close();
+
+        serverSocket.close();
+    }
+
+    /**
+     * Returns the concatenation of 8-bit, length prefixed protocol names.
+     * http://tools.ietf.org/html/draft-agl-tls-nextprotoneg-04#page-4
+     */
+    static byte[] concatLengthPrefixed(List<String> protocols) throws IOException {
+        ByteArrayOutputStream result = new ByteArrayOutputStream();
+        for (int i = 0, size = protocols.size(); i < size; i++) {
+            String protocol = protocols.get(i);
+            result.write(protocol.length());
+            result.write(protocol.getBytes(StandardCharsets.UTF_8));
+        }
+        return result.toByteArray();
     }
 
     public static void main (String[] args) {
