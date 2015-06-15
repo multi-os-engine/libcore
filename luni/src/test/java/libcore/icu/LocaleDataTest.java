@@ -31,7 +31,7 @@ public class LocaleDataTest extends junit.framework.TestCase {
   public void test_en_US() throws Exception {
     LocaleData l = LocaleData.get(Locale.US);
     assertEquals("AM", l.amPm[0]);
-    assertEquals("a", l.narrowAm);
+    assertEquals("a", l.narrowAmPm[0]);
 
     assertEquals("BC", l.eras[0]);
 

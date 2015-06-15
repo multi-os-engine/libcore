@@ -444,9 +444,10 @@ class LocaleNameIterator {
   DISALLOW_COPY_AND_ASSIGN(LocaleNameIterator);
 };
 
-static bool getAmPmMarkersNarrow(JNIEnv* env, jobject localeData, const char* locale_name) {
+static bool getAmPmMarkers(JNIEnv* env, jobject localeData, const char* localeName,
+                               const char* markerType, const char* fieldName) {
   UErrorCode status = U_ZERO_ERROR;
-  ScopedResourceBundle root(ures_open(NULL, locale_name, &status));
+  ScopedResourceBundle root(ures_open(NULL, localeName, &status));
   if (U_FAILURE(status)) {
     return false;
   }
@@ -458,12 +459,37 @@ static bool getAmPmMarkersNarrow(JNIEnv* env, jobject localeData, const char* lo
   if (U_FAILURE(status)) {
     return false;
   }
-  ScopedResourceBundle amPmMarkersNarrow(ures_getByKey(gregorian.get(), "AmPmMarkersNarrow", NULL, &status));
+  ScopedResourceBundle amPmMarkersNarrow(ures_getByKey(gregorian.get(), markerType, NULL, &status));
   if (U_FAILURE(status)) {
     return false;
   }
-  setStringField(env, localeData, "narrowAm", amPmMarkersNarrow.get(), 0);
-  setStringField(env, localeData, "narrowPm", amPmMarkersNarrow.get(), 1);
+
+  // There are precisely two elements in the AM/PM marker array.
+  static const int32_t kAmPmMarkerSize = 2;
+  ScopedLocalRef<jobjectArray> result(env,
+      env->NewObjectArray(kAmPmMarkerSize, JniConstants::stringClass, NULL));
+
+  for (int32_t i = 0; i < kAmPmMarkerSize ; i++) {
+    UErrorCode status = U_ZERO_ERROR;
+    int charCount;
+    const UChar* chars = ures_getStringByIndex(amPmMarkersNarrow.get(), i, &charCount, &status);
+    if (!U_SUCCESS(status)) {
+      ALOGE("Error setting String field %s from ICU resource (index %d): %s",
+            fieldName, i, u_errorName(status));
+      return false;
+    }
+
+    ScopedLocalRef<jstring> s(env, env->NewString(chars, charCount));
+    if (env->ExceptionCheck()) {
+      return false;
+    }
+    env->SetObjectArrayElement(result.get(), i, s.get());
+    if (env->ExceptionCheck()) {
+      return false;
+    }
+  }
+
+  setStringArrayField(env, localeData, fieldName, result.get());
   return true;
 }
 
@@ -574,7 +600,7 @@ static jboolean ICU_initLocaleDataNative(JNIEnv* env, jclass, jstring javaLangua
     // Get the narrow "AM" and "PM" strings.
     bool foundAmPmMarkersNarrow = false;
     for (LocaleNameIterator it(icuLocale.locale().getBaseName(), status); it.HasNext(); it.Up()) {
-      if (getAmPmMarkersNarrow(env, localeData, it.Get())) {
+      if (getAmPmMarkers(env, localeData, it.Get(), "AmPmMarkersNarrow", "narrowAmPm")) {
         foundAmPmMarkersNarrow = true;
         break;
       }
@@ -582,6 +608,14 @@ static jboolean ICU_initLocaleDataNative(JNIEnv* env, jclass, jstring javaLangua
     if (!foundAmPmMarkersNarrow) {
       ALOGE("Couldn't find ICU AmPmMarkersNarrow for %s", languageTag.c_str());
       return JNI_FALSE;
+    }
+
+    bool foundAmPmMarkersAbbr = false;
+    for (LocaleNameIterator it(icuLocale.locale().getBaseName(), status); it.HasNext(); it.Up()) {
+      if (getAmPmMarkers(env, localeData, it.Get(), "AmPmMarkersAbbr", "amPm")) {
+        foundAmPmMarkersNarrow = true;
+        break;
+      }
     }
 
     status = U_ZERO_ERROR;
@@ -602,13 +636,18 @@ static jboolean ICU_initLocaleDataNative(JNIEnv* env, jclass, jstring javaLangua
 
     // Get AM/PM and BC/AD.
     int32_t count = 0;
-    const icu::UnicodeString* amPmStrs = dateFormatSym.getAmPmStrings(count);
-    setStringArrayField(env, localeData, "amPm", amPmStrs, count);
+    // If we've found abbreviated AM/PM markers for this locale, we use them
+    // instead of using the regular AM/PM markers.
+    if (!foundAmPmMarkersAbbr) {
+        const icu::UnicodeString* amPmStrs = dateFormatSym.getAmPmStrings(count);
+        setStringArrayField(env, localeData, "amPm", amPmStrs, count);
+    }
+
     const icu::UnicodeString* erasStrs = dateFormatSym.getEras(count);
     setStringArrayField(env, localeData, "eras", erasStrs, count);
 
     const icu::UnicodeString* longMonthNames =
-       dateFormatSym.getMonths(count, icu::DateFormatSymbols::FORMAT, icu::DateFormatSymbols::WIDE);
+        dateFormatSym.getMonths(count, icu::DateFormatSymbols::FORMAT, icu::DateFormatSymbols::WIDE);
     setStringArrayField(env, localeData, "longMonthNames", longMonthNames, count);
     const icu::UnicodeString* shortMonthNames =
         dateFormatSym.getMonths(count, icu::DateFormatSymbols::FORMAT, icu::DateFormatSymbols::ABBREVIATED);
