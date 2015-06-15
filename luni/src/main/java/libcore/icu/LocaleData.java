@@ -80,8 +80,7 @@ public final class LocaleData {
     public String shortDateFormat;
 
     // Used by TimePicker. Not currently used by UTS#35.
-    public String narrowAm; // "a".
-    public String narrowPm; // "p".
+    public String[] narrowAmPm; // { "a", "p" }
 
     // shortDateFormat, but guaranteed to have 4-digit years.
     // Used by android.text.format.DateFormat.getDateFormatStringForSetting.

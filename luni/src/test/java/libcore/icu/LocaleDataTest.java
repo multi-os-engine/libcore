@@ -31,7 +31,7 @@ public class LocaleDataTest extends junit.framework.TestCase {
   public void test_en_US() throws Exception {
     LocaleData l = LocaleData.get(Locale.US);
     assertEquals("AM", l.amPm[0]);
-    assertEquals("a", l.narrowAm);
+    assertEquals("a", l.narrowAmPm[0]);
 
     assertEquals("BC", l.eras[0]);
 
@@ -96,6 +96,13 @@ public class LocaleDataTest extends junit.framework.TestCase {
     assertEquals("Воскресенье", l.longStandAloneWeekdayNames[1]);
     assertEquals("Вс", l.shortStandAloneWeekdayNames[1]);
     assertEquals("В", l.tinyStandAloneWeekdayNames[1]);
+  }
+
+  // http://b/21015990
+  public void test_ur() throws Exception {
+    LocaleData l = LocaleData.get(new Locale("ur"));
+    assertEquals("ق.د.", l.amPm[0]);
+    assertEquals("ب.د.", l.amPm[1]);
   }
 
   // http://code.google.com/p/android/issues/detail?id=38844
