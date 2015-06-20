@@ -224,6 +224,14 @@ import static android.system.OsConstants.S_ISDIR;
         return makeElements(files, null, suppressedExceptions, true);
     }
 
+    /*
+     * GMS core relies on existence of this method (see b/21957414 for details)
+     */
+    private static Element[] makePathElements(List<File> files, File optimizedDirectory,
+                                              List<IOException> suppressedExceptions) {
+        return makeElements(files, null, suppressedExceptions, true);
+    }
+
     private static Element[] makeElements(List<File> files, File optimizedDirectory,
                                           List<IOException> suppressedExceptions,
                                           boolean ignoreDexFiles) {
