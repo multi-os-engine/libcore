@@ -432,4 +432,15 @@ public class DateIntervalFormatTest extends junit.framework.TestCase {
     assertEquals("11:00 PM – 12:00 AM", formatDateRange(locale, timeZone,
             1430434800000L, 1430438400000L, FORMAT_SHOW_TIME));
   }
+
+  // http://b/21581017
+  public void testAbbreviatedFormatsInSlovakian() throws Exception {
+    final ULocale locale = new ULocale("sk");
+    final TimeZone timeZone = TimeZone.getTimeZone("UTC");
+
+    assertEquals("25. máj – 22. jún", formatDateRange(locale, timeZone,
+        1432562400000L, 1434981600000L, FORMAT_SHOW_DATE | FORMAT_ABBREV_MONTH));
+    assertEquals("25. 5", formatDateRange(locale, timeZone,
+        1432562400000L, 1432562400000L, FORMAT_SHOW_DATE | FORMAT_ABBREV_MONTH));
+  }
 }
