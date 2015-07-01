@@ -105,11 +105,13 @@ local_javac_flags = [
 icu4j_root = "../external/icu/icu4j"
 icu4j_src_files = [
     icu4j_root + "/main/classes/**/*.java",
+]
+icu4j_exclude_src_files = [
     // Filter out bits of ICU4J we don't use yet : the SPIs (which we have limited support for),
     // the charset encoders and the transliterators.
-    "-" + icu4j_root + "/main/classes/localespi/**/*.java",
-    "-" + icu4j_root + "/main/classes/charset/**/*.java",
-    "-" + icu4j_root + "/main/classes/translit/**/*.java",
+    icu4j_root + "/main/classes/localespi/**/*.java",
+    icu4j_root + "/main/classes/charset/**/*.java",
+    icu4j_root + "/main/classes/translit/**/*.java",
 ]
 
 // Not all src dirs contain resources, some instead contain other random files
@@ -119,16 +121,20 @@ icu4j_src_files = [
 
 icu4j_resource_dirs = [
     icu4j_root + "/main/classes/*/src",
-    "-" + icu4j_root + "/main/classes/localespi/src",
-    "-" + icu4j_root + "/main/classes/charset/src",
-    "-" + icu4j_root + "/main/classes/translit/src",
+]
+icu4j_exclude_resource_dirs = [
+    icu4j_root + "/main/classes/localespi/src",
+    icu4j_root + "/main/classes/charset/src",
+    icu4j_root + "/main/classes/translit/src",
 ]
 
 // Definitions to make the core library.
 
 java_library {
     srcs: libart_core_src_files + icu4j_src_files,
+    exclude_srcs: icu4j_exclude_src_files,
     java_resource_dirs: core_resource_dirs + icu4j_resource_dirs,
+    exclude_java_resource_dirs: icu4j_exclude_resource_dirs,
     no_standard_libraries: true,
     javacflags: local_javac_flags,
     dxflags: ["--core-library"],
