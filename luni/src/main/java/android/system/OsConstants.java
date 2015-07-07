@@ -217,6 +217,7 @@ public final class OsConstants {
     public static final int ENOTDIR = placeholder();
     public static final int ENOTEMPTY = placeholder();
     public static final int ENOTSOCK = placeholder();
+    /** @hide */ public static final int EUSERS = placeholder();
     public static final int ENOTSUP = placeholder();
     public static final int ENOTTY = placeholder();
     public static final int ENXIO = placeholder();

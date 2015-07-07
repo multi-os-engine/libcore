@@ -190,6 +190,7 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "ENOTDIR", ENOTDIR);
     initConstant(env, c, "ENOTEMPTY", ENOTEMPTY);
     initConstant(env, c, "ENOTSOCK", ENOTSOCK);
+    initConstant(env, c, "EUSERS", EUSERS);
     initConstant(env, c, "ENOTSUP", ENOTSUP);
     initConstant(env, c, "ENOTTY", ENOTTY);
     initConstant(env, c, "ENXIO", ENXIO);
