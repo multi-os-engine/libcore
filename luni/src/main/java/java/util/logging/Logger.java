@@ -229,8 +229,10 @@ public class Logger {
 
         this.dalvikLogHandler = newLogHandler;
 
-        for (Logger logger : children) {
-            logger.updateDalvikLogHandler();
+        synchronized (LogManager.getLogManager()) {
+            for (Logger logger : children) {
+                logger.updateDalvikLogHandler();
+            }
         }
     }
 
