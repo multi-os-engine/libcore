@@ -32,6 +32,7 @@ public class UnixSocketAddressTest extends TestCase {
         // See unix(7)
         System.arraycopy(abstractNameBytes, 0, expected, 0, abstractNameBytes.length);
         assertTrue(Arrays.equals(expected, sa.getSunPath()));
+        assertEquals(path, sa.getFileSystemPath());
     }
 
     public void testUnnamedSunPath() throws Exception {
