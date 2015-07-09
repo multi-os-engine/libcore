@@ -92,6 +92,18 @@ public final class UnixSocketAddress extends SocketAddress {
         return sunPathCopy;
     }
 
+    /**
+     * Returns the file system path of the socket address iff the address is a filesystem type
+     * address, otherwise {@code null} is returned.
+     */
+    public String getFileSystemPath() {
+        if (sun_path.length == 0 || sun_path[0] == 0) {
+            return null;
+        }
+        // Get the path, stripping off the trailing '\0'.
+        return new String(sun_path, 0, sun_path.length -1, StandardCharsets.UTF_8);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
