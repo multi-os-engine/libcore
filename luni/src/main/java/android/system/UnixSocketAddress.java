@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,9 @@ public final class UnixSocketAddress extends SocketAddress {
     private static final byte[] UNNAMED_PATH = new byte[0];
 
     // See unix(7): Three types of UnixSocketAddress:
-    // 1) pathname: sun_path.length == NAMED_PATH_LENGTH, sun_path[0] != 0.
+    // 1) pathname: 0 < sun_path.length <= NAMED_PATH_LENGTH, sun_path[0] != 0.
     // 2) unnamed: sun_path = [].
-    // 3) abstract: sun_path.length == NAMED_PATH_LENGTH, sun_path[0] == 0.
+    // 3) abstract: 0 < sun_path.length <= NAMED_PATH_LENGTH, sun_path[0] == 0.
     private byte[] sun_path;
 
     /** This constructor is also used from JNI. */
@@ -48,7 +48,7 @@ public final class UnixSocketAddress extends SocketAddress {
         if (sun_path.length == 0) {
             this.sun_path = UNNAMED_PATH;
         } else {
-            this.sun_path = new byte[NAMED_PATH_LENGTH];
+            this.sun_path = new byte[sun_path.length];
             System.arraycopy(sun_path, 0, this.sun_path, 0, sun_path.length);
         }
     }
@@ -108,8 +108,8 @@ public final class UnixSocketAddress extends SocketAddress {
 
     @Override
     public String toString() {
-        return "UnixSocketAddress{" +
+        return "UnixSocketAddress[" +
                 "sun_path=" + Arrays.toString(sun_path) +
-                '}';
+                ']';
     }
 }
