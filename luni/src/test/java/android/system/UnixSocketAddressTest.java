@@ -34,6 +34,12 @@ public class UnixSocketAddressTest extends TestCase {
         assertTrue(Arrays.equals(expected, sa.getSunPath()));
     }
 
+    public void testGetFilesystemSunPath() throws Exception {
+        String path = "/foo/bar";
+        UnixSocketAddress sa = UnixSocketAddress.createFileSystem(path);
+        assertEquals(path, sa.getFileSystemPath());
+    }
+
     public void testUnnamedSunPath() throws Exception {
         UnixSocketAddress sa = UnixSocketAddress.createUnnamed();
         assertEquals(0, sa.getSunPath().length);
