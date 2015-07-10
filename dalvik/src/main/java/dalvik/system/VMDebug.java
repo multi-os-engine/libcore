@@ -372,6 +372,19 @@ public final class VMDebug {
     public static native long countInstancesOfClass(Class klass, boolean assignable);
 
     /**
+     * Counts the instances of classes.
+     *
+     * @param classes the classes to be counted.
+     * @param assignable if false, direct instances of klass are
+     *                   counted.  If true, instances that are
+     *                   assignable to klass, as defined by
+     *                   {@link Class#isAssignableFrom} are counted.
+     * @return an array containing the number of matching instances. The value for
+     * an index is the number of instances of the class at that index in number classes.
+     */
+    public static native long[] countInstancesOfClasses(Class[] classes, boolean assignable);
+
+    /**
      * Export the heap per-space stats for dumpsys meminfo.
      *
      * The content of the array is:
