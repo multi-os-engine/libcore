@@ -16,11 +16,13 @@
 
 package libcore.icu;
 
+import com.ibm.icu.text.PluralRules;
+
 import java.util.Locale;
 
 /**
  * Provides access to ICU's
- * <a href="http://icu-project.org/apiref/icu4c/classPluralRules.html">PluralRules</a> class.
+ * <a href="http://icu-project.org/apiref/icu4j/com/ibm/icu/text/PluralRules.html">PluralRules</a> class.
  * This is not necessary for Java API, but is used by frameworks/base's resources system to
  * ease localization of strings to languages with complex grammatical rules regarding number.
  */
@@ -32,23 +34,15 @@ public final class NativePluralRules {
     public static final int MANY  = 4;
     public static final int OTHER = 5;
 
-    private final long address;
-
-    private NativePluralRules(long address) {
-        this.address = address;
-    }
-
-    @Override protected void finalize() throws Throwable {
-        try {
-            finalizeImpl(address);
-        } finally {
-            super.finalize();
-        }
+    private NativePluralRules(PluralRules jInstance) {
+        this.jInstance = jInstance;
     }
 
     public static NativePluralRules forLocale(Locale locale) {
-        return new NativePluralRules(forLocaleImpl(locale.toString()));
+        return new NativePluralRules(PluralRules.forLocale(locale));
     }
+
+    private final PluralRules jInstance;
 
     /**
      * Returns the constant defined in this class corresponding
@@ -59,10 +53,20 @@ public final class NativePluralRules {
         if (value < 0) {
             return OTHER;
         }
-        return quantityForIntImpl(address, value);
+        String keyword = jInstance.select(value);
+        if (keyword.equals("zero")) {
+            return 0;
+        } else if (keyword.equals("one")) {
+            return 1;
+        } else if (keyword.equals("two")) {
+            return 2;
+        } else if (keyword.equals("few")) {
+            return 3;
+        } else if (keyword.equals("many")) {
+            return 4;
+        } else {
+            return 5;
+        }
     }
 
-    private static native void finalizeImpl(long address);
-    private static native long forLocaleImpl(String localeName);
-    private static native int quantityForIntImpl(long address, int value);
 }
