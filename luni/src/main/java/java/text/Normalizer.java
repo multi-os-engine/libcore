@@ -55,6 +55,20 @@ public final class Normalizer {
     }
 
     /**
+     * Converts members of the above enum to the ICU4j Modes
+     * {@link com.ibm.icu.text.Normalizer.Mode}.
+     */
+    private static com.ibm.icu.text.Normalizer.Mode formToMode(Form form) {
+        switch (form) {
+        case NFC: return com.ibm.icu.text.Normalizer.NFC;
+        case NFD: return com.ibm.icu.text.Normalizer.NFD;
+        case NFKC: return com.ibm.icu.text.Normalizer.NFKC;
+        case NFKD: return com.ibm.icu.text.Normalizer.NFKD;
+        }
+        throw new AssertionError("unknown Normalizer.Form " + form);
+    }
+
+    /**
      * Check whether the given character sequence <code>src</code> is normalized
      * according to the normalization method <code>form</code>.
      *
@@ -63,7 +77,7 @@ public final class Normalizer {
      * @return true if normalized according to <code>form</code>
      */
     public static boolean isNormalized(CharSequence src, Form form) {
-        return NativeNormalizer.isNormalized(src, form);
+        return com.ibm.icu.text.Normalizer.isNormalized(src.toString(), formToMode(form), 0);
     }
 
     /**
@@ -75,7 +89,7 @@ public final class Normalizer {
      * @return string normalized according to <code>form</code>
      */
     public static String normalize(CharSequence src, Form form) {
-        return NativeNormalizer.normalize(src, form);
+        return com.ibm.icu.text.Normalizer.normalize(src.toString(), formToMode(form));
     }
 
     private Normalizer() {}
