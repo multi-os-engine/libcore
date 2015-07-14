@@ -16,41 +16,35 @@
 
 package libcore.icu;
 
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+
 /**
  * Exposes icu4c's Transliterator.
  */
 public final class Transliterator {
-  private long peer;
-
+  com.ibm.icu.text.Transliterator transliterator;
   /**
    * Creates a new Transliterator for the given id.
    */
   public Transliterator(String id) {
-    peer = create(id);
-  }
-
-  @Override protected synchronized void finalize() throws Throwable {
-    try {
-      destroy(peer);
-      peer = 0;
-    } finally {
-      super.finalize();
-    }
+    transliterator = com.ibm.icu.text.Transliterator.getInstance(id);
   }
 
   /**
    * Returns the ids of all known transliterators.
    */
-  public static native String[] getAvailableIDs();
+  public static String[] getAvailableIDs() {
+    List<String> availableIDs = Collections.list(com.ibm.icu.text.Transliterator.getAvailableIDs());
+    return availableIDs.toArray(new String[availableIDs.size()]);
+  }
 
   /**
    * Transliterates the specified string.
    */
   public String transliterate(String s) {
-    return transliterate(peer, s);
+    return transliterator.transliterate(s);
   }
 
-  private static native long create(String id);
-  private static native void destroy(long peer);
-  private static native String transliterate(long peer, String s);
 }
