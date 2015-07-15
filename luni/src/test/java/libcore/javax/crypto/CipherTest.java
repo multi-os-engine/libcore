@@ -3448,4 +3448,23 @@ public final class CipherTest extends TestCase {
         cipher.init(Cipher.ENCRYPT_MODE, keyGen.generateKeyPair().getPublic());
         cipher.doFinal(new byte[] {1,2,3,4});
     }
+
+    /**
+     * Check that Cipher#update returns 0 until a full block is completed.
+     *
+     * http://b/9483314
+     */
+    public void test_updateReturnsZeroUntilBlockIsFull() throws Exception {
+        Cipher cipher = Cipher.getInstance("AES/CTS/NoPadding");
+        int plainTextLen = cipher.getBlockSize()/2;
+        int[] modes = { Cipher.ENCRYPT_MODE, Cipher.DECRYPT_MODE };
+        for (int mode : modes) {
+            cipher.init(
+                    Cipher.ENCRYPT_MODE,
+                    new SecretKeySpec(
+                            "0123456789012345".getBytes(StandardCharsets.US_ASCII), "AES"));
+            byte[] plainText= new byte[plainTextLen];
+            assertEquals(0, cipher.update(plainText, 0, plainTextLen, plainText, 0));
+        }
+    }
 }
