@@ -16,7 +16,7 @@
 
 package java.net;
 
-import libcore.icu.NativeIDN;
+import com.ibm.icu.text.IDNA;
 
 /**
  * Converts internationalized domain names between Unicode and the ASCII Compatible Encoding
@@ -29,15 +29,34 @@ import libcore.icu.NativeIDN;
 public final class IDN {
     /**
      * When set, allows IDN to process unassigned unicode points.
+     * No longer supported under UTS46.
      */
-    public static final int ALLOW_UNASSIGNED = 1;
+    public static final int ALLOW_UNASSIGNED = IDNA.ALLOW_UNASSIGNED;
 
     /**
      * When set, ASCII strings are checked against
      * <a href="http://www.ietf.org/rfc/rfc1122.txt">RFC 1122</a> and
      * <a href="http://www.ietf.org/rfc/rfc1123.txt">RFC 1123</a>.
      */
-    public static final int USE_STD3_ASCII_RULES = 2;
+    public static final int USE_STD3_ASCII_RULES = IDNA.USE_STD3_RULES;
+
+    /**
+     * Check whether the input conforms to BiDi rules.
+     * @hide
+     */
+    public static final int CHECK_BIDI = IDNA.CHECK_BIDI;
+
+    /**
+     * Check weather the input conforms to CONTEXTJ rules.
+     * @hide
+     */
+    public static final int CHECK_CONTEXTJ = IDNA.CHECK_CONTEXTJ;
+
+    /**
+     * Check weather the input conforms to CONTEXTO rules,
+     * @hide
+     */
+    public static final int CHECK_CONTEXTO = IDNA.CHECK_CONTEXTO;
 
     private IDN() {
     }
@@ -55,13 +74,23 @@ public final class IDN {
      * All of these will become U+002E (full stop) in the result.
      *
      * @param input the Unicode name
-     * @param flags 0, {@code ALLOW_UNASSIGNED}, {@code USE_STD3_ASCII_RULES},
-     *         or {@code ALLOW_UNASSIGNED | USE_STD3_ASCII_RULES}
+     * @param flags 0, {@code IDN.USE_STD3_ASCII_RULES}, {@code IDN.CHECK_BIDI},
+     *              {@code IDN.CHECK_CONTEXTJ}, {@code IDN.CHECK_CONTEXTO}, or
+     *              any bitwise combination of these.
      * @return the ACE name
      * @throws IllegalArgumentException if {@code input} does not conform to <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>
      */
     public static String toASCII(String input, int flags) {
-        return NativeIDN.toASCII(input, flags);
+        IDNA converter = IDNA.getUTS46Instance(flags);
+        StringBuilder result = new StringBuilder();
+        IDNA.Info info = new IDNA.Info();
+        converter.nameToASCII(input, result, info);
+
+        if (info.hasErrors()) {
+            throw new IllegalArgumentException("Invalid input to toASCII: " + input);
+        }
+
+        return result.toString();
     }
 
     /**
@@ -87,11 +116,23 @@ public final class IDN {
      *
      * @param input the ACE name
      * @return the Unicode name
-     * @param flags 0, {@code ALLOW_UNASSIGNED}, {@code USE_STD3_ASCII_RULES},
-     *         or {@code ALLOW_UNASSIGNED | USE_STD3_ASCII_RULES}
+     * @param flags 0, {@code IDN.USE_STD3_ASCII_RULES}, {@code IDN.CHECK_BIDI},
+     *              {@code IDN.CHECK_CONTEXTJ}, {@code IDN.CHECK_CONTEXTO}, or
+     *              any bitwise combination of these.
      */
     public static String toUnicode(String input, int flags) {
-        return NativeIDN.toUnicode(input, flags);
+        IDNA converter = IDNA.getUTS46Instance(flags);
+        StringBuilder result = new StringBuilder();
+        IDNA.Info info = new IDNA.Info();
+        converter.nameToUnicode(input, result, info);
+
+        // To maintain compatibility, if there was an error parsing, the original string
+        // is returned.
+        if (info.hasErrors()) {
+            return input;
+        }
+
+        return result.toString();
     }
 
     /**
@@ -101,6 +142,6 @@ public final class IDN {
      * @return the Unicode name
      */
     public static String toUnicode(String input) {
-        return NativeIDN.toUnicode(input, 0);
+        return toUnicode(input, 0);
     }
 }
