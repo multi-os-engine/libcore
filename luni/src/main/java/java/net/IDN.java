@@ -16,6 +16,7 @@
 
 package java.net;
 
+import com.ibm.icu.text.StringPrepParseException;
 import libcore.icu.NativeIDN;
 
 /**
@@ -61,7 +62,11 @@ public final class IDN {
      * @throws IllegalArgumentException if {@code input} does not conform to <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>
      */
     public static String toASCII(String input, int flags) {
-        return NativeIDN.toASCII(input, flags);
+        try {
+            return com.ibm.icu.impl.IDNA2003.convertIDNToASCII(input, flags).toString();
+        } catch (com.ibm.icu.text.StringPrepParseException e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 
     /**
@@ -73,6 +78,35 @@ public final class IDN {
      */
     public static String toASCII(String input) {
         return toASCII(input, 0);
+    }
+
+    /**
+     * Determines if the character is a separator in internationalised domain names.
+     * Follows §3.1 of <a href="https://tools.ietf.org/html/rfc3490">RFC 3490</a>.
+     * @return true if the character is a separator, false otherwise.
+     */
+    private static boolean isLabelSeparator(char c) {
+        switch (c) {
+            case 0x3002:  // Ideographic full stop。
+            case 0xff0e:  // Fullwidth full stop．
+            case 0xff61:  // Halfwidth ideographic full stop｡
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Replaces characters that are treated as full stops in RFC3490 §3.1 with a full stop.
+     * @return a corrected string representation of the input.
+     */
+    private static String fixupSeperator(StringBuffer input) {
+        for (int pos = 0; pos < input.length(); pos++) {
+            char c = input.charAt(pos);
+            if (isLabelSeparator(c)) {
+                input.setCharAt(pos, (char) 0x002e);  // Normal full stop.
+            }
+        }
+        return input.toString();
     }
 
     /**
@@ -91,7 +125,11 @@ public final class IDN {
      *         or {@code ALLOW_UNASSIGNED | USE_STD3_ASCII_RULES}
      */
     public static String toUnicode(String input, int flags) {
-        return NativeIDN.toUnicode(input, flags);
+        try {
+            return fixupSeperator(com.ibm.icu.impl.IDNA2003.convertIDNToUnicode(input, flags));
+        } catch (StringPrepParseException e) {
+            return input;
+        }
     }
 
     /**
