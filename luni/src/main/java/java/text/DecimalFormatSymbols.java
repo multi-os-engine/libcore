@@ -112,6 +112,35 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
+     * Convert an instance of this class to the ICU version so that it can be used with ICU4j.
+     * @return ICU version of DecimalFormatSymbols
+     * @hide
+     */
+    protected com.ibm.icu.text.DecimalFormatSymbols getIcuDecimalFormatSymbols() {
+        com.ibm.icu.text.DecimalFormatSymbols result = new com.ibm.icu.text.DecimalFormatSymbols(this.locale);
+        result.setZeroDigit(zeroDigit);
+        result.setDigit(digit);
+        result.setDecimalSeparator(decimalSeparator);
+        result.setGroupingSeparator(groupingSeparator);
+        result.setPatternSeparator(patternSeparator);
+        result.setPercent(percent.charAt(0));
+        result.setMonetaryDecimalSeparator(monetarySeparator);
+        result.setMinusSign(minusSign.charAt(0));
+        result.setInfinity(infinity);
+        result.setNaN(NaN);
+        result.setExponentSeparator(exponentSeparator);
+        try {
+            result.setCurrency(com.ibm.icu.util.Currency.getInstance(locale));
+            result.setCurrencySymbol(currency.getSymbol());
+            result.setInternationalCurrencySymbol(intlCurrencySymbol);
+        } catch (NullPointerException e) {
+            /* Do not set the currency if we don't know what to set it to */
+        }
+        return result;
+    }
+
+
+    /**
      * Returns a new {@code DecimalFormatSymbols} instance for the user's default locale.
      * See "<a href="../util/Locale.html#default_locale">Be wary of the default locale</a>".
      *
