@@ -112,6 +112,68 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
+     * Convert an instance of this class to the ICU version so that it can be used with ICU4J.
+     * @hide
+     */
+    protected com.ibm.icu.text.DecimalFormatSymbols getIcuDecimalFormatSymbols() {
+        com.ibm.icu.text.DecimalFormatSymbols result =
+                new com.ibm.icu.text.DecimalFormatSymbols(this.locale);
+        result.setZeroDigit(zeroDigit);
+        result.setDigit(digit);
+        result.setDecimalSeparator(decimalSeparator);
+        result.setGroupingSeparator(groupingSeparator);
+        result.setPatternSeparator(patternSeparator);
+        result.setPercent(percent.charAt(0));
+        result.setMonetaryDecimalSeparator(monetarySeparator);
+        result.setMinusSign(minusSign.charAt(0));
+        result.setInfinity(infinity);
+        result.setNaN(NaN);
+        result.setExponentSeparator(exponentSeparator);
+
+        try {
+            result.setCurrency(com.ibm.icu.util.Currency.getInstance(currency.getCurrencyCode()));
+        } catch (NullPointerException e) {
+            currency = Currency.getInstance("XXX");
+        }
+
+        result.setCurrencySymbol(currencySymbol);
+        result.setInternationalCurrencySymbol(intlCurrencySymbol);
+        return result;
+    }
+
+    /**
+     * Create an instance of DecimalFormatSymbols using the ICU equivalent of this class.
+     * @hide
+     */
+    protected static DecimalFormatSymbols fromIcuInstance(
+            com.ibm.icu.text.DecimalFormatSymbols dfs) {
+        DecimalFormatSymbols result = new DecimalFormatSymbols();
+        result.setZeroDigit(dfs.getZeroDigit());
+        result.setDigit(dfs.getDigit());
+        result.setDecimalSeparator(dfs.getDecimalSeparator());
+        result.setGroupingSeparator(dfs.getGroupingSeparator());
+        result.setPatternSeparator(dfs.getPatternSeparator());
+        result.setPercent(dfs.getPercent());
+        result.setPerMill(dfs.getPerMill());
+        result.setMonetaryDecimalSeparator(dfs.getMonetaryDecimalSeparator());
+        result.setMinusSign(dfs.getMinusSign());
+        result.setInfinity(dfs.getInfinity());
+        result.setNaN(dfs.getNaN());
+        result.setExponentSeparator(dfs.getExponentSeparator());
+
+        try {
+            result.setCurrency(Currency.getInstance(dfs.getCurrency().getCurrencyCode()));
+        } catch (IllegalArgumentException e) {
+            result.setCurrency(Currency.getInstance("XXX"));
+        }
+
+        result.setCurrencySymbol(dfs.getCurrencySymbol());
+        result.setInternationalCurrencySymbol(dfs.getInternationalCurrencySymbol());
+        return result;
+    }
+
+
+    /**
      * Returns a new {@code DecimalFormatSymbols} instance for the user's default locale.
      * See "<a href="../util/Locale.html#default_locale">Be wary of the default locale</a>".
      *
