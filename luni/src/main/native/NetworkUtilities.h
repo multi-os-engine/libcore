@@ -17,6 +17,77 @@
 #include "jni.h"
 #include <sys/socket.h>
 
+/**
+ * Used to retry networking system calls that can be interrupted with a signal. Unlike
+ * TEMP_FAILURE_RETRY, this also handles the case where
+ * AsynchronousCloseMonitor::signalBlockedThreads(fd) is used to signal a close() or
+ * Thread.interrupt(). Other signals that result in an EINTR result are ignored and the system call
+ * is retried.
+ *
+ * Returns the result of the system call though a Java exception will be pending if the result is
+ * -1:  a SocketException if signaled via AsynchronousCloseMonitor, or ErrnoException for other
+ * failures.
+ */
+#define NET_FAILURE_RETRY(jni_env, return_type, syscall_name, java_fd, ...) ({ \
+    return_type _rc = -1; \
+    do { \
+        bool _wasSignaled; \
+        int _syscallErrno; \
+        { \
+            int _fd = jniGetFDFromFileDescriptor(jni_env, java_fd); \
+            AsynchronousCloseMonitor _monitor(_fd); \
+            _rc = syscall_name(_fd, __VA_ARGS__); \
+            _syscallErrno = errno; \
+            _wasSignaled = _monitor.wasSignaled(); \
+        } \
+        if (_wasSignaled) { \
+            jniThrowException(jni_env, "java/net/SocketException", "Socket closed"); \
+            _rc = -1; \
+            break; \
+        } \
+        if (_rc == -1 && _syscallErrno != EINTR) { \
+            /* TODO: with a format string we could show the arguments too, like strace(1). */ \
+            throwErrnoException(jni_env, # syscall_name); \
+            break; \
+        } \
+    } while (_rc == -1); /* _syscallErrno == EINTR && !_wasSignaled */ \
+    _rc; })
+
+/**
+ * Used to retry system calls that can be interrupted with a signal. Unlike TEMP_FAILURE_RETRY, this
+ * also handles the case where AsynchronousCloseMonitor::signalBlockedThreads(fd) is used to signal
+ * a close() or Thread.interrupt(). Other signals that result in an EINTR result are ignored and the
+ * system call is retried.
+ *
+ * Returns the result of the system call though a Java exception will be pending if the result is
+ * -1: an IOException if the file descriptor is already closed, a InterruptedIOException if signaled
+ * via AsynchronousCloseMonitor, or ErrnoException for other failures.
+ */
+#define IO_FAILURE_RETRY(jni_env, return_type, syscall_name, java_fd, ...) ({ \
+    return_type _rc = -1; \
+    do { \
+        bool _wasSignaled; \
+        int _syscallErrno; \
+        { \
+            int _fd = jniGetFDFromFileDescriptor(jni_env, java_fd); \
+            AsynchronousCloseMonitor _monitor(_fd); \
+            _rc = syscall_name(_fd, __VA_ARGS__); \
+            _syscallErrno = errno; \
+            _wasSignaled = _monitor.wasSignaled(); \
+        } \
+        if (_wasSignaled) { \
+            jniThrowException(jni_env, "java/io/InterruptedIOException", # syscall_name " interrupted"); \
+            _rc = -1; \
+            break; \
+        } \
+        if (_rc == -1 && _syscallErrno != EINTR) { \
+            /* TODO: with a format string we could show the arguments too, like strace(1). */ \
+            throwErrnoException(jni_env, # syscall_name); \
+            break; \
+        } \
+    } while (_rc == -1); /* && _syscallErrno == EINTR && !_wasSignaled */ \
+    _rc; })
+
 // Convert from sockaddr_storage to Inet4Address (AF_INET) or Inet6Address (AF_INET6).
 // If 'port' is non-NULL and the address family includes a notion
 // of port number, *port will be set to the port number.
