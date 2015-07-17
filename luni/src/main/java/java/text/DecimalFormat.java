@@ -25,9 +25,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.Currency;
+import java.util.Iterator;
 import java.util.Locale;
+import java.util.Set;
+
 import libcore.icu.LocaleData;
-import libcore.icu.NativeDecimalFormat;
 
 /**
  * A concrete subclass of {@link NumberFormat} that formats decimal numbers. It
@@ -507,9 +509,9 @@ public class DecimalFormat extends NumberFormat {
 
     private transient DecimalFormatSymbols symbols;
 
-    private transient NativeDecimalFormat ndf;
-
     private transient RoundingMode roundingMode = RoundingMode.HALF_EVEN;
+
+    private transient com.ibm.icu.text.DecimalFormat icuDecimalFormat;
 
     /**
      * Constructs a new {@code DecimalFormat} for formatting and parsing numbers
@@ -519,7 +521,7 @@ public class DecimalFormat extends NumberFormat {
     public DecimalFormat() {
         Locale locale = Locale.getDefault();
         this.symbols = new DecimalFormatSymbols(locale);
-        initNative(LocaleData.get(locale).numberPattern);
+        initIcu(LocaleData.get(locale).numberPattern);
     }
 
     /**
@@ -548,25 +550,22 @@ public class DecimalFormat extends NumberFormat {
      */
     public DecimalFormat(String pattern, DecimalFormatSymbols value) {
         this.symbols = (DecimalFormatSymbols) value.clone();
-        initNative(pattern);
+        initIcu(pattern);
     }
 
     // Used by NumberFormat.getInstance because cloning DecimalFormatSymbols is slow.
     DecimalFormat(String pattern, Locale locale) {
         this.symbols = new DecimalFormatSymbols(locale);
-        initNative(pattern);
+        initIcu(pattern);
     }
 
-    private void initNative(String pattern) {
-        try {
-            this.ndf = new NativeDecimalFormat(pattern, symbols);
-        } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException(pattern);
-        }
-        super.setMaximumFractionDigits(ndf.getMaximumFractionDigits());
-        super.setMaximumIntegerDigits(ndf.getMaximumIntegerDigits());
-        super.setMinimumFractionDigits(ndf.getMinimumFractionDigits());
-        super.setMinimumIntegerDigits(ndf.getMinimumIntegerDigits());
+    private void initIcu(String pattern) {
+        this.icuDecimalFormat = new com.ibm.icu.text.DecimalFormat(
+                pattern, symbols.getIcuDecimalFormatSymbols());
+        super.setMaximumFractionDigits(icuDecimalFormat.getMaximumFractionDigits());
+        super.setMaximumIntegerDigits(icuDecimalFormat.getMaximumIntegerDigits());
+        super.setMinimumFractionDigits(icuDecimalFormat.getMinimumFractionDigits());
+        super.setMinimumIntegerDigits(icuDecimalFormat.getMinimumIntegerDigits());
     }
 
     /**
@@ -579,8 +578,8 @@ public class DecimalFormat extends NumberFormat {
      *            if the pattern cannot be parsed.
      */
     public void applyLocalizedPattern(String pattern) {
-        ndf.applyLocalizedPattern(pattern);
-        updateFieldsFromNative();
+        icuDecimalFormat.applyLocalizedPattern(pattern);
+        updateFieldsFromIcu();
     }
 
     /**
@@ -593,18 +592,18 @@ public class DecimalFormat extends NumberFormat {
      *            if the pattern cannot be parsed.
      */
     public void applyPattern(String pattern) {
-        // The underlying ICU4C accepts a super-set of the pattern spec documented by the Android
+        // The underlying ICU4J accepts a super-set of the pattern spec documented by the Android
         // APIs. For example, rounding increments (pattern characters '1'-'9'). They will work but
         // see class doc for issues with serialization/deserialization they may cause.
-        ndf.applyPattern(pattern);
-        updateFieldsFromNative();
+        icuDecimalFormat.applyPattern(pattern);
+        updateFieldsFromIcu();
     }
 
-    private void updateFieldsFromNative() {
-        maximumIntegerDigits = ndf.getMaximumIntegerDigits();
-        minimumIntegerDigits = ndf.getMinimumIntegerDigits();
-        maximumFractionDigits = ndf.getMaximumFractionDigits();
-        minimumFractionDigits = ndf.getMinimumFractionDigits();
+    private void updateFieldsFromIcu() {
+        maximumIntegerDigits = icuDecimalFormat.getMaximumIntegerDigits();
+        minimumIntegerDigits = icuDecimalFormat.getMinimumIntegerDigits();
+        maximumFractionDigits = icuDecimalFormat.getMaximumFractionDigits();
+        minimumFractionDigits = icuDecimalFormat.getMinimumFractionDigits();
     }
 
     /**
@@ -614,7 +613,7 @@ public class DecimalFormat extends NumberFormat {
     @Override
     public Object clone() {
         DecimalFormat clone = (DecimalFormat) super.clone();
-        clone.ndf = (NativeDecimalFormat) ndf.clone();
+        clone.icuDecimalFormat = (com.ibm.icu.text.DecimalFormat) icuDecimalFormat.clone();
         clone.symbols = (DecimalFormatSymbols) symbols.clone();
         return clone;
     }
@@ -639,8 +638,14 @@ public class DecimalFormat extends NumberFormat {
             return false;
         }
         DecimalFormat other = (DecimalFormat) object;
-        return (this.ndf == null ? other.ndf == null : this.ndf.equals(other.ndf)) &&
-                getDecimalFormatSymbols().equals(other.getDecimalFormatSymbols());
+
+        if (this.icuDecimalFormat == null) {
+            return other.icuDecimalFormat == null;
+        }
+
+        return (this.icuDecimalFormat.equals(other.icuDecimalFormat))
+                && this.icuDecimalFormat.toPattern().equals(other.icuDecimalFormat.toPattern())
+                && getDecimalFormatSymbols().equals(other.getDecimalFormatSymbols());
     }
 
     /**
@@ -662,7 +667,42 @@ public class DecimalFormat extends NumberFormat {
         if (object == null) {
             throw new NullPointerException("object == null");
         }
-        return ndf.formatToCharacterIterator(object);
+        // Note: formatToCharacterIterator cannot be used directly because it returns attributes
+        // in terms of its own class: icu.text.NumberFormat instead of java.text.NumberFormat,
+
+        AttributedCharacterIterator original = icuDecimalFormat.formatToCharacterIterator(object);
+        StringBuilder textBuilder = new StringBuilder();
+
+        for (int i = original.getBeginIndex(); i < original.getEndIndex(); i++) {
+            textBuilder.append(original.current());
+            original.next();
+        }
+
+        String text = textBuilder.toString();
+
+        Iterator<AttributedCharacterIterator.Attribute> attributeIterator =
+                original.getAllAttributeKeys().iterator();
+
+        AttributedString result = new AttributedString(text);
+
+        while (attributeIterator.hasNext()) {
+            AttributedCharacterIterator.Attribute attribute = attributeIterator.next();
+            original.setIndex(0);
+            while (original.current() != CharacterIterator.DONE) {
+                int start = original.getRunStart(attribute);
+                int end = original.getRunLimit(attribute);
+                Object value = original.getAttribute(attribute);
+                if (value != null) {
+                    AttributedCharacterIterator.Attribute javaAttribute =
+                            getJavaAttributes(attribute);
+                    result.addAttribute(javaAttribute, javaAttribute, start, end);
+                }
+                // Set the position on the original iterator to the end of the current run.
+                original.setIndex(end);
+            }
+        }
+
+        return result.getIterator();
     }
 
     private void checkBufferAndFieldPosition(StringBuffer buffer, FieldPosition position) {
@@ -676,34 +716,133 @@ public class DecimalFormat extends NumberFormat {
 
     @Override
     public StringBuffer format(double value, StringBuffer buffer, FieldPosition position) {
+        FieldPosition icuFieldPosition = getIcuFieldPosition(position);
         checkBufferAndFieldPosition(buffer, position);
-        buffer.append(ndf.formatDouble(value, position));
+        icuDecimalFormat.format(value, buffer, icuFieldPosition);
+        position.setBeginIndex(icuFieldPosition.getBeginIndex());
+        position.setEndIndex(icuFieldPosition.getEndIndex());
         return buffer;
     }
 
     @Override
     public StringBuffer format(long value, StringBuffer buffer, FieldPosition position) {
+        FieldPosition icuFieldPosition = getIcuFieldPosition(position);
         checkBufferAndFieldPosition(buffer, position);
-        buffer.append(ndf.formatLong(value, position));
+        icuDecimalFormat.format(value, buffer, icuFieldPosition);
+        position.setBeginIndex(icuFieldPosition.getBeginIndex());
+        position.setEndIndex(icuFieldPosition.getEndIndex());
         return buffer;
     }
 
     @Override
     public final StringBuffer format(Object number, StringBuffer buffer, FieldPosition position) {
         checkBufferAndFieldPosition(buffer, position);
+        FieldPosition icuFieldPosition = getIcuFieldPosition(position);
         if (number instanceof BigInteger) {
             BigInteger bigInteger = (BigInteger) number;
-            char[] chars = (bigInteger.bitLength() < 64)
-                    ? ndf.formatLong(bigInteger.longValue(), position)
-                    : ndf.formatBigInteger(bigInteger, position);
-            buffer.append(chars);
-            return buffer;
+            icuDecimalFormat.format(
+                    (bigInteger.bitLength() < 64) ? bigInteger.longValue() : bigInteger,
+                    buffer, icuFieldPosition);
+            position.setBeginIndex(icuFieldPosition.getBeginIndex());
+            position.setEndIndex(icuFieldPosition.getEndIndex());
+           return buffer;
         } else if (number instanceof BigDecimal) {
-            buffer.append(ndf.formatBigDecimal((BigDecimal) number, position));
+            icuDecimalFormat.format((BigDecimal) number, buffer, icuFieldPosition);
+            position.setBeginIndex(icuFieldPosition.getBeginIndex());
+            position.setEndIndex(icuFieldPosition.getEndIndex());
             return buffer;
         }
         return super.format(number, buffer, position);
     }
+
+
+    /**
+     * Convert between field positions used by Java/ICU.
+     * @param fp The Java field position
+     * @return The ICU field position
+     * @hide
+     */
+    private static FieldPosition getIcuFieldPosition(FieldPosition fp) {
+        if (fp.getFieldAttribute() == null) return fp;
+        FieldPosition icuFieldPosition;
+
+        if (fp.getFieldAttribute() == Field.INTEGER) {
+            icuFieldPosition = new FieldPosition(com.ibm.icu.text.NumberFormat.Field.INTEGER);
+        } else if (fp.getFieldAttribute() == Field.FRACTION) {
+            icuFieldPosition = new FieldPosition(com.ibm.icu.text.NumberFormat.Field.FRACTION);
+        } else if (fp.getFieldAttribute() == Field.DECIMAL_SEPARATOR) {
+            icuFieldPosition =
+                    new FieldPosition(com.ibm.icu.text.NumberFormat.Field.DECIMAL_SEPARATOR);
+        } else if (fp.getFieldAttribute() == Field.EXPONENT_SYMBOL) {
+            icuFieldPosition =
+                    new FieldPosition(com.ibm.icu.text.NumberFormat.Field.EXPONENT_SYMBOL);
+        } else if (fp.getFieldAttribute() == Field.EXPONENT) {
+            icuFieldPosition = new FieldPosition(com.ibm.icu.text.NumberFormat.Field.EXPONENT);
+        } else if (fp.getFieldAttribute() == Field.GROUPING_SEPARATOR) {
+            icuFieldPosition =
+                    new FieldPosition(com.ibm.icu.text.NumberFormat.Field.GROUPING_SEPARATOR);
+        } else if (fp.getFieldAttribute() == Field.CURRENCY) {
+            icuFieldPosition = new FieldPosition(com.ibm.icu.text.NumberFormat.Field.CURRENCY);
+        } else if (fp.getFieldAttribute() == Field.PERCENT) {
+            icuFieldPosition = new FieldPosition(com.ibm.icu.text.NumberFormat.Field.PERCENT);
+        } else if (fp.getFieldAttribute() == Field.PERMILLE) {
+            icuFieldPosition = new FieldPosition(com.ibm.icu.text.NumberFormat.Field.PERMILLE);
+        } else if (fp.getFieldAttribute() == Field.SIGN) {
+            icuFieldPosition = new FieldPosition(com.ibm.icu.text.NumberFormat.Field.SIGN);
+        } else {
+            throw new IllegalArgumentException("Unexpected field position attribute type.");
+        }
+
+        icuFieldPosition.setBeginIndex(fp.getBeginIndex());
+        icuFieldPosition.setEndIndex(fp.getEndIndex());
+        return icuFieldPosition;
+    }
+
+    /**
+     * Convert the Attribute that ICU returns in its AttributedCharacterIterator
+     * responses to the type that java uses.
+     * @param icu
+     * @return A Java Attribute
+     * @hide
+     */
+    private static AttributedCharacterIterator.Attribute getJavaAttributes(
+            AttributedCharacterIterator.Attribute icu) {
+        if (icu.getName().equals(Field.INTEGER.getName())) {
+            return Field.INTEGER;
+        }
+        if (icu.getName().equals(Field.CURRENCY.getName())) {
+            return Field.CURRENCY;
+        }
+        if (icu.getName().equals(Field.DECIMAL_SEPARATOR.getName())) {
+            return Field.DECIMAL_SEPARATOR;
+        }
+        if (icu.getName().equals(Field.EXPONENT.getName())) {
+            return Field.EXPONENT;
+        }
+        if (icu.getName().equals(Field.EXPONENT_SIGN.getName())) {
+            return Field.EXPONENT_SIGN;
+        }
+        if (icu.getName().equals(Field.EXPONENT_SYMBOL.getName())) {
+            return Field.EXPONENT_SYMBOL;
+        }
+        if (icu.getName().equals(Field.FRACTION.getName())) {
+            return Field.FRACTION;
+        }
+        if (icu.getName().equals(Field.GROUPING_SEPARATOR.getName())) {
+            return Field.GROUPING_SEPARATOR;
+        }
+        if (icu.getName().equals(Field.SIGN.getName())) {
+            return Field.SIGN;
+        }
+        if (icu.getName().equals(Field.PERCENT.getName())) {
+            return Field.PERCENT;
+        }
+        if (icu.getName().equals(Field.PERMILLE.getName())) {
+            return Field.PERMILLE;
+        }
+        throw new IllegalArgumentException("Unrecognized attribute: " + icu.getName());
+   }
+
 
     /**
      * Returns the {@code DecimalFormatSymbols} used by this decimal format.
@@ -712,7 +851,7 @@ public class DecimalFormat extends NumberFormat {
      *         format.
      */
     public DecimalFormatSymbols getDecimalFormatSymbols() {
-        return (DecimalFormatSymbols) symbols.clone();
+        return DecimalFormatSymbols.fromIcuInstance(icuDecimalFormat.getDecimalFormatSymbols());
     }
 
     /**
@@ -734,7 +873,7 @@ public class DecimalFormat extends NumberFormat {
      * @return the number of digits grouped together.
      */
     public int getGroupingSize() {
-        return ndf.getGroupingSize();
+        return icuDecimalFormat.getGroupingSize();
     }
 
     /**
@@ -743,7 +882,7 @@ public class DecimalFormat extends NumberFormat {
      * @return the negative prefix.
      */
     public String getNegativePrefix() {
-        return ndf.getNegativePrefix();
+        return icuDecimalFormat.getNegativePrefix();
     }
 
     /**
@@ -752,7 +891,7 @@ public class DecimalFormat extends NumberFormat {
      * @return the negative suffix.
      */
     public String getNegativeSuffix() {
-        return ndf.getNegativeSuffix();
+        return icuDecimalFormat.getNegativeSuffix();
     }
 
     /**
@@ -761,7 +900,7 @@ public class DecimalFormat extends NumberFormat {
      * @return the positive prefix.
      */
     public String getPositivePrefix() {
-        return ndf.getPositivePrefix();
+        return icuDecimalFormat.getPositivePrefix();
     }
 
     /**
@@ -770,7 +909,7 @@ public class DecimalFormat extends NumberFormat {
      * @return the positive suffix.
      */
     public String getPositiveSuffix() {
-        return ndf.getPositiveSuffix();
+        return icuDecimalFormat.getPositiveSuffix();
     }
 
     @Override
@@ -786,7 +925,7 @@ public class DecimalFormat extends NumberFormat {
      *         {@code false} otherwise.
      */
     public boolean isDecimalSeparatorAlwaysShown() {
-        return ndf.isDecimalSeparatorAlwaysShown();
+        return icuDecimalFormat.isDecimalSeparatorAlwaysShown();
     }
 
     /**
@@ -798,7 +937,7 @@ public class DecimalFormat extends NumberFormat {
      *         {@code Double}.
      */
     public boolean isParseBigDecimal() {
-        return ndf.isParseBigDecimal();
+        return icuDecimalFormat.isParseBigDecimal();
     }
 
     /**
@@ -820,12 +959,12 @@ public class DecimalFormat extends NumberFormat {
         // fulfill most of the format and parse feature. And this method is
         // delegated to the wrapped instance of NativeDecimalFormat.
         super.setParseIntegerOnly(value);
-        ndf.setParseIntegerOnly(value);
+        icuDecimalFormat.setParseIntegerOnly(value);
     }
 
     @Override
     public boolean isParseIntegerOnly() {
-        return ndf.isParseIntegerOnly();
+        return icuDecimalFormat.isParseIntegerOnly();
     }
 
     private static final Double NEGATIVE_ZERO_DOUBLE = new Double(-0.0);
@@ -855,7 +994,8 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public Number parse(String string, ParsePosition position) {
-        Number number = ndf.parse(string, position);
+        // Returns a number class in ICU.
+        Number number = icuDecimalFormat.parse(string, position);
         if (number == null) {
             return null;
         }
@@ -868,12 +1008,12 @@ public class DecimalFormat extends NumberFormat {
 
                 return new BigDecimal(number.toString());
             }
-            if (number instanceof BigInteger) {
+            if (number instanceof com.ibm.icu.math.BigDecimal) {
                 return new BigDecimal(number.toString());
             }
             return number;
         }
-        if ((number instanceof BigDecimal) || (number instanceof BigInteger)) {
+        if ((number instanceof com.ibm.icu.math.BigDecimal) || (number instanceof BigInteger)) {
             return new Double(number.doubleValue());
         }
         if (this.isParseIntegerOnly() && number.equals(NEGATIVE_ZERO_DOUBLE)) {
@@ -888,9 +1028,8 @@ public class DecimalFormat extends NumberFormat {
      */
     public void setDecimalFormatSymbols(DecimalFormatSymbols value) {
         if (value != null) {
-            // The Java object is canonical, and we copy down to native code.
             this.symbols = (DecimalFormatSymbols) value.clone();
-            ndf.setDecimalFormatSymbols(this.symbols);
+            icuDecimalFormat.setDecimalFormatSymbols(symbols.getIcuDecimalFormatSymbols());
         }
     }
 
@@ -901,8 +1040,11 @@ public class DecimalFormat extends NumberFormat {
     @Override
     public void setCurrency(Currency currency) {
         Currency instance = Currency.getInstance(currency.getCurrencyCode());
-        symbols.setCurrency(instance);
-        ndf.setCurrency(symbols.getCurrencySymbol(), currency.getCurrencyCode());
+        if (instance != null) {
+            symbols.setCurrency(instance);
+        }
+        icuDecimalFormat.setCurrency(com.ibm.icu.util.Currency.getInstance(
+                symbols.getCurrency().getCurrencyCode()));
     }
 
     /**
@@ -910,7 +1052,7 @@ public class DecimalFormat extends NumberFormat {
      * digits.
      */
     public void setDecimalSeparatorAlwaysShown(boolean value) {
-        ndf.setDecimalSeparatorAlwaysShown(value);
+        icuDecimalFormat.setDecimalSeparatorAlwaysShown(value);
     }
 
     /**
@@ -919,7 +1061,7 @@ public class DecimalFormat extends NumberFormat {
      * size can only be set with a pattern.
      */
     public void setGroupingSize(int value) {
-        ndf.setGroupingSize(value);
+        icuDecimalFormat.setGroupingSize(value);
     }
 
     /**
@@ -928,7 +1070,7 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setGroupingUsed(boolean value) {
-        ndf.setGroupingUsed(value);
+        icuDecimalFormat.setGroupingUsed(value);
     }
 
     /**
@@ -937,7 +1079,7 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public boolean isGroupingUsed() {
-        return ndf.isGroupingUsed();
+        return icuDecimalFormat.isGroupingUsed();
     }
 
     /**
@@ -948,7 +1090,7 @@ public class DecimalFormat extends NumberFormat {
     @Override
     public void setMaximumFractionDigits(int value) {
         super.setMaximumFractionDigits(value);
-        ndf.setMaximumFractionDigits(getMaximumFractionDigits());
+        icuDecimalFormat.setMaximumFractionDigits(getMaximumFractionDigits());
         // Changing the maximum fraction digits needs to update ICU4C's rounding configuration.
         setRoundingMode(roundingMode);
     }
@@ -961,7 +1103,7 @@ public class DecimalFormat extends NumberFormat {
     @Override
     public void setMaximumIntegerDigits(int value) {
         super.setMaximumIntegerDigits(value);
-        ndf.setMaximumIntegerDigits(getMaximumIntegerDigits());
+        icuDecimalFormat.setMaximumIntegerDigits(getMaximumIntegerDigits());
     }
 
     /**
@@ -972,7 +1114,7 @@ public class DecimalFormat extends NumberFormat {
     @Override
     public void setMinimumFractionDigits(int value) {
         super.setMinimumFractionDigits(value);
-        ndf.setMinimumFractionDigits(getMinimumFractionDigits());
+        icuDecimalFormat.setMinimumFractionDigits(getMinimumFractionDigits());
     }
 
     /**
@@ -983,7 +1125,7 @@ public class DecimalFormat extends NumberFormat {
     @Override
     public void setMinimumIntegerDigits(int value) {
         super.setMinimumIntegerDigits(value);
-        ndf.setMinimumIntegerDigits(getMinimumIntegerDigits());
+        icuDecimalFormat.setMinimumIntegerDigits(getMinimumIntegerDigits());
     }
 
     /**
@@ -993,7 +1135,7 @@ public class DecimalFormat extends NumberFormat {
      * "123" would be parsed as 1.23.
      */
     public int getMultiplier() {
-        return ndf.getMultiplier();
+        return icuDecimalFormat.getMultiplier();
     }
 
     /**
@@ -1003,35 +1145,35 @@ public class DecimalFormat extends NumberFormat {
      * "123" would be parsed as 1.23.
      */
     public void setMultiplier(int value) {
-        ndf.setMultiplier(value);
+        icuDecimalFormat.setMultiplier(value);
     }
 
     /**
      * Sets the prefix which is formatted or parsed before a negative number.
      */
     public void setNegativePrefix(String value) {
-        ndf.setNegativePrefix(value);
+        icuDecimalFormat.setNegativePrefix(value);
     }
 
     /**
      * Sets the suffix which is formatted or parsed after a negative number.
      */
     public void setNegativeSuffix(String value) {
-        ndf.setNegativeSuffix(value);
+        icuDecimalFormat.setNegativeSuffix(value);
     }
 
     /**
      * Sets the prefix which is formatted or parsed before a positive number.
      */
     public void setPositivePrefix(String value) {
-        ndf.setPositivePrefix(value);
+        icuDecimalFormat.setPositivePrefix(value);
     }
 
     /**
      * Sets the suffix which is formatted or parsed after a positive number.
      */
     public void setPositiveSuffix(String value) {
-        ndf.setPositiveSuffix(value);
+        icuDecimalFormat.setPositiveSuffix(value);
     }
 
     /**
@@ -1043,7 +1185,7 @@ public class DecimalFormat extends NumberFormat {
      *            {@code BigDecimal}; {@code false} otherwise.
      */
     public void setParseBigDecimal(boolean newValue) {
-        ndf.setParseBigDecimal(newValue);
+        icuDecimalFormat.setParseBigDecimal(newValue);
     }
 
     /**
@@ -1053,7 +1195,7 @@ public class DecimalFormat extends NumberFormat {
      * @return the localized pattern.
      */
     public String toLocalizedPattern() {
-        return ndf.toLocalizedPattern();
+        return icuDecimalFormat.toLocalizedPattern();
     }
 
     /**
@@ -1063,7 +1205,7 @@ public class DecimalFormat extends NumberFormat {
      * @return the non-localized pattern.
      */
     public String toPattern() {
-        return ndf.toPattern();
+        return icuDecimalFormat.toPattern();
     }
 
     // the fields list to be serialized
@@ -1104,27 +1246,27 @@ public class DecimalFormat extends NumberFormat {
      */
     private void writeObject(ObjectOutputStream stream) throws IOException, ClassNotFoundException {
         ObjectOutputStream.PutField fields = stream.putFields();
-        fields.put("positivePrefix", ndf.getPositivePrefix());
-        fields.put("positiveSuffix", ndf.getPositiveSuffix());
-        fields.put("negativePrefix", ndf.getNegativePrefix());
-        fields.put("negativeSuffix", ndf.getNegativeSuffix());
-        fields.put("posPrefixPattern", (String) null);
-        fields.put("posSuffixPattern", (String) null);
-        fields.put("negPrefixPattern", (String) null);
-        fields.put("negSuffixPattern", (String) null);
-        fields.put("multiplier", ndf.getMultiplier());
-        fields.put("groupingSize", (byte) ndf.getGroupingSize());
-        fields.put("groupingUsed", ndf.isGroupingUsed());
-        fields.put("decimalSeparatorAlwaysShown", ndf.isDecimalSeparatorAlwaysShown());
-        fields.put("parseBigDecimal", ndf.isParseBigDecimal());
+        fields.put("positivePrefix", icuDecimalFormat.getPositivePrefix());
+        fields.put("positiveSuffix", icuDecimalFormat.getPositiveSuffix());
+        fields.put("negativePrefix", icuDecimalFormat.getNegativePrefix());
+        fields.put("negativeSuffix", icuDecimalFormat.getNegativeSuffix());
+        fields.put("posPrefixPattern", null);
+        fields.put("posSuffixPattern", null);
+        fields.put("negPrefixPattern", null);
+        fields.put("negSuffixPattern", null);
+        fields.put("multiplier", icuDecimalFormat.getMultiplier());
+        fields.put("groupingSize", (byte) icuDecimalFormat.getGroupingSize());
+        fields.put("groupingUsed", icuDecimalFormat.isGroupingUsed());
+        fields.put("decimalSeparatorAlwaysShown", icuDecimalFormat.isDecimalSeparatorAlwaysShown());
+        fields.put("parseBigDecimal", icuDecimalFormat.isParseBigDecimal());
         fields.put("roundingMode", roundingMode);
         fields.put("symbols", symbols);
         fields.put("useExponentialNotation", false);
         fields.put("minExponentDigits", (byte) 0);
-        fields.put("maximumIntegerDigits", ndf.getMaximumIntegerDigits());
-        fields.put("minimumIntegerDigits", ndf.getMinimumIntegerDigits());
-        fields.put("maximumFractionDigits", ndf.getMaximumFractionDigits());
-        fields.put("minimumFractionDigits", ndf.getMinimumFractionDigits());
+        fields.put("maximumIntegerDigits", icuDecimalFormat.getMaximumIntegerDigits());
+        fields.put("minimumIntegerDigits", icuDecimalFormat.getMinimumIntegerDigits());
+        fields.put("maximumFractionDigits", icuDecimalFormat.getMaximumFractionDigits());
+        fields.put("minimumFractionDigits", icuDecimalFormat.getMinimumFractionDigits());
         fields.put("serialVersionOnStream", 4);
         stream.writeFields();
     }
@@ -1144,15 +1286,25 @@ public class DecimalFormat extends NumberFormat {
         ObjectInputStream.GetField fields = stream.readFields();
         this.symbols = (DecimalFormatSymbols) fields.get("symbols", null);
 
-        initNative("");
-        ndf.setPositivePrefix((String) fields.get("positivePrefix", ""));
-        ndf.setPositiveSuffix((String) fields.get("positiveSuffix", ""));
-        ndf.setNegativePrefix((String) fields.get("negativePrefix", "-"));
-        ndf.setNegativeSuffix((String) fields.get("negativeSuffix", ""));
-        ndf.setMultiplier(fields.get("multiplier", 1));
-        ndf.setGroupingSize(fields.get("groupingSize", (byte) 3));
-        ndf.setGroupingUsed(fields.get("groupingUsed", true));
-        ndf.setDecimalSeparatorAlwaysShown(fields.get("decimalSeparatorAlwaysShown", false));
+        initIcu("");
+
+        String positivePrefix = (String) fields.get("positivePrefix", "");
+        if (!positivePrefix.equals("")) {
+            setPositivePrefix(positivePrefix);
+        }
+
+        String positiveSuffix = (String) fields.get("positiveSuffix", "");
+        if (!positiveSuffix.equals("")) {
+            setPositiveSuffix(positiveSuffix);
+        }
+
+        setNegativePrefix((String) fields.get("negativePrefix", "-"));
+        setNegativeSuffix((String) fields.get("negativeSuffix", ""));
+
+        setMultiplier(fields.get("multiplier", 1));
+        setGroupingSize(fields.get("groupingSize", (byte) 3));
+        setGroupingUsed(fields.get("groupingUsed", true));
+        setDecimalSeparatorAlwaysShown(fields.get("decimalSeparatorAlwaysShown", false));
 
         setRoundingMode((RoundingMode) fields.get("roundingMode", RoundingMode.HALF_EVEN));
 
@@ -1165,8 +1317,8 @@ public class DecimalFormat extends NumberFormat {
         // behavior in this area is, and it's not obvious how we can second-guess ICU (or tell
         // it to just do exactly what we ask). We only need to do this with maximumIntegerDigits
         // because ICU doesn't seem to have its own ideas about the other options.
-        ndf.setMaximumIntegerDigits(maximumIntegerDigits);
-        super.setMaximumIntegerDigits(ndf.getMaximumIntegerDigits());
+        setMaximumIntegerDigits(maximumIntegerDigits);
+        super.setMaximumIntegerDigits(getMaximumIntegerDigits());
 
         setMinimumIntegerDigits(minimumIntegerDigits);
         setMinimumFractionDigits(minimumFractionDigits);
@@ -1190,6 +1342,34 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
+     * Convert RoundingMode into an integer representation which ICU's DecimalFormat understands.
+     * @param rm RoundingMode to use.
+     * @return an integer representing a RoundingMode for ICU.
+     * @hide
+     */
+    private static int convertRoundingMode(RoundingMode rm) {
+        switch (rm) {
+            case UP:
+                return 0;
+            case DOWN:
+                return 1;
+            case CEILING:
+                return 2;
+            case FLOOR:
+                return 3;
+            case HALF_UP:
+                return 4;
+            case HALF_DOWN:
+                return 5;
+            case HALF_EVEN:
+                return 6;
+            case UNNECESSARY:
+                return 7;
+        }
+        throw new IllegalArgumentException("Invalid rounding mode specified");
+    }
+
+    /**
      * Sets the {@code RoundingMode} used by this {@code NumberFormat}.
      * @since 1.6
      */
@@ -1201,9 +1381,23 @@ public class DecimalFormat extends NumberFormat {
         // DecimalFormat does not allow specification of a rounding increment.  If anything other
         // than 0.0 is used here the resulting DecimalFormat cannot be deserialized because the
         // serialization format does not include rounding increment information.
-        double roundingIncrement = 0.0;
-        ndf.setRoundingMode(roundingMode, roundingIncrement);
+        icuDecimalFormat.setRoundingMode(convertRoundingMode(roundingMode));
     }
 
-    public String toString() { return ndf.toString(); }
+    public String toString() {
+        return getClass().getName() + "[\"" + toPattern() + "\"" +
+                ",isDecimalSeparatorAlwaysShown=" + isDecimalSeparatorAlwaysShown() +
+                ",groupingSize=" + getGroupingSize() +
+                ",multiplier=" + getMultiplier() +
+                ",negativePrefix=" + getNegativePrefix() +
+                ",negativeSuffix=" + getNegativeSuffix() +
+                ",positivePrefix=" + getPositivePrefix() +
+                ",positiveSuffix=" + getPositiveSuffix() +
+                ",maxIntegerDigits=" + getMaximumIntegerDigits() +
+                ",maxFractionDigits=" + getMaximumFractionDigits() +
+                ",minIntegerDigits=" + getMinimumIntegerDigits() +
+                ",minFractionDigits=" + getMinimumFractionDigits() +
+                ",grouping=" + isGroupingUsed() +
+                "]";
+    }
 }
