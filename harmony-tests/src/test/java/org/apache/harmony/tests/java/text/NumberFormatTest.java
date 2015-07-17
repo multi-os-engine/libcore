@@ -174,7 +174,7 @@ public class NumberFormatTest extends junit.framework.TestCase {
         format = (DecimalFormat) NumberFormat.getIntegerInstance(arLocale);
         assertEquals(
                 "Test7: NumberFormat.getIntegerInstance(new Locale(\"ar\", \"AE\")).toPattern() returned wrong pattern",
-                "#,##0", format.toPattern());
+                "#,##0;-#,##0", format.toPattern());
         assertEquals(
                 "Test8: NumberFormat.getIntegerInstance(new Locale(\"ar\", \"AE\")).format(-35.76) returned wrong value",
                 "\u200f-\u0666", format.format(-6));
