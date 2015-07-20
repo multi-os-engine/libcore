@@ -326,6 +326,15 @@ public class Runtime {
     void load(String absolutePath, ClassLoader loader) {
         if (absolutePath == null) {
             throw new NullPointerException("absolutePath == null");
+        } else {
+            final File libFile = new File(absolutePath);
+            if (!libFile.exists()) {
+                throw new NullPointerException("absolutePath is not existing");
+            } else if (!libFile.canRead()) {
+                throw new NullPointerException("absolutePath is not readable");
+            } else if (!libFile.canExecute()) {
+                throw new NullPointerException("absolutePath is not executable");
+            }
         }
         String error = doLoad(absolutePath, loader);
         if (error != null) {
