@@ -61,7 +61,11 @@ jint JNI_OnLoad(JavaVM* vm, void*) {
     REGISTER(register_libcore_icu_NativeConverter);
     REGISTER(register_libcore_icu_NativeDecimalFormat);
     REGISTER(register_libcore_icu_NativeIDN);
+<<<<<<< HEAD   (c8ee7f Change NativePluralRules to use ICU4j.)
     REGISTER(register_libcore_icu_NativeNormalizer);
+=======
+    REGISTER(register_libcore_icu_NativePluralRules);
+>>>>>>> BRANCH (eed9cb Merge "Transition the Normalizer class to call ICU4j.")
     REGISTER(register_libcore_icu_TimeZoneNames);
     REGISTER(register_libcore_icu_Transliterator);
     REGISTER(register_libcore_io_AsynchronousCloseMonitor);

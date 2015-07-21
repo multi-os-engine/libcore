@@ -41,7 +41,11 @@ LOCAL_SRC_FILES := \
     libcore_icu_NativeConverter.cpp \
     libcore_icu_NativeDecimalFormat.cpp \
     libcore_icu_NativeIDN.cpp \
+<<<<<<< HEAD   (c8ee7f Change NativePluralRules to use ICU4j.)
     libcore_icu_NativeNormalizer.cpp \
+=======
+    libcore_icu_NativePluralRules.cpp \
+>>>>>>> BRANCH (eed9cb Merge "Transition the Normalizer class to call ICU4j.")
     libcore_icu_TimeZoneNames.cpp \
     libcore_icu_Transliterator.cpp \
     libcore_io_AsynchronousCloseMonitor.cpp \
