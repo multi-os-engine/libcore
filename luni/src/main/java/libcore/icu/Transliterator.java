@@ -16,41 +16,52 @@
 
 package libcore.icu;
 
+import java.util.ArrayList;
+import java.util.Enumeration;
+
 /**
- * Exposes icu4c's Transliterator.
+ * Exposes icu4j's Transliterator.
  */
 public final class Transliterator {
-  private long peer;
+
+  com.ibm.icu.text.Transliterator transliterator;
+  static String[] availableIDs = null;
 
   /**
    * Creates a new Transliterator for the given id.
    */
   public Transliterator(String id) {
-    peer = create(id);
+    transliterator = com.ibm.icu.text.Transliterator.getInstance(id);
   }
 
-  @Override protected synchronized void finalize() throws Throwable {
-    try {
-      destroy(peer);
-      peer = 0;
-    } finally {
-      super.finalize();
-    }
-  }
 
   /**
    * Returns the ids of all known transliterators.
    */
-  public static native String[] getAvailableIDs();
+  public static String[] getAvailableIDs() {
+    // Cache the list of transliterators.
+    if (availableIDs == null) {
+      ArrayList<String> collector = new ArrayList<>();
+      Enumeration<String> ids = com.ibm.icu.text.Transliterator.getAvailableIDs();
+      while (ids.hasMoreElements()) {
+        collector.add(ids.nextElement());
+      }
+
+      availableIDs = new String[collector.size()];
+      for (int i = 0; i < availableIDs.length; i++) {
+        availableIDs[i] = collector.get(i);
+      }
+    }
+
+    return availableIDs;
+  }
+
 
   /**
    * Transliterates the specified string.
    */
   public String transliterate(String s) {
-    return transliterate(peer, s);
+    return transliterator.transliterate(s);
   }
 
-  private static native long create(String id);
-  private static native void destroy(long peer);
-  private static native String transliterate(long peer, String s);
 }
