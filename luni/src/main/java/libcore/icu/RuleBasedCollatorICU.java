@@ -10,6 +10,9 @@
 
 package libcore.icu;
 
+import com.ibm.icu.text.RuleBasedCollator;
+
+import java.io.IOException;
 import java.text.CharacterIterator;
 import java.text.CollationKey;
 import java.text.ParseException;
@@ -42,13 +45,32 @@ public final class RuleBasedCollatorICU implements Cloneable {
     public static final int STRENGTH = 5;
 
     // The address of the ICU4C native peer.
-    private final long address;
+    private final long address = 1;
 
-    public RuleBasedCollatorICU(String rules) throws ParseException {
-        if (rules == null) {
-            throw new NullPointerException("rules == null");
+    // The ICU RuleBasedCollator
+    RuleBasedCollator ruleBasedCollator;
+
+    /**
+     * Create a new instance of RuleBasedCollatorICU which proxies to ICU's
+     * RuleBasedCollator.
+     * @param rules Rules for
+     * @throws ParseException If the rules could not be parsed.
+     * @throws IOException If there was an error reading the data files.
+     */
+    public RuleBasedCollatorICU(String rules) throws ParseException, IOException {
+        try {
+            ruleBasedCollator = new RuleBasedCollator(rules);
+        } catch (Exception e) {
+            if (e instanceof IllegalArgumentException) {
+                throw new NullPointerException("Rules cannot be null");
+            }
+            if (e instanceof IOException) {
+                throw (IOException) e;
+            }
+            if (e instanceof ParseException) {
+                throw (ParseException) e;
+            }
         }
-        address = NativeCollation.openCollatorFromRules(rules, VALUE_OFF, VALUE_DEFAULT_STRENGTH);
     }
 
     public RuleBasedCollatorICU(Locale locale) {
