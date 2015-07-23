@@ -10,107 +10,92 @@
 
 package libcore.icu;
 
+import com.ibm.icu.text.CollationElementIterator;
+import com.ibm.icu.text.RuleBasedCollator;
+
+import java.io.IOException;
 import java.text.CharacterIterator;
 import java.text.CollationKey;
 import java.text.ParseException;
 import java.util.Locale;
 
 public final class RuleBasedCollatorICU implements Cloneable {
-    // Values from the native UColAttributeValue enum.
-    public static final int VALUE_DEFAULT = -1;
-    public static final int VALUE_PRIMARY = 0;
-    public static final int VALUE_SECONDARY = 1;
-    public static final int VALUE_TERTIARY = 2;
-    public static final int VALUE_DEFAULT_STRENGTH = VALUE_TERTIARY;
-    public static final int VALUE_QUATERNARY = 3;
-    public static final int VALUE_IDENTICAL = 15;
-    public static final int VALUE_OFF = 16;
-    public static final int VALUE_ON = 17;
-    public static final int VALUE_SHIFTED = 20;
-    public static final int VALUE_NON_IGNORABLE = 21;
-    public static final int VALUE_LOWER_FIRST = 24;
-    public static final int VALUE_UPPER_FIRST = 25;
-    public static final int VALUE_ON_WITHOUT_HANGUL = 28;
-    public static final int VALUE_ATTRIBUTE_VALUE_COUNT = 29;
+    // The ICU RuleBasedCollator
+    RuleBasedCollator ruleBasedCollator;
 
-    // Values from the UColAttribute enum.
-    public static final int FRENCH_COLLATION = 0;
-    public static final int ALTERNATE_HANDLING = 1;
-    public static final int CASE_FIRST = 2;
-    public static final int CASE_LEVEL = 3;
-    public static final int DECOMPOSITION_MODE = 4;
-    public static final int STRENGTH = 5;
-
-    // The address of the ICU4C native peer.
-    private final long address;
-
-    public RuleBasedCollatorICU(String rules) throws ParseException {
-        if (rules == null) {
-            throw new NullPointerException("rules == null");
+    /**
+     * Create a new instance of RuleBasedCollatorICU which proxies to ICU's RuleBasedCollator.
+     * @param rules Rules for building the collation table.
+     * @throws ParseException If the rules could not be parsed.
+     * @throws IOException If there was an error reading the data files.
+     */
+    public RuleBasedCollatorICU(String rules) throws ParseException, IOException {
+        try {
+            ruleBasedCollator = new RuleBasedCollator(rules);
+        } catch (Exception e) {
+            // The constructor of ICU's RuleBasedCollator throws an IllegalArgumentException
+            // if the rules passed in are null.
+            if (e instanceof IllegalArgumentException) {
+                throw new NullPointerException("Rules cannot be null");
+            }
+            if (e instanceof IOException) {
+                throw (IOException) e;
+            }
+            if (e instanceof ParseException) {
+                throw (ParseException) e;
+            }
+            throw new IllegalStateException("ICU threw an unexpected exception: " + e.getMessage());
         }
-        address = NativeCollation.openCollatorFromRules(rules, VALUE_OFF, VALUE_DEFAULT_STRENGTH);
     }
 
     public RuleBasedCollatorICU(Locale locale) {
-        address = NativeCollation.openCollator(locale);
+        ruleBasedCollator = (RuleBasedCollator) RuleBasedCollator.getInstance(locale);
     }
 
-    private RuleBasedCollatorICU(long address) {
-        this.address = address;
+    private RuleBasedCollatorICU (RuleBasedCollator collator) {
+        this.ruleBasedCollator = collator;
     }
 
     public Object clone() {
-        return new RuleBasedCollatorICU(NativeCollation.safeClone(address));
+        return new RuleBasedCollatorICU(ruleBasedCollator.cloneAsThawed());
     }
 
     public int compare(String source, String target) {
-        return NativeCollation.compare(address, source, target);
+        return ruleBasedCollator.compare(source, target);
     }
 
     public int getDecomposition() {
-        return NativeCollation.getAttribute(address, DECOMPOSITION_MODE);
+        return ruleBasedCollator.getDecomposition();
     }
 
     public void setDecomposition(int mode) {
-        NativeCollation.setAttribute(address, DECOMPOSITION_MODE, mode);
+        ruleBasedCollator.setDecomposition(mode);
     }
 
     public int getStrength() {
-        return NativeCollation.getAttribute(address, STRENGTH);
+        return ruleBasedCollator.getStrength();
     }
 
     public void setStrength(int strength) {
-        NativeCollation.setAttribute(address, STRENGTH, strength);
-    }
-
-    public void setAttribute(int type, int value) {
-        NativeCollation.setAttribute(address, type, value);
-    }
-
-    public int getAttribute(int type) {
-        return NativeCollation.getAttribute(address, type);
+        ruleBasedCollator.setStrength(strength);
     }
 
     public CollationKey getCollationKey(String source) {
         if (source == null) {
             return null;
         }
-        byte[] key = NativeCollation.getSortKey(address, source);
-        if (key == null) {
-            return null;
-        }
-        return new CollationKeyICU(source, key);
+        return new CollationKeyICU(source, ruleBasedCollator.getCollationKey(source).toByteArray());
     }
 
     public String getRules() {
-        return NativeCollation.getRules(address);
+        return ruleBasedCollator.getRules();
     }
 
-    public CollationElementIteratorICU getCollationElementIterator(String source) {
-        return CollationElementIteratorICU.getInstance(address, source);
+    public CollationElementIterator getCollationElementIterator(String source) {
+        return ruleBasedCollator.getCollationElementIterator(source);
     }
 
-    public CollationElementIteratorICU getCollationElementIterator(CharacterIterator it) {
+    public CollationElementIterator getCollationElementIterator(CharacterIterator it) {
         // We only implement the String-based API, so build a string from the iterator.
         return getCollationElementIterator(characterIteratorToString(it));
     }
@@ -142,13 +127,5 @@ public final class RuleBasedCollatorICU implements Cloneable {
         return getRules().equals(rhs.getRules()) &&
                 getStrength() == rhs.getStrength() &&
                 getDecomposition() == rhs.getDecomposition();
-    }
-
-    @Override protected void finalize() throws Throwable {
-        try {
-            NativeCollation.closeCollator(address);
-        } finally {
-            super.finalize();
-        }
     }
 }
