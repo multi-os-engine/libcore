@@ -26,7 +26,7 @@ public final class CollationKeyICU extends CollationKey {
      */
     private int hashCode;
 
-    CollationKeyICU(String source, byte[] bytes) {
+    public CollationKeyICU(String source, byte[] bytes) {
         super(source);
         this.bytes = bytes;
     }

@@ -231,4 +231,14 @@ public class CollatorTest extends junit.framework.TestCase {
 	public void test_setStrengthI() {
 		assertTrue("Used to test", true);
 	}
+
+  // In traditional Spanish sorting, the pair of characters 'ch' behaves as a single character that
+  // sorts after c.
+  public void testTradSpanishSorting() {
+	  RuleBasedCollator tradEsColl = (RuleBasedCollator)
+			  Collator.getInstance(Locale.forLanguageTag("es-u-co-trad"));
+    String cd = "cd";
+    String ch = "chd";
+    assertTrue(tradEsColl.compare(cd, ch) < 0);
+  }
 }
