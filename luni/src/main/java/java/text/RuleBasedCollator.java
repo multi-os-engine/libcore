@@ -17,7 +17,7 @@
 
 package java.text;
 
-import libcore.icu.RuleBasedCollatorICU;
+import libcore.icu.CollationKeyICU;
 
 /**
  * A concrete subclass of {@link Collator}.
@@ -76,8 +76,13 @@ import libcore.icu.RuleBasedCollatorICU;
  * {@code ParseException}.
  */
 public class RuleBasedCollator extends Collator {
-    RuleBasedCollator(RuleBasedCollatorICU wrapper) {
+
+    RuleBasedCollator(com.ibm.icu.text.RuleBasedCollator wrapper) {
         super(wrapper);
+    }
+
+    com.ibm.icu.text.RuleBasedCollator collAsICU() {
+        return (com.ibm.icu.text.RuleBasedCollator) icuColl;
     }
 
     /**
@@ -98,11 +103,12 @@ public class RuleBasedCollator extends Collator {
      *             syntax.
      */
     public RuleBasedCollator(String rules) throws ParseException {
+
         if (rules == null) {
             throw new NullPointerException("rules == null");
         }
         try {
-            icuColl = new RuleBasedCollatorICU(rules);
+            icuColl = new com.ibm.icu.text.RuleBasedCollator(rules);
         } catch (Exception e) {
             if (e instanceof ParseException) {
                 throw (ParseException) e;
@@ -111,7 +117,9 @@ public class RuleBasedCollator extends Collator {
              * -1 means it's not a ParseException. Maybe IOException thrown when
              * an error occurred while reading internal data.
              */
-            throw new ParseException(e.getMessage(), -1);
+            ParseException pe = new ParseException(e.getMessage(), -1);
+            pe.initCause(e);
+            throw pe;
         }
     }
 
@@ -128,7 +136,8 @@ public class RuleBasedCollator extends Collator {
         if (source == null) {
             throw new NullPointerException("source == null");
         }
-        return new CollationElementIterator(icuColl.getCollationElementIterator(source));
+        return new CollationElementIterator(
+                ((com.ibm.icu.text.RuleBasedCollator) icuColl).getCollationElementIterator(source));
     }
 
     /**
@@ -142,7 +151,7 @@ public class RuleBasedCollator extends Collator {
         if (source == null) {
             throw new NullPointerException("source == null");
         }
-        return new CollationElementIterator(icuColl.getCollationElementIterator(source));
+        return new CollationElementIterator(collAsICU().getCollationElementIterator(source));
     }
 
     /**
@@ -153,7 +162,7 @@ public class RuleBasedCollator extends Collator {
      * The string forms of the collation rules are omitted to save space on the device.
      */
     public String getRules() {
-        return icuColl.getRules();
+        return collAsICU().getRules();
     }
 
     /**
@@ -202,12 +211,16 @@ public class RuleBasedCollator extends Collator {
      */
     @Override
     public CollationKey getCollationKey(String source) {
-        return icuColl.getCollationKey(source);
+        if (source == null) {
+            return null;
+        }
+        // TODO: Wrap com.ibm.icu.text.CollationKey directly.
+        return new CollationKeyICU(source, icuColl.getCollationKey(source).toByteArray());
     }
 
     @Override
     public int hashCode() {
-        return icuColl.getRules().hashCode();
+        return icuColl.hashCode();
     }
 
     /**
