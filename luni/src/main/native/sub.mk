@@ -37,7 +37,6 @@ LOCAL_SRC_FILES := \
     java_util_zip_Inflater.cpp \
     libcore_icu_AlphabeticIndex.cpp \
     libcore_icu_ICU.cpp \
-    libcore_icu_NativeCollation.cpp \
     libcore_icu_NativeConverter.cpp \
     libcore_icu_NativeDecimalFormat.cpp \
     libcore_icu_NativeIDN.cpp \
