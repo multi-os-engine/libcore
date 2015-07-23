@@ -17,7 +17,7 @@
 
 package java.text;
 
-import libcore.icu.RuleBasedCollatorICU;
+import libcore.icu.CollationKeyICU;
 
 /**
  * A concrete subclass of {@link Collator}.
@@ -76,7 +76,7 @@ import libcore.icu.RuleBasedCollatorICU;
  * {@code ParseException}.
  */
 public class RuleBasedCollator extends Collator {
-    RuleBasedCollator(RuleBasedCollatorICU wrapper) {
+    RuleBasedCollator(com.ibm.icu.text.RuleBasedCollator wrapper) {
         super(wrapper);
     }
 
@@ -98,11 +98,12 @@ public class RuleBasedCollator extends Collator {
      *             syntax.
      */
     public RuleBasedCollator(String rules) throws ParseException {
+
         if (rules == null) {
             throw new NullPointerException("rules == null");
         }
         try {
-            icuColl = new RuleBasedCollatorICU(rules);
+            icuColl = new com.ibm.icu.text.RuleBasedCollator(rules);
         } catch (Exception e) {
             if (e instanceof ParseException) {
                 throw (ParseException) e;
@@ -202,7 +203,7 @@ public class RuleBasedCollator extends Collator {
      */
     @Override
     public CollationKey getCollationKey(String source) {
-        return icuColl.getCollationKey(source);
+        return new CollationKeyICU(source, icuColl.getCollationKey(source).toByteArray());
     }
 
     @Override
