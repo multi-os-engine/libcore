@@ -17,8 +17,6 @@
 
 package java.text;
 
-import libcore.icu.CollationElementIteratorICU;
-
 /**
  * Created by a {@code RuleBasedCollator} to iterate through a string. The
  * result of each iteration is a 32-bit collation element that defines the
@@ -51,6 +49,7 @@ import libcore.icu.CollationElementIteratorICU;
  */
 public final class CollationElementIterator {
 
+    // TODO: Once ICU4J is exposed, change this constant to the ICU4J equivalent.
     /**
      * This constant is returned by the iterator in the methods
      * {@code next()} and {@code previous()} when the end or the
@@ -59,9 +58,17 @@ public final class CollationElementIterator {
      */
     public static final int NULLORDER = -1;
 
-    private CollationElementIteratorICU icuIterator;
+    /**
+     * This constant is returned by the iterator in the methods {@code next()}
+     * and {@code previous()} when a collation element result is to be ignored.
+     * @hide
+     */
+    public static final int IGNORABLE = 0;
 
-    CollationElementIterator(CollationElementIteratorICU iterator) {
+    // The ICU version of this class that we proxy to.
+    private final com.ibm.icu.text.CollationElementIterator icuIterator;
+
+    CollationElementIterator(com.ibm.icu.text.CollationElementIterator iterator) {
         this.icuIterator = iterator;
     }
 
@@ -126,7 +133,9 @@ public final class CollationElementIterator {
      *            the element of the collation.
      */
     public static final int primaryOrder(int order) {
-        return CollationElementIteratorICU.primaryOrder(order);
+        short returnOrder = (short) com.ibm.icu.text.CollationElementIterator.primaryOrder(order);
+        return (returnOrder == com.ibm.icu.text.CollationElementIterator.NULLORDER) ?
+                NULLORDER : returnOrder;
     }
 
     /**
@@ -150,7 +159,9 @@ public final class CollationElementIterator {
      *            the element of the collator.
      */
     public static final short secondaryOrder(int order) {
-        return (short) CollationElementIteratorICU.secondaryOrder(order);
+        short returnOrder = (short) com.ibm.icu.text.CollationElementIterator.secondaryOrder(order);
+        return (returnOrder == com.ibm.icu.text.CollationElementIterator.NULLORDER) ?
+                NULLORDER : returnOrder;
     }
 
     /**
@@ -209,6 +220,8 @@ public final class CollationElementIterator {
      *            the element of the collation.
      */
     public static final short tertiaryOrder(int order) {
-        return (short) CollationElementIteratorICU.tertiaryOrder(order);
+        short returnOrder = (short) com.ibm.icu.text.CollationElementIterator.tertiaryOrder(order);
+        return (returnOrder == com.ibm.icu.text.CollationElementIterator.NULLORDER) ?
+                NULLORDER : returnOrder;
     }
 }
