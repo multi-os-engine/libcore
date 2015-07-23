@@ -335,9 +335,9 @@ public abstract class Collator implements Comparator<Object>, Cloneable {
     private int decompositionMode_Java_ICU(int mode) {
         switch (mode) {
         case Collator.CANONICAL_DECOMPOSITION:
-            return RuleBasedCollatorICU.VALUE_ON;
+            return com.ibm.icu.text.Collator.CANONICAL_DECOMPOSITION;
         case Collator.NO_DECOMPOSITION:
-            return RuleBasedCollatorICU.VALUE_OFF;
+            return com.ibm.icu.text.Collator.NO_DECOMPOSITION;
         }
         throw new IllegalArgumentException("Bad mode: " + mode);
     }
@@ -345,10 +345,10 @@ public abstract class Collator implements Comparator<Object>, Cloneable {
     private int decompositionMode_ICU_Java(int mode) {
         int javaMode = mode;
         switch (mode) {
-        case RuleBasedCollatorICU.VALUE_OFF:
+        case com.ibm.icu.text.Collator.NO_DECOMPOSITION:
             javaMode = Collator.NO_DECOMPOSITION;
             break;
-        case RuleBasedCollatorICU.VALUE_ON:
+        case com.ibm.icu.text.Collator.CANONICAL_DECOMPOSITION:
             javaMode = Collator.CANONICAL_DECOMPOSITION;
             break;
         }
@@ -358,13 +358,13 @@ public abstract class Collator implements Comparator<Object>, Cloneable {
     private int strength_Java_ICU(int value) {
         switch (value) {
         case Collator.PRIMARY:
-            return RuleBasedCollatorICU.VALUE_PRIMARY;
+            return com.ibm.icu.text.Collator.PRIMARY;
         case Collator.SECONDARY:
-            return RuleBasedCollatorICU.VALUE_SECONDARY;
+            return com.ibm.icu.text.Collator.SECONDARY;
         case Collator.TERTIARY:
-            return RuleBasedCollatorICU.VALUE_TERTIARY;
+            return com.ibm.icu.text.Collator.TERTIARY;
         case Collator.IDENTICAL:
-            return RuleBasedCollatorICU.VALUE_IDENTICAL;
+            return com.ibm.icu.text.Collator.IDENTICAL;
         }
         throw new IllegalArgumentException("Bad strength: " + value);
     }
@@ -372,16 +372,16 @@ public abstract class Collator implements Comparator<Object>, Cloneable {
     private int strength_ICU_Java(int value) {
         int javaValue = value;
         switch (value) {
-        case RuleBasedCollatorICU.VALUE_PRIMARY:
+        case com.ibm.icu.text.Collator.PRIMARY:
             javaValue = Collator.PRIMARY;
             break;
-        case RuleBasedCollatorICU.VALUE_SECONDARY:
+        case com.ibm.icu.text.Collator.SECONDARY:
             javaValue = Collator.SECONDARY;
             break;
-        case RuleBasedCollatorICU.VALUE_TERTIARY:
+        case com.ibm.icu.text.Collator.TERTIARY:
             javaValue = Collator.TERTIARY;
             break;
-        case RuleBasedCollatorICU.VALUE_IDENTICAL:
+        case com.ibm.icu.text.Collator.IDENTICAL:
             javaValue = Collator.IDENTICAL;
             break;
         }
