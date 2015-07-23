@@ -40,17 +40,14 @@ public class RuleBasedCollatorTest extends TestCase {
   }
 
   public void testHashCode() throws ParseException {
-    {
-      String rule = "&9 < a < b < c < d";
-      RuleBasedCollator coll = new RuleBasedCollator(rule);
-      assertEquals(rule.hashCode(), coll.hashCode());
-    }
+    String rule = "&9 < a < b < c < d";
+    String otherRule = "&9 < a < b < c < d < e";
 
-    {
-      String rule = "&9 < a < b < c < d < e";
-      RuleBasedCollator coll = new RuleBasedCollator(rule);
-      assertEquals(rule.hashCode(), coll.hashCode());
-    }
+    RuleBasedCollator coll = new RuleBasedCollator(rule);
+    RuleBasedCollator same = new RuleBasedCollator(rule);
+    RuleBasedCollator diff = new RuleBasedCollator(otherRule);
+    assertEquals(coll.hashCode(), same.hashCode());
+    assertTrue(coll.hashCode() != diff.hashCode());
   }
 
   public void testClone() throws ParseException {
