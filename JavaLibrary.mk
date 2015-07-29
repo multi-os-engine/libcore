@@ -51,8 +51,11 @@ endef
 
 # The Java files and their associated resources.
 common_core_src_files := $(call all-main-java-files-under,dalvik dex dom json luni xml)
-core_resource_dirs := $(call all-core-resource-dirs,main)
+core_resource_dirs :=
 test_resource_dirs := $(call all-core-resource-dirs,test)
+core_resource_files := \
+  libcore/luni/src/main/java/java/security/security.properties \
+  libcore/luni/src/main/java/java/util/logging/logging.properties
 test_src_files := $(call all-test-java-files-under,dalvik dom harmony-tests json luni xml)
 
 ifeq ($(EMMA_INSTRUMENT),true)
@@ -106,6 +109,7 @@ icu4j_resource_dirs := $(filter-out $(icu4j_root)/main/classes/translit/%, $(icu
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(libart_core_src_files) $(icu4j_src_files)
 LOCAL_JAVA_RESOURCE_DIRS := $(core_resource_dirs) $(icu4j_resource_dirs)
+LOCAL_JAVA_RESOURCE_FILES := $(core_resource_files)
 LOCAL_NO_STANDARD_LIBRARIES := true
 LOCAL_JAVACFLAGS := $(local_javac_flags)
 LOCAL_DX_FLAGS := --core-library
