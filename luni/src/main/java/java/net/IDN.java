@@ -16,7 +16,7 @@
 
 package java.net;
 
-import libcore.icu.NativeIDN;
+import com.ibm.icu.text.IDNA;
 
 /**
  * Converts internationalized domain names between Unicode and the ASCII Compatible Encoding
@@ -61,7 +61,11 @@ public final class IDN {
      * @throws IllegalArgumentException if {@code input} does not conform to <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>
      */
     public static String toASCII(String input, int flags) {
-        return NativeIDN.toASCII(input, flags);
+        try {
+            return IDNA.convertIDNToASCII(input, flags).toString();
+        } catch (com.ibm.icu.text.StringPrepParseException e) {
+            throw new IllegalArgumentException("Invalid input to toASCI: " + input);
+        }
     }
 
     /**
@@ -91,7 +95,11 @@ public final class IDN {
      *         or {@code ALLOW_UNASSIGNED | USE_STD3_ASCII_RULES}
      */
     public static String toUnicode(String input, int flags) {
-        return NativeIDN.toUnicode(input, flags);
+        try {
+            return IDNA.convertIDNToUnicode(input, flags).toString();
+        } catch (com.ibm.icu.text.StringPrepParseException e) {
+            return input;
+        }
     }
 
     /**
@@ -101,6 +109,6 @@ public final class IDN {
      * @return the Unicode name
      */
     public static String toUnicode(String input) {
-        return NativeIDN.toUnicode(input, 0);
+        return toUnicode(input, 0);
     }
 }
