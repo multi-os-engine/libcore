@@ -17,6 +17,8 @@
 
 package libcore.io;
 
+import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import junit.framework.TestCase;
 
@@ -26,30 +28,37 @@ public final class Base64Test extends TestCase {
         assertEquals("[]", Arrays.toString(Base64.decode(new byte[0])));
     }
 
-    public void testEncode() throws Exception {
-        assertEncoded("");
-        assertEncoded("Eg==", 0x12);
-        assertEncoded("EjQ=", 0x12, 0x34 );
-        assertEncoded("EjRW", 0x12, 0x34, 0x56);
-        assertEncoded("EjRWeA==", 0x12, 0x34, 0x56, 0x78);
-        assertEncoded("EjRWeJo=", 0x12, 0x34, 0x56, 0x78, 0x9A);
-        assertEncoded("EjRWeJq8", 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc);
+    public void testEncodeAndDecode() throws Exception {
+        assertEncodeAndDecode("");
+        assertEncodeAndDecode("AA==", 0x0);
+        assertEncodeAndDecode("Eg==", 0x12);
+        assertEncodeAndDecode("EjQ=", 0x12, 0x34);
+        assertEncodeAndDecode("EjRW", 0x12, 0x34, 0x56);
+        assertEncodeAndDecode("EjRWeA==", 0x12, 0x34, 0x56, 0x78);
+        assertEncodeAndDecode("EjRWeJo=", 0x12, 0x34, 0x56, 0x78, 0x9A);
+        assertEncodeAndDecode("EjRWeJq8", 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc);
+        assertEncodeAndDecode("mYg=", (byte) 0x99, (byte) 0x88);
+        assertEncodeAndDecode("A0B1C2///+++cedZ",
+                0x03, 0x40, 0x75, 0x0b, 0x6f, 0xff, 0xff, 0xef, 0xbe, 0x71, 0xe7, 0x59);
     }
 
-    public void testEncodeDoesNotWrap() {
+    public void testEncodeDoesNotWrap() throws Exception {
         int[] data = new int[61];
         Arrays.fill(data, 0xff);
         String expected = "///////////////////////////////////////////////////////////////////////"
                 + "//////////w=="; // 84 chars
-        assertEncoded(expected, data);
+        assertEncodeAndDecode(expected, data);
     }
 
-    public void assertEncoded(String expected , int... data) {
-        byte[] dataBytes = new byte[data.length];
-        for (int i = 0; i < data.length; i++) {
-            dataBytes[i] = (byte) data[i];
+    public void assertEncodeAndDecode(String encoded, int... plain) throws Exception {
+        byte[] dataBytes = new byte[plain.length];
+        for (int i = 0; i < plain.length; i++) {
+            dataBytes[i] = (byte) plain[i];
         }
-        assertEquals(expected, Base64.encode(dataBytes));
+        assertEquals("encoding", encoded, Base64.encode(dataBytes));
+        assertEquals("decoding",
+                Arrays.toString(dataBytes),
+                Arrays.toString(Base64.decode(encoded.getBytes("ASCII"))));
     }
 }
 
