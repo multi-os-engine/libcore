@@ -9,8 +9,6 @@
 
 package java.nio.charset;
 
-import libcore.icu.NativeConverter;
-
 final class CharsetICU extends Charset {
     private final String icuCanonicalName;
 
@@ -33,6 +31,6 @@ final class CharsetICU extends Charset {
         } else if (this.equals(cs)) {
             return true;
         }
-        return NativeConverter.contains(this.name(), cs.name());
+        return com.ibm.icu.charset.CharsetICU.forNameICU(this.name()).contains(cs);
     }
 }

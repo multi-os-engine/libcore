@@ -79,7 +79,6 @@ icu4j_src_files := $(call all-java-files-under,$(icu4j_root)/main/classes)
 # Filter out bits of ICU4J we don't use yet : the SPIs (which we have limited support for),
 # and the charset encoders
 icu4j_src_files := $(filter-out $(icu4j_root)/main/classes/localespi/%, $(icu4j_src_files))
-icu4j_src_files := $(filter-out $(icu4j_root)/main/classes/charset/%, $(icu4j_src_files))
 
 # Not all src dirs contain resources, some instead contain other random files
 # that should not be included as resources. The ones that should be included
@@ -91,7 +90,6 @@ endef
 
 icu4j_resource_dirs := $(call all-icu-subdir-with-subdir,$(icu4j_root)/main/classes/*/src,com/ibm/icu)
 icu4j_resource_dirs := $(filter-out $(icu4j_root)/main/classes/localespi/%, $(icu4j_resource_dirs))
-icu4j_resource_dirs := $(filter-out $(icu4j_root)/main/classes/charset/%, $(icu4j_resource_dirs))
 
 
 
