@@ -17,6 +17,8 @@
 
 package java.nio.charset;
 
+import libcore.icu.NativeConverter;
+
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -30,7 +32,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import libcore.icu.NativeConverter;
 
 /**
  * A charset is a named mapping between Unicode characters and byte sequences. Every
