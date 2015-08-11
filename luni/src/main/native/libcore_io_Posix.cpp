@@ -109,6 +109,10 @@ static bool isIPv4MappedAddress(const sockaddr *sa) {
         /* inetAddressToSockaddr always returns an IPv6 sockaddr. Assume that java_fd was created \
          * by Java API calls, which always create IPv6 socket fds, and pass it in as is. */ \
         _rc = NET_FAILURE_RETRY(jni_env, return_type, syscall_name, java_fd, ##args, _sa, _salen); \
+if (_rc < 0 && errno != EAFNOSUPPORT) { \
+  ALOGE("Non-EAFNOSUPPORT error! rc=%zd, errno=%s, salen=%d, isIpv4Mapped(_sa)=%d", \
+  _rc, strerror(errno), _salen, isIPv4MappedAddress(_sa)); \
+} \
         if (_rc == -1 && errno == EAFNOSUPPORT && _salen && isIPv4MappedAddress(_sa)) { \
             /* We passed in an IPv4 address in an IPv6 sockaddr and the kernel told us that we got \
              * the address family wrong. Pass in the same address in an IPv4 sockaddr. */ \
@@ -119,6 +123,10 @@ static bool isIPv4MappedAddress(const sockaddr *sa) {
             _sa = reinterpret_cast<sockaddr*>(&_ss); \
             _rc = NET_FAILURE_RETRY(jni_env, return_type, syscall_name, java_fd, ##args, _sa, _salen); \
         } \
+if (_rc < 0) { \
+  ALOGE("Error after fallback! rc=%zd, errno=%s, salen=%d, isIpv4Mapped(_sa)=%d", \
+  _rc, strerror(errno), _salen, isIPv4MappedAddress(_sa)); \
+} \
     } while (0); \
     _rc; }) \
 
@@ -153,6 +161,7 @@ static bool isIPv4MappedAddress(const sockaddr *sa) {
         if (_rc == -1 && _syscallErrno != EINTR) { \
             /* TODO: with a format string we could show the arguments too, like strace(1). */ \
             throwErrnoException(jni_env, # syscall_name); \
+            errno = _syscallErrno; \
             break; \
         } \
     } while (_rc == -1); /* _syscallErrno == EINTR && !_wasSignaled */ \
@@ -222,6 +231,7 @@ static void throwException(JNIEnv* env, jclass exceptionClass, jmethodID ctor3, 
 
 static void throwErrnoException(JNIEnv* env, const char* functionName) {
     int error = errno;
+if (error == EAGAIN) ALOGE("Throwing ErrnoException(EAGAIN)");
     static jmethodID ctor3 = env->GetMethodID(JniConstants::errnoExceptionClass,
             "<init>", "(Ljava/lang/String;ILjava/lang/Throwable;)V");
     static jmethodID ctor2 = env->GetMethodID(JniConstants::errnoExceptionClass,
