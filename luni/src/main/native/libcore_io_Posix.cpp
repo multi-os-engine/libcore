@@ -156,6 +156,9 @@ static bool isIPv4MappedAddress(const sockaddr *sa) {
             break; \
         } \
     } while (_rc == -1); /* _syscallErrno == EINTR && !_wasSignaled */ \
+    if (_rc == -1) { \
+        errno = _syscallErrno; \
+    } \
     _rc; })
 
 /**
@@ -191,6 +194,9 @@ static bool isIPv4MappedAddress(const sockaddr *sa) {
             break; \
         } \
     } while (_rc == -1); /* && _syscallErrno == EINTR && !_wasSignaled */ \
+    if (_rc == -1) { \
+        errno = _syscallErrno; \
+    } \
     _rc; })
 
 #define NULL_ADDR_OK         true
