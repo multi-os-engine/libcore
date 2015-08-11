@@ -426,6 +426,24 @@ public class OsTest extends TestCase {
     checkSocketPing(fd, ipv4Loopback, packet, ICMP_ECHO, ICMP_ECHOREPLY, false);
   }
 
+  public void test_Ipv4Fallback() throws Exception {
+    // On a hammerhead running MRZ37C using vogar, this number of iterations takes about 4s and is
+    // sufficient to expose http://b/23088314 - operations on AF_INET sockets created using
+    // Os.socket(AF_INET, ...) rarely fail with EAFNOSUPPORT - about 60% of the time. That should be
+    // enough to avoid regressions without causing test times to become too long.
+    final int ITERATIONS = 10000;
+    for (int i = 0; i < ITERATIONS; i++) {
+      FileDescriptor mUdpSock = Libcore.os.socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+      try {
+          Libcore.os.bind(mUdpSock, Inet4Address.ANY, 0);
+      } catch(ErrnoException e) {
+          fail("ErrnoException after " + i + " iterations: " + e);
+      } finally {
+          Libcore.os.close(mUdpSock);
+      }
+    }
+  }
+
   public void test_unlink() throws Exception {
     File f = File.createTempFile("OsTest", "tst");
     assertTrue(f.exists());

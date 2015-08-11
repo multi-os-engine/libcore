@@ -153,6 +153,7 @@ static bool isIPv4MappedAddress(const sockaddr *sa) {
         if (_rc == -1 && _syscallErrno != EINTR) { \
             /* TODO: with a format string we could show the arguments too, like strace(1). */ \
             throwErrnoException(jni_env, # syscall_name); \
+            errno = _syscallErrno; \
             break; \
         } \
     } while (_rc == -1); /* _syscallErrno == EINTR && !_wasSignaled */ \
