@@ -29,6 +29,12 @@ import libcore.util.ZoneInfoDB;
  * Provides access to ICU's time zone name data.
  */
 public final class TimeZoneNames {
+    /** The name to use if a zone is a variation of UTC and ICU cannot provide a name. */
+    private static final String UTC_NAME = "UTC";
+
+    private static final int ID_LOOKUP_OLSON_NAME = 0;
+    private static final int ID_LOOKUP_CANONICAL_ID = 1;
+
     private static final String[] availableTimeZoneIds = TimeZone.getAvailableIDs();
 
     /*
@@ -61,16 +67,12 @@ public final class TimeZoneNames {
             long start = System.currentTimeMillis();
 
             // Set up the 2D array used to hold the names. The first column contains the Olson ids.
-            String[][] result = new String[availableTimeZoneIds.length][5];
-            for (int i = 0; i < availableTimeZoneIds.length; ++i) {
-                result[i][0] = availableTimeZoneIds[i];
-            }
-
             long nativeStart = System.currentTimeMillis();
-            fillZoneStrings(locale.toString(), result);
+            String[][] result = fillZoneStrings(nativeStart, locale);
             long nativeEnd = System.currentTimeMillis();
 
             internStrings(result);
+
             // Ending up in this method too often is an easy way to make your app slow, so we ensure
             // it's easy to tell from the log (a) what we were doing, (b) how long it took, and
             // (c) that it's all ICU's fault.
@@ -157,7 +159,77 @@ public final class TimeZoneNames {
         return ids.toArray(new String[ids.size()]);
     }
 
-    public static native String getExemplarLocation(String locale, String tz);
+    private static String[][] fillZoneStrings(long now, Locale locale) {
+        // Set up the 2D array used to hold the names. The first column contains the Olson ids.
+        String[][] result = new String[availableTimeZoneIds.length][NAME_COUNT];
 
-    private static native void fillZoneStrings(String locale, String[][] result);
+        com.ibm.icu.text.TimeZoneNames timeZoneNames =
+                com.ibm.icu.text.TimeZoneNames.getInstance(locale);
+        for (int i = 0; i < result.length; i++) {
+            String[] row = result[i];
+            String zoneId = availableTimeZoneIds[i];
+            String canonicalZoneId = com.ibm.icu.util.TimeZone.getCanonicalID(zoneId);
+
+            row[OLSON_NAME] = zoneId;
+            String longStd = timeZoneNames.getDisplayName(canonicalZoneId,
+                com.ibm.icu.text.TimeZoneNames.NameType.LONG_STANDARD, now);
+            String shortStd = timeZoneNames.getDisplayName(canonicalZoneId,
+                com.ibm.icu.text.TimeZoneNames.NameType.SHORT_STANDARD, now);
+            String longDst = timeZoneNames.getDisplayName(canonicalZoneId,
+                com.ibm.icu.text.TimeZoneNames.NameType.LONG_DAYLIGHT, now);
+            String shortDst = timeZoneNames.getDisplayName(canonicalZoneId,
+                com.ibm.icu.text.TimeZoneNames.NameType.SHORT_DAYLIGHT, now);
+            row[LONG_NAME] = filterGmt(longStd);
+            row[SHORT_NAME] = filterGmt(shortStd);
+            row[LONG_NAME_DST] = filterGmt(longDst);
+            row[SHORT_NAME_DST] = filterGmt(shortDst);
+
+            if (isUtc(zoneId)) {
+                // If ICU doesn't give us a string for any zone that is a "UTC" variation, we supply
+                // our own value instead of using "GMT". At the time of writing ICU does not provide
+                // a value for any of these.
+                if (row[LONG_NAME] == null) row[LONG_NAME] = UTC_NAME;
+                if (row[SHORT_NAME] == null) row[SHORT_NAME] = UTC_NAME;
+                if (row[LONG_NAME_DST] == null) row[LONG_NAME_DST] = UTC_NAME;
+                if (row[SHORT_NAME_DST] == null) row[SHORT_NAME_DST] = UTC_NAME;
+            }
+        }
+        return result;
+    }
+
+    private static String filterGmt(String name) {
+        // We don't need to use ICU for GMT or GMT(+-) zones because TimeZone.getDisplayName creates
+        // names on demand using the timezone data. This way we will never rely on ICU calculating
+        // the zone offset correctly.
+        if (name == null || name.startsWith("GMT")) {
+            return null;
+        }
+        return name;
+    }
+
+    private static boolean isUtc(String zoneId) {
+        // At the time of writing performing 8 string comparisons is faster than using a single
+        // regexp by a significant margin.
+        return "Etc/UCT".equals(zoneId)
+                || "Etc/UTC".equals(zoneId)
+                || "Etc/Universal".equals(zoneId)
+                || "Etc/Zulu".equals(zoneId)
+                || "UCT".equals(zoneId)
+                || "UTC".equals(zoneId)
+                || "Universal".equals(zoneId)
+                || "Zulu".equals(zoneId);
+    }
+
+  public static String getExemplarLocation(String localeName, String tz) {
+    Locale locale = new Locale(localeName);
+    return getExemplarLocation(locale, tz);
+  }
+
+  public static String getExemplarLocation(Locale locale, String tz) {
+    long now = System.currentTimeMillis();
+    android.icu.text.TimeZoneNames tzNames =
+        android.icu.text.TimeZoneNames.getInstance(locale);
+    return tzNames.getExemplarLocationName(tz);
+  }
+
 }
