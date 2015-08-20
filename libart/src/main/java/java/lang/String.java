@@ -430,24 +430,22 @@ public final class String implements Serializable, Comparable<String>, CharSeque
             if (s.count != count) {
                 return false;
             }
-            // TODO: we want to avoid many boundchecks in the loop below
-            // for long Strings until we have array equality intrinsic.
-            // Bad benchmarks just push .equals without first getting a
-            // hashCode hit (unlike real world use in a Hashtable). Filter
-            // out these long strings here. When we get the array equality
-            // intrinsic then remove this use of hashCode.
-            if (hashCode() != s.hashCode()) {
-                return false;
-            }
-            for (int i = 0; i < count; ++i) {
-                if (charAt(i) != s.charAt(i)) {
-                    return false;
-                }
-            }
-            return true;
+            return equalsLoop(s, count);
         } else {
             return false;
         }
+    }
+
+    /**
+     * Intrinsified helper function for String.equals to compare strings character by character.
+     */
+    private boolean equalsLoop(String s, int count) {
+        for (int i = 0; i < count; ++i) {
+            if (charAt(i) != s.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
