@@ -224,11 +224,11 @@ public class TimerTaskTest extends junit.framework.TestCase {
                 Thread.sleep(200);
             } catch (InterruptedException e) {
             }
+            t = new Timer();
             assertEquals("TimerTask.run() method should not have been called",
                     0, testTask.wasRun());
 
             // Ensure a task is run
-            t = new Timer();
             testTask = new TimerTestTask();
             t.schedule(testTask, 200);
             while(testTask.wasRun() < 1) {

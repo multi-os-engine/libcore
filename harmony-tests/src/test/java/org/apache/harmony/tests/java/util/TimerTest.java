@@ -21,6 +21,9 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import junit.framework.TestCase;
 
@@ -258,6 +261,7 @@ public class TimerTest extends TestCase {
             }
             t.cancel();
             Thread.sleep(200);
+
         } finally {
             if (t != null)
                 t.cancel();
@@ -975,6 +979,74 @@ public class TimerTest extends TestCase {
         Thread.sleep(400);
         Thread timerThread = threadRef.get();
         assertFalse(timerThread.isAlive());
+    }
+
+    private class CheckIfExecutedOnTime extends TimerTask {
+        private static final int TOLERANCE_TIME = 10;
+        private final AtomicBoolean executedOnTime;
+
+        static final int SLEEPING_TIME = 200;
+
+        private CheckIfExecutedOnTime(AtomicBoolean executedOnTime) {
+            this.executedOnTime = executedOnTime;
+        }
+
+        @Override
+        public void run() {
+            // We'll schedule one after the other to execute immediately. Ensure that the second
+            // is delayed by at most the time spent by the first one, plus some tolerance.
+            if (executedOnTime != null &&
+                    System.currentTimeMillis()
+                            <= scheduledExecutionTime() + SLEEPING_TIME + TOLERANCE_TIME) {
+                executedOnTime.set(true);
+            } else {
+                try {
+                    Thread.sleep(SLEEPING_TIME);
+                } catch (InterruptedException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        }
+    };
+
+    public void testOverdueTaskExecutesImmediately() throws Exception {
+        Timer t = new Timer();
+        t.schedule(new CheckIfExecutedOnTime(null), new Date(System.currentTimeMillis()));
+        AtomicBoolean checkIfExecutedOnTime = new AtomicBoolean();
+        // Scheduled to execute right now but won't do as the other task is sleeping. Check that
+        // this one executes as soon as the other one finishes.
+        t.schedule(new CheckIfExecutedOnTime(checkIfExecutedOnTime),
+                new Date(System.currentTimeMillis()));
+        // Only the first one sleeps, this will be the two tasks plenty of time to finish.
+        Thread.sleep(2 * CheckIfExecutedOnTime.SLEEPING_TIME);
+        t.cancel();
+        assertTrue(checkIfExecutedOnTime.get());
+    }
+
+    public void testCanBeCancelledEvenIfTaskKeepsItPermanentlyBusy() throws Exception {
+        final int timeSleeping = 200;
+        Timer t = new Timer();
+        final AtomicLong counter = new AtomicLong();
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    counter.incrementAndGet();
+                    Thread.sleep(timeSleeping);
+                } catch (InterruptedException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        };
+        t.scheduleAtFixedRate(task, 1, timeSleeping / 2);
+        Thread.sleep(timeSleeping*8);
+        // Check the task was actually running.
+        assertTrue(counter.get() > 0);
+        t.cancel();
+        // Allow some time to finish.
+        Thread.sleep(2 * timeSleeping);
+        // Check that the task is cancelled.
+        assertFalse(task.cancel());
     }
 
     protected void setUp() {
