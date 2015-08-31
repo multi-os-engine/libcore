@@ -61,6 +61,7 @@ public class TimeZoneNamesTest extends junit.framework.TestCase {
   }
 
   public void test_getExemplarLocation() throws Exception {
+    // Test with locale instances.
     assertEquals("Moscow",
             TimeZoneNames.getExemplarLocation(new Locale("en", "US"),
                 TimeZone.getTimeZone("Europe/Moscow").getID()));
@@ -72,6 +73,14 @@ public class TimeZoneNamesTest extends junit.framework.TestCase {
                 TimeZone.getTimeZone("Asia/Seoul").getID()));
     assertEquals("서울",
             TimeZoneNames.getExemplarLocation(new Locale("ko", "KR"),
+                TimeZone.getTimeZone("Asia/Seoul").getID()));
+
+    // Test with locale as string.
+    assertEquals("Moskau",
+            TimeZoneNames.getExemplarLocation("de-DE",
+                TimeZone.getTimeZone("Europe/Moscow").getID()));
+    assertEquals("서울",
+            TimeZoneNames.getExemplarLocation("ko",
                 TimeZone.getTimeZone("Asia/Seoul").getID()));
   }
 }

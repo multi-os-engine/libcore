@@ -163,48 +163,49 @@ public final class TimeZoneNames {
         // Set up the 2D array used to hold the names. The first column contains the Olson ids.
         String[][] result = new String[availableTimeZoneIds.length][NAME_COUNT];
 
+        com.ibm.icu.text.TimeZoneNames.NameType types[] = {
+            com.ibm.icu.text.TimeZoneNames.NameType.LONG_STANDARD,
+            com.ibm.icu.text.TimeZoneNames.NameType.SHORT_STANDARD,
+            com.ibm.icu.text.TimeZoneNames.NameType.LONG_DAYLIGHT,
+            com.ibm.icu.text.TimeZoneNames.NameType.SHORT_DAYLIGHT
+        };
+
         com.ibm.icu.text.TimeZoneNames timeZoneNames =
                 com.ibm.icu.text.TimeZoneNames.getInstance(locale);
+        timeZoneNames.loadAllDisplayNames();
         for (int i = 0; i < result.length; i++) {
             String[] row = result[i];
             String zoneId = availableTimeZoneIds[i];
             String canonicalZoneId = com.ibm.icu.util.TimeZone.getCanonicalID(zoneId);
 
             row[OLSON_NAME] = zoneId;
-            String longStd = timeZoneNames.getDisplayName(canonicalZoneId,
-                com.ibm.icu.text.TimeZoneNames.NameType.LONG_STANDARD, now);
-            String shortStd = timeZoneNames.getDisplayName(canonicalZoneId,
-                com.ibm.icu.text.TimeZoneNames.NameType.SHORT_STANDARD, now);
-            String longDst = timeZoneNames.getDisplayName(canonicalZoneId,
-                com.ibm.icu.text.TimeZoneNames.NameType.LONG_DAYLIGHT, now);
-            String shortDst = timeZoneNames.getDisplayName(canonicalZoneId,
-                com.ibm.icu.text.TimeZoneNames.NameType.SHORT_DAYLIGHT, now);
-            row[LONG_NAME] = filterGmt(longStd);
-            row[SHORT_NAME] = filterGmt(shortStd);
-            row[LONG_NAME_DST] = filterGmt(longDst);
-            row[SHORT_NAME_DST] = filterGmt(shortDst);
+            timeZoneNames.getDisplayNames(canonicalZoneId, types, now, row, 1);
+            filterGmt(row);
 
             if (isUtc(zoneId)) {
                 // If ICU doesn't give us a string for any zone that is a "UTC" variation, we supply
                 // our own value instead of using "GMT". At the time of writing ICU does not provide
                 // a value for any of these.
-                if (row[LONG_NAME] == null) row[LONG_NAME] = UTC_NAME;
-                if (row[SHORT_NAME] == null) row[SHORT_NAME] = UTC_NAME;
-                if (row[LONG_NAME_DST] == null) row[LONG_NAME_DST] = UTC_NAME;
-                if (row[SHORT_NAME_DST] == null) row[SHORT_NAME_DST] = UTC_NAME;
+                for (int j = 1; j < row.length; ++j) {
+                    if (row[j] == null) {
+                      row[j] = UTC_NAME;
+                    }
+                }
             }
         }
         return result;
     }
 
-    private static String filterGmt(String name) {
+    private static void filterGmt(String[] row) {
         // We don't need to use ICU for GMT or GMT(+-) zones because TimeZone.getDisplayName creates
         // names on demand using the timezone data. This way we will never rely on ICU calculating
         // the zone offset correctly.
-        if (name == null || name.startsWith("GMT")) {
-            return null;
+        for (int i = 1; i < row.length; ++i) {
+            String name = row[i];
+            if (name == null || name.startsWith("GMT")) {
+                row[i] = null;
+            }
         }
-        return name;
     }
 
     private static boolean isUtc(String zoneId) {
@@ -221,13 +222,14 @@ public final class TimeZoneNames {
     }
 
   public static String getExemplarLocation(String localeName, String tz) {
+    // TODO: Remove this method after clients using this are converted to
+    // using locale object.
+    // E.g., packages/apps/Settings/src/com/android/settings/ZonePicker.java
     Locale locale = new Locale(localeName);
     return getExemplarLocation(locale, tz);
   }
 
   public static String getExemplarLocation(Locale locale, String tz) {
-    // TODO(ccornelius): Do we need this?
-    long now = System.currentTimeMillis();
     android.icu.text.TimeZoneNames tzNames =
         android.icu.text.TimeZoneNames.getInstance(locale);
     return tzNames.getExemplarLocationName(tz);
