@@ -19,6 +19,7 @@ package libcore.icu;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -165,6 +166,10 @@ public final class TimeZoneNames {
 
         com.ibm.icu.text.TimeZoneNames timeZoneNames =
                 com.ibm.icu.text.TimeZoneNames.getInstance(locale);
+        // Hack to make the ICU TimeZoneNamesImpl load all time zone and
+        // meta zone names as efficiently as possible.
+        timeZoneNames.find("?", 0,
+            EnumSet.of(com.ibm.icu.text.TimeZoneNames.NameType.SHORT_STANDARD));
         for (int i = 0; i < result.length; i++) {
             String[] row = result[i];
             String zoneId = availableTimeZoneIds[i];
