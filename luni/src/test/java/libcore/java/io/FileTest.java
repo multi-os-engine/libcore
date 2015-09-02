@@ -24,6 +24,11 @@ import java.util.UUID;
 import libcore.io.Libcore;
 
 public class FileTest extends junit.framework.TestCase {
+
+    static {
+        System.loadLibrary("javacoretests");
+    }
+
     private static File createTemporaryDirectory() throws Exception {
         String base = System.getProperty("java.io.tmpdir");
         File directory = new File(base, UUID.randomUUID().toString());
@@ -271,4 +276,27 @@ public class FileTest extends junit.framework.TestCase {
         assertFalse(badParent.exists());
         assertFalse(badParent.mkdirs());
     }
+
+    // http://b/23523042 : Test that creating a directory and file with
+    // a surrogate pair in the name works as expected and roundtrips correctly.
+    public void testFilesWithSurrogatePairs() throws Exception {
+        File base = createTemporaryDirectory();
+        File subDir = new File(base, "dir_\uD80C\uDC00");
+        assertTrue(subDir.mkdir());
+        File subFile = new File(subDir, "file_\uD80C\uDC00");
+        assertTrue(subFile.createNewFile());
+
+        File[] files = base.listFiles();
+        assertEquals(1, files.length);
+        assertEquals("dir_\uD80C\uDC00", files[0].getName());
+
+        files = subDir.listFiles();
+        assertEquals(1, files.length);
+        assertEquals("file_\uD80C\uDC00", files[0].getName());
+
+        // Throws on error.
+        nativeTestFilesWithSurrogatePairs(base.getAbsolutePath());
+    }
+
+    private static native void nativeTestFilesWithSurrogatePairs(String base);
 }
