@@ -22,6 +22,7 @@ import java.net.URL;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import libcore.net.NetworkSecurityPolicy;
 
 /**
  * An {@link HttpURLConnection} for HTTPS (<a
@@ -136,7 +137,9 @@ public abstract class HttpsURLConnection extends HttpURLConnection {
         if (v == null) {
             throw new IllegalArgumentException("HostnameVerifier is null");
         }
-        NoPreloadHolder.defaultHostnameVerifier = v;
+        if (NetworkSecurityPolicy.allowHttpsHostnameVerifierOverride()) {
+            NoPreloadHolder.defaultHostnameVerifier = v;
+        }
     }
 
     /**
@@ -273,7 +276,9 @@ public abstract class HttpsURLConnection extends HttpURLConnection {
         if (v == null) {
             throw new IllegalArgumentException("HostnameVerifier is null");
         }
-        hostnameVerifier = v;
+        if (NetworkSecurityPolicy.allowHttpsHostnameVerifierOverride()) {
+            hostnameVerifier = v;
+        }
     }
 
     /**

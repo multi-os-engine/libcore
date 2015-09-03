@@ -32,6 +32,7 @@ public class NetworkSecurityPolicy {
 
     private static volatile boolean cleartextTrafficPermitted = true;
     private static volatile boolean allowTLSTrustManagerOverride = true;
+    private static volatile boolean allowHttpsHostnameVerifierOverride = true;
 
     /**
      * Returns whether cleartext network traffic (e.g. HTTP, FTP, XMPP, IMAP, SMTP -- without TLS or
@@ -59,6 +60,10 @@ public class NetworkSecurityPolicy {
         return allowTLSTrustManagerOverride;
     }
 
+    public static boolean allowHttpsHostnameVerifierOverride() {
+        return allowHttpsHostnameVerifierOverride;
+    }
+
     /**
      * Sets whether cleartext network traffic (e.g. HTTP, FTP, XMPP, IMAP, SMTP -- without TLS or
      * STARTTLS) is permitted for this process.
@@ -72,4 +77,9 @@ public class NetworkSecurityPolicy {
     public static void setTLSTrustManagerOverride(boolean permitted) {
         allowTLSTrustManagerOverride = permitted;
     }
+
+    public static void setHttpsHostnameVerifierOverride(boolean permitted) {
+        allowHttpsHostnameVerifierOverride = permitted;
+    }
+
 }
