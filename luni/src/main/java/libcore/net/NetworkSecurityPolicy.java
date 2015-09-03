@@ -31,6 +31,7 @@ import libcore.net.url.FtpURLConnection;
 public class NetworkSecurityPolicy {
 
     private static volatile boolean cleartextTrafficPermitted = true;
+    private static volatile boolean allowTLSTrustManagerOverride = true;
 
     /**
      * Returns whether cleartext network traffic (e.g. HTTP, FTP, XMPP, IMAP, SMTP -- without TLS or
@@ -54,6 +55,10 @@ public class NetworkSecurityPolicy {
         return cleartextTrafficPermitted;
     }
 
+    public static boolean allowTLSTrustManagerOverride() {
+        return allowTLSTrustManagerOverride;
+    }
+
     /**
      * Sets whether cleartext network traffic (e.g. HTTP, FTP, XMPP, IMAP, SMTP -- without TLS or
      * STARTTLS) is permitted for this process.
@@ -62,5 +67,9 @@ public class NetworkSecurityPolicy {
      */
     public static void setCleartextTrafficPermitted(boolean permitted) {
         cleartextTrafficPermitted = permitted;
+    }
+
+    public static void setTLSTrustManagerOverride(boolean permitted) {
+        allowTLSTrustManagerOverride = permitted;
     }
 }
