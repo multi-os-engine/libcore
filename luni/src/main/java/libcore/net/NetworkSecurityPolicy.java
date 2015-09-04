@@ -31,6 +31,7 @@ import libcore.net.url.FtpURLConnection;
 public class NetworkSecurityPolicy {
 
     private static volatile boolean cleartextTrafficPermitted = true;
+    private static volatile String[] certPins;
 
     /**
      * Returns whether cleartext network traffic (e.g. HTTP, FTP, XMPP, IMAP, SMTP -- without TLS or
@@ -62,5 +63,13 @@ public class NetworkSecurityPolicy {
      */
     public static void setCleartextTrafficPermitted(boolean permitted) {
         cleartextTrafficPermitted = permitted;
+    }
+
+    public static String[] getCertPins() {
+        return certPins;
+    }
+
+    public static void setCertPins(String[] pins) {
+        certPins = pins;
     }
 }
