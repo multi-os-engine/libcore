@@ -123,7 +123,17 @@ public class LocaleInternalsTest extends TestCase {
             assertEquals(Locale.GERMANY, Locale.getDefault());
         }
 
-        Locale.setDefault(new Locale("bogus", "LOCALE"));
+        // According to the BCP-47 spec a language tag is valid if it matches the following pattern:
+        //  language  = 2*3ALPHA      ; shortest ISO 639 code
+        //             ["-" extlang]  ; sometimes followed by
+        //                            ; extended language subtags
+        //             / 4ALPHA       ; or reserved for future use
+        //             / 5*8ALPHA     ; or registered language subtag.
+
+        // Previously this test used new Locale("bogus", "LOCALE"), but according to the spec that
+        // is actually a valid language tag. Now this test uses b0gus for the language tag which
+        // is not an alpha string.
+        Locale.setDefault(new Locale("b0gus", "LOCALE"));
         assertEquals("und", ICU.getDefaultLocale());
     }
 }
