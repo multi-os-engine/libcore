@@ -108,6 +108,22 @@ public class LocaleTest extends junit.framework.TestCase {
         assertEquals("Taiwan", new Locale("", "TW").getDisplayCountry(Locale.US));
     }
 
+    // Tests to see that we return the correct variant depending on if the country was valid.
+    public void test_getDisplayCountryCountryVariantValidity() {
+        // A valid ISO-3166-1 country code.
+        Locale deCH1996 = new Locale("de", "CH", "1996");
+        assertEquals("Switzerland", deCH1996.getDisplayCountry());
+        assertEquals("German orthography of 1996", deCH1996.getDisplayVariant());
+        // A valid UN M.49 code.
+        Locale westEurope = new Locale("", "155", "Variant");
+        assertEquals("Western Europe", westEurope.getDisplayCountry());
+        assertEquals("VARIANT", westEurope.getDisplayVariant());
+        // An invalid country code
+        Locale invalid = new Locale("", "abc", "variant");
+        assertEquals("ABC", invalid.getDisplayCountry());
+        assertEquals("VARIANT", invalid.getDisplayVariant());
+    }
+
     public void test_tl_and_fil() throws Exception {
         // In jb-mr1, we had a last-minute hack to always return "Filipino" because
         // icu4c 4.8 didn't have any localizations for fil. (http://b/7291355).
@@ -987,6 +1003,70 @@ public class LocaleTest extends junit.framework.TestCase {
             fail();
         } catch (UnsupportedOperationException expected) {
         }
+    }
+
+    // Keep track of the cases where undetermined language is returned from Locale.toLanguageTag().
+    public void test_toLanguageTagUnd() {
+        // Valid length 3.
+        assertEquals("foo", new Locale("foo").toLanguageTag());
+        // Max length
+        assertEquals("fooooooo", new Locale("fooooooo").toLanguageTag());
+        // Too long
+        assertEquals("und", new Locale("foooooooo").toLanguageTag());
+        // Too short
+        assertEquals("und", new Locale("a").toLanguageTag());
+        // Too short language with country
+        assertEquals("und-US", new Locale("a", "US").toLanguageTag());
+        // Too long language with country and variant
+        assertEquals("und-US-variant", new Locale("foooooooo", "US", "variant").toLanguageTag());
+    }
+
+    // Variants which are not BCP47 compliant are added as -x-lvariant's
+    // The BCP-47 spec states that :
+    // - Subtags can be between [5, 8] alphanumeric chars in length.
+    // - Subtags that start with a number are allowed to be 4 chars in length.
+    public void test_toLanguageTagLvariant() {
+        assertEquals("en-US-variant-variant-variant",
+                new Locale("en", "US", "variant_variant_variant").toLanguageTag());
+        assertEquals("en-US-variant-variant-x-lvariant-foo",
+                new Locale("en", "US", "variant_variant_foo").toLanguageTag());
+        // There are valid tags after the first invalid variant tag.
+        assertEquals("en-US-variant-x-lvariant-bar-bazel",
+                new Locale("en", "US", "variant_bar_bazel").toLanguageTag());
+        // There are no valid subtags after the first invalid variant tag.
+        assertEquals("en-US-x-lvariant-bar-baz",
+                new Locale("en", "US", "bar_baz").toLanguageTag());
+        // The last subtag is not a valid private use extension.
+        assertEquals("en-US-foooo-x-lvariant-bar",
+                new Locale("en", "US", "foooo_bar_baz!").toLanguageTag());
+        // There is an invalid private use extension which is not the last variant part.
+        assertEquals("en-US-x-lvariant-bar",
+                new Locale("en", "US", "bar_baz!_b@z3!").toLanguageTag());
+        // Test subtags which begin with a number. e.g. Swiss High German with 1996- grammar rules.
+        assertEquals("de-CH-1996",
+                new Locale("de", "CH", "1996").toLanguageTag());
+    }
+
+    // Old iw, ji, and in tags should be used even when the new form is specified.
+    public void test_toLanguageTagRewrite() {
+        assertEquals("iw", new Locale("he").toLanguageTag());
+        assertEquals("ji", new Locale("yi").toLanguageTag());
+        assertEquals("in", new Locale("id").toLanguageTag());
+    }
+
+    // POSIX is a special case which ULocale refers to as -u-va-posix but we just call POSIX.
+    public void test_toLanguageTagPosix() {
+        Locale posixLocale = new Locale("en", "US", "POSIX");
+        assertEquals("en-US-POSIX", posixLocale.toLanguageTag());
+        assertEquals("English (United States,Computer)", posixLocale.getDisplayName());
+        assertEquals("anglais (États-Unis,informatique)",
+                posixLocale.getDisplayName(Locale.FRENCH));
+    }
+
+    // Test the special case for no_NO_NY
+    public void test_toLanguageTagnoNONY() {
+        Locale no = new Locale("no", "NO", "NY");
+        assertEquals("nn-NO", no.toLanguageTag());
     }
 
     public void test_toLanguageTag() {
