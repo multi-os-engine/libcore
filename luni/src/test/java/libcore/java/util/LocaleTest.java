@@ -989,6 +989,58 @@ public class LocaleTest extends junit.framework.TestCase {
         }
     }
 
+    // Keep track of the cases where undetermined language is returned from Locale.toLanguageTag().
+    public void test_toLanguageTagUnd() {
+        // Simple too long language.
+        assertEquals("und", new Locale("fooo").toLanguageTag());
+        // Too long language with country
+        assertEquals("und-US", new Locale("fooo", "US").toLanguageTag());
+        // Too long language with country and variant
+        assertEquals("und-US-variant", new Locale("fooo", "US", "variant").toLanguageTag());
+    }
+
+    // Variants which are not BCP47 compliant are added as -x-lvariant's
+    // The BCP-47 spec states that :
+    // - Subtags can be between [5, 8] alphanumeric chars in length.
+    // - Subtags that start with a number are allowed to be 4 chars in length.
+    public void test_toLanguageTagLvariant() {
+        assertEquals("en-US-variant-variant-variant",
+                new Locale("en", "US", "variant_variant_variant").toLanguageTag());
+        assertEquals("en-US-variant-variant-x-lvariant-foo",
+                new Locale("en", "US", "variant_variant_foo").toLanguageTag());
+        // There are valid tags after the first invalid variant tag.
+        assertEquals("en-US-variant-x-lvariant-bar-bazel",
+                new Locale("en", "US", "variant_bar_bazel").toLanguageTag());
+        // There are no valid subtags after the first invalid variant tag.
+        assertEquals("en-US-x-lvariant-bar-baz",
+                new Locale("en", "US", "bar_baz").toLanguageTag());
+        // The last subtag is not a valid private use extension.
+        assertEquals("en-US-foooo-x-lvariant-bar",
+                new Locale("en", "US", "foooo_bar_baz!").toLanguageTag());
+        // There is an invalid private use extension which is not the last variant part.
+        assertEquals("en-US-x-lvariant-bar",
+                new Locale("en", "US", "bar_baz!_b@z3!").toLanguageTag());
+        // Test subtags which begin with a number. e.g. Swiss High German with 1996- grammar rules.
+        assertEquals("de-CH-1996",
+                new Locale("de", "CH", "1996").toLanguageTag());
+    }
+
+    // Old iw, ji, and in tags should be used even when the new form is specified.
+    public void test_toLanguageTagRewrite() {
+        assertEquals("iw", new Locale("he").toLanguageTag());
+        assertEquals("ji", new Locale("yi").toLanguageTag());
+        assertEquals("in", new Locale("id").toLanguageTag());
+    }
+
+    // POSIX is a special case which ULocale refers to as -u-va-posix but we just call POSIX.
+    public void test_toLanguageTagPosix() {
+        Locale posixLocale = new Locale("en", "US", "POSIX");
+        assertEquals("en-US-POSIX", posixLocale.toLanguageTag());
+        assertEquals("English (United States,Computer)", posixLocale.getDisplayName());
+        assertEquals("anglais (États-Unis,informatique)",
+                posixLocale.getDisplayName(Locale.FRENCH));
+    }
+
     public void test_toLanguageTag() {
         Locale.Builder b = new Locale.Builder();
 
