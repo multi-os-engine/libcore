@@ -16,10 +16,14 @@
 
 package libcore.icu;
 
+import com.ibm.icu.util.ULocale;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -43,7 +47,7 @@ public final class ICU {
    */
   public static String[] getISOLanguages() {
     if (isoLanguages == null) {
-      isoLanguages = getISOLanguagesNative();
+      isoLanguages = ULocale.getISOLanguages();
     }
     return isoLanguages.clone();
   }
@@ -53,7 +57,7 @@ public final class ICU {
    */
   public static String[] getISOCountries() {
     if (isoCountries == null) {
-      isoCountries = getISOCountriesNative();
+      isoCountries = ULocale.getISOCountries();
     }
     return isoCountries.clone();
   }
@@ -240,25 +244,30 @@ public final class ICU {
 
   public static Locale[] getAvailableLocales() {
     if (availableLocalesCache == null) {
-      availableLocalesCache = localesFromStrings(getAvailableLocalesNative());
+      List<String> localeStrings = new ArrayList<>();
+      // TODO: Get a public ICU API for this method.
+      localeStrings.addAll(com.ibm.icu.impl.ICUResourceBundle.getAvailableLocaleNameSet());
+      Collections.sort(localeStrings);
+      availableLocalesCache = localesFromStrings(
+              localeStrings.toArray(new String[localeStrings.size()]));
     }
     return availableLocalesCache.clone();
   }
 
   public static Locale[] getAvailableBreakIteratorLocales() {
-    return localesFromStrings(getAvailableBreakIteratorLocalesNative());
+    return com.ibm.icu.text.BreakIterator.getAvailableLocales();
   }
 
   public static Locale[] getAvailableCalendarLocales() {
-    return localesFromStrings(getAvailableCalendarLocalesNative());
+    return com.ibm.icu.util.Calendar.getAvailableLocales();
   }
 
   public static Locale[] getAvailableCollatorLocales() {
-    return localesFromStrings(getAvailableCollatorLocalesNative());
+    return com.ibm.icu.text.Collator.getAvailableLocales();
   }
 
   public static Locale[] getAvailableDateFormatLocales() {
-    return localesFromStrings(getAvailableDateFormatLocalesNative());
+    return com.ibm.icu.text.DateFormat.getAvailableLocales();
   }
 
   public static Locale[] getAvailableDateFormatSymbolsLocales() {
@@ -270,7 +279,7 @@ public final class ICU {
   }
 
   public static Locale[] getAvailableNumberFormatLocales() {
-    return localesFromStrings(getAvailableNumberFormatLocalesNative());
+    return com.ibm.icu.text.NumberFormat.getAvailableLocales();
   }
 
   public static String getBestDateTimePattern(String skeleton, Locale locale) {
@@ -373,13 +382,6 @@ public final class ICU {
 
   // --- Native methods accessing ICU's database.
 
-  private static native String[] getAvailableBreakIteratorLocalesNative();
-  private static native String[] getAvailableCalendarLocalesNative();
-  private static native String[] getAvailableCollatorLocalesNative();
-  private static native String[] getAvailableDateFormatLocalesNative();
-  private static native String[] getAvailableLocalesNative();
-  private static native String[] getAvailableNumberFormatLocalesNative();
-
   public static native String[] getAvailableCurrencyCodes();
   public static native String getCurrencyCode(String countryCode);
 
@@ -398,34 +400,6 @@ public final class ICU {
 
   private static native String getCurrencySymbol(String languageTag, String currencyCode);
 
-  public static String getDisplayCountry(Locale targetLocale, Locale locale) {
-    return getDisplayCountryNative(targetLocale.toLanguageTag(), locale.toLanguageTag());
-  }
-
-  private static native String getDisplayCountryNative(String targetLanguageTag, String languageTag);
-
-  public static String getDisplayLanguage(Locale targetLocale, Locale locale) {
-    return getDisplayLanguageNative(targetLocale.toLanguageTag(), locale.toLanguageTag());
-  }
-
-  private static native String getDisplayLanguageNative(String targetLanguageTag, String languageTag);
-
-  public static String getDisplayVariant(Locale targetLocale, Locale locale) {
-    return getDisplayVariantNative(targetLocale.toLanguageTag(), locale.toLanguageTag());
-  }
-
-  private static native String getDisplayVariantNative(String targetLanguageTag, String languageTag);
-
-  public static String getDisplayScript(Locale targetLocale, Locale locale) {
-    return getDisplayScriptNative(targetLocale.toLanguageTag(), locale.toLanguageTag());
-  }
-
-  private static native String getDisplayScriptNative(String targetLanguageTag, String languageTag);
-
-  public static native String getISO3Country(String languageTag);
-
-  public static native String getISO3Language(String languageTag);
-
   public static Locale addLikelySubtags(Locale locale) {
       return Locale.forLanguageTag(addLikelySubtags(locale.toLanguageTag()).replace('_', '-'));
   }
@@ -442,9 +416,6 @@ public final class ICU {
    */
   @Deprecated
   public static native String getScript(String locale);
-
-  private static native String[] getISOLanguagesNative();
-  private static native String[] getISOCountriesNative();
 
   static native boolean initLocaleDataNative(String languageTag, LocaleData result);
 
