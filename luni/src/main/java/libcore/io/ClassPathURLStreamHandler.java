@@ -57,7 +57,10 @@ public class ClassPathURLStreamHandler extends JarHandler {
    * entry cannot be found under the exact name presented.
    */
   public URL getEntryUrlOrNull(String entryName) {
-    if (jarFile.findEntry(entryName) != null) {
+    ZipEntry entry = findEntryWithDirectoryFallback(entryName);
+    if (entry != null) {
+      // Correct the entry name in case findEntryWithDirectoryFallback() returned a corrected name.
+      entryName = entry.getName();
       try {
         // We rely on the URL/the stream handler to deal with any url encoding necessary here, and
         // we assume it is completely reversible.
@@ -70,7 +73,7 @@ public class ClassPathURLStreamHandler extends JarHandler {
   }
 
   /**
-   * Returns true if entry with specified name exists and stored (not compressed),
+   * Returns true if an entry with the specified name exists and is stored (not compressed),
    * and false otherwise.
    */
   public boolean isEntryStored(String entryName) {
@@ -85,6 +88,19 @@ public class ClassPathURLStreamHandler extends JarHandler {
 
   public void close() throws IOException {
     jarFile.close();
+  }
+
+  /**
+   * Finds an entry with the specified name. If an exact match isn't found it will also try with "/"
+   * appended, if appropriate. This is to maintain compatibility with
+   * {@link libcore.net.url.JarHandler} and its treatment of directory entries.
+   */
+  private ZipEntry findEntryWithDirectoryFallback(String entryName) {
+    ZipEntry entry = jarFile.findEntry(entryName);
+    if (entry == null && !entryName.endsWith("/") ) {
+      entry = jarFile.findEntry(entryName + "/");
+    }
+    return entry;
   }
 
   private static class ClassPathURLConnection extends JarURLConnection {
