@@ -40,16 +40,33 @@ import libcore.net.url.JarHandler;
  */
 public class ClassPathURLStreamHandler extends JarHandler {
   private final String fileUri;
-  private final StrictJarFile jarFile;
+  private final StrictJarFile strictJarFile;
+  /**
+   * Created on demand if somebody calls {@link JarURLConnection#getJarFile()} and
+   * {@link URLConnection#getUseCaches()} is true.
+   */
+  private JarFile jarFile;
 
   public ClassPathURLStreamHandler(String jarFileName) throws IOException {
     // We use StrictJarFile because it is much less heap memory hungry than ZipFile / JarFile.
-    jarFile = new StrictJarFile(jarFileName);
+    strictJarFile = new StrictJarFile(jarFileName);
 
     // File.toURI() is compliant with RFC 1738 in always creating absolute path names. If we
     // construct the URL by concatenating strings, we might end up with illegal URLs for relative
     // names.
     this.fileUri = new File(jarFileName).toURI().toString();
+  }
+
+  /**
+   * Obtains a cached {@link JarFile} that points to the same jar file as {@link #strictJarFile}.
+   */
+  JarFile getSharedJarFile() throws IOException {
+    synchronized (this) {
+      if (jarFile == null) {
+        jarFile = new JarFile(strictJarFile.getName());
+      }
+    }
+    return jarFile;
   }
 
   /**
@@ -74,17 +91,21 @@ public class ClassPathURLStreamHandler extends JarHandler {
    * and false otherwise.
    */
   public boolean isEntryStored(String entryName) {
-    ZipEntry entry = jarFile.findEntry(entryName);
+    ZipEntry entry = strictJarFile.findEntry(entryName);
     return entry != null && entry.getMethod() == ZipEntry.STORED;
   }
 
   @Override
   protected URLConnection openConnection(URL url) throws IOException {
-    return new ClassPathURLConnection(url, jarFile);
+    return new ClassPathURLConnection(url);
   }
 
+  /** Used from tests to indicate this stream handler is finished with. */
   public void close() throws IOException {
-    jarFile.close();
+    strictJarFile.close();
+    if (jarFile != null) {
+      jarFile.close();
+    }
   }
 
   /**
@@ -100,42 +121,54 @@ public class ClassPathURLStreamHandler extends JarHandler {
     return entry;
   }
 
-  private static class ClassPathURLConnection extends JarURLConnection {
-
+  private class ClassPathURLConnection extends JarURLConnection {
+    // The StrictJarFile instance is shared across URLConnections and must not be closed.
     private final StrictJarFile strictJarFile;
+
     private ZipEntry jarEntry;
     private InputStream jarInput;
     private boolean closed;
+
+    /**
+     * Indicates the behavior of the {@link #jarFile}. If true, the reference is shared and should
+     * not be closed. If false, it must be closed.
+     */
+    private boolean jarFileMustBehaveAsCached;
     private JarFile jarFile;
 
-    public ClassPathURLConnection(URL url, StrictJarFile strictJarFile)
-            throws MalformedURLException {
+    public ClassPathURLConnection(URL url) throws MalformedURLException {
       super(url);
-      this.strictJarFile = strictJarFile;
+      this.strictJarFile = ClassPathURLStreamHandler.this.strictJarFile;
     }
 
     @Override
     public void connect() throws IOException {
       if (!connected) {
-          this.jarEntry = findEntryWithDirectoryFallback(strictJarFile, getEntryName());
-          if (jarEntry == null) {
-              throw new FileNotFoundException(
-                      "URL does not correspond to an entry in the zip file. URL=" + url
-                              + ", zipfile=" + strictJarFile.getName());
-          }
-          connected = true;
+        this.jarEntry = findEntryWithDirectoryFallback(strictJarFile, getEntryName());
+        if (jarEntry == null) {
+          throw new FileNotFoundException(
+              "URL does not correspond to an entry in the zip file. URL=" + url
+              + ", zipfile=" + strictJarFile.getName());
+        }
+        jarFileMustBehaveAsCached = getUseCaches();
+        connected = true;
       }
     }
 
     @Override
     public JarFile getJarFile() throws IOException {
-        connect();
+      connect();
 
-        // This is expensive because we only pretend that we wrap a JarFile.
-        if (jarFile == null) {
-            jarFile = new JarFile(strictJarFile.getName());
-        }
-        return jarFile;
+      // This is more expensive than JarURLConnectionImpl because we only pretend that we wrap a
+      // JarFile. We do cache in the surrounding class if jarFileMustBehaveAsCached is true to
+      // preserve garbage collection semantics to avoid leak warnings.
+      String jarFileName = strictJarFile.getName();
+      if (jarFileMustBehaveAsCached) {
+        jarFile = ClassPathURLStreamHandler.this.getSharedJarFile();
+      } else {
+        jarFile = new JarFile(jarFileName);
+      }
+      return jarFile;
     }
 
     @Override
@@ -151,7 +184,12 @@ public class ClassPathURLStreamHandler extends JarHandler {
         @Override
         public void close() throws IOException {
           super.close();
-          closed = true;
+          // If the jar file is not cached closing the input stream will close the URLConnection and
+          // any JarFile returned from getJarFile().
+          if (jarFile != null && !jarFileMustBehaveAsCached) {
+            jarFile.close();
+            closed = true;
+          }
         }
       };
     }
