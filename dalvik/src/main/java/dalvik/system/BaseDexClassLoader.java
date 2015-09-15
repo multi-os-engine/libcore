@@ -45,7 +45,15 @@ public class BaseDexClassLoader extends ClassLoader {
     public BaseDexClassLoader(String dexPath, File optimizedDirectory,
             String libraryPath, ClassLoader parent) {
         super(parent);
-        this.pathList = new DexPathList(this, dexPath, libraryPath, optimizedDirectory);
+
+        // In the absence of a BaseDexClassLoader.close() we disable CloseGuard for any resources
+        // opened by the ClassLoader to prevent warnings when the ClassLoader is discarded.
+        CloseGuard.pauseForCurrentThread();
+        try {
+            this.pathList = new DexPathList(this, dexPath, libraryPath, optimizedDirectory);
+        } finally {
+            CloseGuard.resumeForCurrentThread();
+        }
     }
 
     @Override
