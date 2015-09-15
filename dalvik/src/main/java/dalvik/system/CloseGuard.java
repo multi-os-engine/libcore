@@ -16,6 +16,8 @@
 
 package dalvik.system;
 
+import java.util.concurrent.CopyOnWriteArrayList;
+
 /**
  * CloseGuard is a mechanism for flagging implicit finalizer cleanup of
  * resources that should have been cleaned up by explicit close
@@ -117,6 +119,9 @@ public final class CloseGuard {
      */
     private static volatile Reporter REPORTER = new DefaultReporter();
 
+    /** Threads that have temporarily disabled CloseGuard */
+    private static CopyOnWriteArrayList<Thread> pausedThreads = new CopyOnWriteArrayList<>();
+
     /**
      * Returns a CloseGuard instance. If CloseGuard is enabled, {@code
      * #open(String)} can be used to set up the instance to warn on
@@ -124,10 +129,36 @@ public final class CloseGuard {
      * instance is returned.
      */
     public static CloseGuard get() {
-        if (!ENABLED) {
+        if (!ENABLED ||
+            (!pausedThreads.isEmpty() && pausedThreads.contains(Thread.currentThread()))) {
             return NOOP;
         }
         return new CloseGuard();
+    }
+
+    /**
+     * Temporarily relax CloseGuards for the current thread if they are enabled. Any CloseGuard
+     * objects returned via {@link #get()} will be no-ops until
+     * {@link #resumeForCurrentThread()} is called. This is useful for poorly designed legacy APIs
+     * where it is not possible to clean up properly. Each call to this method should be paired with
+     * a call to {@link #resumeForCurrentThread()}.
+     */
+    public static void pauseForCurrentThread() {
+        // Use add() rather than addIfAbsent() because we want to re-enable only once the final
+        // call to reenableForCurrentThread() has been made.
+        pausedThreads.add(Thread.currentThread());
+    }
+
+    /**
+     * Return to strict CloseGuards for the current thread if they are enabled. If
+     * {@link #pauseForCurrentThread()} has been called multiple times for the current thread this
+     * method must be called the same number of times actually return to strict CloseGuards.
+     */
+    public static void resumeForCurrentThread() {
+        boolean removed = pausedThreads.remove(Thread.currentThread());
+        if (!removed) {
+            REPORTER.report("Unbalanced pause/resume for CloseGuard", new Throwable("resumeSite"));
+        }
     }
 
     /**
@@ -211,8 +242,8 @@ public final class CloseGuard {
     /**
      * Interface to allow customization of reporting behavior.
      */
-    public static interface Reporter {
-        public void report (String message, Throwable allocationSite);
+    public interface Reporter {
+        void report (String message, Throwable allocationSite);
     }
 
     /**
