@@ -911,9 +911,10 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
 
     /**
      * Returns a {@code Field} object which represents the public field with the
-     * given name. This method first searches the class C represented by
-     * this {@code Class}, then the interfaces implemented by C and finally the
-     * superclasses of C.
+     * given name. This method first searches the class C represented by this
+     * {@code Class}, then recursively searches the interfaces directly
+     * implemented by C (in the order they are declared) and finally recursively
+     * searches the superclasses of C.
      *
      * @throws NoSuchFieldException
      *             if the field cannot be found.
@@ -931,24 +932,38 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
     }
 
     private Field getPublicFieldRecursive(String name) {
-        // search superclasses
+        // We search the current class, its direct interfaces then its superclass
         for (Class<?> c = this; c != null; c = c.superClass) {
             Field result = c.getDeclaredFieldInternal(name);
             if (result != null && (result.getModifiers() & Modifier.PUBLIC) != 0) {
                 return result;
             }
-        }
-
-        // search iftable which has a flattened and uniqued list of interfaces
-        if (ifTable != null) {
-            for (int i = 0; i < ifTable.length; i += 2) {
-                Field result = ((Class<?>) ifTable[i]).getPublicFieldRecursive(name);
-                if (result != null && (result.getModifiers() & Modifier.PUBLIC) != 0) {
-                    return result;
+            // We can get Array and Proxy faster by just using getInterfaces. One is a static and
+            // the other is a native call.
+            if (isArray() || isProxy()) {
+                // Recursively search each of the implemented interfaces of the current class.
+                for (Class<?> iface : c.getInterfaces()) {
+                    result = iface.getPublicFieldRecursive(name);
+                    if (result != null) {
+                        return result;
+                    }
+                }
+            } else {
+                // Copied from Class#getInterfaces to remove an array allocation.
+                Dex dex = c.getDex();
+                if (dex == null) {
+                    return null;
+                }
+                short[] interfaces =
+                    dex.interfaceTypeIndicesFromClassDefIndex(c.getDexClassDefIndex());
+                for (int i = 0; i < interfaces.length; i++) {
+                    result = c.getDexCacheType(dex, interfaces[i]).getPublicFieldRecursive(name);
+                    if (result != null) {
+                        return result;
+                    }
                 }
             }
         }
-
         return null;
     }
 
