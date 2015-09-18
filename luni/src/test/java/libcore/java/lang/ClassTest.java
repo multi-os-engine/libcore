@@ -50,4 +50,25 @@ public class ClassTest extends TestCase {
     public void test_getGenericSuperclass_returnsObjectForArrays() {
         assertSame(Object.class, (new Integer[0]).getClass().getGenericSuperclass());
     }
+
+    interface A {
+      public static String name = "A";
+    }
+    interface B {
+      public static String name = "B";
+    }
+    class X implements A { }
+    class Y extends X implements B { }
+    public void test_getField() {
+      try {
+        assertEquals(X.class.getField("name"), A.class.getField("name"));
+      } catch (NoSuchFieldException e) {
+        fail("Got exception");
+      }
+      try {
+        assertEquals(Y.class.getField("name"), B.class.getField("name"));
+      } catch (NoSuchFieldException e) {
+        fail("Got exception");
+      }
+    }
 }
