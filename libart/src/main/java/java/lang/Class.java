@@ -911,9 +911,10 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
 
     /**
      * Returns a {@code Field} object which represents the public field with the
-     * given name. This method first searches the class C represented by
-     * this {@code Class}, then the interfaces implemented by C and finally the
-     * superclasses of C.
+     * given name. This method first searches the class C represented by this
+     * {@code Class}, then recursively searches the interfaces directly
+     * implemented by C (in the order they are declared) and finally recursively
+     * searches the superclasses of C.
      *
      * @throws NoSuchFieldException
      *             if the field cannot be found.
@@ -930,27 +931,12 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
         return result;
     }
 
-    private Field getPublicFieldRecursive(String name) {
-        // search superclasses
-        for (Class<?> c = this; c != null; c = c.superClass) {
-            Field result = c.getDeclaredFieldInternal(name);
-            if (result != null && (result.getModifiers() & Modifier.PUBLIC) != 0) {
-                return result;
-            }
-        }
-
-        // search iftable which has a flattened and uniqued list of interfaces
-        if (ifTable != null) {
-            for (int i = 0; i < ifTable.length; i += 2) {
-                Field result = ((Class<?>) ifTable[i]).getPublicFieldRecursive(name);
-                if (result != null && (result.getModifiers() & Modifier.PUBLIC) != 0) {
-                    return result;
-                }
-            }
-        }
-
-        return null;
-    }
+    /**
+     * The native implementation of the {@code getField} method.
+     *
+     * @see #getField(String)
+     */
+    private native Field getPublicFieldRecursive(String name);
 
     /**
      * Returns an array containing {@code Field} objects for all public fields
