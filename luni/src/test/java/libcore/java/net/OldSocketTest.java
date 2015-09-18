@@ -1391,12 +1391,17 @@ public class OldSocketTest extends OldSocketTestCase {
         theSocket = new Socket();
         SocketConnector connector = new SocketConnector(5000, theSocket, nonReachableAddress);
         connector.start();
-        theSocket.setSoTimeout(1000);
-        Thread.sleep(10);
-        assertEquals("Socket option not set during connect: 10 ", 1000, theSocket.getSoTimeout());
-        Thread.sleep(50);
-        theSocket.setSoTimeout(2000);
-        assertEquals("Socket option not set during connect: 50 ", 2000, theSocket.getSoTimeout());
+        try {
+	    theSocket.setSoTimeout(1000);
+            Thread.sleep(10);
+            assertEquals("Socket option not set during connect: 10 ", 1000, theSocket.getSoTimeout());
+            Thread.sleep(50);
+            theSocket.setSoTimeout(2000);
+            assertEquals("Socket option not set during connect: 50 ", 2000, theSocket.getSoTimeout());
+	} catch (SocketException e) {
+             // some networks will quickly reset the TCP connection attempt to this fake IP
+	     // in this case SocketException thrown when setSoTimeout the 2nd time
+	}
         Thread.sleep(5000);
         theSocket.close();
 
