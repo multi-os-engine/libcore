@@ -114,6 +114,7 @@ public final class Daemons {
                     threadToStop.join();
                     return;
                 } catch (InterruptedException ignored) {
+                } catch (OutOfMemoryError ignored) {
                 }
             }
         }
@@ -151,6 +152,8 @@ public final class Daemons {
                     }
                 } catch (InterruptedException e) {
                     continue;
+                } catch (OutOfMemoryError e) {
+                    continue;
                 }
                 enqueue(list);
             }
@@ -184,6 +187,7 @@ public final class Daemons {
                 try {
                     doFinalize((FinalizerReference<?>) queue.remove());
                 } catch (InterruptedException ignored) {
+                } catch (OutOfMemoryError ignored) {
                 }
             }
         }
@@ -255,6 +259,8 @@ public final class Daemons {
                         wait();
                     } catch (InterruptedException e) {
                         // Daemon.stop may have interrupted us.
+                        return false;
+                    } catch (OutOfMemoryError e) {
                         return false;
                     }
                 }
