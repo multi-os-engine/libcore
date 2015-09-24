@@ -1047,17 +1047,49 @@ public class LocaleTest extends junit.framework.TestCase {
                 new Locale("de", "CH", "1996").toLanguageTag());
     }
 
-    // Old iw, ji, and in tags should be used even when the new form is specified.
+    // Test to see if old language tags are rewritten to the new ones, and that data is present
+    // for both locales created with new and old language tags.
     public void test_toLanguageTagRewrite() {
-        assertEquals("iw", new Locale("he").toLanguageTag());
-        assertEquals("ji", new Locale("yi").toLanguageTag());
-        assertEquals("in", new Locale("id").toLanguageTag());
+        Locale hebrew = new Locale("he");
+        Locale oldHebrew = new Locale("iw");
+        Locale yiddish = new Locale("yi");
+        Locale oldYiddish = new Locale("ji");
+        Locale indonesian = new Locale("id");
+        Locale oldIndonesian = new Locale("in");
+
+        assertEquals("he", oldHebrew.toLanguageTag());
+        assertEquals("yi", oldYiddish.toLanguageTag());
+        assertEquals("id", oldIndonesian.toLanguageTag());
+        assertEquals("he", hebrew.toLanguageTag());
+        assertEquals("yi", yiddish.toLanguageTag());
+        assertEquals("id", indonesian.toLanguageTag());
+
+        String hebrewDisplayEn = "Hebrew";
+        String hebrewDisplayFr = "hébreu";
+        String yiddishDisplayEn = "Yiddish";
+        String yiddishDisplayFr = "yiddish";
+        String indonesianDisplayEn = "Indonesian";
+        String indonesianDisplayFr = "indonésien";
+
+        assertEquals(hebrewDisplayEn, hebrew.getDisplayName());
+        assertEquals(hebrewDisplayEn, oldHebrew.getDisplayName());
+        assertEquals(hebrewDisplayFr, hebrew.getDisplayName(Locale.FRENCH));
+        assertEquals(hebrewDisplayFr, oldHebrew.getDisplayName(Locale.FRENCH));
+        assertEquals(yiddishDisplayEn, yiddish.getDisplayName());
+        assertEquals(yiddishDisplayEn, oldYiddish.getDisplayName());
+        assertEquals(yiddishDisplayFr, yiddish.getDisplayName(Locale.FRENCH));
+        assertEquals(yiddishDisplayFr, oldYiddish.getDisplayName(Locale.FRENCH));
+        assertEquals(indonesianDisplayEn, indonesian.getDisplayName());
+        assertEquals(indonesianDisplayEn, oldIndonesian.getDisplayName());
+        assertEquals(indonesianDisplayFr, indonesian.getDisplayName(Locale.FRENCH));
+        assertEquals(indonesianDisplayFr, oldIndonesian.getDisplayName(Locale.FRENCH));
+
     }
 
-    // POSIX is a special case which ULocale refers to as -u-va-posix but we just call POSIX.
+    // POSIX is a special case which is expressed in a language tag with extension -u-va-posix.
     public void test_toLanguageTagPosix() {
         Locale posixLocale = new Locale("en", "US", "POSIX");
-        assertEquals("en-US-POSIX", posixLocale.toLanguageTag());
+        assertEquals("en-US-u-va-posix", posixLocale.toLanguageTag());
         assertEquals("English (United States,Computer)", posixLocale.getDisplayName());
         assertEquals("anglais (États-Unis,informatique)",
                 posixLocale.getDisplayName(Locale.FRENCH));
@@ -1199,7 +1231,7 @@ public class LocaleTest extends junit.framework.TestCase {
         Locale posix = new Locale.Builder()
                 .setLanguage("en").setRegion("US").setVariant("POSIX")
                 .build();
-        assertEquals("en-US-POSIX", posix.toLanguageTag());
+        assertEquals("en-US-u-va-posix", posix.toLanguageTag());
     }
 
     public void test_forLanguageTag_grandFatheredLocale() {

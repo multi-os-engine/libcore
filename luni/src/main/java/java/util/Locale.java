@@ -38,10 +38,11 @@ import libcore.icu.ICU;
  * <a href="http://en.wikipedia.org/wiki/ISO_3166-1_alpha-3">ISO 3166-1</a>.
  * The variant codes are unspecified.
  *
- * <p>Note that Java uses several deprecated two-letter codes. The Hebrew ("he") language
+ * <p>Note that Java uses several deprecated two-letter ISO 639-1 codes. The Hebrew ("he") language
  * code is rewritten as "iw", Indonesian ("id") as "in", and Yiddish ("yi") as "ji". This
  * rewriting happens even if you construct your own {@code Locale} object, not just for
- * instances returned by the various lookup methods.
+ * instances returned by the various lookup methods. However, {@code Locale#toLanguageTag} will
+ * convert the deprecated codes to their modern equivalents in the returned language tag.
  *
  * <a name="available_locales"></a><h3>Available locales</h3>
  * <p>This class' constructors do no error checking. You can create a {@code Locale} for languages
@@ -1411,28 +1412,14 @@ public final class Locale implements Cloneable, Serializable {
      * For example, we do not require scripts to be a registered ISO 15924 scripts or
      * languages to appear in the ISO-639-2 code list.
      *
+     * If this locale uses the deprecated ISO 639-1 language codes for Hebrew ("iw"), Yiddish ("ji")
+     * or Indonesian ("in"), they will be converted to "he", "yi" or "id" respectively.
+     *
      * @since 1.7
      */
     public String toLanguageTag() {
         if (cachedLanguageTag == null) {
             cachedLanguageTag = getULocale().toLanguageTag();
-            // Replacements for language codes which ICU rewrites but we want to preserve legacy
-            // behaviour for.
-            if (languageCode.equals("iw")) {
-                cachedLanguageTag = "iw"
-                        + cachedLanguageTag.substring(2, cachedLanguageTag.length());
-            } else if (languageCode.equals("ji")) {
-                cachedLanguageTag = "ji"
-                        + cachedLanguageTag.substring(2, cachedLanguageTag.length());
-            } else if (languageCode.equals("in")) {
-                cachedLanguageTag = "in"
-                        + cachedLanguageTag.substring(2, cachedLanguageTag.length());
-            }
-
-            // Workaround for POSIX tag which ICU uses the u-va-posix variant for.
-            if (variantCode.equals("POSIX")) {
-                cachedLanguageTag = cachedLanguageTag.replaceAll("u-va-posix$", "POSIX");
-            }
         }
         return cachedLanguageTag;
     }
@@ -1942,12 +1929,14 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
+     * Map modern language codes to their deprecated counterparts.
+     * Hebrew: "he" -> "iw",
+     * Indonesian "id" -> "in",
+     * Yiddish "yi" -> "ji".
      * @hide for internal use only.
      */
     public static String adjustLanguageCode(String languageCode) {
         String adjusted = languageCode.toLowerCase(Locale.US);
-        // Map new language codes to the obsolete language
-        // codes so the correct resource bundles will be used.
         if (languageCode.equals("he")) {
             adjusted = "iw";
         } else if (languageCode.equals("id")) {
