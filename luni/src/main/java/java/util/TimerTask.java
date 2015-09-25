@@ -1,118 +1,102 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ * Copyright (C) 2015 The Android Open Source Project
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License
  */
 
 package java.util;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
- * The {@code TimerTask} class represents a task to run at a specified time. The task
- * may be run once or repeatedly.
+ * A task to be scheduled in a {@link Timer}.
  *
- * @see Timer
- * @see java.lang.Object#wait(long)
+ * Is it assumed that each {@link TimerTask} is at most once in a {@link Timer} and is used in
+ * at most one scheduling call.
  */
 public abstract class TimerTask implements Runnable {
-    /* Lock object for synchronization. It's also used by Timer class. */
-    final Object lock = new Object();
+    private final AtomicLong scheduledExecutionTime = new AtomicLong(0);
+    private final AtomicBoolean cancelled = new AtomicBoolean(false);
+    private AtomicBoolean scheduled = new AtomicBoolean(false);
 
-    /* If timer was cancelled */
-    boolean cancelled;
-
-    /* Slots used by Timer */
-    long when;
-
-    long period;
-
-    boolean fixedRate;
-
-    /*
-     * The time when task will be executed, or the time when task was launched
-     * if this is task in progress.
-     */
-    private long scheduledTime;
-
-    /*
-     * Method called from the Timer for synchronized getting of when field.
-     */
-    long getWhen() {
-        synchronized (lock) {
-            return when;
-        }
-    }
-
-    /*
-     * Method called from the Timer object when scheduling an event @param time
-     */
-    void setScheduledTime(long time) {
-        synchronized (lock) {
-            scheduledTime = time;
-        }
-    }
-
-    /*
-     * Is TimerTask scheduled into any timer?
-     *
-     * @return {@code true} if the timer task is scheduled, {@code false}
-     * otherwise.
-     */
-    boolean isScheduled() {
-        synchronized (lock) {
-            return when > 0 || scheduledTime > 0;
-        }
-    }
-
-    /**
-     * Creates a new {@code TimerTask}.
-     */
     protected TimerTask() {
+
     }
 
-    /**
-     * Cancels the {@code TimerTask} and removes it from the {@code Timer}'s queue. Generally, it
-     * returns {@code false} if the call did not prevent a {@code TimerTask} from running at
-     * least once. Subsequent calls have no effect.
-     *
-     * @return {@code true} if the call prevented a scheduled execution
-     *         from taking place, {@code false} otherwise.
-     */
-    public boolean cancel() {
-        synchronized (lock) {
-            boolean willRun = !cancelled && when > 0;
-            cancelled = true;
-            return willRun;
-        }
-    }
-
-    /**
-     * Returns the scheduled execution time. If the task execution is in
-     * progress it returns the execution time of the ongoing task. Tasks which
-     * have not yet run return an undefined value.
-     *
-     * @return the most recent execution time.
-     */
-    public long scheduledExecutionTime() {
-        synchronized (lock) {
-            return scheduledTime;
-        }
-    }
-
-    /**
-     * The task to run should be specified in the implementation of the {@code run()}
-     * method.
-     */
+    /** Inherited from {@link Runnable} */
     public abstract void run();
 
+    /**
+     * Cancels this task and guarantees that this task will never run again.
+     *
+     * <p>If this task is currently running, the current run() will be allowed to complete.
+     * {@code cancel()} can be called more than once and it has no effect after the first call.
+     *
+     * <p>Returns {@code true} iff. at least one run of the task was cancelled. Note that if the
+     * given task wasn’t scheduled, there’s nothing to cancel (by definition) so this method must
+     * return {@code false} in that case.
+     */
+    public boolean cancel() {
+        synchronized(cancelled) {
+            if (cancelled.get()) {
+                return false;
+            }
+            cancelled.set(true);
+            return scheduled.get();
+        }
+    }
+
+    /**
+     * Returns the time at which the most recent execution of this task was <em>scheduled</em>
+     * to occur.
+     *
+     * <p>Because task execution can occur later than scheduled this method can be used within the
+     * {@link #run()} method to calculate the difference between the scheduled and actual execution
+     * time.
+     *
+     * <p>The return value is undefined for tasks that have never been run.
+     */
+    public long scheduledExecutionTime() {
+        return scheduledExecutionTime.get();
+    }
+
+    boolean isCancelled() {
+        synchronized(cancelled) {
+            return cancelled.get();
+        }
+    }
+
+    void setScheduledExecutionTime(long timeMillis) {
+        scheduledExecutionTime.set(timeMillis);
+    }
+
+    void setScheduled(boolean scheduled) {
+        synchronized (cancelled) {
+            this.scheduled.set(scheduled);
+        }
+    }
+
+    void updateScheduledExecutionTimeAndRun(
+            long scheduledExecutionTime,
+            boolean hasAnotherFutureExecutionScheduled) {
+        synchronized(cancelled) {
+            if (isCancelled()) {
+                return;
+            }
+            setScheduledExecutionTime(scheduledExecutionTime);
+            setScheduled(hasAnotherFutureExecutionScheduled);
+        }
+        run();
+    }
 }
