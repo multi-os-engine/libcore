@@ -106,10 +106,38 @@ public final class Posix implements Os {
     public native void mkdir(String path, int mode) throws ErrnoException;
     public native void mkfifo(String path, int mode) throws ErrnoException;
     public native void mlock(long address, long byteCount) throws ErrnoException;
-    public native long mmap(long address, long byteCount, int prot, int flags, FileDescriptor fd, long offset) throws ErrnoException;
-    public native void msync(long address, long byteCount, int flags) throws ErrnoException;
-    public native void munlock(long address, long byteCount) throws ErrnoException;
-    public native void munmap(long address, long byteCount) throws ErrnoException;
+    public long mmap(long address, long byteCount, int prot, int flags, FileDescriptor fd, long offset) throws ErrnoException {
+        if ((address < 0) || (byteCount < 0)) {
+            throw new IllegalArgumentException("address or byteCount less than zero. address="
+                                               + address + " byteCount=" + byteCount);
+        }
+        return mmapImpl(address, byteCount, prot, flags, fd, offset);
+    }
+    private native long mmapImpl(long address, long byteCount, int prot, int flags, FileDescriptor fd, long offset) throws ErrnoException;
+    public void msync(long address, long byteCount, int flags) throws ErrnoException {
+        if ((address < 0) || (byteCount < 0)) {
+            throw new IllegalArgumentException("address or byteCount less than zero. address="
+                                               + address + " byteCount=" + byteCount);
+        }
+        msyncImpl(address, byteCount, flags);
+    }
+    private native void msyncImpl(long address, long byteCount, int flags) throws ErrnoException;
+    public void munlock(long address, long byteCount) throws ErrnoException {
+        if ((address < 0) || (byteCount < 0)) {
+            throw new IllegalArgumentException("address or byteCount less than zero. address="
+                                               + address + " byteCount=" + byteCount);
+        }
+        munlockImpl(address, byteCount);
+    }
+    private native void munlockImpl(long address, long byteCount) throws ErrnoException;
+    public void munmap(long address, long byteCount) throws ErrnoException {
+        if ((address < 0) || (byteCount < 0)) {
+            throw new IllegalArgumentException("address or byteCount less than zero. address="
+                                               + address + " byteCount=" + byteCount);
+        }
+        munmapImpl(address, byteCount);
+    }
+    private native void munmapImpl(long address, long byteCount) throws ErrnoException;
     public native FileDescriptor open(String path, int flags, int mode) throws ErrnoException;
     public native FileDescriptor[] pipe2(int flags) throws ErrnoException;
     public native int poll(StructPollfd[] fds, int timeoutMs) throws ErrnoException;
@@ -129,6 +157,9 @@ public final class Posix implements Os {
         return bytesRead;
     }
     public int pread(FileDescriptor fd, byte[] bytes, int byteOffset, int byteCount, long offset) throws ErrnoException, InterruptedIOException {
+        if (byteCount < 0) {
+            throw new IllegalArgumentException("byteCount less than zero. byteCount=" + byteCount);
+        }
         // This indirection isn't strictly necessary, but ensures that our public interface is type safe.
         return preadBytes(fd, bytes, byteOffset, byteCount, offset);
     }
@@ -165,6 +196,9 @@ public final class Posix implements Os {
         return bytesRead;
     }
     public int read(FileDescriptor fd, byte[] bytes, int byteOffset, int byteCount) throws ErrnoException, InterruptedIOException {
+        if (byteCount < 0) {
+            throw new IllegalArgumentException("byteCount less than zero. byteCount=" + byteCount);
+        }
         // This indirection isn't strictly necessary, but ensures that our public interface is type safe.
         return readBytes(fd, bytes, byteOffset, byteCount);
     }

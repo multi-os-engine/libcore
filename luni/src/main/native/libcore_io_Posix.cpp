@@ -1294,7 +1294,7 @@ static void Posix_mlock(JNIEnv* env, jobject, jlong address, jlong byteCount) {
     throwIfMinusOne(env, "mlock", TEMP_FAILURE_RETRY(mlock(ptr, byteCount)));
 }
 
-static jlong Posix_mmap(JNIEnv* env, jobject, jlong address, jlong byteCount, jint prot, jint flags, jobject javaFd, jlong offset) {
+static jlong Posix_mmapImpl(JNIEnv* env, jobject, jlong address, jlong byteCount, jint prot, jint flags, jobject javaFd, jlong offset) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     void* suggestedPtr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     void* ptr = mmap(suggestedPtr, byteCount, prot, flags, fd, offset);
@@ -1304,17 +1304,17 @@ static jlong Posix_mmap(JNIEnv* env, jobject, jlong address, jlong byteCount, ji
     return static_cast<jlong>(reinterpret_cast<uintptr_t>(ptr));
 }
 
-static void Posix_msync(JNIEnv* env, jobject, jlong address, jlong byteCount, jint flags) {
+static void Posix_msyncImpl(JNIEnv* env, jobject, jlong address, jlong byteCount, jint flags) {
     void* ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     throwIfMinusOne(env, "msync", TEMP_FAILURE_RETRY(msync(ptr, byteCount, flags)));
 }
 
-static void Posix_munlock(JNIEnv* env, jobject, jlong address, jlong byteCount) {
+static void Posix_munlockImpl(JNIEnv* env, jobject, jlong address, jlong byteCount) {
     void* ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     throwIfMinusOne(env, "munlock", TEMP_FAILURE_RETRY(munlock(ptr, byteCount)));
 }
 
-static void Posix_munmap(JNIEnv* env, jobject, jlong address, jlong byteCount) {
+static void Posix_munmapImpl(JNIEnv* env, jobject, jlong address, jlong byteCount) {
     void* ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     throwIfMinusOne(env, "munmap", TEMP_FAILURE_RETRY(munmap(ptr, byteCount)));
 }
@@ -1993,10 +1993,10 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(Posix, mkdir, "(Ljava/lang/String;I)V"),
     NATIVE_METHOD(Posix, mkfifo, "(Ljava/lang/String;I)V"),
     NATIVE_METHOD(Posix, mlock, "(JJ)V"),
-    NATIVE_METHOD(Posix, mmap, "(JJIILjava/io/FileDescriptor;J)J"),
-    NATIVE_METHOD(Posix, msync, "(JJI)V"),
-    NATIVE_METHOD(Posix, munlock, "(JJ)V"),
-    NATIVE_METHOD(Posix, munmap, "(JJ)V"),
+    NATIVE_METHOD(Posix, mmapImpl, "(JJIILjava/io/FileDescriptor;J)J"),
+    NATIVE_METHOD(Posix, msyncImpl, "(JJI)V"),
+    NATIVE_METHOD(Posix, munlockImpl, "(JJ)V"),
+    NATIVE_METHOD(Posix, munmapImpl, "(JJ)V"),
     NATIVE_METHOD(Posix, open, "(Ljava/lang/String;II)Ljava/io/FileDescriptor;"),
     NATIVE_METHOD(Posix, pipe2, "(I)[Ljava/io/FileDescriptor;"),
     NATIVE_METHOD(Posix, poll, "([Landroid/system/StructPollfd;I)I"),
