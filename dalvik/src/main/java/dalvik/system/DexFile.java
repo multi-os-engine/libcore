@@ -36,7 +36,6 @@ import libcore.io.Libcore;
 public final class DexFile {
     private Object mCookie;
     private final String mFileName;
-    private final CloseGuard guard = CloseGuard.get();
 
     /**
      * Opens a DEX file from a given File object. This will usually be a ZIP/JAR
@@ -79,7 +78,6 @@ public final class DexFile {
     public DexFile(String fileName) throws IOException {
         mCookie = openDexFile(fileName, null, 0);
         mFileName = fileName;
-        guard.open("close");
         //System.out.println("DEX FILE cookie is " + mCookie + " fileName=" + fileName);
     }
 
@@ -110,7 +108,6 @@ public final class DexFile {
 
         mCookie = openDexFile(sourceName, outputName, flags);
         mFileName = sourceName;
-        guard.open("close");
         //System.out.println("DEX FILE cookie is " + mCookie + " sourceName=" + sourceName + " outputName=" + outputName);
     }
 
@@ -167,19 +164,16 @@ public final class DexFile {
     /**
      * Closes the DEX file.
      * <p>
-     * This may not be able to release any resources. If classes from this
-     * DEX file are still resident, the DEX file can't be unmapped.
+     * This is a nop since the closing is handled by the finalizer. Manually closing the
+     * DexFile is unsafe since there may still be classes using it.
      *
      * @throws IOException
      *             if an I/O error occurs during closing the file, which
      *             normally should not happen
+     *
+     * @deprecated. The finalizer closes the DexFile.
      */
     public void close() throws IOException {
-        if (mCookie != null) {
-            guard.close();
-            closeDexFile(mCookie);
-            mCookie = null;
-        }
     }
 
     /**
@@ -276,10 +270,10 @@ public final class DexFile {
      */
     @Override protected void finalize() throws Throwable {
         try {
-            if (guard != null) {
-                guard.warnIfOpen();
+            if (mCookie != null) {
+                closeDexFile(mCookie);
+                mCookie = null;
             }
-            close();
         } finally {
             super.finalize();
         }
