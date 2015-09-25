@@ -36,7 +36,6 @@ import libcore.io.Libcore;
 public final class DexFile {
     private Object mCookie;
     private final String mFileName;
-    private final CloseGuard guard = CloseGuard.get();
 
     /**
      * Opens a DEX file from a given File object. This will usually be a ZIP/JAR
@@ -79,7 +78,6 @@ public final class DexFile {
     public DexFile(String fileName) throws IOException {
         mCookie = openDexFile(fileName, null, 0);
         mFileName = fileName;
-        guard.open("close");
         //System.out.println("DEX FILE cookie is " + mCookie + " fileName=" + fileName);
     }
 
@@ -110,7 +108,6 @@ public final class DexFile {
 
         mCookie = openDexFile(sourceName, outputName, flags);
         mFileName = sourceName;
-        guard.open("close");
         //System.out.println("DEX FILE cookie is " + mCookie + " sourceName=" + sourceName + " outputName=" + outputName);
     }
 
@@ -175,11 +172,6 @@ public final class DexFile {
      *             normally should not happen
      */
     public void close() throws IOException {
-        if (mCookie != null) {
-            guard.close();
-            closeDexFile(mCookie);
-            mCookie = null;
-        }
     }
 
     /**
@@ -276,10 +268,10 @@ public final class DexFile {
      */
     @Override protected void finalize() throws Throwable {
         try {
-            if (guard != null) {
-                guard.warnIfOpen();
+            if (mCookie != null) {
+                closeDexFile(mCookie);
+                mCookie = null;
             }
-            close();
         } finally {
             super.finalize();
         }
