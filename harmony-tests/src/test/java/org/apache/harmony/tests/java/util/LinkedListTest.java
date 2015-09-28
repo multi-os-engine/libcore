@@ -21,12 +21,16 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import org.apache.harmony.testframework.serialization.SerializationTest;
 import org.apache.harmony.testframework.serialization.SerializationTest.SerializableAssert;
@@ -955,6 +959,39 @@ public class LinkedListTest extends junit.framework.TestCase {
             }
         });
     }
+
+    /**
+     * Check that doing {@code strings.add("")} while some some other task is doing
+     * {@code list.addAll(strings)} doesn't cause an {@code ArrayIndexOutOfBoundsException}.
+     *
+     * https://code.google.com/p/android/issues/detail?id=187424
+     */
+    /*public void test_concurrentAddAll() throws InterruptedException, ExecutionException {
+        final List<String> strings = new ArrayList<>();
+        for(int i = 0; i < 1000; i++) {
+            strings.add("");
+        }
+
+        final Callable<Void> task = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                final List<String> list = new LinkedList<>();
+                list.addAll(strings);
+                list.toArray();
+                strings.add("");
+                return null;
+            }
+        };
+
+        final List<Callable<Void>> tasks = Collections.nCopies(70, task);
+        final List<Future<Void>> results = executorService.invokeAll(tasks);
+        final List<Void> resultList = new ArrayList<>(results.size());
+        // Check for exceptions
+        for(final Future<Void> future : results) {
+            // Throws an exception if an exception was thrown by the task.
+            resultList.add(future.get());
+        }
+    }*/
 
     /**
      * Sets up the fixture, for example, open a network connection. This method
