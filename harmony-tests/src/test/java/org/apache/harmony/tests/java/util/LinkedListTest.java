@@ -21,12 +21,17 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.harmony.testframework.serialization.SerializationTest;
 import org.apache.harmony.testframework.serialization.SerializationTest.SerializableAssert;
@@ -954,6 +959,92 @@ public class LinkedListTest extends junit.framework.TestCase {
                 assertEquals(formerQue.remove(), deserializedQue.remove());
             }
         });
+    }
+
+    /**
+     * Check that doing {@code strings.add("")} while some some other task is doing
+     * {@code list.addAll(strings)} doesn't cause an {@code ArrayIndexOutOfBoundsException}.
+     *
+     * https://code.google.com/p/android/issues/detail?id=187424
+     */
+    public void test_concurrentAddAll() throws InterruptedException, ExecutionException {
+        final List<String> strings = new ArrayList<>();
+        for(int i = 0; i < 1000; i++) {
+            strings.add("");
+        }
+
+        final Callable<Void> task = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                final List<String> list = new LinkedList<>();
+                list.addAll(strings);
+                list.toArray();
+                strings.add("");
+                return null;
+            }
+        };
+
+        final List<Callable<Void>> tasks = Collections.nCopies(1000, task);
+        final List<Future<Void>> results = Executors.newFixedThreadPool(tasks.size())
+                .invokeAll(tasks);
+        final List<Void> resultList = new ArrayList<>(results.size());
+        // Check for exceptions
+        for(final Future<Void> future : results) {
+            // Throws an exception if an exception was thrown by the task.
+            try {
+                future.get();
+            } catch (ExecutionException e) {
+                // {@code ConcurrentModificationException} is fine, we might be modifying
+                // {@code strings} while iterating on {@code list}.
+                if (!(e.getCause() instanceof ConcurrentModificationException)) {
+                    throw e;
+                }
+            }
+        }
+    }
+
+    /**
+     * Check that doing {@code strings.add("")} while some some other task is doing
+     * {@code list.addAll(n, strings)} doesn't cause an {@code ArrayIndexOutOfBoundsException}.
+     *
+     * https://code.google.com/p/android/issues/detail?id=187424
+     */
+    public void test_concurrentAddAllInLocation() throws InterruptedException, ExecutionException {
+        final List<String> strings = new ArrayList<>();
+        for(int i = 0; i < 1000; i++) {
+            strings.add("");
+        }
+
+        final Callable<Void> task = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                final List<String> list = new LinkedList<>();
+                list.add("aa");
+                list.add("bb");
+                list.addAll(1, strings);
+                list.toArray();
+                strings.add("");
+                return null;
+            }
+        };
+
+        final List<Callable<Void>> tasks = Collections.nCopies(1000, task);
+        final List<Future<Void>> results = Executors.newFixedThreadPool(tasks.size())
+                .invokeAll(tasks);
+        final List<Void> resultList = new ArrayList<>(results.size());
+        // Check for exceptions
+        for(final Future<Void> future : results) {
+            // Throws an exception if an exception was thrown by the task.
+            try {
+                future.get();
+            } catch (ExecutionException e) {
+                // {@code ConcurrentModificationException} is fine, we might be modifying
+                // {@code strings} while iterating on {@code list}.
+                if (!(e.getCause() instanceof ConcurrentModificationException)) {
+                    throw e;
+                }
+            }
+        }
     }
 
     /**

@@ -343,8 +343,7 @@ public class LinkedList<E> extends AbstractSequentialList<E> implements
         if (location < 0 || location > size) {
             throw new IndexOutOfBoundsException();
         }
-        int adding = collection.size();
-        if (adding == 0) {
+        if (collection.size() == 0) {
             return false;
         }
         Collection<? extends E> elements = (collection == this) ?
@@ -361,10 +360,12 @@ public class LinkedList<E> extends AbstractSequentialList<E> implements
             }
         }
         Link<E> next = previous.next;
+        int adding = 0;
         for (E e : elements) {
             Link<E> newLink = new Link<E>(e, previous, null);
             previous.next = newLink;
             previous = newLink;
+            adding++;
         }
         previous.next = next;
         next.previous = previous;
@@ -383,18 +384,19 @@ public class LinkedList<E> extends AbstractSequentialList<E> implements
      */
     @Override
     public boolean addAll(Collection<? extends E> collection) {
-        int adding = collection.size();
-        if (adding == 0) {
+        if (collection.size() == 0) {
             return false;
         }
         Collection<? extends E> elements = (collection == this) ?
                 new ArrayList<E>(collection) : collection;
 
         Link<E> previous = voidLink.previous;
+        int adding = 0;
         for (E e : elements) {
             Link<E> newLink = new Link<E>(e, previous, null);
             previous.next = newLink;
             previous = newLink;
+            adding++;
         }
         previous.next = voidLink;
         voidLink.previous = previous;
