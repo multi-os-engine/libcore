@@ -93,8 +93,8 @@ public class LocaleDataTest extends junit.framework.TestCase {
     assertEquals("вс", l.tinyWeekdayNames[1]);
 
     // Russian stand-alone weekday names get an initial capital.
-    assertEquals("Воскресенье", l.longStandAloneWeekdayNames[1]);
-    assertEquals("Вс", l.shortStandAloneWeekdayNames[1]);
+    assertEquals("воскресенье", l.longStandAloneWeekdayNames[1]);
+    assertEquals("вс", l.shortStandAloneWeekdayNames[1]);
     assertEquals("В", l.tinyStandAloneWeekdayNames[1]);
   }
 
