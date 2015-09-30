@@ -115,6 +115,24 @@ LOCAL_JARJAR_RULES := $(LOCAL_PATH)/jarjar-rules.txt
 include $(BUILD_JAVA_LIBRARY)
 
 ifeq ($(LIBCORE_SKIP_TESTS),)
+# A guaranteed unstripped version of core-libart. This is required for ART testing in preopted
+# configurations. See b/24535627.
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := $(libart_core_src_files) $(icu4j_src_files)
+LOCAL_JAVA_RESOURCE_DIRS := $(core_resource_dirs) $(icu4j_resource_dirs)
+LOCAL_NO_STANDARD_LIBRARIES := true
+LOCAL_JAVACFLAGS := $(local_javac_flags)
+LOCAL_DX_FLAGS := --core-library
+LOCAL_MODULE_TAGS := optional
+LOCAL_DEX_PREOPT := false
+LOCAL_MODULE := core-libart-testdex
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/JavaLibrary.mk
+LOCAL_REQUIRED_MODULES := tzdata
+LOCAL_JARJAR_RULES := $(LOCAL_PATH)/jarjar-rules.txt
+include $(BUILD_JAVA_LIBRARY)
+endif
+
+ifeq ($(LIBCORE_SKIP_TESTS),)
 # Make the core-tests library.
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(test_src_files)
