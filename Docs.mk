@@ -24,7 +24,8 @@ libcore_to_document := \
    luni/src/main/java/javax \
    luni/src/main/java/org/xml/sax \
    luni/src/main/java/org/w3c \
-   xml/src/main/java/org/xmlpull/v1)
+   xml/src/main/java/org/xmlpull/v1 \
+   android_icu4j/src/main/java)
 
 libcore_docs_include_once := 1
 endif # libcore_docs_include_once
