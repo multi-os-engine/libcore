@@ -1431,6 +1431,7 @@ public class SSLSocketTest extends TestCase {
      * socket.
      */
     public void test_SSLSocket_interrupt_read() throws Exception {
+        final int readingTimeoutMillis = 5 * 1000;
         TestSSLContext c = TestSSLContext.create();
         final Socket underlying = new Socket(c.host, c.port);
         final SSLSocket wrapping = (SSLSocket)
@@ -1453,9 +1454,12 @@ public class SSLSocketTest extends TestCase {
                 try {
                     wrapping.startHandshake();
                     assertFalse(StandardNames.IS_RI);
-                    wrapping.setSoTimeout(5 * 1000);
+                    wrapping.setSoTimeout(readingTimeoutMillis);
                     assertEquals(-1, wrapping.getInputStream().read());
                 } catch (Exception e) {
+                    System.out.println("Exception!");
+                    e.printStackTrace();
+                    System.out.println("End exception!");
                     assertTrue(StandardNames.IS_RI);
                 }
                 return null;
@@ -1478,6 +1482,10 @@ public class SSLSocketTest extends TestCase {
                 StackTraceElement[] elements = threads[0].getStackTrace();
                 for (StackTraceElement element : elements) {
                     if ("read".equals(element.getMethodName())) {
+                        // The client might be executing "read" but still not have reached the
+                        // point in which it's blocked reading. This is causing flakiness
+                        // (b/24367646). Delaying for a fraction of the timeout.
+                        Thread.sleep(readingTimeoutMillis / 5);
                         clientInRead = true;
                         break;
                     }
