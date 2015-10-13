@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import junit.framework.TestCase;
@@ -267,21 +268,36 @@ public class TimerTest extends TestCase {
 
     }
 
+    private class PurgeTestTask extends TimerTestTask {
+        private AtomicInteger cancellationCounter;
+        private PurgeTestTask(AtomicInteger cancellationCounter) {
+            this.cancellationCounter = cancellationCounter;
+        }
+        @Override
+        public boolean cancel() {
+            boolean ret = super.cancel();
+            cancellationCounter.incrementAndGet();
+            return ret;
+        }
+    }
+
     /**
      * java.util.Timer#purge()
      */
     public void test_purge() throws Exception {
+        AtomicInteger cancellationCounter = new AtomicInteger();
         Timer t = null;
         try {
             t = new Timer();
             assertEquals(0, t.purge());
 
-            TimerTestTask[] tasks = new TimerTestTask[100];
+            PurgeTestTask[] tasks = new PurgeTestTask[100];
+
             int[] delayTime = { 50, 80, 20, 70, 40, 10, 90, 30, 60 };
 
             int j = 0;
-            for (int i = 0; i < 100; i++) {
-                tasks[i] = new TimerTestTask();
+            for (int i = 0; i < tasks.length; i++) {
+                tasks[i] = new PurgeTestTask(cancellationCounter);
                 t.schedule(tasks[i], delayTime[j++], 200);
                 if (j == 9) {
                     j = 0;
@@ -291,8 +307,8 @@ public class TimerTest extends TestCase {
             for (int i = 0; i < 50; i++) {
                 tasks[i].cancel();
             }
-
-            assertTrue(t.purge() <= 50);
+            while (cancellationCounter.get() != 50) {};
+            assertTrue(t.purge() == 50);
             assertEquals(0, t.purge());
         } finally {
             if (t != null) {
