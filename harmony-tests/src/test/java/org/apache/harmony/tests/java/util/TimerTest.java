@@ -1106,89 +1106,109 @@ public class TimerTest extends TestCase {
     }
 
     public void testTimerCancelledAfterException() throws Exception {
-        Timer t = new Timer();
-        final AtomicLong counter = new AtomicLong();
-        TimerTask task1 = new TimerTask() {
+        UncaughtExceptionHandler excHandler = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
             @Override
-            public void run() {
-                counter.incrementAndGet();
-                throw new IllegalStateException("AAA");
+            public void uncaughtException(Thread thread, Throwable ex) {
+
             }
-        };
-        TimerTask task2 = new TimerTask() {
-            @Override
-            public void run() {
-                counter.incrementAndGet();
-            }
-        };
-        t.scheduleAtFixedRate(task1, 1 /* delay */, 100);
-        t.schedule(task2, 100 /* delay */);
-        Thread.sleep(1000);
-        // Check the counter wasn't increased more than once (ie, the exception killed the
-        // execution thread).
-        assertEquals("Counter should be 1, and is: " + counter.get(), 1, counter.get());
-
-        assertTrue("The timer should not cancel the tasks", task1.cancel());
-        assertTrue("The timer should not cancel the tasks", task2.cancel());
-
-
-        TimerTask task3 = new TimerTask() {
-            @Override
-            public void run() {
-                counter.incrementAndGet();
-            }
-        };
-
+        });
         try {
-            t.schedule(task3, 1);
-            fail("Timer should be cancelled and no new tasks should be allowed");
-        } catch (Exception expected) {
-            // Expected.
+            Timer t = new Timer();
+            final AtomicLong counter = new AtomicLong();
+            TimerTask task1 = new TimerTask() {
+                @Override
+                public void run() {
+                    counter.incrementAndGet();
+                    throw new IllegalStateException("AAA");
+                }
+            };
+            TimerTask task2 = new TimerTask() {
+                @Override
+                public void run() {
+                    counter.incrementAndGet();
+                }
+            };
+            t.scheduleAtFixedRate(task1, 1 /* delay */, 100);
+            t.schedule(task2, 100 /* delay */);
+            Thread.sleep(1000);
+            // Check the counter wasn't increased more than once (ie, the exception killed the
+            // execution thread).
+            assertEquals("Counter should be 1, and is: " + counter.get(), 1, counter.get());
+
+            assertTrue("The timer should not cancel the tasks", task1.cancel());
+            assertTrue("The timer should not cancel the tasks", task2.cancel());
+
+            TimerTask task3 = new TimerTask() {
+                @Override
+                public void run() {
+                    counter.incrementAndGet();
+                }
+            };
+
+            try {
+                t.schedule(task3, 1);
+                fail("Timer should be cancelled and no new tasks should be allowed");
+            } catch (Exception expected) {
+                // Expected.
+            }
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(excHandler);
         }
+
     }
 
     public void testTimerCancelledAfterExceptionAndTasksNotCancelledAfterPurge() throws Exception {
-        Timer t = new Timer();
-        final AtomicLong counter = new AtomicLong();
-        TimerTask task1 = new TimerTask() {
+        UncaughtExceptionHandler excHandler = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
             @Override
-            public void run() {
-                counter.incrementAndGet();
-                throw new IllegalStateException("AAA");
-            }
-        };
-        TimerTask task2 = new TimerTask() {
-            @Override
-            public void run() {
-                counter.incrementAndGet();
-            }
-        };
-        t.scheduleAtFixedRate(task1, 1 /* delay */, 100);
-        t.schedule(task2, 100 /* delay */);
-        Thread.sleep(1000);
-        // Check the counter wasn't increased more than once (ie, the exception killed the
-        // execution thread).
-        assertEquals("Counter should be 1, and is: " + counter.get(), 1, counter.get());
-        t.purge();
-        assertTrue("The timer should not cancel the tasks", task1.cancel());
-        assertTrue("The timer should not cancel the tasks", task2.cancel());
+            public void uncaughtException(Thread thread, Throwable ex) {
 
-
-        TimerTask task3 = new TimerTask() {
-            @Override
-            public void run() {
-                counter.incrementAndGet();
             }
-        };
-
+        });
         try {
-            t.schedule(task3, 1);
-            fail("Timer should be cancelled and no new tasks should be allowed");
-        } catch (Exception expected) {
-            // Expected.
+            Timer t = new Timer();
+            final AtomicLong counter = new AtomicLong();
+            TimerTask task1 = new TimerTask() {
+                @Override
+                public void run() {
+                    counter.incrementAndGet();
+                    throw new IllegalStateException("AAA");
+                }
+            };
+            TimerTask task2 = new TimerTask() {
+                @Override
+                public void run() {
+                    counter.incrementAndGet();
+                }
+            };
+            t.scheduleAtFixedRate(task1, 1 /* delay */, 100);
+            t.schedule(task2, 100 /* delay */);
+            Thread.sleep(1000);
+            // Check the counter wasn't increased more than once (ie, the exception killed the
+            // execution thread).
+            assertEquals("Counter should be 1, and is: " + counter.get(), 1, counter.get());
+            t.purge();
+            assertTrue("The timer should not cancel the tasks", task1.cancel());
+            assertTrue("The timer should not cancel the tasks", task2.cancel());
+
+            TimerTask task3 = new TimerTask() {
+                @Override
+                public void run() {
+                    counter.incrementAndGet();
+                }
+            };
+
+            try {
+                t.schedule(task3, 1);
+                fail("Timer should be cancelled and no new tasks should be allowed");
+            } catch (Exception expected) {
+                // Expected.
+            }
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(excHandler);
         }
     }
-
 
     protected void setUp() {
         timerCounter = 0;
