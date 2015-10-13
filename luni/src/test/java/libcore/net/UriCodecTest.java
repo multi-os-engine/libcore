@@ -28,9 +28,7 @@ public class UriCodecTest extends TestCase {
     private static final UriCodec CODEC = new UriCodec() {
         @Override
         protected boolean isRetained(char c) {
-            // Note: this is a dubious codec specifying to retain the escape character '%'.
-            // Testing that is not treated as retained anyway..
-            return c == '$' || c == '%';
+            return c == '$';
         }
     };
 
@@ -182,18 +180,30 @@ public class UriCodecTest extends TestCase {
         assertEquals("ab%2F$%C4%82%2512%20",
                 CODEC.encode("ab/$\u0102%12 ", StandardCharsets.UTF_8));
 
-
         UriCodec withWhitespaceRetained = new UriCodec() {
             @Override
             protected boolean isRetained(char c) {
-                // Note: this is a dubious codec specifying to retain the escape character '%'.
-                // Testing that is not treated as retained anyway..
-                return c == '$' || c == '%' || c == ' ';
+                return c == '$' || c == ' ';
             }
         };
         // Whitespace is retained, convert to plus.
         assertEquals("ab%2F$%C4%82%2512+",
                 withWhitespaceRetained.encode("ab/$\u0102%12 ", StandardCharsets.UTF_8));
+    }
+
+    /**
+     * At some point it was assumed that the percent character couldn't be retained, but uses
+     * of percent retained appeared in the codebase (b/24806835)
+     */
+    public void testEncode_percentRetained() {
+        UriCodec withPercentRetained = new UriCodec() {
+            @Override
+            protected boolean isRetained(char c) {
+                return c == '$' || c == '%';
+            }
+        };
+        // Percent is retained
+        assertEquals("ab%34%20", withPercentRetained.encode("ab%34 ", StandardCharsets.UTF_8));
     }
 
     public void testEncode_partially_returnsPercentUnchanged() {
