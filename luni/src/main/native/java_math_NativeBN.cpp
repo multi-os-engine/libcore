@@ -104,6 +104,14 @@ static jlong NativeBN_BN_new(JNIEnv* env, jclass) {
   return result;
 }
 
+static jlong NativeBN_freeFunction(JNIEnv*, jclass) {
+  return static_cast<jlong>(reinterpret_cast<uintptr_t>(&BN_free));
+}
+
+static jlong NativeBN_size(JNIEnv*, jclass) {
+  return static_cast<jlong>(sizeof(BIGNUM));
+}
+
 static void NativeBN_BN_free(JNIEnv* env, jclass, jlong a) {
   if (!oneValidHandle(env, a)) return;
   BN_free(toBigNum(a));
@@ -603,11 +611,13 @@ static JNINativeMethod gMethods[] = {
    NATIVE_METHOD(NativeBN, BN_sub, "(JJJ)V"),
    NATIVE_METHOD(NativeBN, bitLength, "(J)I"),
    NATIVE_METHOD(NativeBN, bn2litEndInts, "(J)[I"),
+   NATIVE_METHOD(NativeBN, freeFunction, "()J"),
    NATIVE_METHOD(NativeBN, litEndInts2bn, "([IIZJ)V"),
    NATIVE_METHOD(NativeBN, longInt, "(J)J"),
    NATIVE_METHOD(NativeBN, putLongInt, "(JJ)V"),
    NATIVE_METHOD(NativeBN, putULongInt, "(JJZ)V"),
    NATIVE_METHOD(NativeBN, sign, "(J)I"),
+   NATIVE_METHOD(NativeBN, size, "()J"),
    NATIVE_METHOD(NativeBN, twosComp2bn, "([BIJ)V"),
 };
 void register_java_math_NativeBN(JNIEnv* env) {

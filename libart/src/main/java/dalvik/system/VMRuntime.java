@@ -17,6 +17,7 @@
 package dalvik.system;
 
 import java.lang.ref.FinalizerReference;
+import java.lang.ref.NativeReference;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -301,6 +302,88 @@ public final class VMRuntime {
      * Registers a native free by reducing the number of native bytes accounted for.
      */
     public native void registerNativeFree(int bytes);
+
+    /**
+     * A handle to a native allocation associated with a referent Java object.
+     * The handle may be used to explicitly free or reset the native
+     * allocation. Otherwise, the runtime will automatically free the native
+     * allocation when the referent Java object becomes unreachable. The user
+     * need not keep a referent to the NativeAllocation handle if they do not
+     * need to explicitly free or reset the native allocation.
+     *
+     * @hide
+     */
+    public interface NativeAllocation {
+        /**
+         * Reset the underlying native allocation.
+         *
+         * If this NativeAllocation handle refers to an existing underlying
+         * native allocation, that underlying native allocation will be freed
+         * first, as if by calling freeNativeAllocation. See
+         * VMRuntime.registerNativeAllocation for a description of the
+         * arguments nativePtr, freeFunction, and size.
+         *
+         * This method is not thread safe.
+         */
+        public void resetNativeAllocation(long nativePtr, long freeFunction, long size);
+
+        /**
+         * Free the underlying native allocation by calling the freeFunction
+         * provided when initially registering or reseting the
+         * NativeAllocation. This has the effect of notifying the runtime to
+         * lower the heap pressure accordingly. This has no effect if the
+         * native allocation has already been freed.
+         *
+         * This method is not thread safe.
+         */
+        public void freeNativeAllocation();
+    }
+
+    /**
+     * Register a native allocation with the runtime, associating it with the
+     * given referent Java object.
+     * @param referent - A Java object to associate the native allocation
+     * with.
+     * @param nativePtr - The address of the native allocation.
+     * @param freeFunction - The address of a native function used to free the
+     * native allocation. The function should have the following prototype:
+     *   void freeFunction(void* nativePtr);
+     * @param size - The logical size of the native allocation in bytes.
+     *
+     * Calling VMRuntime.registerNativeAllocation has the following effects:
+     * 1. The garbage collector will consider the native allocation to be
+     * taking up 'size' additional bytes on the heap and will use that to
+     * schedule garbage collection accordingly.
+     *
+     * 2. The freeFunction will automatically be called in a timely fashion
+     * when the referent object becomes unreachable, as if by calling
+     * freeNativeAllocation on the returned NativeAllocation handle. The
+     * returned NativeAllocation handle will not cause the referent to be
+     * reachable. The user does not need to keep a reference to the returned
+     * NativeAllocation for the freeFunction to be automatically called. If
+     * you maintain references to the underlying native allocation outside of
+     * the referent object, you must not access these after the referent
+     * becomes unreachable, because they may be dangling pointers.
+     *
+     * 3. The native allocation's size will be visible in heap dumps.
+     *
+     * The case where nativePtr is 0 is not treated specially; the
+     * freeFunction will be called with NULL as its argument.
+     *
+     * If freeFunction is 0, the resulting NativeAllocation is considered
+     * already freed; no pressure will be added to the heap, the garbage
+     * collector will not take any action associated with this
+     * NativeAllocation object when the referent goes out of scope, and
+     * calling freeNativeAllocation will have no effect.
+     *
+     * @hide
+     */
+    public static NativeAllocation registerNativeAllocation(Object referent,
+            long nativePtr, long freeFunction, long size) {
+        NativeReference alloc = new NativeReference(referent);
+        alloc.resetNativeAllocation(nativePtr, freeFunction, size);
+        return alloc;
+    }
 
     /**
      * Wait for objects to be finalized.

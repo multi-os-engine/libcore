@@ -127,4 +127,9 @@ final class NativeBN {
     public static native boolean BN_is_prime_ex(long p, int nchecks, long cb);
     // int BN_is_prime_ex(const BIGNUM *p, int nchecks, BN_CTX *ctx, BN_GENCB *cb);
 
+    public static native long freeFunction();
+    // &BN_free
+
+    public static native long size();
+    // sizeof(BIGNUM)
 }

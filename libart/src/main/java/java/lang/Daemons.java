@@ -20,6 +20,7 @@ import android.system.Os;
 import android.system.OsConstants;
 import dalvik.system.VMRuntime;
 import java.lang.ref.FinalizerReference;
+import java.lang.ref.NativeReference;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -43,6 +44,7 @@ public final class Daemons {
         FinalizerDaemon.INSTANCE.start();
         FinalizerWatchdogDaemon.INSTANCE.start();
         HeapTaskDaemon.INSTANCE.start();
+        NativeAllocationDaemon.INSTANCE.start();
     }
 
     public static void stop() {
@@ -50,6 +52,7 @@ public final class Daemons {
         ReferenceQueueDaemon.INSTANCE.stop();
         FinalizerDaemon.INSTANCE.stop();
         FinalizerWatchdogDaemon.INSTANCE.stop();
+        NativeAllocationDaemon.INSTANCE.stop();
     }
 
     /**
@@ -211,6 +214,25 @@ public final class Daemons {
             } finally {
                 // Done finalizing, stop holding the object as live.
                 finalizingObject = null;
+            }
+        }
+    }
+
+    private static class NativeAllocationDaemon extends Daemon {
+        private static final NativeAllocationDaemon INSTANCE = new NativeAllocationDaemon();
+
+        NativeAllocationDaemon() {
+            super("NativeAllocationDaemon");
+        }
+
+        @Override public void run() {
+            ReferenceQueue<Object> queue = NativeReference.getQueue();
+            while (isRunning()) {
+                try {
+                    ((NativeReference) queue.remove()).freeNativeAllocation();
+                } catch (InterruptedException ignored) {
+                } catch (OutOfMemoryError ignored) {
+                }
             }
         }
     }
