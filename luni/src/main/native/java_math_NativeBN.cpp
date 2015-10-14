@@ -104,6 +104,20 @@ static jlong NativeBN_BN_new(JNIEnv* env, jclass) {
   return result;
 }
 
+static jlong NativeBN_BN_new_alloc(JNIEnv* env, jclass cls, jobject naobj) {
+  jclass nacls = env->GetObjectClass(naobj);
+  jmethodID mid = env->GetMethodID(nacls, "resetNativeAllocation", "(JJJ)V");
+  if (mid == 0) {
+    return 0;
+  }
+  jlong ptr = NativeBN_BN_new(env, cls);
+  jlong freeFunc = static_cast<jlong>(reinterpret_cast<uintptr_t>(&BN_free));
+  jlong size = static_cast<jlong>(sizeof(BIGNUM));
+  env->CallVoidMethod(naobj, mid, ptr, freeFunc, size);
+  throwExceptionIfNecessary(env);
+  return ptr;
+}
+
 static void NativeBN_BN_free(JNIEnv* env, jclass, jlong a) {
   if (!oneValidHandle(env, a)) return;
   BN_free(toBigNum(a));
@@ -597,6 +611,7 @@ static JNINativeMethod gMethods[] = {
    NATIVE_METHOD(NativeBN, BN_mul, "(JJJ)V"),
    NATIVE_METHOD(NativeBN, BN_mul_word, "(JI)V"),
    NATIVE_METHOD(NativeBN, BN_new, "()J"),
+   NATIVE_METHOD(NativeBN, BN_new_alloc, "(Ldalvik/system/NativeAllocation;)J"),
    NATIVE_METHOD(NativeBN, BN_nnmod, "(JJJ)V"),
    NATIVE_METHOD(NativeBN, BN_set_negative, "(JI)V"),
    NATIVE_METHOD(NativeBN, BN_shift, "(JJI)V"),

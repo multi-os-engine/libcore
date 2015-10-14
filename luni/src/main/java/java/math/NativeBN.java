@@ -16,10 +16,16 @@
 
 package java.math;
 
+import dalvik.system.NativeAllocation;
+
 final class NativeBN {
 
     public static native long BN_new();
     // BIGNUM *BN_new(void);
+
+    public static native long BN_new_alloc(NativeAllocation nativeAllocation);
+    // BIGNUM *BN_new(void). The BIGNUM is associated with the given
+    // NativeAllocation object.
 
     public static native void BN_free(long a);
     // void BN_free(BIGNUM *a);
