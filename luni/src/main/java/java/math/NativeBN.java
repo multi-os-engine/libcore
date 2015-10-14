@@ -24,6 +24,12 @@ final class NativeBN {
     public static native void BN_free(long a);
     // void BN_free(BIGNUM *a);
 
+    public static native long BN_freeFunction();
+    // &BN_free
+
+    public static native long BN_size();
+    // sizeof(BIGNUM)
+
     public static native int BN_cmp(long a, long b);
     // int BN_cmp(const BIGNUM *a, const BIGNUM *b);
 

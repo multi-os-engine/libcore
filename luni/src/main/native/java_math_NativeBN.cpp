@@ -109,6 +109,20 @@ static void NativeBN_BN_free(JNIEnv* env, jclass, jlong a) {
   BN_free(toBigNum(a));
 }
 
+static void freeFunction(BIGNUM* addr) {
+  if (addr != nullptr) {
+    BN_free(addr);
+  }
+}
+
+static jlong NativeBN_BN_freeFunction(JNIEnv*, jclass) {
+  return static_cast<jlong>(reinterpret_cast<uintptr_t>(&freeFunction));
+}
+
+static jlong NativeBN_BN_size(JNIEnv*, jclass) {
+  return static_cast<jlong>(sizeof(BIGNUM));
+}
+
 static int NativeBN_BN_cmp(JNIEnv* env, jclass, jlong a, jlong b) {
   if (!twoValidHandles(env, a, b)) return 1;
   return BN_cmp(toBigNum(a), toBigNum(b));
@@ -586,6 +600,7 @@ static JNINativeMethod gMethods[] = {
    NATIVE_METHOD(NativeBN, BN_div, "(JJJJ)V"),
    NATIVE_METHOD(NativeBN, BN_exp, "(JJJ)V"),
    NATIVE_METHOD(NativeBN, BN_free, "(J)V"),
+   NATIVE_METHOD(NativeBN, BN_freeFunction, "()J"),
    NATIVE_METHOD(NativeBN, BN_gcd, "(JJJ)V"),
    NATIVE_METHOD(NativeBN, BN_generate_prime_ex, "(JIZJJJ)V"),
    NATIVE_METHOD(NativeBN, BN_hex2bn, "(JLjava/lang/String;)I"),
@@ -600,6 +615,7 @@ static JNINativeMethod gMethods[] = {
    NATIVE_METHOD(NativeBN, BN_nnmod, "(JJJ)V"),
    NATIVE_METHOD(NativeBN, BN_set_negative, "(JI)V"),
    NATIVE_METHOD(NativeBN, BN_shift, "(JJI)V"),
+   NATIVE_METHOD(NativeBN, BN_size, "()J"),
    NATIVE_METHOD(NativeBN, BN_sub, "(JJJ)V"),
    NATIVE_METHOD(NativeBN, bitLength, "(J)I"),
    NATIVE_METHOD(NativeBN, bn2litEndInts, "(J)[I"),

@@ -16,6 +16,8 @@
 
 package java.math;
 
+import dalvik.system.NativeAllocation;
+
 /*
  * In contrast to BigIntegers this class doesn't fake two's complement representation.
  * Any Bit-Operations, including Shifting, solely regard the unsigned magnitude.
@@ -26,17 +28,6 @@ final class BigInt {
     /* Fields used for the internal representation. */
     transient long bignum = 0;
 
-    @Override protected void finalize() throws Throwable {
-        try {
-            if (this.bignum != 0) {
-                NativeBN.BN_free(this.bignum);
-                this.bignum = 0;
-            }
-        } finally {
-            super.finalize();
-        }
-    }
-
     @Override
     public String toString() {
         return this.decString();
@@ -46,15 +37,23 @@ final class BigInt {
         return this.bignum;
     }
 
+    private void makeNew() {
+        // TODO: It would be much nicer if we could call resetNativeAllocation
+        // from native. Then we wouldn't need BN_freeFunction or BN_size.
+        this.bignum = NativeBN.BN_new();
+        (new NativeAllocation(this)).resetNativeAllocation(
+                this.bignum, NativeBN.BN_freeFunction(), NativeBN.BN_size());
+    }
+
     private void makeValid() {
         if (this.bignum == 0) {
-            this.bignum = NativeBN.BN_new();
+            makeNew();
         }
     }
 
     private static BigInt newBigInt() {
         BigInt bi = new BigInt();
-        bi.bignum = NativeBN.BN_new();
+        bi.makeNew();
         return bi;
     }
 
