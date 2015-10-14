@@ -16,26 +16,14 @@
 
 package java.math;
 
+import dalvik.system.NativeAllocation;
+
 /*
  * In contrast to BigIntegers this class doesn't fake two's complement representation.
  * Any Bit-Operations, including Shifting, solely regard the unsigned magnitude.
  * Moreover BigInt objects are mutable and offer efficient in-place-operations.
  */
-final class BigInt {
-
-    /* Fields used for the internal representation. */
-    transient long bignum = 0;
-
-    @Override protected void finalize() throws Throwable {
-        try {
-            if (this.bignum != 0) {
-                NativeBN.BN_free(this.bignum);
-                this.bignum = 0;
-            }
-        } finally {
-            super.finalize();
-        }
-    }
+final class BigInt extends NativeAllocation {
 
     @Override
     public String toString() {
@@ -43,30 +31,36 @@ final class BigInt {
     }
 
     long getNativeBIGNUM() {
-        return this.bignum;
+        return this.nativePtr;
+    }
+
+    private void makeNew() {
+        // TODO: It would be much nicer if we could call resetNativeAllocation
+        // from native. Then we wouldn't need BN_freeFunction or BN_size.
+        resetNativeAllocation(NativeBN.BN_new(), NativeBN.BN_freeFunction(), NativeBN.BN_size());
     }
 
     private void makeValid() {
-        if (this.bignum == 0) {
-            this.bignum = NativeBN.BN_new();
+        if (this.nativePtr == 0) {
+            makeNew();
         }
     }
 
     private static BigInt newBigInt() {
         BigInt bi = new BigInt();
-        bi.bignum = NativeBN.BN_new();
+        bi.makeNew();
         return bi;
     }
 
 
     static int cmp(BigInt a, BigInt b) {
-        return NativeBN.BN_cmp(a.bignum, b.bignum);
+        return NativeBN.BN_cmp(a.nativePtr, b.nativePtr);
     }
 
 
     void putCopy(BigInt from) {
         this.makeValid();
-        NativeBN.BN_copy(this.bignum, from.bignum);
+        NativeBN.BN_copy(this.nativePtr, from.nativePtr);
     }
 
     BigInt copy() {
@@ -78,12 +72,12 @@ final class BigInt {
 
     void putLongInt(long val) {
         this.makeValid();
-        NativeBN.putLongInt(this.bignum, val);
+        NativeBN.putLongInt(this.nativePtr, val);
     }
 
     void putULongInt(long val, boolean neg) {
         this.makeValid();
-        NativeBN.putULongInt(this.bignum, val, neg);
+        NativeBN.putULongInt(this.nativePtr, val, neg);
     }
 
     private NumberFormatException invalidBigInteger(String s) {
@@ -93,7 +87,7 @@ final class BigInt {
     void putDecString(String original) {
         String s = checkString(original, 10);
         this.makeValid();
-        int usedLen = NativeBN.BN_dec2bn(this.bignum, s);
+        int usedLen = NativeBN.BN_dec2bn(this.nativePtr, s);
         if (usedLen < s.length()) {
             throw invalidBigInteger(original);
         }
@@ -102,7 +96,7 @@ final class BigInt {
     void putHexString(String original) {
         String s = checkString(original, 16);
         this.makeValid();
-        int usedLen = NativeBN.BN_hex2bn(this.bignum, s);
+        int usedLen = NativeBN.BN_hex2bn(this.nativePtr, s);
         if (usedLen < s.length()) {
             throw invalidBigInteger(original);
         }
@@ -169,121 +163,121 @@ final class BigInt {
 
     void putBigEndian(byte[] a, boolean neg) {
         this.makeValid();
-        NativeBN.BN_bin2bn(a, a.length, neg, this.bignum);
+        NativeBN.BN_bin2bn(a, a.length, neg, this.nativePtr);
     }
 
     void putLittleEndianInts(int[] a, boolean neg) {
         this.makeValid();
-        NativeBN.litEndInts2bn(a, a.length, neg, this.bignum);
+        NativeBN.litEndInts2bn(a, a.length, neg, this.nativePtr);
     }
 
     void putBigEndianTwosComplement(byte[] a) {
         this.makeValid();
-        NativeBN.twosComp2bn(a, a.length, this.bignum);
+        NativeBN.twosComp2bn(a, a.length, this.nativePtr);
     }
 
 
     long longInt() {
-        return NativeBN.longInt(this.bignum);
+        return NativeBN.longInt(this.nativePtr);
     }
 
     String decString() {
-        return NativeBN.BN_bn2dec(this.bignum);
+        return NativeBN.BN_bn2dec(this.nativePtr);
     }
 
     String hexString() {
-        return NativeBN.BN_bn2hex(this.bignum);
+        return NativeBN.BN_bn2hex(this.nativePtr);
     }
 
     byte[] bigEndianMagnitude() {
-        return NativeBN.BN_bn2bin(this.bignum);
+        return NativeBN.BN_bn2bin(this.nativePtr);
     }
 
     int[] littleEndianIntsMagnitude() {
-        return NativeBN.bn2litEndInts(this.bignum);
+        return NativeBN.bn2litEndInts(this.nativePtr);
     }
 
     int sign() {
-        return NativeBN.sign(this.bignum);
+        return NativeBN.sign(this.nativePtr);
     }
 
     void setSign(int val) {
         if (val > 0) {
-            NativeBN.BN_set_negative(this.bignum, 0);
+            NativeBN.BN_set_negative(this.nativePtr, 0);
         } else {
-            if (val < 0) NativeBN.BN_set_negative(this.bignum, 1);
+            if (val < 0) NativeBN.BN_set_negative(this.nativePtr, 1);
         }
     }
 
     boolean twosCompFitsIntoBytes(int desiredByteCount) {
-        int actualByteCount = (NativeBN.bitLength(this.bignum) + 7) / 8;
+        int actualByteCount = (NativeBN.bitLength(this.nativePtr) + 7) / 8;
         return actualByteCount <= desiredByteCount;
     }
 
     int bitLength() {
-        return NativeBN.bitLength(this.bignum);
+        return NativeBN.bitLength(this.nativePtr);
     }
 
     boolean isBitSet(int n) {
-        return NativeBN.BN_is_bit_set(this.bignum, n);
+        return NativeBN.BN_is_bit_set(this.nativePtr, n);
     }
 
     // n > 0: shift left (multiply)
     static BigInt shift(BigInt a, int n) {
         BigInt r = newBigInt();
-        NativeBN.BN_shift(r.bignum, a.bignum, n);
+        NativeBN.BN_shift(r.nativePtr, a.nativePtr, n);
         return r;
     }
 
     void shift(int n) {
-        NativeBN.BN_shift(this.bignum, this.bignum, n);
+        NativeBN.BN_shift(this.nativePtr, this.nativePtr, n);
     }
 
     void addPositiveInt(int w) {
-        NativeBN.BN_add_word(this.bignum, w);
+        NativeBN.BN_add_word(this.nativePtr, w);
     }
 
     void multiplyByPositiveInt(int w) {
-        NativeBN.BN_mul_word(this.bignum, w);
+        NativeBN.BN_mul_word(this.nativePtr, w);
     }
 
     static int remainderByPositiveInt(BigInt a, int w) {
-        return NativeBN.BN_mod_word(a.bignum, w);
+        return NativeBN.BN_mod_word(a.nativePtr, w);
     }
 
     static BigInt addition(BigInt a, BigInt b) {
         BigInt r = newBigInt();
-        NativeBN.BN_add(r.bignum, a.bignum, b.bignum);
+        NativeBN.BN_add(r.nativePtr, a.nativePtr, b.nativePtr);
         return r;
     }
 
     void add(BigInt a) {
-        NativeBN.BN_add(this.bignum, this.bignum, a.bignum);
+        NativeBN.BN_add(this.nativePtr, this.nativePtr, a.nativePtr);
     }
 
     static BigInt subtraction(BigInt a, BigInt b) {
         BigInt r = newBigInt();
-        NativeBN.BN_sub(r.bignum, a.bignum, b.bignum);
+        NativeBN.BN_sub(r.nativePtr, a.nativePtr, b.nativePtr);
         return r;
     }
 
 
     static BigInt gcd(BigInt a, BigInt b) {
         BigInt r = newBigInt();
-        NativeBN.BN_gcd(r.bignum, a.bignum, b.bignum);
+        NativeBN.BN_gcd(r.nativePtr, a.nativePtr, b.nativePtr);
         return r;
     }
 
     static BigInt product(BigInt a, BigInt b) {
         BigInt r = newBigInt();
-        NativeBN.BN_mul(r.bignum, a.bignum, b.bignum);
+        NativeBN.BN_mul(r.nativePtr, a.nativePtr, b.nativePtr);
         return r;
     }
 
     static BigInt bigExp(BigInt a, BigInt p) {
         // Sign of p is ignored!
         BigInt r = newBigInt();
-        NativeBN.BN_exp(r.bignum, a.bignum, p.bignum);
+        NativeBN.BN_exp(r.nativePtr, a.nativePtr, p.nativePtr);
         return r;
     }
 
@@ -301,48 +295,48 @@ final class BigInt {
         long quot, rem;
         if (quotient != null) {
             quotient.makeValid();
-            quot = quotient.bignum;
+            quot = quotient.nativePtr;
         } else {
             quot = 0;
         }
         if (remainder != null) {
             remainder.makeValid();
-            rem = remainder.bignum;
+            rem = remainder.nativePtr;
         } else {
             rem = 0;
         }
-        NativeBN.BN_div(quot, rem, dividend.bignum, divisor.bignum);
+        NativeBN.BN_div(quot, rem, dividend.nativePtr, divisor.nativePtr);
     }
 
     static BigInt modulus(BigInt a, BigInt m) {
         // Sign of p is ignored! ?
         BigInt r = newBigInt();
-        NativeBN.BN_nnmod(r.bignum, a.bignum, m.bignum);
+        NativeBN.BN_nnmod(r.nativePtr, a.nativePtr, m.nativePtr);
         return r;
     }
 
     static BigInt modExp(BigInt a, BigInt p, BigInt m) {
         // Sign of p is ignored!
         BigInt r = newBigInt();
-        NativeBN.BN_mod_exp(r.bignum, a.bignum, p.bignum, m.bignum);
+        NativeBN.BN_mod_exp(r.nativePtr, a.nativePtr, p.nativePtr, m.nativePtr);
         return r;
     }
 
 
     static BigInt modInverse(BigInt a, BigInt m) {
         BigInt r = newBigInt();
-        NativeBN.BN_mod_inverse(r.bignum, a.bignum, m.bignum);
+        NativeBN.BN_mod_inverse(r.nativePtr, a.nativePtr, m.nativePtr);
         return r;
     }
 
 
     static BigInt generatePrimeDefault(int bitLength) {
         BigInt r = newBigInt();
-        NativeBN.BN_generate_prime_ex(r.bignum, bitLength, false, 0, 0, 0);
+        NativeBN.BN_generate_prime_ex(r.nativePtr, bitLength, false, 0, 0, 0);
         return r;
     }
 
     boolean isPrime(int certainty) {
-        return NativeBN.BN_is_prime_ex(bignum, certainty, 0);
+        return NativeBN.BN_is_prime_ex(nativePtr, certainty, 0);
     }
 }
