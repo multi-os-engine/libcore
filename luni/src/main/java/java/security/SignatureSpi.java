@@ -18,6 +18,7 @@
 package java.security;
 
 import java.nio.ByteBuffer;
+import java.nio.NioUtils;
 import java.security.spec.AlgorithmParameterSpec;
 
 /**
@@ -122,9 +123,9 @@ public abstract class SignatureSpi {
             return;
         }
         byte[] tmp;
-        if (input.hasArray()) {
-            tmp = input.array();
-            int offset = input.arrayOffset();
+        if (!input.isDirect()) {
+            tmp = NioUtils.unsafeArray(input);
+            int offset = NioUtils.unsafeArrayOffset(input);
             int position = input.position();
             int limit = input.limit();
             try {

@@ -18,6 +18,7 @@
 package javax.crypto;
 
 import java.nio.ByteBuffer;
+import java.nio.NioUtils;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -343,9 +344,9 @@ public abstract class CipherSpi {
         }
         byte[] bInput;
         byte[] bOutput;
-        if (input.hasArray()) {
-            bInput = input.array();
-            int offset = input.arrayOffset();
+        if (!input.isDirect()) {
+            bInput = NioUtils.unsafeArray(input);
+            int offset = NioUtils.unsafeArrayOffset(input);
             bOutput = engineUpdate(bInput, offset + position, limit - position);
             input.position(limit);
         } else {
@@ -417,9 +418,9 @@ public abstract class CipherSpi {
             return;
         }
         byte[] bInput;
-        if (input.hasArray()) {
-            bInput = input.array();
-            int offset = input.arrayOffset();
+        if (!input.isDirect()) {
+            bInput = NioUtils.unsafeArray(input);
+            int offset = NioUtils.unsafeArrayOffset(input);
             engineUpdateAAD(bInput, offset + position, limit - position);
             input.position(limit);
         } else {

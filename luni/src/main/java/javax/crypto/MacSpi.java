@@ -18,6 +18,7 @@
 package javax.crypto;
 
 import java.nio.ByteBuffer;
+import java.nio.NioUtils;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -97,9 +98,9 @@ public abstract class MacSpi {
             return;
         }
         byte[] bInput;
-        if (input.hasArray()) {
-            bInput = input.array();
-            int offset = input.arrayOffset();
+        if (!input.isDirect()) {
+            bInput = NioUtils.unsafeArray(input);
+            int offset = NioUtils.unsafeArrayOffset(input);
             int position = input.position();
             int limit = input.limit();
             engineUpdate(bInput, offset + position, limit - position);

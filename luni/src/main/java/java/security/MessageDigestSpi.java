@@ -18,6 +18,7 @@
 package java.security;
 
 import java.nio.ByteBuffer;
+import java.nio.NioUtils;
 
 /**
  * {@code MessageDigestSpi} is the Service Provider Interface (SPI) definition
@@ -74,9 +75,9 @@ public abstract class MessageDigestSpi {
             return;
         }
         byte[] tmp;
-        if (input.hasArray()) {
-            tmp = input.array();
-            int offset = input.arrayOffset();
+        if (!input.isDirect()) {
+            tmp = NioUtils.unsafeArray(input);
+            int offset = NioUtils.unsafeArrayOffset(input);
             int position = input.position();
             int limit = input.limit();
             engineUpdate(tmp, offset+position, limit - position);
