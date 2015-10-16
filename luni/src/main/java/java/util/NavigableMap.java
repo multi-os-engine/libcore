@@ -183,12 +183,18 @@ public interface NavigableMap<K,V> extends SortedMap<K,V> {
     /**
      * Returns a key-value mapping associated with the least
      * key in this map, or {@code null} if the map is empty.
+     *
+     * @return an entry with the least key,
+     *         or {@code null} if this map is empty
      */
     Map.Entry<K,V> firstEntry();
 
     /**
      * Returns a key-value mapping associated with the greatest
      * key in this map, or {@code null} if the map is empty.
+     *
+     * @return an entry with the greatest key,
+     *         or {@code null} if this map is empty
      */
     Map.Entry<K,V> lastEntry();
 
@@ -219,7 +225,7 @@ public interface NavigableMap<K,V> extends SortedMap<K,V> {
      * operation), the results of the iteration are undefined.
      *
      * <p>The returned map has an ordering equivalent to
-     * <tt>{@link Collections#reverseOrder(Comparator) Collections.reverseOrder}(comparator())</tt>.
+     * {@link Collections#reverseOrder(Comparator) Collections.reverseOrder}{@code (comparator())}.
      * The expression {@code m.descendingMap().descendingMap()} returns a
      * view of {@code m} essentially equivalent to {@code m}.
      *

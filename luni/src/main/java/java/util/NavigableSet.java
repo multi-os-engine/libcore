@@ -31,7 +31,7 @@ package java.util;
  * Subsets of any {@code NavigableSet} must implement the {@code
  * NavigableSet} interface.
  *
- * <p> The return values of navigation methods may be ambiguous in
+ * <p>The return values of navigation methods may be ambiguous in
  * implementations that permit {@code null} elements. However, even
  * in this case the result can be disambiguated by checking
  * {@code contains(null)}. To avoid such issues, implementations of
@@ -143,7 +143,7 @@ public interface NavigableSet<E> extends SortedSet<E> {
      * the iteration are undefined.
      *
      * <p>The returned set has an ordering equivalent to
-     * <tt>{@link Collections#reverseOrder(Comparator) Collections.reverseOrder}(comparator())</tt>.
+     * {@link Collections#reverseOrder(Comparator) Collections.reverseOrder}{@code (comparator())}.
      * The expression {@code s.descendingSet().descendingSet()} returns a
      * view of {@code s} essentially equivalent to {@code s}.
      *
@@ -274,7 +274,7 @@ public interface NavigableSet<E> extends SortedSet<E> {
      * @throws ClassCastException       {@inheritDoc}
      * @throws NullPointerException     {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-na     */
+     */
     SortedSet<E> headSet(E toElement);
 
     /**
