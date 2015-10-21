@@ -206,7 +206,7 @@ public class NumberFormatTest extends junit.framework.TestCase {
 
         // Chinese locale uses Yuan with a non-breaking space after the symbol.
         nf = NumberFormat.getCurrencyInstance(Locale.CHINA);
-        assertEquals("￥\u00a050.00", nf.format(50));
+        assertEquals("￥50.00", nf.format(50));
     }
 
     // Test the currency symbol is correctly taken from ICU. Verifies that the fractional digits
@@ -251,7 +251,7 @@ public class NumberFormatTest extends junit.framework.TestCase {
 
         // Armenian Dram 0 fractional digits.
         nf = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("hy-AM"));
-        assertEquals("50\u00a0֏", nf.format(50.00));
+        assertEquals("֏\u00a050", nf.format(50.00));
 
         // Swiss Francs 2 fractional digits.
         nf = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("de-CH"));
