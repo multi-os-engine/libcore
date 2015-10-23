@@ -2121,8 +2121,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal>, Serial
         if (x instanceof BigDecimal) {
             BigDecimal x1 = (BigDecimal) x;
             return x1.scale == scale
-                   && (bitLength < 64 ? (x1.smallValue == smallValue)
-                    : intVal.equals(x1.intVal));
+                    && x1.bitLength == bitLength
+                    && (bitLength < 64 ? (x1.smallValue == smallValue) : x1.intVal.equals(intVal));
         }
         return false;
     }
@@ -2480,7 +2480,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal>, Serial
      * this case the result is rounded.
      * <p>
      * For example, if the instance {@code x1 = new BigDecimal("0.1")} cannot be
-     * represented exactly as a float, and thus {@code x1.equals(new
+     equals(new
      * BigDecimal(x1.floatValue())} returns {@code false} for this case.
      * <p>
      * Similarly, if the instance {@code new BigDecimal(16777217)} is converted
