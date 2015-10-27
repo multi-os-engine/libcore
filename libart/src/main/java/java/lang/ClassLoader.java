@@ -103,6 +103,11 @@ public abstract class ClassLoader {
     private transient long classTable;
 
     /**
+     * Pointer to a lambda box class table, only used from within the runtime.
+     */
+    private transient long lambdaProxyCache;
+
+    /**
      * To avoid unloading individual classes, {@link java.lang.reflect.Proxy}
      * only generates one class for each set of interfaces. This maps sets of
      * interfaces to the proxy class that implements all of them. It is declared
