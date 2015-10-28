@@ -144,13 +144,7 @@ public final class Daemons {
             while (isRunning()) {
                 Reference<?> list;
                 try {
-                    synchronized (ReferenceQueue.class) {
-                        while (ReferenceQueue.unenqueued == null) {
-                            ReferenceQueue.class.wait();
-                        }
-                        list = ReferenceQueue.unenqueued;
-                        ReferenceQueue.unenqueued = null;
-                    }
+                    list = ReferenceQueue.removeUnenqueued();
                 } catch (InterruptedException e) {
                     continue;
                 } catch (OutOfMemoryError e) {

@@ -146,6 +146,9 @@ public abstract class Reference<T> {
      */
     public volatile Reference<?> pendingNext;
 
+    /** @hide */
+    public volatile Reference<?> pendingNextList;
+
     /**
      * Constructs a new instance of this class.
      */

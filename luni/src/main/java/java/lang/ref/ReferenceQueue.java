@@ -145,26 +145,37 @@ public class ReferenceQueue<T> {
         notify();
     }
 
-    /** @hide */
-    public static Reference<?> unenqueued = null;
+    private static Reference<?> unenqueued = null;
+    private static Reference<?> unenqueuedLast = null;
+
+    /**
+     * Blocks to get the next set of unenqueued references.
+     *
+     * @hide
+     */
+    public static Reference<?> removeUnenqueued() throws InterruptedException {
+        synchronized (ReferenceQueue.class) {
+            while (unenqueued == null) {
+              ReferenceQueue.class.wait();
+            }
+            Reference<?> list = unenqueued;
+            unenqueued = list.pendingNextList;
+            list.pendingNextList = null;
+            if (unenqueued == null) {
+                unenqueuedLast = null;
+            }
+            return list;
+        }
+    }
 
     static void add(Reference<?> list) {
         synchronized (ReferenceQueue.class) {
             if (unenqueued == null) {
                 unenqueued = list;
+                unenqueuedLast = list;
             } else {
-                // Find the last element in unenqueued.
-                Reference<?> last = unenqueued;
-                while (last.pendingNext != unenqueued) {
-                  last = last.pendingNext;
-                }
-                // Add our list to the end. Update the pendingNext to point back to enqueued.
-                last.pendingNext = list;
-                last = list;
-                while (last.pendingNext != list) {
-                    last = last.pendingNext;
-                }
-                last.pendingNext = unenqueued;
+                unenqueuedLast.pendingNextList = list;
+                unenqueuedLast = list;
             }
             ReferenceQueue.class.notifyAll();
         }
