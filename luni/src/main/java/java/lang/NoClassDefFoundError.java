@@ -42,4 +42,19 @@ public class NoClassDefFoundError extends LinkageError {
     public NoClassDefFoundError(String detailMessage) {
         super(detailMessage);
     }
+
+    /**
+     * Constructs a new {@code NoClassDefFoundError} with the current stack
+     * trace, the specified detail message and the specified cause. Used
+     * internally.
+     *
+     * @param detailMessage
+     *            the detail message for this error.
+     * @param throwable
+     *            the cause of this error.
+     */
+    private NoClassDefFoundError(String detailMessage, Throwable cause) {
+        super(detailMessage, cause);
+    }
+    
 }
