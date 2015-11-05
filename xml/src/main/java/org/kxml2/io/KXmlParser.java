@@ -22,6 +22,7 @@
 
 package org.kxml2.io;
 
+import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1634,6 +1635,9 @@ public class KXmlParser implements XmlPullParser, Closeable {
 
         if (is == null) {
             throw new IllegalArgumentException("is == null");
+        } else if (!(is instanceof BufferedInputStream)) {
+            // Wrap the InputStream in a BufferedInputStream if necessary.
+            is = new BufferedInputStream(is);
         }
 
         try {
