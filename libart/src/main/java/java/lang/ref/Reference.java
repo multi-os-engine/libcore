@@ -126,30 +126,41 @@ public abstract class Reference<T> {
      * VM requirement: this field <em>must</em> be called "queue"
      * and be a java.lang.ref.ReferenceQueue.
      */
-    volatile ReferenceQueue<? super T> queue;
+    final ReferenceQueue<? super T> queue;
 
     /**
      * Used internally by java.lang.ref.ReferenceQueue.
      * VM requirement: this field <em>must</em> be called "queueNext"
      * and be a java.lang.ref.Reference.
+     * <p>
+     * This field forms a singly linked list of reference objects that have
+     * been enqueued. The last element of the list points to itself, so that
+     * we have the invariant that a reference is enqueued if and only if
+     * queueNext is non-null. Access to the queueNext field is guarded by
+     * synchronization on 'queue'.
      */
     @SuppressWarnings("unchecked")
-    volatile Reference queueNext;
+    Reference queueNext;
 
     /**
      * Used internally by the VM.  This field forms a circular and
      * singly linked list of reference objects discovered by the
      * garbage collector and awaiting processing by the reference
      * queue thread.
-     *
-     * @hide
+     * <p>
+     * The pendingNext field is initially set by the GC. After the GC forms a
+     * complete circularly linked list, the list is handed off to the
+     * ReferenceQueueDaemon using the ReferenceQueue.class lock. The
+     * ReferenceQueueDaemon can then read the pendingNext fields without
+     * additional synchronization.
      */
-    public volatile Reference<?> pendingNext;
+    Reference<?> pendingNext;
 
     /**
      * Constructs a new instance of this class.
      */
     Reference() {
+        queue = null;
     }
 
     Reference(T r, ReferenceQueue<? super T> q) {
@@ -166,23 +177,6 @@ public abstract class Reference<T> {
     }
 
     /**
-     * Adds an object to its reference queue.
-     *
-     * @return {@code true} if this call has caused the {@code Reference} to
-     * become enqueued, or {@code false} otherwise
-     *
-     * @hide
-     */
-    public final synchronized boolean enqueueInternal() {
-        if (queue != null && queueNext == null) {
-            queue.enqueue(this);
-            queue = null;
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Forces the reference object to be enqueued if it has been associated with
      * a queue.
      *
@@ -190,7 +184,7 @@ public abstract class Reference<T> {
      * become enqueued, or {@code false} otherwise
      */
     public boolean enqueue() {
-        return enqueueInternal();
+        return queue != null && queue.enqueue(this);
     }
 
     /**
@@ -220,7 +214,11 @@ public abstract class Reference<T> {
      *         false} otherwise
      */
     public boolean isEnqueued() {
-        return queueNext != null;
+        if (queue == null) {
+            return false;
+        }
+        synchronized (queue) {
+            return queueNext != null;
+        }
     }
-
 }

@@ -126,12 +126,19 @@ public class ReferenceQueue<T> {
     }
 
     /**
-     * Enqueue the reference object on the receiver.
+     * Enqueue the reference object on the receiver. The caller is responsible
+     * for ensuring the lock is held on this queue, and for calling notify on
+     * this queue after the reference has been enqueued.
      *
      * @param reference
      *            reference object to be enqueued.
+     * @return true if the reference was enqueued.
      */
-    synchronized void enqueue(Reference<? extends T> reference) {
+    private boolean enqueueInternal(Reference<? extends T> reference) {
+        if (reference.queueNext != null) {
+            return false;
+        }
+
         if (tail == null) {
             head = reference;
         } else {
@@ -142,10 +149,58 @@ public class ReferenceQueue<T> {
         // points to itself.
         tail = reference;
         tail.queueNext = reference;
-        notify();
+        return true;
     }
 
-    /** @hide */
+    /**
+     * Enqueue the reference object on the receiver.
+     *
+     * @param reference
+     *            reference object to be enqueued.
+     * @return true if the reference was enqueued.
+     */
+    synchronized boolean enqueue(Reference<? extends T> reference) {
+        if (enqueueInternal(reference)) {
+            notify();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Enqueue the given list of currently pending (unenqueued) references.
+     *
+     * @hide
+     */
+    public static void enqueuePending(Reference<?> list) {
+        Reference<?> start = list;
+        do {
+            ReferenceQueue queue = list.queue;
+            if (queue == null) {
+                Reference<?> next = list.pendingNext;
+                list.pendingNext = null;
+                list = next;
+            } else {
+                synchronized (queue) {
+                    do {
+                        Reference<?> next = list.pendingNext;
+                        list.pendingNext = null;
+                        if (list.queueNext == null) {
+                            queue.enqueueInternal(list);
+                        }
+                        list = next;
+                    } while (list != start && list.queue == queue);
+                    queue.notify();
+                }
+            }
+        } while (list != start);
+    }
+
+    /**
+     * List of references that the GC says need to be enqueued.
+     * Protected by ReferenceQueue.class lock.
+     * @hide
+     */
     public static Reference<?> unenqueued = null;
 
     static void add(Reference<?> list) {
