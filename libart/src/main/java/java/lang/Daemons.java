@@ -22,6 +22,7 @@ import dalvik.system.VMRuntime;
 import java.lang.ref.FinalizerReference;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.TimeoutException;
@@ -157,19 +158,8 @@ public final class Daemons {
                 } catch (OutOfMemoryError e) {
                     continue;
                 }
-                enqueue(list);
+                ReferenceQueue.enqueuePending(list);
             }
-        }
-
-        private void enqueue(Reference<?> list) {
-            Reference<?> start = list;
-            do {
-                // pendingNext is owned by the GC so no synchronization is required.
-                Reference<?> next = list.pendingNext;
-                list.pendingNext = null;
-                list.enqueueInternal();
-                list = next;
-            } while (list != start);
         }
     }
 
@@ -202,16 +192,22 @@ public final class Daemons {
                 try {
                     // Use non-blocking poll to avoid FinalizerWatchdogDaemon communication
                     // when busy.
-                    finalizingObject = (FinalizerReference<?>)queue.poll();
-                    progressCounter.lazySet(++localProgressCounter);
-                    if (finalizingObject == null) {
+                    List<Reference<?>> objects = queue.pollAll();
+                    if (objects == null) {
                         // Slow path; block.
+                        finalizingObject = null;
                         FinalizerWatchdogDaemon.INSTANCE.goToSleep();
                         finalizingObject = (FinalizerReference<?>)queue.remove();
                         progressCounter.set(++localProgressCounter);
                         FinalizerWatchdogDaemon.INSTANCE.wakeUp();
+                        doFinalize(finalizingObject);
+                    } else {
+                        for (Reference<?> object : objects) {
+                            finalizingObject = (FinalizerReference<?>)object;
+                            progressCounter.lazySet(++localProgressCounter);
+                            doFinalize(finalizingObject);
+                        }
                     }
-                    doFinalize(finalizingObject);
                 } catch (InterruptedException ignored) {
                 } catch (OutOfMemoryError ignored) {
                 }

@@ -17,6 +17,9 @@
 
 package java.lang.ref;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * The {@code ReferenceQueue} is the container on which reference objects are
  * enqueued when the garbage collector detects the reachability type specified
@@ -126,12 +129,14 @@ public class ReferenceQueue<T> {
     }
 
     /**
-     * Enqueue the reference object on the receiver.
+     * Enqueue the reference object on the receiver. The caller is responsible
+     * for ensuring the lock is held on this queue, and for calling notify on
+     * this queue after the reference has been enqueued.
      *
      * @param reference
      *            reference object to be enqueued.
      */
-    synchronized void enqueue(Reference<? extends T> reference) {
+    void enqueueInternal(Reference<? extends T> reference) {
         if (tail == null) {
             head = reference;
         } else {
@@ -142,7 +147,72 @@ public class ReferenceQueue<T> {
         // points to itself.
         tail = reference;
         tail.queueNext = reference;
+    }
+
+    /**
+     * Enqueue the reference object on the receiver.
+     *
+     * @param reference
+     *            reference object to be enqueued.
+     */
+    synchronized void enqueue(Reference<? extends T> reference) {
+        enqueueInternal(reference);
         notify();
+    }
+
+    /**
+     * Returns the list of all available references on the queue, removing
+     * them in the process. Does not wait for a reference to become available.
+     *
+     * @return a list of available references, or {@code null} if no reference
+     *         is immediately available.
+     *
+     * @hide
+     */
+    public synchronized List<Reference<? extends T>> pollAll() {
+        if (head == null) {
+            return null;
+        }
+
+        List<Reference<? extends T>> refs = new ArrayList<Reference<? extends T>>();
+        while (head != tail) {
+            Reference<? extends T> ref = head;
+            refs.add(ref);
+            head = ref.queueNext;
+            ref.queueNext = null;
+        }
+        refs.add(head);
+        head.queueNext = null;
+        tail = null;
+        head = null;
+        return refs;
+    }
+
+    /**
+     * Enqueue the given list of currently pending (unenqueued) references.
+     *
+     * @hide
+     */
+    public static void enqueuePending(Reference<?> list) {
+        Reference<?> start = list;
+        do {
+            ReferenceQueue queue = list.queue;
+            if (queue == null) {
+                Reference<?> next = list.pendingNext;
+                list.pendingNext = null;
+                list = next;
+            } else {
+                synchronized (queue) {
+                    do {
+                        Reference<?> next = list.pendingNext;
+                        list.pendingNext = null;
+                        list.enqueueInternal();
+                        list = next;
+                    } while (list != start && list.queue == queue);
+                    queue.notify();
+                }
+            }
+        } while (list != start);
     }
 
     /** @hide */
