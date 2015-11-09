@@ -201,7 +201,7 @@ public class WeakHashMapTest extends junit.framework.TestCase {
 
         FinalizationTester.induceFinalization();
         long startTime = System.currentTimeMillis();
-        // We use a busy wait loop here since we can not know when the ReferenceQueue
+        // We use a busy wait loop here since we cannot know when the ReferenceQueue
         // daemon will enqueue the cleared references on their internal reference
         // queues. The current timeout is 5 seconds.
         do {
@@ -212,9 +212,8 @@ public class WeakHashMapTest extends junit.framework.TestCase {
         } while (entrySet.size() != 99 &&
                  System.currentTimeMillis() - startTime < 5000);
 
-        assertTrue(
-                "Incorrect number of entries returned after gc--wanted 99, got: "
-                        + entrySet.size(), entrySet.size() == 99);
+        assertEquals("Incorrect number of keys returned after gc,", 99,
+                entrySet.size());
     }
 
     /**
@@ -312,16 +311,21 @@ public class WeakHashMapTest extends junit.framework.TestCase {
         values = null;
         keyArray[50] = null;
 
-        int count = 0;
+        FinalizationTester.induceFinalization();
+        long startTime = System.currentTimeMillis();
+        // We use a busy wait loop here since we cannot know when the ReferenceQueue
+        // daemon will enqueue the cleared references on their internal reference
+        // queues. The current timeout is 5 seconds.
         do {
-            System.gc();
-            System.gc();
-            FinalizationTester.induceFinalization();
-            count++;
-        } while (count <= 5 && keySet.size() == 100);
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+        } while (keySet.size() != 99 &&
+                 System.currentTimeMillis() - startTime < 5000);
 
-        assertEquals("Incorrect number of keys returned after gc,", 99, keySet
-                .size());
+        assertEquals("Incorrect number of keys returned after gc,", 99,
+                keySet.size());
     }
 
     /**
@@ -390,13 +394,18 @@ public class WeakHashMapTest extends junit.framework.TestCase {
         values = null;
         keyArray[50] = null;
 
-        int count = 0;
+        FinalizationTester.induceFinalization();
+        long startTime = System.currentTimeMillis();
+        // We use a busy wait loop here since we cannot know when the ReferenceQueue
+        // daemon will enqueue the cleared references on their internal reference
+        // queues. The current timeout is 5 seconds.
         do {
-            System.gc();
-            System.gc();
-            FinalizationTester.induceFinalization();
-            count++;
-        } while (count <= 5 && valuesCollection.size() == 100);
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+        } while (valuesCollection.size() != 99 &&
+                 System.currentTimeMillis() - startTime < 5000);
 
         assertEquals("Incorrect number of keys returned after gc,", 99,
                 valuesCollection.size());
