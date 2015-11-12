@@ -63,6 +63,13 @@ public final class DexFile {
     public DexFile(File file) throws IOException {
         this(file.getPath());
     }
+    /*
+     * Private version with class loader argument.
+     * @hide
+     */
+    public DexFile(File file, ClassLoader loader) throws IOException {
+        this(file.getPath(), loader);
+    }
 
     /**
      * Opens a DEX file from a given filename. This will usually be a ZIP/JAR
@@ -82,12 +89,20 @@ public final class DexFile {
      *             access rights missing for opening it
      */
     public DexFile(String fileName) throws IOException {
-        mCookie = openDexFile(fileName, null, 0);
+        this(fileName, null);
+    }
+    /*
+     * Private version with class loader argument.
+     * @hide
+     */
+    public DexFile(String fileName, ClassLoader loader) throws IOException {
+        mCookie = openDexFile(fileName, null, 0, loader);
         mInternalCookie = mCookie;
         mFileName = fileName;
         guard.open("close");
         //System.out.println("DEX FILE cookie is " + mCookie + " fileName=" + fileName);
     }
+
 
     /**
      * Opens a DEX file from a given filename, using a specified file
@@ -100,7 +115,7 @@ public final class DexFile {
      * @param flags
      *  Enable optional features.
      */
-    private DexFile(String sourceName, String outputName, int flags) throws IOException {
+    private DexFile(String sourceName, String outputName, int flags, ClassLoader loader) throws IOException {
         if (outputName != null) {
             try {
                 String parent = new File(outputName).getParent();
@@ -114,7 +129,7 @@ public final class DexFile {
             }
         }
 
-        mCookie = openDexFile(sourceName, outputName, flags);
+        mCookie = openDexFile(sourceName, outputName, flags, loader);
         mFileName = sourceName;
         //System.out.println("DEX FILE cookie is " + mCookie + " sourceName=" + sourceName + " outputName=" + outputName);
     }
@@ -153,7 +168,23 @@ public final class DexFile {
          * decided to open it multiple times.  In practice this may not
          * be a real issue.
          */
-        return new DexFile(sourcePathName, outputPathName, flags);
+        return loadDex(sourcePathName, outputPathName, flags, null);
+    }
+    /*
+     * Private version that takes a class loader
+     * @hide
+     */
+    static public DexFile loadDex(String sourcePathName, String outputPathName,
+        int flags, ClassLoader loader) throws IOException {
+
+        /*
+         * TODO: we may want to cache previously-opened DexFile objects.
+         * The cache would be synchronized with close().  This would help
+         * us avoid mapping the same DEX more than once when an app
+         * decided to open it multiple times.  In practice this may not
+         * be a real issue.
+         */
+        return new DexFile(sourcePathName, outputPathName, flags, loader);
     }
 
     /**
@@ -302,11 +333,13 @@ public final class DexFile {
      * Open a DEX file.  The value returned is a magic VM cookie.  On
      * failure, an IOException is thrown.
      */
-    private static Object openDexFile(String sourceName, String outputName, int flags) throws IOException {
+    private static Object openDexFile(String sourceName, String outputName, int flags,
+            ClassLoader loader) throws IOException {
         // Use absolute paths to enable the use of relative paths when testing on host.
         return openDexFileNative(new File(sourceName).getAbsolutePath(),
                                  (outputName == null) ? null : new File(outputName).getAbsolutePath(),
-                                 flags);
+                                 flags,
+                                 loader);
     }
 
     /*
@@ -321,7 +354,8 @@ public final class DexFile {
      * Open a DEX file.  The value returned is a magic VM cookie.  On
      * failure, an IOException is thrown.
      */
-    private static native Object openDexFileNative(String sourceName, String outputName, int flags);
+    private static native Object openDexFileNative(String sourceName, String outputName, int flags,
+            ClassLoader loader);
 
     /**
      * Returns true if the VM believes that the apk/jar file is out of date
