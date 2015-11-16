@@ -37,6 +37,8 @@ abstract class AbstractStringBuilder {
 
     private char[] value;
 
+    private String cachedString = null;
+
     private int count;
 
     private boolean shared;
@@ -68,6 +70,7 @@ abstract class AbstractStringBuilder {
         }
 
         shared = false;
+        cachedString = null;
         value = val;
         count = len;
     }
@@ -86,6 +89,7 @@ abstract class AbstractStringBuilder {
     AbstractStringBuilder(String string) {
         count = string.length();
         shared = false;
+        cachedString = string;
         value = new char[count + INITIAL_CAPACITY];
         string.getCharsNoCheck(0, count, value, 0);
     }
@@ -107,6 +111,7 @@ abstract class AbstractStringBuilder {
         value[count++] = 'u';
         value[count++] = 'l';
         value[count++] = 'l';
+        cachedString = null;
     }
 
     final void append0(char[] chars) {
@@ -116,6 +121,7 @@ abstract class AbstractStringBuilder {
         }
         System.arraycopy(chars, 0, value, count, chars.length);
         count = newCount;
+        cachedString = null;
     }
 
     final void append0(char[] chars, int offset, int length) {
@@ -126,6 +132,7 @@ abstract class AbstractStringBuilder {
         }
         System.arraycopy(chars, offset, value, count, length);
         count = newCount;
+        cachedString = null;
     }
 
     final void append0(char ch) {
@@ -133,6 +140,7 @@ abstract class AbstractStringBuilder {
             enlargeBuffer(count + 1);
         }
         value[count++] = ch;
+        cachedString = null;
     }
 
     final void append0(String string) {
@@ -147,6 +155,7 @@ abstract class AbstractStringBuilder {
         }
         string.getCharsNoCheck(0, length, value, count);
         count = newCount;
+        cachedString = null;
     }
 
     final void append0(CharSequence s, int start, int end) {
@@ -179,6 +188,7 @@ abstract class AbstractStringBuilder {
         }
 
         this.count = newCount;
+        cachedString = null;
     }
 
     /**
@@ -244,6 +254,7 @@ abstract class AbstractStringBuilder {
             }
         }
         count -= end - start;
+        cachedString = null;
     }
 
     final void deleteCharAt0(int index) {
@@ -307,6 +318,7 @@ abstract class AbstractStringBuilder {
             move(chars.length, index);
             System.arraycopy(chars, 0, value, index, chars.length);
             count += chars.length;
+            cachedString = null;
         }
     }
 
@@ -318,6 +330,7 @@ abstract class AbstractStringBuilder {
                     move(length, index);
                     System.arraycopy(chars, start, value, index, length);
                     count += length;
+                    cachedString = null;
                 }
                 return;
             }
@@ -335,6 +348,7 @@ abstract class AbstractStringBuilder {
         move(1, index);
         value[index] = ch;
         count++;
+        cachedString = null;
     }
 
     final void insert0(int index, String string) {
@@ -347,6 +361,7 @@ abstract class AbstractStringBuilder {
                 move(min, index);
                 string.getCharsNoCheck(0, min, value, index);
                 count += min;
+                cachedString = null;
             }
         } else {
             throw indexAndLength(index);
@@ -373,6 +388,7 @@ abstract class AbstractStringBuilder {
     }
 
     private void move(int size, int index) {
+        cachedString = null;
         int newCount;
         if (value.length - count >= size) {
             if (!shared) {
@@ -424,6 +440,7 @@ abstract class AbstractStringBuilder {
                 }
                 string.getCharsNoCheck(0, stringLength, value, start);
                 count -= diff;
+                cachedString = null;
                 return;
             }
             if (start == end) {
@@ -441,6 +458,7 @@ abstract class AbstractStringBuilder {
         if (count < 2) {
             return;
         }
+        cachedString = null;
         if (!shared) {
             int end = count - 1;
             char frontHigh = value[0];
@@ -534,6 +552,7 @@ abstract class AbstractStringBuilder {
             shared = false;
         }
         value[index] = ch;
+        cachedString = null;
     }
 
     /**
@@ -566,6 +585,7 @@ abstract class AbstractStringBuilder {
             }
         }
         count = length;
+        cachedString = null;
     }
 
     /**
@@ -626,7 +646,13 @@ abstract class AbstractStringBuilder {
         if (count == 0) {
             return "";
         }
-        return StringFactory.newStringFromChars(0, count, value);
+
+        // We need to allocate a new string only if we don't have up-to-date cached result.
+        if (cachedString == null) {
+            cachedString = StringFactory.newStringFromChars(0, count, value);
+        }
+
+        return cachedString;
     }
 
     /**
