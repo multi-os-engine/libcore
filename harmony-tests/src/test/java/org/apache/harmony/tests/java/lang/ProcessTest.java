@@ -109,7 +109,7 @@ public class ProcessTest extends junit.framework.TestCase {
   }
 
   public void test_exitValue() throws Exception {
-    String[] commands = { "ls" };
+    String[] commands = { "sh", "-c", "exit 0" };
     Process process = Runtime.getRuntime().exec(commands, null, null);
     process.waitFor();
     assertEquals(0, process.exitValue());
@@ -129,7 +129,7 @@ public class ProcessTest extends junit.framework.TestCase {
   }
 
   public void test_destroy() throws Exception {
-    String[] commands = { "ls"};
+    String[] commands = { "sh", "-c", "exit 0"};
     Process process = Runtime.getRuntime().exec(commands, null, null);
     process.destroy();
     process.destroy();
