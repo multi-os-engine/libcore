@@ -684,4 +684,25 @@ public class RelativeDateTimeFormatterTest extends junit.framework.TestCase {
       }
     }
   }
+
+  // Check for ICU data lookup fallback failure. http://b/25883157
+  public void test_bug25883157() {
+    final Locale locale = new Locale("en", "GB");
+    final TimeZone tz = TimeZone.getTimeZone("GMT");
+
+    final Calendar cal = Calendar.getInstance(tz, locale);
+    cal.set(2015, Calendar.JUNE, 19, 12, 0, 0);
+
+    final long base = cal.getTimeInMillis();
+    final long time = base + 2 * WEEK_IN_MILLIS;
+
+    String result = null;
+    try {
+      result = getRelativeTimeSpanString(
+          locale, tz, time, base, WEEK_IN_MILLIS, FORMAT_ABBREV_RELATIVE);
+    } catch (IllegalStateException e) {
+      fail("Failed to format for " + locale);
+    }
+    assertEquals("In 2 wk", result);
+  }
 }
