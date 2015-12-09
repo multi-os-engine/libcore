@@ -45,7 +45,10 @@ public abstract class NetworkSecurityPolicy {
 
     /**
      * Returns whether cleartext network traffic (e.g. HTTP, FTP, XMPP, IMAP, SMTP -- without TLS or
-     * STARTTLS) is permitted for this process.
+     * STARTTLS) is permitted for all connections for this process.
+     *
+     * <p>{@link #isCleartextTrafficPermitted(String)} should be used to determine if cleartext
+     * traffic is permitted for a specific host.
      *
      * <p>When cleartext network traffic is not permitted, the platform's components (e.g. HTTP
      * stacks, {@code WebView}, {@code MediaPlayer}) will refuse this process's requests to use
@@ -63,10 +66,22 @@ public abstract class NetworkSecurityPolicy {
      */
     public abstract boolean isCleartextTrafficPermitted();
 
+    /**
+     * Returns whether cleartext network traffic (e.g. HTTP, FTP, XMPP, IMAP, SMTP -- without TLS or
+     * STARTTLS) is permitted for connections to {@code hostname} for this process.
+     *
+     * <p>See {@link #isCleartextTrafficPermitted} for more details.
+     */
+    public abstract boolean isCleartextTrafficPermitted(String hostname);
+
     public static final class DefaultNetworkSecurityPolicy extends NetworkSecurityPolicy {
         @Override
         public boolean isCleartextTrafficPermitted() {
             return true;
+        }
+        @Override
+        public boolean isCleartextTrafficPermitted(String hostname) {
+            return isCleartextTrafficPermitted();
         }
     }
 }
