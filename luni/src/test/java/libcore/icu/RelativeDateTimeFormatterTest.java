@@ -692,11 +692,12 @@ public class RelativeDateTimeFormatterTest extends junit.framework.TestCase {
 
     final Calendar cal = Calendar.getInstance(tz, locale);
     cal.set(2015, Calendar.JUNE, 19, 12, 0, 0);
-
     final long base = cal.getTimeInMillis();
-    final long time = base + 2 * WEEK_IN_MILLIS;
+
+    assertEquals("In 1 wk", getRelativeTimeSpanString(
+        locale, tz, base + 1 * WEEK_IN_MILLIS, base, WEEK_IN_MILLIS, FORMAT_ABBREV_RELATIVE));
 
     assertEquals("In 2 wk", getRelativeTimeSpanString(
-        locale, tz, time, base, WEEK_IN_MILLIS, FORMAT_ABBREV_RELATIVE));
+        locale, tz, base + 2 * WEEK_IN_MILLIS, base, WEEK_IN_MILLIS, FORMAT_ABBREV_RELATIVE));
   }
 }
