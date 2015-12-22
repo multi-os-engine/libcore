@@ -29,7 +29,7 @@ package java.io;
  * Overriding some of the non-abstract methods is also often advised, since it
  * might result in higher efficiency.
  * <p>
- * Many specialized readers for purposes like reading from a file already exist
+ * Many specialized writers for purposes like writing to a file already exist
  * in this package.
  *
  * @see Reader
