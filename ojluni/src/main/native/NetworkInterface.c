@@ -50,6 +50,7 @@
 //#include <bits/ioctls.h>
 #include <sys/utsname.h>
 #include <stdio.h>
+#include <ifaddrs.h>
 #endif
 
 #ifdef __linux__
@@ -132,6 +133,10 @@ static int     getFlags0(JNIEnv *env, jstring  ifname);
 
 static netif  *enumInterfaces(JNIEnv *env);
 static netif  *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs);
+
+#ifdef __linux__
+static netif  *enumRawInterfaces(JNIEnv *env, netif *ifs);
+#endif
 
 #ifdef AF_INET6
 static netif  *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs);
@@ -752,6 +757,17 @@ static netif *enumInterfaces(JNIEnv *env) {
   int sock;
 
   /*
+   * Enumerate raw addresses
+   */
+#ifdef __linux__
+  ifs = enumRawInterfaces(env, NULL);
+
+  if (ifs == NULL && (*env)->ExceptionOccurred(env)) {
+    return NULL;
+  }
+#endif
+
+  /*
    * Enumerate IPv4 addresses
    */
 
@@ -760,7 +776,7 @@ static netif *enumInterfaces(JNIEnv *env) {
     return NULL;
   }
 
-  ifs = enumIPv4Interfaces(env, sock, NULL);
+  ifs = enumIPv4Interfaces(env, sock, ifs);
   close(sock);
 
   if (ifs == NULL && (*env)->ExceptionOccurred(env)) {
@@ -842,7 +858,7 @@ netif *addif(JNIEnv *env, int sock, const char * if_name,
              short prefix)
 {
   netif *currif = ifs, *parent;
-  netaddr *addrP;
+  netaddr *addrP = NULL;
 
 #ifdef LIFNAMSIZ
   int ifnam_size = LIFNAMSIZ;
@@ -875,29 +891,41 @@ netif *addif(JNIEnv *env, int sock, const char * if_name,
    */
   /*Allocate for addr and brdcast at once*/
 
+  switch(family) {
+    case AF_INET:
+      addr_size = sizeof(struct sockaddr_in);
+      break;
 #ifdef AF_INET6
-  addr_size = (family == AF_INET) ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
-#else
-  addr_size = sizeof(struct sockaddr_in);
+    case AF_INET6:
+      addr_size = sizeof(struct sockaddr_in6);
+      break;
 #endif
+    case AF_PACKET:
+      addr_size = 0;
+      break;
+    default:
+      return NULL;
+  }
 
-  CHECKED_MALLOC3(addrP, netaddr *, sizeof(netaddr)+2*addr_size);
-  addrP->addr = (struct sockaddr *)( (char *) addrP+sizeof(netaddr) );
-  memcpy(addrP->addr, ifr_addrP, addr_size);
+  if (addr_size > 0) {
+    CHECKED_MALLOC3(addrP, netaddr *, sizeof(netaddr)+2*addr_size);
+    addrP->addr = (struct sockaddr *)( (char *) addrP+sizeof(netaddr) );
+    memcpy(addrP->addr, ifr_addrP, addr_size);
 
-  addrP->family = family;
-  addrP->brdcast = NULL;
-  addrP->mask = prefix;
-  addrP->next = 0;
-  if (family == AF_INET) {
-    /*
-     * Deal with brodcast addr & subnet mask
-     */
-    struct sockaddr * brdcast_to = (struct sockaddr *) ((char *) addrP + sizeof(netaddr) + addr_size);
-    addrP->brdcast = getBroadcast(env, sock, name,  brdcast_to );
+    addrP->family = family;
+    addrP->brdcast = NULL;
+    addrP->mask = prefix;
+    addrP->next = 0;
+    if (family == AF_INET) {
+      /*
+       * Deal with brodcast addr & subnet mask
+       */
+      struct sockaddr * brdcast_to = (struct sockaddr *) ((char *) addrP + sizeof(netaddr) + addr_size);
+      addrP->brdcast = getBroadcast(env, sock, name,  brdcast_to );
 
-    if (addrP->brdcast && (mask = getSubnet(env, sock, name)) != -1) {
-      addrP->mask = mask;
+      if (addrP->brdcast && (mask = getSubnet(env, sock, name)) != -1) {
+        addrP->mask = mask;
+      }
     }
   }
 
@@ -958,7 +986,8 @@ netif *addif(JNIEnv *env, int sock, const char * if_name,
   /*
    * Finally insert the address on the interface
    */
-  addrP->next = currif->addr;
+  if (addrP != NULL)
+    addrP->next = currif->addr;
   currif->addr = addrP;
 
   parent = currif;
@@ -1068,47 +1097,33 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname){
 }
 #endif
 
-static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
-  struct ifconf ifc;
-  struct ifreq *ifreqP;
-  char *buf;
-  int numifs;
-  unsigned i;
+static netif *enumRawInterfaces(JNIEnv *env, netif *ifs) {
+  struct ifaddrs *ifa, *origifa;
 
-
-  /* need to do a dummy SIOCGIFCONF to determine the buffer size.
-   * SIOCGIFCOUNT doesn't work
-   */
-  ifc.ifc_buf = NULL;
-  if (ioctl(sock, SIOCGIFCONF, (char *)&ifc) < 0) {
-    NET_ThrowByNameWithLastError(env , JNU_JAVANETPKG "SocketException", "ioctl SIOCGIFCONF failed");
+  if (getifaddrs(&origifa) != 0) {
+    NET_ThrowByNameWithLastError(env , JNU_JAVANETPKG "SocketException",
+                                 "getifaddrs() function failed");
     return ifs;
   }
 
-  CHECKED_MALLOC3(buf,char *, ifc.ifc_len);
+  for (ifa = origifa; ifa != NULL; ifa = ifa->ifa_next) {
 
-  ifc.ifc_buf = buf;
-  if (ioctl(sock, SIOCGIFCONF, (char *)&ifc) < 0) {
-    NET_ThrowByNameWithLastError(env , JNU_JAVANETPKG "SocketException", "ioctl SIOCGIFCONF failed");
-    (void) free(buf);
-    return ifs;
-  }
-
-  /*
-   * Iterate through each interface
-   */
-  ifreqP = ifc.ifc_req;
-  for (i=0; i<ifc.ifc_len/sizeof (struct ifreq); i++, ifreqP++) {
     /*
-     * Add to the list
+     * Skip non-AF_PACKET entries.
      */
-    ifs = addif(env, sock, ifreqP->ifr_name, ifs, (struct sockaddr *) & (ifreqP->ifr_addr), AF_INET, 0);
+    if (ifa->ifa_addr == NULL || ifa->ifa_addr->sa_family != AF_PACKET)
+      continue;
 
     /*
-     * If an exception occurred then free the list
+     * Add to the list.
+     */
+    ifs = addif(env, 0, ifa->ifa_name, ifs, 0, AF_PACKET, 0);
+
+    /*
+     * If an exception occurred then free the list.
      */
     if ((*env)->ExceptionOccurred(env)) {
-      free(buf);
+      freeifaddrs(origifa);
       freeif(ifs);
       return NULL;
     }
@@ -1117,8 +1132,48 @@ static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
   /*
    * Free socket and buffer
    */
-  free(buf);
+  freeifaddrs(origifa);
   return ifs;
+}
+
+static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
+  struct ifaddrs *ifa, *origifa;
+
+  if (getifaddrs(&origifa) != 0) {
+    NET_ThrowByNameWithLastError(env , JNU_JAVANETPKG "SocketException",
+                                 "getifaddrs() function failed");
+    return ifs;
+  }
+
+  for (ifa = origifa; ifa != NULL; ifa = ifa->ifa_next) {
+
+    /*
+     * Skip non-AF_INET entries.
+     */
+    if (ifa->ifa_addr == NULL || ifa->ifa_addr->sa_family != AF_INET)
+      continue;
+
+    /*
+     * Add to the list.
+     */
+    ifs = addif(env, sock, ifa->ifa_name, ifs, ifa->ifa_addr, AF_INET, 0);
+
+    /*
+     * If an exception occurred then free the list.
+     */
+    if ((*env)->ExceptionOccurred(env)) {
+      freeifaddrs(origifa);
+      freeif(ifs);
+      return NULL;
+    }
+  }
+
+  /*
+   * Free socket and buffer
+   */
+  freeifaddrs(origifa);
+  return ifs;
+
 }
 
 
@@ -1127,44 +1182,67 @@ static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
  */
 
 #ifdef AF_INET6
+/*
+ * Determines the prefix for IPv6 interfaces.
+ */
+static
+int prefix(void *val, int size) {
+  u_char *name = (u_char *)val;
+  int byte, bit, plen = 0;
+
+  for (byte = 0; byte < size; byte++, plen += 8)
+    if (name[byte] != 0xff)
+      break;
+  if (byte == size)
+    return (plen);
+  for (bit = 7; bit != 0; bit--, plen++)
+    if (!(name[byte] & (1 << bit)))
+      break;
+  for (; bit != 0; bit--)
+    if (name[byte] & (1 << bit))
+      return (0);
+  byte++;
+  for (; byte < size; byte++)
+    if (name[byte])
+      return (0);
+  return (plen);
+}
+
 static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
-  FILE *f;
-  char addr6[40], devname[21];
-  char addr6p[8][5];
-  int plen, scope, dad_status, if_idx;
-  uint8_t ipv6addr[16];
+  struct ifaddrs *ifa, *origifa;
+  struct sockaddr_in6 *sin6;
 
-  if ((f = fopen(_PATH_PROCNET_IFINET6, "r")) != NULL) {
-    while (fscanf(f, "%4s%4s%4s%4s%4s%4s%4s%4s %08x %02x %02x %02x %20s\n",
-                  addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4], addr6p[5], addr6p[6], addr6p[7],
-                  &if_idx, &plen, &scope, &dad_status, devname) != EOF) {
-
-      struct netif *ifs_ptr = NULL;
-      struct netif *last_ptr = NULL;
-      struct sockaddr_in6 addr;
-
-      sprintf(addr6, "%s:%s:%s:%s:%s:%s:%s:%s",
-              addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4], addr6p[5], addr6p[6], addr6p[7]);
-      inet_pton(AF_INET6, addr6, ipv6addr);
-
-      memset(&addr, 0, sizeof(struct sockaddr_in6));
-      memcpy((void*)addr.sin6_addr.s6_addr, (const void*)ipv6addr, 16);
-
-      addr.sin6_scope_id = if_idx;
-
-      ifs = addif(env, sock, devname, ifs, (struct sockaddr *)&addr, AF_INET6, plen);
-
-
-      /*
-       * If an exception occurred then return the list as is.
-       */
-      if ((*env)->ExceptionOccurred(env)) {
-        fclose(f);
-        return ifs;
-      }
-    }
-    fclose(f);
+  if (getifaddrs(&origifa) != 0) {
+    NET_ThrowByNameWithLastError(env , JNU_JAVANETPKG "SocketException",
+                                 "getifaddrs() function failed");
+    return ifs;
   }
+
+  for (ifa = origifa; ifa != NULL; ifa = ifa->ifa_next) {
+
+    /*
+     * Skip non-AF_INET6 entries.
+     */
+    if (ifa->ifa_addr == NULL || ifa->ifa_addr->sa_family != AF_INET6)
+      continue;
+
+    /* Add to the list.  */
+    sin6 = (struct sockaddr_in6 *)&ifa->ifa_addr;
+    ifs = addif(env, sock, ifa->ifa_name, ifs, ifa->ifa_addr, AF_INET6,
+                prefix(&sin6->sin6_addr, sizeof(struct in6_addr)));
+
+    /* If an exception occurred then free the list.  */
+    if ((*env)->ExceptionOccurred(env)) {
+      freeifaddrs(origifa);
+      freeif(ifs);
+      return NULL;
+    }
+  }
+
+  /*
+   * Free socket and ifaddrs buffer
+   */
+  freeifaddrs(origifa);
   return ifs;
 }
 #endif
