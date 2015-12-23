@@ -158,6 +158,9 @@ public class SocketAdaptor
     }
 
     public InetAddress getInetAddress() {
+        if (!isConnected()) {
+            return null;
+        }
         SocketAddress remote = sc.remoteAddress();
         if (remote == null) {
             return null;
@@ -176,6 +179,9 @@ public class SocketAdaptor
     }
 
     public int getPort() {
+        if (!isConnected()) {
+          return 0;
+        }
         SocketAddress remote = sc.remoteAddress();
         if (remote == null) {
             return 0;
