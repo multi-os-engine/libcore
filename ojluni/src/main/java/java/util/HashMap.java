@@ -466,8 +466,10 @@ public class HashMap<K,V>
      * Returns the entry associated with the specified key in the
      * HashMap.  Returns null if the HashMap contains no mapping
      * for the key.
+     *
+     * @hide
      */
-    final Entry<K,V> getEntry(Object key) {
+    public final Entry<K,V> getEntry(Object key) {
         if (size == 0) {
             return null;
         }
