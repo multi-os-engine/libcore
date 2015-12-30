@@ -250,7 +250,7 @@ public class LocaleTest extends junit.framework.TestCase {
 
         // Too long
         try {
-            b.setLanguage("engl");
+            b.setLanguage("foobarbar");
             fail();
         } catch (IllformedLocaleException expected) {
         }
@@ -1175,7 +1175,7 @@ public class LocaleTest extends junit.framework.TestCase {
             System.setUnchangeableSystemProperty("user.language", "en");
             System.setUnchangeableSystemProperty("user.region", "US");
 
-            Locale l = Locale.getDefaultLocaleFromSystemProperties();
+            Locale l = Locale.initDefault();
             assertEquals("de", l.getLanguage());
             assertEquals("DE", l.getCountry());
 
@@ -1184,18 +1184,18 @@ public class LocaleTest extends junit.framework.TestCase {
             System.setUnchangeableSystemProperty("user.language", "en");
             System.setUnchangeableSystemProperty("user.region", "US");
 
-            l = Locale.getDefaultLocaleFromSystemProperties();
+            l = Locale.initDefault();
             assertEquals("de", l.getLanguage());
             assertEquals("DE", l.getCountry());
             assertEquals("Latn", l.getScript());
 
-            // Assert that we use "und" if we're faced with a bad language tag, and
-            // that we don't end up with a null default locale or an exception.
+            // Assert that we don't end up with a null default locale or an exception.
             System.setUnchangeableSystemProperty("user.locale", "dexx-Latn-DE");
 
-            l = Locale.getDefaultLocaleFromSystemProperties();
-            assertEquals("", l.getLanguage());
-            assertEquals("DE", l.getCountry());
+            // Note: pre-enso Locale#fromLanguageTag parser was more error-tolerant
+            // then the current one. Result of bad language tag from line above will be
+            // an empty Locale object.
+            assertNotNull(Locale.initDefault());
         } finally {
             System.setUnchangeableSystemProperty("user.language", userLanguage);
             System.setUnchangeableSystemProperty("user.region", userRegion);
