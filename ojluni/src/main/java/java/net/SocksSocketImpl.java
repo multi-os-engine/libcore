@@ -38,9 +38,9 @@ import sun.net.www.ParseUtil;
  * SOCKS (V4 & V5) TCP socket implementation (RFC 1928).
  * This is a subclass of PlainSocketImpl.
  * Note this class should <b>NOT</b> be public.
+ * @hide
  */
-
-class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
+public class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
     private String server = null;
     private int serverPort = DEFAULT_PORT;
     private InetSocketAddress external_address;
@@ -52,7 +52,10 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
     private boolean applicationSetProxy;  /* false */
 
 
-    SocksSocketImpl() {
+    /**
+     * @hide
+     */
+    public SocksSocketImpl() {
         // Nothing needed
     }
 

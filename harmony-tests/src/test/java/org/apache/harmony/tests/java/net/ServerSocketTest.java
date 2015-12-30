@@ -26,7 +26,7 @@ import java.net.BindException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.PlainServerSocketImpl;
+import java.net.SocksSocketImpl;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -331,7 +331,7 @@ public class ServerSocketTest extends junit.framework.TestCase {
 
     private static class MockSocketImplFactory implements SocketImplFactory {
         public SocketImpl createSocketImpl() {
-            return new PlainServerSocketImpl();
+            return new SocksSocketImpl();
         }
     }
 
