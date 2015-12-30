@@ -35,6 +35,7 @@ import java.security.AccessController;
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
@@ -331,11 +332,19 @@ public abstract class Charset
     // along with the names that were used to find them
     //
     private static volatile Object[] cache1 = null; // "Level 1" cache
-    private static volatile Object[] cache2 = null; // "Level 2" cache
+    private static final HashMap<String, Charset> cache2 = new HashMap<>(); // "Level 2" cache
 
     private static void cache(String charsetName, Charset cs) {
-        cache2 = cache1;
         cache1 = new Object[] { charsetName, cs };
+
+        synchronized(cache2) {
+            String canonicalName = cs.name();
+            cache2.put(canonicalName, cs);
+
+            for (String alias : cs.aliases()) {
+                cache2.put(alias, cs);
+            }
+        }
     }
 
     // Creates an iterator that walks over the available providers, ignoring
@@ -481,14 +490,14 @@ public abstract class Charset
     }
 
     private static Charset lookup2(String charsetName) {
-        Object[] a;
-        if ((a = cache2) != null && charsetName.equals(a[0])) {
-            cache2 = cache1;
-            cache1 = a;
-            return (Charset)a[1];
+        Charset cs;
+        synchronized (cache2) {
+            if ((cs = cache2.get(charsetName)) != null) {
+                cache1 = new Object[] { charsetName, cs };
+                return cs;
+            }
         }
 
-        Charset cs;
         // Android-changed: Drop support for "standard" and "extended"
         // providers.
         if ((cs = NativeConverter.charsetForName(charsetName))  != null ||
