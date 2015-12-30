@@ -26,7 +26,6 @@ import java.net.BindException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.PlainServerSocketImpl;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -34,6 +33,7 @@ import java.net.SocketException;
 import java.net.SocketImpl;
 import java.net.SocketImplFactory;
 import java.net.UnknownHostException;
+import java.lang.reflect.Field;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Properties;
@@ -308,7 +308,7 @@ public class ServerSocketTest extends junit.framework.TestCase {
      * java.net.ServerSocket#setSocketFactory(java.net.SocketImplFactory)
      */
     public void test_setSocketFactoryLjava_net_SocketImplFactory()
-            throws IOException {
+            throws Exception {
         SocketImplFactory factory = new MockSocketImplFactory();
         // Should not throw SocketException when set DatagramSocketImplFactory
         // for the first time.
@@ -327,11 +327,17 @@ public class ServerSocketTest extends junit.framework.TestCase {
         } catch (SocketException e) {
             // Expected
         }
+
+        // Clean-up after the test by setting the factory to null.
+        // We have to use reflection because #setSocketFactory can be called only once.
+        Field field = ServerSocket.class.getDeclaredField("factory");
+        field.setAccessible(true);
+        field.set(null, null);
     }
 
     private static class MockSocketImplFactory implements SocketImplFactory {
         public SocketImpl createSocketImpl() {
-            return new PlainServerSocketImpl();
+            return new MockSocketImpl();
         }
     }
 
@@ -364,7 +370,7 @@ public class ServerSocketTest extends junit.framework.TestCase {
         try {
             int portNumber = s.getLocalPort();
             // In IPv6, the all-zeros-address is written as "::"
-            assertEquals("ServerSocket[addr=::/::,port=0,localport="
+            assertEquals("ServerSocket[addr=/::,localport="
                     + portNumber + "]", s.toString());
         } finally {
             s.close();
