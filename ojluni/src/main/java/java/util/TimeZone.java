@@ -604,7 +604,10 @@ abstract public class TimeZone implements Serializable, Cloneable {
             raw = -raw;
         }
 
-        String cleanId = String.format("GMT%c%02d:%02d", sign, hour, minute);
+        String cleanId = "GMT" + sign
+                         + (hour < 10 ? "0" : "") + hour + ":"
+                         + (minute < 10 ? "0" : "") + minute;
+
         return new SimpleTimeZone(raw, cleanId);
     }
 
