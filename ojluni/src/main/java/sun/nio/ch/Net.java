@@ -620,5 +620,4 @@ class Net {                                             // package-private
         Util.load();
         initIDs();
     }
-
 }
