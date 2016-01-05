@@ -51,7 +51,6 @@ public class ReferenceQueueTest extends junit.framework.TestCase {
                 integer = new Integer(667);
                 SoftReference sr = new SoftReference(integer, rq);
                 sr.enqueue();
-                rq.notify();
             }
         }
     }
