@@ -26,8 +26,6 @@
 
 package java.lang.ref;
 
-import sun.misc.Cleaner;
-
 
 /**
  * Abstract base class for reference objects.  This class defines the
@@ -57,13 +55,25 @@ public abstract class Reference<T> {
     private static boolean slowPathEnabled = false;
 
     volatile T referent;         /* Treated specially by GC */
-    volatile ReferenceQueue<? super T> queue;
-    volatile Reference queueNext;
+    final ReferenceQueue<? super T> queue;
+
+    /*
+     * This field forms a singly linked list of reference objects that have
+     * been enqueued. The last element of the list points to itself, so that
+     * we have the invariant that a reference has been enqueued if and only if
+     * queueNext is non-null. Access to the queueNext field is guarded by
+     * synchronization on a lock internal to 'queue'.
+     */
+    Reference queueNext;
 
     /**
-     * @hide
+     * The pendingNext field is initially set by the GC. After the GC forms a
+     * complete circularly linked list, the list is handed off to the
+     * ReferenceQueueDaemon using the ReferenceQueue.class lock. The
+     * ReferenceQueueDaemon can then read the pendingNext fields without
+     * additional synchronization.
      */
-    public volatile Reference<?> pendingNext;
+    Reference<?> pendingNext;
 
     /* -- Referent accessor and setters -- */
 
@@ -105,26 +115,7 @@ public abstract class Reference<T> {
      *           been enqueued
      */
     public boolean isEnqueued() {
-        return queueNext != null;
-    }
-
-    /** @hide */
-    public final synchronized boolean enqueueInternal() {
-        if (this instanceof Cleaner) {
-            // If this reference is a Cleaner, then simply invoke the clean method instead
-            // of enqueueing it in the queue. Cleaners are associated with dummy queues that
-            // are never polled and objects are never enqueued on them.
-            Cleaner cl = (sun.misc.Cleaner) this;
-            cl.clean();
-            return true;
-        }
-
-        if (queue != null && queueNext == null) {
-            queue.enqueue(this);
-            queue = null;
-            return true;
-        }
-        return false;
+        return queue != null && queue.isEnqueued(this);
     }
 
     /**
@@ -139,7 +130,7 @@ public abstract class Reference<T> {
      *           it was not registered with a queue when it was created
      */
     public boolean enqueue() {
-       return enqueueInternal();
+       return queue != null && queue.enqueue(this);
     }
 
 
