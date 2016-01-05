@@ -83,7 +83,7 @@ public class NetworkInterfaceTest extends TestCase {
                 continue;
             }
             // Ethernet
-            if (isEthernet(nif.getName())) {
+            if (nif.getHardwareAddress() != null) {
                 assertEquals(6, nif.getHardwareAddress().length);
                 for (InterfaceAddress ia : nif.getInterfaceAddresses()) {
                     if (ia.getAddress() instanceof Inet4Address) {
@@ -140,16 +140,6 @@ public class NetworkInterfaceTest extends TestCase {
 
             assertFalse(allIndexes.contains(nif.getIndex()));
             allIndexes.add(nif.getIndex());
-        }
-    }
-
-    // Returns true if interface by name ifName is Ethernet
-    private boolean isEthernet(String ifName) throws Exception {
-        String s = IoUtils.readFileAsString("/sys/class/net/" + ifName + "/type").trim();
-        if (s.startsWith("0x")) {
-            return (Integer.parseInt(s.substring(2), 16) == ARPHRD_ETHER);
-        } else {
-            return (Integer.parseInt(s) == ARPHRD_ETHER);
         }
     }
 }
