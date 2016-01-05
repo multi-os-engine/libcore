@@ -35,7 +35,10 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 
 
-class Net {                                             // package-private
+/**
+ * @hide
+ */
+public class Net {                                             // package-private
 
     private Net() { }
 
@@ -479,7 +482,6 @@ class Net {                                             // package-private
                                        int remotePort)
         throws IOException;
 
-
     public final static int SHUT_RD = 0;
     public final static int SHUT_WR = 1;
     public final static int SHUT_RDWR = 2;
@@ -621,4 +623,9 @@ class Net {                                             // package-private
         initIDs();
     }
 
+    /**
+     * Mocks the following connect call and sets the errno to chosen value.
+     * Used for testing purpouses
+     */
+    public static native void mockErrnoInConnect(int errno);
 }

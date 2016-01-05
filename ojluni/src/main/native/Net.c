@@ -94,6 +94,16 @@ struct my_group_source_req {
 #define COPY_INET6_ADDRESS(env, source, target) \
     (*env)->GetByteArrayRegion(env, source, 0, 16, target)
 
+
+
+int mockErrnoInConnect = 0;
+
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_Net_mockErrnoInConnect(JNIEnv* env, jclass cl, jint mock_errno)
+{
+  mockErrnoInConnect = mock_errno;
+}
+
 /*
  * Copy IPv6 group, interface index, and IPv6 source address
  * into group_source_req structure.
@@ -253,14 +263,21 @@ Java_sun_nio_ch_Net_connect0(JNIEnv *env, jclass clazz, jboolean preferIPv6,
       return IOS_THROWN;
     }
 
-    rv = connect(fdval(env, fdo), (struct sockaddr *)&sa, sa_len);
+    if (mockErrnoInConnect != 0) {
+        // Mock errno for testing
+        rv = -1;
+        errno = mockErrnoInConnect;
+        mockErrnoInConnect = 0;
+    } else {
+        rv = connect(fdval(env, fdo), (struct sockaddr *)&sa, sa_len);
+    }
     if (rv != 0) {
         if (errno == EINPROGRESS) {
             return IOS_UNAVAILABLE;
         } else if (errno == EINTR) {
             return IOS_INTERRUPTED;
         }
-        return handleSocketError(env, errno);
+        return handleSocketErrorWithDefault(env, errno, JNU_JAVANETPKG "ConnectException");
     }
     return 1;
 }
@@ -653,11 +670,10 @@ Java_sun_nio_ch_Net_shutdown(JNIEnv *env, jclass cl, jobject fdo, jint jhow)
 }
 
 /* Declared in nio_util.h */
-
 jint
-handleSocketError(JNIEnv *env, jint errorValue)
+handleSocketErrorWithDefault(JNIEnv *env, jint errorValue, const char *defaultException)
 {
-    char *xn;
+    const char *xn;
     switch (errorValue) {
         case EINPROGRESS:       /* Non-blocking connect */
             return 0;
@@ -680,12 +696,19 @@ handleSocketError(JNIEnv *env, jint errorValue)
             xn = JNU_JAVANETPKG "BindException";
             break;
         default:
-            xn = JNU_JAVANETPKG "SocketException";
+            xn = defaultException;
             break;
     }
     errno = errorValue;
     JNU_ThrowByNameWithLastError(env, xn, "NioSocketError");
     return IOS_THROWN;
+}
+
+/* Declared in nio_util.h */
+jint
+handleSocketError(JNIEnv *env, jint errorValue) {
+    return handleSocketErrorWithDefault(env, errorValue,
+                                        JNU_JAVANETPKG "SocketException");
 }
 
 
@@ -712,6 +735,8 @@ static JNINativeMethod gMethods[] = {
   NATIVE_METHOD(Net, setInterface6, "(Ljava/io/FileDescriptor;I)V"),
   NATIVE_METHOD(Net, getInterface6, "(Ljava/io/FileDescriptor;)I"),
   NATIVE_METHOD(Net, initIDs, "()V"),
+  NATIVE_METHOD(Net, mockErrnoInConnect, "(I)V"),
+
 };
 
 void register_sun_nio_ch_Net(JNIEnv* env) {
