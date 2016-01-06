@@ -622,7 +622,8 @@ class Inet6Address extends InetAddress {
         return ipaddress.clone();
     }
 
-    public byte[] getAddressInternal() {
+    @Override
+    protected byte[] getAddressInternal() {
         return ipaddress;
     }
 
