@@ -35,17 +35,14 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.logging.Level;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.spi.CurrencyNameProvider;
-import java.util.spi.LocaleServiceProvider;
-import sun.util.LocaleServiceProviderPool;
-import sun.util.logging.PlatformLogger;
+
 import libcore.icu.ICU;
 import libcore.icu.LocaleData;
-
-import sun.util.resources.OpenListResourceBundle;
+import sun.util.LocaleServiceProviderPool;
+import sun.util.logging.PlatformLogger;
 
 
 /**
@@ -336,11 +333,7 @@ public final class Currency implements Serializable {
     /**
      * Returns the <code>Currency</code> instance for the country of the
      * given locale. The language and variant components of the locale
-     * are ignored. The result may vary over time, as countries change their
-     * currencies. For example, for the original member countries of the
-     * European Monetary Union, the method returns the old national currencies
-     * until December 31, 2001, and the Euro from January 1, 2002, local time
-     * of the respective countries.
+     * are ignored.
      * <p>
      * The method returns <code>null</code> for territories that don't
      * have a currency, such as Antarctica.
@@ -384,12 +377,14 @@ public final class Currency implements Serializable {
                 return null;
             } else {
                 int index = (tableEntry & SPECIAL_CASE_COUNTRY_INDEX_MASK) - SPECIAL_CASE_COUNTRY_INDEX_DELTA;
-                if (scCutOverTimes[index] == Long.MAX_VALUE || System.currentTimeMillis() < scCutOverTimes[index]) {
+                // Android changed: The currency symbol is independent of time, and always the most recent one
+                // is used
+                if (scCutOverTimes[index] == Long.MAX_VALUE) {
                     return getInstance(scOldCurrencies[index], scOldCurrenciesDFD[index],
-                        scOldCurrenciesNumericCode[index]);
+                            scOldCurrenciesNumericCode[index]);
                 } else {
                     return getInstance(scNewCurrencies[index], scNewCurrenciesDFD[index],
-                        scNewCurrenciesNumericCode[index]);
+                            scNewCurrenciesNumericCode[index]);
                 }
             }
         }
