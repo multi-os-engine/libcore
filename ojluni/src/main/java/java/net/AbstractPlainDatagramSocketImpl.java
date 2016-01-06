@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.util.Enumeration;
 import java.security.AccessController;
+
+import dalvik.system.CloseGuard;
 import sun.net.ResourceManager;
 
 /**
@@ -55,6 +57,8 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
     private boolean loopbackMode = true;
     private int ttl = -1;
 
+    private final CloseGuard guard = CloseGuard.get();
+
     private static final String os = AccessController.doPrivileged(
         new sun.security.action.GetPropertyAction("os.name")
     );
@@ -76,6 +80,10 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
             ResourceManager.afterUdpClose();
             fd = null;
             throw ioe;
+        }
+
+        if (fd != null && fd.valid()) {
+            guard.open("close");
         }
     }
 
@@ -219,6 +227,8 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
      * Close the socket.
      */
     protected void close() {
+        guard.close();
+
         if (fd != null) {
             datagramSocketClose();
             ResourceManager.afterUdpClose();
@@ -231,6 +241,10 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
     }
 
     protected void finalize() {
+        if (guard != null) {
+            guard.warnIfOpen();
+        }
+        
         close();
     }
 
