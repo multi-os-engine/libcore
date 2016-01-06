@@ -492,15 +492,33 @@ public class Date
                         i++;
                     }
                     if (prevc == '+' || prevc == '-' && year != Integer.MIN_VALUE) {
-                        // timezone offset
-                        if (n < 24)
-                            n = n * 60; // EG. "GMT-3"
-                        else
-                            n = n % 100 + n / 100 * 60; // eg "GMT-0430"
-                        if (prevc == '+')   // plus means east of GMT
-                            n = -n;
                         if (tzoffset != 0 && tzoffset != -1)
                             break syntax;
+
+                        // timezone offset
+                        if (n < 24) {
+                            n = n * 60; // EG. "GMT-3"
+
+                            // Support for Timezones of the form GMT-3:30. We look for an ':" and
+                            // parse the number following it as loosely as the original hours
+                            // section (i.e, no range or validity checks).
+                            int minutesPart = 0;
+                            if (i < limit && (s.charAt(i) == ':')) {
+                                i++;
+                                while (i < limit && '0' <= (c = s.charAt(i)) && c <= '9') {
+                                    minutesPart = minutesPart * 10 + c - '0';
+                                    i++;
+                                }
+                            }
+
+                            n += minutesPart;
+                        } else {
+                            n = n % 100 + n / 100 * 60; // eg "GMT-0430"
+                        }
+
+                        if (prevc == '+')   // plus means east of GMT
+                            n = -n;
+
                         tzoffset = n;
                     } else if (n >= 70)
                         if (year != Integer.MIN_VALUE)
