@@ -35,17 +35,14 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.logging.Level;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.spi.CurrencyNameProvider;
-import java.util.spi.LocaleServiceProvider;
-import sun.util.LocaleServiceProviderPool;
-import sun.util.logging.PlatformLogger;
+
 import libcore.icu.ICU;
 import libcore.icu.LocaleData;
-
-import sun.util.resources.OpenListResourceBundle;
+import sun.util.LocaleServiceProviderPool;
+import sun.util.logging.PlatformLogger;
 
 
 /**
@@ -384,12 +381,12 @@ public final class Currency implements Serializable {
                 return null;
             } else {
                 int index = (tableEntry & SPECIAL_CASE_COUNTRY_INDEX_MASK) - SPECIAL_CASE_COUNTRY_INDEX_DELTA;
-                if (scCutOverTimes[index] == Long.MAX_VALUE || System.currentTimeMillis() < scCutOverTimes[index]) {
+                if (scCutOverTimes[index] == Long.MAX_VALUE) {
                     return getInstance(scOldCurrencies[index], scOldCurrenciesDFD[index],
-                        scOldCurrenciesNumericCode[index]);
+                            scOldCurrenciesNumericCode[index]);
                 } else {
                     return getInstance(scNewCurrencies[index], scNewCurrenciesDFD[index],
-                        scNewCurrenciesNumericCode[index]);
+                            scNewCurrenciesNumericCode[index]);
                 }
             }
         }
