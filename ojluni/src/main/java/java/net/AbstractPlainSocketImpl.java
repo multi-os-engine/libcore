@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.FileDescriptor;
 
+import dalvik.system.CloseGuard;
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
 import sun.net.ResourceManager;
@@ -71,6 +72,8 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     */
     protected boolean stream;
 
+    private final CloseGuard guard = CloseGuard.get();
+
     /**
      * Creates a socket with a boolean that specifies whether this
      * is a stream socket (true) or an unconnected UDP socket (false).
@@ -94,6 +97,11 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
             socket.setCreated();
         if (serverSocket != null)
             serverSocket.setCreated();
+
+        // socketCreate will set |fd| if it succeeds.
+        if (fd != null && fd.valid()) {
+            guard.open("close");
+        }
     }
 
     /**
@@ -537,6 +545,10 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
      * Cleans up if the user forgets to close it.
      */
     protected void finalize() throws IOException {
+        if (guard != null) {
+            guard.warnIfOpen();
+        }
+
         close();
     }
 
@@ -576,7 +588,6 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
                 resetState = CONNECTION_RESET_PENDING;
             }
         }
-
     }
 
     /*
@@ -607,6 +618,8 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
      * Close the socket (and release the file descriptor).
      */
     protected void socketClose() throws IOException {
+        guard.close();
+
         socketClose0();
     }
 
