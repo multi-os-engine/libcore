@@ -24,25 +24,30 @@
  * questions.
  */
 package java.net;
+import dalvik.system.BlockGuard;
+
 import java.io.IOException;
 
 /*
  * Package private implementation of InetAddressImpl for dual
- * IPv4/IPv6 stack.
- * <p>
- * If InetAddress.preferIPv6Address is true then anyLocalAddress(),
- * loopbackAddress(), and localHost() will return IPv6 addresses,
- * otherwise IPv4 addresses.
+ * IPv4/IPv6 stack. {@code #anyLocalAddress()} will always return an IPv6 address.
  *
  * @since 1.4
  */
 
 class Inet6AddressImpl implements InetAddressImpl {
-    public native String getLocalHostName() throws UnknownHostException;
-    public native InetAddress[]
-        lookupAllHostAddr(String hostname) throws UnknownHostException;
-    public native String getHostByAddr(byte[] addr) throws UnknownHostException;
-    private native boolean isReachable0(byte[] addr, int scope, int timeout, byte[] inf, int ttl, int if_scope) throws IOException;
+
+    private static final InetAddress ANY_LOCAL_ADDRESS;
+
+    static {
+        ANY_LOCAL_ADDRESS = new Inet6Address();
+        ANY_LOCAL_ADDRESS.holder().hostName = "::";
+    }
+
+    public String getHostByAddr(byte[] addr) throws UnknownHostException {
+        BlockGuard.getThreadPolicy().onNetwork();
+        return getHostByAddr0(addr);
+    }
 
     public boolean isReachable(InetAddress addr, int timeout, NetworkInterface netif, int ttl) throws IOException {
         byte[] ifaddr = null;
@@ -75,27 +80,15 @@ class Inet6AddressImpl implements InetAddressImpl {
         }
         if (addr instanceof Inet6Address)
             scope = ((Inet6Address) addr).getScopeId();
+
+        BlockGuard.getThreadPolicy().onNetwork();
         return isReachable0(addr.getAddress(), scope, timeout, ifaddr, ttl, netif_scope);
     }
 
     public synchronized InetAddress anyLocalAddress() {
-        if (anyLocalAddress == null) {
-            anyLocalAddress = new Inet6Address();
-            anyLocalAddress.holder().hostName = "::";
-        }
-        return anyLocalAddress;
+        return ANY_LOCAL_ADDRESS;
     }
 
-    public synchronized InetAddress loopbackAddress() {
-        if (loopbackAddress == null) {
-            byte[] loopback =
-                {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
-            loopbackAddress = new Inet6Address("localhost", loopback);
-        }
-        return loopbackAddress;
-    }
-
-    private InetAddress      anyLocalAddress;
-    private InetAddress      loopbackAddress;
+    private native String getHostByAddr0(byte[] addr) throws UnknownHostException;
+    private native boolean isReachable0(byte[] addr, int scope, int timeout, byte[] inf, int ttl, int if_scope) throws IOException;
 }

@@ -694,10 +694,6 @@ class InetAddress implements java.io.Serializable {
         if (provider.equals("default")) {
             // initialize the default name service
             nameService = new NameService() {
-                public InetAddress[] lookupAllHostAddr(String host)
-                    throws UnknownHostException {
-                    return impl.lookupAllHostAddr(host);
-                }
                 public String getHostByAddr(byte[] addr)
                     throws UnknownHostException {
                     return impl.getHostByAddr(addr);
@@ -945,7 +941,7 @@ class InetAddress implements java.io.Serializable {
      * @since 1.7
      */
     public static InetAddress getLoopbackAddress() {
-        return impl.loopbackAddress();
+        return Inet6Address.LOOPBACK;
     }
 
 
@@ -1057,18 +1053,8 @@ class InetAddress implements java.io.Serializable {
      * @see java.net.InetAddress#getByName(java.lang.String)
      */
     public static InetAddress getLocalHost() throws UnknownHostException {
-
-        SecurityManager security = System.getSecurityManager();
-        try {
-            String local = Libcore.os.uname().nodename;
-            if (security != null) {
-                security.checkConnect(local, -1);
-            }
-
-            return lookupHostByName(local, NETID_UNSET)[0];
-        } catch (java.lang.SecurityException e) {
-            return impl.loopbackAddress();
-        }
+        String local = Libcore.os.uname().nodename;
+        return lookupHostByName(local, NETID_UNSET)[0];
     }
 
     /**
