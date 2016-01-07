@@ -61,6 +61,7 @@ class FileInputStream extends InputStream
 
     private final Object closeLock = new Object();
     private volatile boolean closed = false;
+    private final boolean isFdOwner;
 
     /**
      * Creates a <code>FileInputStream</code> by
@@ -133,7 +134,7 @@ class FileInputStream extends InputStream
             throw new FileNotFoundException("Invalid file path");
         }
         fd = new FileDescriptor();
-        fd.incrementAndGetUseCount();
+        isFdOwner = true;
         this.path = name;
         open(name);
     }
@@ -171,14 +172,8 @@ class FileInputStream extends InputStream
             security.checkRead(fdObj);
         }
         fd = fdObj;
+        isFdOwner = false;
         path = null;
-
-        /*
-         * FileDescriptor is being shared by streams.
-         * Ensure that it's GC'ed only when all the streams/channels are done
-         * using it.
-         */
-        fd.incrementAndGetUseCount();
     }
 
     /**
@@ -349,21 +344,10 @@ class FileInputStream extends InputStream
              * The use count is incremented whenever a new channel
              * is obtained from this stream.
              */
-           fd.decrementAndGetUseCount();
            channel.close();
         }
 
-        /*
-         * Decrement the FD use count associated with this stream
-         */
-        int useCount = fd.decrementAndGetUseCount();
-
-        /*
-         * If FileDescriptor is still in use by another stream, the finalizer
-         * will not close it.
-         */
-        // Android change, make sure only last close closes FD.
-        if ((useCount <= 0)) {
+        if (isFdOwner) {
             IoBridge.closeAndSignalBlockedThreads(fd);
         }
     }
@@ -404,12 +388,6 @@ class FileInputStream extends InputStream
             if (channel == null) {
                 channel = FileChannelImpl.open(fd, path, true, false, this);
 
-                /*
-                 * Increment fd's use count. Invoking the channel's close()
-                 * method will result in decrementing the use count set for
-                 * the channel.
-                 */
-                fd.incrementAndGetUseCount();
             }
             return channel;
         }
