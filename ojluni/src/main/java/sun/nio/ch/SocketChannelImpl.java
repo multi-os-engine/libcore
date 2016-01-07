@@ -33,6 +33,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.util.*;
+
+import dalvik.system.BlockGuard;
 import sun.net.NetHooks;
 import sun.misc.IoTrace;
 
@@ -376,6 +378,8 @@ class SocketChannelImpl
                 // closed.  This is analogous to the first two cases above,
                 // except that the shutdown operation plays the role of
                 // nd.preClose().
+                BlockGuard.getThreadPolicy().onNetwork();
+
                 for (;;) {
                     n = IOUtil.read(fd, buf, -1, nd);
                     if ((n == IOStatus.INTERRUPTED) && isOpen()) {
@@ -446,6 +450,7 @@ class SocketChannelImpl
                     readerThread = NativeThread.current();
                 }
 
+                BlockGuard.getThreadPolicy().onNetwork();
                 for (;;) {
                     n = IOUtil.read(fd, dsts, offset, length, nd);
                     if ((n == IOStatus.INTERRUPTED) && isOpen())
@@ -484,6 +489,8 @@ class SocketChannelImpl
                         return 0;
                     writerThread = NativeThread.current();
                 }
+
+                BlockGuard.getThreadPolicy().onNetwork();
                 for (;;) {
                     n = IOUtil.write(fd, buf, -1, nd);
                     if ((n == IOStatus.INTERRUPTED) && isOpen())
@@ -521,6 +528,8 @@ class SocketChannelImpl
                         return 0;
                     writerThread = NativeThread.current();
                 }
+
+                BlockGuard.getThreadPolicy().onNetwork();
                 for (;;) {
                     n = IOUtil.write(fd, srcs, offset, length, nd);
                     if ((n == IOStatus.INTERRUPTED) && isOpen())
@@ -733,6 +742,8 @@ class SocketChannelImpl
                                 }
                                 readerThread = NativeThread.current();
                             }
+
+                            BlockGuard.getThreadPolicy().onNetwork();
                             if (!isBlocking()) {
                                 for (;;) {
                                     n = checkConnect(fd, false,
