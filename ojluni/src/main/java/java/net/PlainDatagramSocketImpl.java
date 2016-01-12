@@ -25,6 +25,8 @@
 package java.net;
 
 import java.io.IOException;
+import android.system.StructGroupReq;
+import libcore.io.IoBridge;
 
 /*
  * On Unix systems we simply delegate to native methods.
@@ -58,11 +60,19 @@ class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 
     protected native byte getTTL() throws IOException;
 
-    protected native void join(InetAddress inetaddr, NetworkInterface netIf)
-        throws IOException;
+    protected void join(InetAddress inetaddr, NetworkInterface netIf)
+        throws IOException {
+      // IoBridge base join/leave works on hammerhead (b/25993730)
+      IoBridge.setSocketOption(fd, IoBridge.JAVA_MCAST_JOIN_GROUP,
+          new StructGroupReq((netIf != null) ? netIf.getIndex() : 0, inetaddr));
+    }
 
-    protected native void leave(InetAddress inetaddr, NetworkInterface netIf)
-        throws IOException;
+    protected void leave(InetAddress inetaddr, NetworkInterface netIf)
+        throws IOException {
+      // IoBridge base join/leave works on hammerhead (b/25993730)
+      IoBridge.setSocketOption(fd, IoBridge.JAVA_MCAST_LEAVE_GROUP,
+          new StructGroupReq((netIf != null) ? netIf.getIndex() : 0, inetaddr));
+    }
 
     protected native void datagramSocketCreate() throws SocketException;
 
