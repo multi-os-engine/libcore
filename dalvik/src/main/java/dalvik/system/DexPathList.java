@@ -179,6 +179,13 @@ import static android.system.OsConstants.S_ISDIR;
     }
 
     /**
+     * For BaseDexClassLoader.getLdLibraryPath.
+     */
+    public List<File> getSystemNativeLibraryDirectories() {
+        return systemNativeLibraryDirectories;
+    }
+
+    /**
      * For BaseDexClassLoader.getLibraryPermittedPath.
      */
     public String getLibraryPermittedPath() {

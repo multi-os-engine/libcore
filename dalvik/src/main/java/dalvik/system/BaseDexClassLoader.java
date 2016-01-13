@@ -162,7 +162,11 @@ public class BaseDexClassLoader extends ClassLoader {
      */
     public String getLdLibraryPath() {
         StringBuilder result = new StringBuilder();
-        for (File directory : pathList.getNativeLibraryDirectories()) {
+        // We use both the loader's directories, and the system directories to
+        // mimic what we do in DexPathList.findLibrary.
+        List<File> files = new ArrayList<File>(pathList.getNativeLibraryDirectories());
+        files.addAll(pathList.getSystemNativeLibraryDirectories());
+        for (File directory : files) {
             if (result.length() > 0) {
                 result.append(':');
             }
