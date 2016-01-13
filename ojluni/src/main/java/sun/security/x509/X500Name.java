@@ -878,6 +878,12 @@ public class X500Name implements GeneralNameInterface, Principal {
             return;
         }
 
+        String inputNoSpacesAtBeginning = input.replaceAll("^[ ]*", "");
+        if (inputNoSpacesAtBeginning.startsWith("\n")
+                || inputNoSpacesAtBeginning.startsWith("\t")) {
+            throw new IllegalArgumentException("DN cannot start with newline nor tab");
+        }
+
         List<RDN> dnVector = new ArrayList<RDN>();
         int dnOffset = 0;
         int rdnEnd;
