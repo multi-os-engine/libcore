@@ -801,7 +801,7 @@ static netif *enumInterfaces(JNIEnv *env) {
     if (ifa->ifa_addr != NULL) {
       switch (ifa->ifa_addr->sa_family) {
         case AF_PACKET:
-          ifs = addif(env, 0, ifa->ifa_name, ifs, 0, AF_PACKET, 0);
+          ifs = addif(env, sock, ifa->ifa_name, ifs, 0, AF_PACKET, 0);
           break;
         case AF_INET:
           ifs = addif(env, sock, ifa->ifa_name, ifs, ifa->ifa_addr, AF_INET, 0);
@@ -816,6 +816,8 @@ static netif *enumInterfaces(JNIEnv *env) {
           break;
 #endif
       }
+    } else if (ifa->ifa_broadaddr == NULL && ifa->ifa_name) {
+      ifs = addif(env, sock, ifa->ifa_name, ifs, 0, AF_UNSPEC, 0);
     }
   }
 
@@ -975,6 +977,7 @@ netif *addif(JNIEnv *env, int sock, const char * if_name,
       break;
 #endif
     case AF_PACKET:
+    case AF_UNSPEC:
       addr_size = 0;
       break;
     default:
