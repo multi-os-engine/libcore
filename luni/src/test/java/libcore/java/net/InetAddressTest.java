@@ -71,6 +71,12 @@ public class InetAddressTest extends junit.framework.TestCase {
         "1.0.0.-1",
     };
 
+    @Override
+    public void setUp() throws Exception {
+        assertNotNull(InetAddress.getAllByName(null)[0]);
+        assertNotNull(InetAddress.getAllByName(null)[1]);
+    }
+
     private static Inet6Address loopback6() throws Exception {
         return (Inet6Address) InetAddress.getByAddress(LOOPBACK6_BYTES);
     }
@@ -383,6 +389,8 @@ public class InetAddressTest extends junit.framework.TestCase {
         InetAddress[] addresses = InetAddress.getAllByName(null);
         InetAddress[] addresses2 = InetAddress.getAllByName(null);
         assertNotSame(addresses, addresses2);
+        assertNotNull(addresses2[0]);
+        assertNotNull(addresses2[1]);
 
         // Also assert that changes to the return value do not affect the cache
         // etc. i.e, that we return a copy.

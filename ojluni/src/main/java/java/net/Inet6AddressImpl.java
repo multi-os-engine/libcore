@@ -47,13 +47,11 @@ import static android.system.OsConstants.SOCK_STREAM;
 class Inet6AddressImpl implements InetAddressImpl {
 
     private static final InetAddress ANY_LOCAL_ADDRESS;
-    private static final InetAddress[] LOOPBACK_ADDRESSES;
+    private static InetAddress[] LOOPBACK_ADDRESSES;
 
     static {
         ANY_LOCAL_ADDRESS = new Inet6Address();
         ANY_LOCAL_ADDRESS.holder().hostName = "::";
-
-        LOOPBACK_ADDRESSES = new InetAddress[] { Inet6Address.LOOPBACK, Inet4Address.LOOPBACK };
     }
 
     private static final AddressCache addressCache = new AddressCache();
@@ -187,7 +185,13 @@ class Inet6AddressImpl implements InetAddressImpl {
 
     @Override
     public InetAddress[] loopbackAddresses() {
-        return LOOPBACK_ADDRESSES;
+        synchronized (Inet6AddressImpl.class) {
+            if (LOOPBACK_ADDRESSES == null) {
+                LOOPBACK_ADDRESSES = new InetAddress[]{Inet6Address.LOOPBACK, Inet4Address.LOOPBACK};
+            }
+
+            return LOOPBACK_ADDRESSES;
+        }
     }
 
     private native String getHostByAddr0(byte[] addr) throws UnknownHostException;
