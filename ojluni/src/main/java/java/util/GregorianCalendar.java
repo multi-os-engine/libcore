@@ -1045,17 +1045,20 @@ public class GregorianCalendar extends Calendar {
             }
 
             fd += delta; // fd is the expected fixed date after the calculation
-            int zoneOffset = internalGet(ZONE_OFFSET) + internalGet(DST_OFFSET);
-            setTimeInMillis((fd - EPOCH_OFFSET) * ONE_DAY + timeOfDay - zoneOffset);
-            zoneOffset -= internalGet(ZONE_OFFSET) + internalGet(DST_OFFSET);
+            int zoneOffsetBefore = internalGet(ZONE_OFFSET) + internalGet(DST_OFFSET);
+            setTimeInMillis((fd - EPOCH_OFFSET) * ONE_DAY + timeOfDay - zoneOffsetBefore);
+            int zoneOffsetAfter = internalGet(ZONE_OFFSET) + internalGet(DST_OFFSET);
             // If the time zone offset has changed, then adjust the difference.
-            if (zoneOffset != 0) {
-                setTimeInMillis(time + zoneOffset);
+            if (zoneOffsetBefore != zoneOffsetAfter) {
+                setTimeInMillis(time + (zoneOffsetBefore - zoneOffsetAfter));
+                if(internalGet(ZONE_OFFSET) + internalGet(DST_OFFSET) == zoneOffsetBefore) {
+                    setTimeInMillis(time - (zoneOffsetBefore - zoneOffsetAfter));
+                }
                 long fd2 = getCurrentFixedDate();
                 // If the adjustment has changed the date, then take
                 // the previous one.
                 if (fd2 != fd) {
-                    setTimeInMillis(time - zoneOffset);
+                    setTimeInMillis(time - (zoneOffsetBefore - zoneOffsetAfter));
                 }
             }
         }
