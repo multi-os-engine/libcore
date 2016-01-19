@@ -113,6 +113,11 @@ public final class URITest extends TestCase {
         } catch (URISyntaxException expected) {
         }
     }
+    public void testSingleLetterHost() throws Exception {
+        URI uri = new URI("http://a");
+        assertEquals("a", uri.getHost());
+        assertEquals("", uri.getPath());
+    }
 
     public void testNoHostAndNoPath() throws Exception {
         try {
@@ -134,6 +139,14 @@ public final class URITest extends TestCase {
         assertEquals("user@host", uri.getAuthority());
         assertEquals("user", uri.getUserInfo());
         assertEquals("host", uri.getHost());
+    }
+
+    public void testUserNoHost() throws Exception {
+        URI uri = new URI("http://user@");
+        assertEquals("user@", uri.getAuthority());
+        // from RI. this is curious
+        assertEquals(null, uri.getUserInfo());
+        assertEquals(null, uri.getHost());
     }
 
     public void testUserNoPasswordExplicitPort() throws Exception {
