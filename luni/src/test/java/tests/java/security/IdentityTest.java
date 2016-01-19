@@ -29,6 +29,8 @@ import java.security.Permission;
 import java.security.Permissions;
 import java.security.PublicKey;
 import java.security.SecurityPermission;
+import java.util.Enumeration;
+import java.util.HashMap;
 
 import org.apache.harmony.security.tests.support.CertificateStub;
 import org.apache.harmony.security.tests.support.IdentityStub;
@@ -105,7 +107,7 @@ public class IdentityTest extends TestCase {
      * verify Identity(String, IdentityScope) creates instance with given name and in give scope
      */
     public void testIdentityStringIdentityScope() throws Exception {
-        IdentityScope s = IdentityScope.getSystemScope();
+        IdentityScope s = new MockIdentityScope();
         Identity i = new IdentityStub("iii2", s);
         assertNotNull(i);
         assertEquals("iii2", i.getName());
@@ -208,10 +210,46 @@ public class IdentityTest extends TestCase {
         assertTrue(c1.equals(s[1]) || c2.equals(s[1]));
     }
 
+    private static final class MockIdentityScope extends IdentityScope {
+        private final HashMap<String, Identity> nameMap = new HashMap<String, Identity>();
+        @Override
+        public int size() {
+            return 0;
+        }
+
+        @Override
+        public Identity getIdentity(String name) {
+            return nameMap.get(name);
+        }
+
+        @Override
+        public Identity getIdentity(PublicKey key) {
+            return null;
+        }
+
+        @Override
+        public void addIdentity(Identity identity) throws KeyManagementException {
+            if (nameMap.put(identity.getName(), identity) != null) {
+                throw new KeyManagementException("Name already added");
+            }
+        }
+
+        @Override
+        public void removeIdentity(Identity identity) throws KeyManagementException {
+            nameMap.remove(identity.getName());
+        }
+
+        @Override
+        public Enumeration<Identity> identities() {
+            return null;
+        }
+    }
+
     /**
      * verify Identity.identityEquals(Identity) return true, only if names and public keys are equal
      */
     public void testIdentityEquals() throws Exception {
+        IdentityScope mockIdentityScope = new MockIdentityScope();
         String name = "nnn";
         PublicKey pk = new PublicKeyStub("aaa", "fff", new byte[]{1,2,3,4,5});
         IdentityStub i = new IdentityStub(name);
@@ -221,7 +259,7 @@ public class IdentityTest extends TestCase {
                 //new Object(), Boolean.FALSE,
                 new IdentityStub("111"), Boolean.FALSE,
                 new IdentityStub(name), Boolean.FALSE,
-                new IdentityStub(name, IdentityScope.getSystemScope()), Boolean.FALSE,
+                new IdentityStub(name, mockIdentityScope), Boolean.FALSE,
                 i, Boolean.TRUE,
                 new IdentityStub(name, pk), Boolean.TRUE
         };
@@ -229,7 +267,7 @@ public class IdentityTest extends TestCase {
             assertEquals(value[k+1], new Boolean(i.identityEquals((Identity)value[k])));
             if (Boolean.TRUE.equals(value[k+1])) assertEquals(i.hashCode(), value[k].hashCode());
         }
-        Identity i2 = IdentityScope.getSystemScope().getIdentity(name);
+        Identity i2 = mockIdentityScope.getIdentity(name);
         i2.setPublicKey(pk);
         assertTrue(i.identityEquals(i2));
     }
@@ -238,10 +276,11 @@ public class IdentityTest extends TestCase {
      * verify Identity.toString(boolean) return string representation of identity
      */
     public void testToStringboolean() throws Exception {
+        IdentityScope mockIdentityScope = new MockIdentityScope();
         new IdentityStub("aaa").toString(false);
-        new IdentityStub("aaa2", IdentityScope.getSystemScope()).toString(false);
+        new IdentityStub("aaa2", mockIdentityScope).toString(false);
         new IdentityStub("bbb").toString(true);
-        new IdentityStub("bbb2", IdentityScope.getSystemScope()).toString(true);
+        new IdentityStub("bbb2", mockIdentityScope).toString(true);
     }
 
     /**
