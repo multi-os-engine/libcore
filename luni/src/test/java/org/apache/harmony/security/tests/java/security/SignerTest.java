@@ -22,14 +22,18 @@
 
 package org.apache.harmony.security.tests.java.security;
 
+import java.security.Identity;
 import java.security.IdentityScope;
 import java.security.InvalidParameterException;
 import java.security.KeyManagementException;
 import java.security.KeyPair;
 import java.security.Permission;
 import java.security.Permissions;
+import java.security.PublicKey;
 import java.security.SecurityPermission;
 import java.security.Signer;
+import java.util.Enumeration;
+import java.util.HashSet;
 
 import org.apache.harmony.security.tests.support.PrivateKeyStub;
 import org.apache.harmony.security.tests.support.PublicKeyStub;
@@ -59,7 +63,7 @@ public class SignerTest extends TestCase {
         Signer s1 = new SignerStub("testToString1");
         assertEquals("[Signer]testToString1", s1.toString());
 
-        Signer s2 = new SignerStub("testToString2", IdentityScope.getSystemScope());
+        Signer s2 = new SignerStub("testToString2", new MockIdentityScope());
         s2.toString();
 
         KeyPair kp = new KeyPair(new PublicKeyStub("public", "SignerTest.testToString", null),
@@ -95,18 +99,57 @@ public class SignerTest extends TestCase {
 
     }
 
+    private static final class MockIdentityScope extends IdentityScope {
+        private final HashSet<String> namesSeen = new HashSet<String>();
+        @Override
+        public int size() {
+            return 0;
+        }
+
+        @Override
+        public Identity getIdentity(String name) {
+            return null;
+        }
+
+        @Override
+        public Identity getIdentity(PublicKey key) {
+            return null;
+        }
+
+        @Override
+        public void addIdentity(Identity identity) throws KeyManagementException {
+            if (!namesSeen.add(identity.getName())) {
+                throw new KeyManagementException("Name already added");
+            }
+        }
+
+        @Override
+        public void removeIdentity(Identity identity) throws KeyManagementException {
+            namesSeen.remove(identity.getName());
+        }
+
+        @Override
+        public Enumeration<Identity> identities() {
+            return null;
+        }
+    };
+
     /**
      * verify  Signer(String, IdentityScope) creates instance
      */
     public void testSignerStringIdentityScope() throws Exception {
-        Signer s = new SignerStub("sss4", IdentityScope.getSystemScope());
+        IdentityScope mockIdentityScope = new MockIdentityScope();
+        Signer s = new SignerStub("sss4", mockIdentityScope);
         assertNotNull(s);
         assertEquals("sss4", s.getName());
-        assertSame(IdentityScope.getSystemScope(), s.getScope());
+        assertSame(mockIdentityScope, s.getScope());
         assertNull(s.getPrivateKey());
 
         try {
-            Signer s2 = new SignerStub("sss4", IdentityScope.getSystemScope());
+            // Check that the creation of a signer with a clashing name throws the required
+            // exception, provided that the underlying IdentityScope does (that is, check that
+            // the Signer is effectively being added to the scope).
+            Signer s2 = new SignerStub("sss4", mockIdentityScope);
             fail("expected KeyManagementException not thrown");
         } catch (KeyManagementException e)
         {
