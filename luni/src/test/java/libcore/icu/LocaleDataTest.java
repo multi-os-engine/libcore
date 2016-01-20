@@ -19,14 +19,6 @@ package libcore.icu;
 import java.util.Locale;
 
 public class LocaleDataTest extends junit.framework.TestCase {
-  public void testAll() throws Exception {
-    // Test that we can get the locale data for all known locales.
-    for (Locale l : Locale.getAvailableLocales()) {
-      LocaleData d = LocaleData.get(l);
-      // System.err.format("%20s %s %s %s\n", l, d.yesterday, d.today, d.tomorrow);
-      // System.err.format("%20s %10s %10s\n", l, d.timeFormat_hm, d.timeFormat_Hm);
-    }
-  }
 
   public void test_en_US() throws Exception {
     LocaleData l = LocaleData.get(Locale.US);
