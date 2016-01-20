@@ -59,8 +59,9 @@ public final class PathClassLoaderTest extends TestCase {
         // Extract loading-test.jar from the resource.
         ClassLoader pcl = PathClassLoaderTest.class.getClassLoader();
         File jar = File.createTempFile("loading-test", ".jar");
-        try (InputStream in = pcl.getResourceAsStream("dalvik/system/loading-test.jar");
-             FileOutputStream out = new FileOutputStream(jar)) {
+        InputStream in = null;
+        FileOutputStream out = null;
+        try (in = pcl.getResourceAsStream("dalvik/system/loading-test.jar"); out = new FileOutputStream(jar)) {
           Streams.copy(in, out);
         }
 
@@ -73,6 +74,17 @@ public final class PathClassLoaderTest extends TestCase {
 
         // Clean up the extracted jar file.
         assertTrue(jar.delete());
+
+        finally{
+            if(in != null){
+                in.close();
+                in = null;
+            }
+            if(out != null){
+                out.close();
+                out = null;
+            }
+        }
     }
 
     @Override protected void setUp() throws Exception {
