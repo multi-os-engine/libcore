@@ -16,17 +16,36 @@
 
 package libcore.icu;
 
+import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.Locale;
 
+import libcore.icu.ICU;
+import libcore.icu.LocaleData;
+
 public class LocaleDataTest extends junit.framework.TestCase {
-  public void testAll() throws Exception {
-    // Test that we can get the locale data for all known locales.
-    for (Locale l : Locale.getAvailableLocales()) {
-      LocaleData d = LocaleData.get(l);
-      // System.err.format("%20s %s %s %s\n", l, d.yesterday, d.today, d.tomorrow);
-      // System.err.format("%20s %10s %10s\n", l, d.timeFormat_hm, d.timeFormat_Hm);
+
+    public void testAll() throws Exception {
+        // Test that we can get the locale data for all known locales.
+        for (Locale l : Locale.getAvailableLocales()) {
+            LocaleData d = LocaleData.get(l);
+            // System.err.format("%20s %s %s %s\n", l, d.yesterday, d.today, d.tomorrow);
+            // System.err.format("%20s %10s %10s\n", l, d.timeFormat_hm, d.timeFormat_Hm);
+        }
+        releaseResources();
     }
-  }
+
+    private void releaseResources() throws Exception {
+        Field icuField = ICU.class.getDeclaredField("availableLocalesCache");
+        icuField.setAccessible(true);
+        icuField.set(null, null);
+
+        Field localeDataField = LocaleData.class.getDeclaredField("localeDataCache");
+        localeDataField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        HashMap<String, LocaleData> localeDataCache = (HashMap<String, LocaleData>) localeDataField.get(null);
+        localeDataCache.clear();
+    }
 
   public void test_en_US() throws Exception {
     LocaleData l = LocaleData.get(Locale.US);
