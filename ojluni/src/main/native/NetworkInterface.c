@@ -46,11 +46,14 @@
 #endif
 
 #ifdef __linux__
+#include <dirent.h>
 #include <sys/ioctl.h>
 //#include <bits/ioctls.h>
 #include <sys/utsname.h>
 #include <stdio.h>
 #endif
+
+#define _PATH_SYS_CLASS_NET             "/sys/class/net"
 
 #ifdef __linux__
 #define _PATH_PROCNET_IFINET6           "/proc/net/if_inet6"
@@ -131,6 +134,7 @@ static jobject createNetworkInterface(JNIEnv *env, netif *ifs);
 static int     getFlags0(JNIEnv *env, jstring  ifname);
 
 static netif  *enumInterfaces(JNIEnv *env);
+static netif  *enumPacketInterfaces(JNIEnv *env, int sock, netif *ifs);
 static netif  *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs);
 
 #ifdef AF_INET6
@@ -745,22 +749,62 @@ jobject createNetworkInterface(JNIEnv *env, netif *ifs) {
 }
 
 /*
+ * Iterate through each interface in /sys/class/net and populate an entry in ifs
+ * with no associated address.
+ */
+static netif *enumPacketInterfaces(JNIEnv *env, int sock, netif *ifs) {
+  DIR* handle = opendir(_PATH_SYS_CLASS_NET);
+  if (handle == NULL) {
+    NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+                                 "Failed to open /sys/class/net.");
+    return NULL;
+  }
+
+  struct dirent* dir;
+  while ((dir = readdir(handle)) != NULL) {
+    if (dir->d_type == DT_LNK) {
+      ifs = addif(env, sock, dir->d_name, ifs, NULL, AF_PACKET, 0);
+    }
+
+    /*
+     * If an exception occurred then close the directory and free the list
+     */
+    if ((*env)->ExceptionOccurred(env)) {
+      if (ifs != NULL) {
+        freeif(ifs);
+      }
+      closedir(handle);
+      return NULL;
+    }
+  }
+  closedir(handle);
+  return ifs;
+}
+
+/*
  * Enumerates all interfaces
  */
 static netif *enumInterfaces(JNIEnv *env) {
-  netif *ifs;
+  netif *ifs = NULL;
   int sock;
-
-  /*
-   * Enumerate IPv4 addresses
-   */
 
   sock = openSocket(env, AF_INET);
   if (sock < 0 && (*env)->ExceptionOccurred(env)) {
     return NULL;
   }
 
-  ifs = enumIPv4Interfaces(env, sock, NULL);
+  /*
+   * Enumerate raw interfaces
+   */
+  ifs = enumPacketInterfaces(env, sock, ifs);
+  if (ifs == NULL && (*env)->ExceptionOccurred(env)) {
+    return NULL;
+  }
+
+  /*
+   * Enumerate IPv4 addresses
+   */
+  ifs = enumIPv4Interfaces(env, sock, ifs);
   close(sock);
 
   if (ifs == NULL && (*env)->ExceptionOccurred(env)) {
@@ -842,7 +886,7 @@ netif *addif(JNIEnv *env, int sock, const char * if_name,
              short prefix)
 {
   netif *currif = ifs, *parent;
-  netaddr *addrP;
+  netaddr *addrP = NULL;
 
 #ifdef LIFNAMSIZ
   int ifnam_size = LIFNAMSIZ;
@@ -875,29 +919,42 @@ netif *addif(JNIEnv *env, int sock, const char * if_name,
    */
   /*Allocate for addr and brdcast at once*/
 
+  switch(family) {
+    case AF_INET:
+      addr_size = sizeof(struct sockaddr_in);
+      break;
 #ifdef AF_INET6
-  addr_size = (family == AF_INET) ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
-#else
-  addr_size = sizeof(struct sockaddr_in);
+    case AF_INET6:
+      addr_size = sizeof(struct sockaddr_in6);
+      break;
 #endif
+    case AF_PACKET:
+      addr_size = 0;
+      break;
+    default:
+      return NULL;
+  }
 
-  CHECKED_MALLOC3(addrP, netaddr *, sizeof(netaddr)+2*addr_size);
-  addrP->addr = (struct sockaddr *)( (char *) addrP+sizeof(netaddr) );
-  memcpy(addrP->addr, ifr_addrP, addr_size);
 
-  addrP->family = family;
-  addrP->brdcast = NULL;
-  addrP->mask = prefix;
-  addrP->next = 0;
-  if (family == AF_INET) {
-    /*
-     * Deal with brodcast addr & subnet mask
-     */
-    struct sockaddr * brdcast_to = (struct sockaddr *) ((char *) addrP + sizeof(netaddr) + addr_size);
-    addrP->brdcast = getBroadcast(env, sock, name,  brdcast_to );
+  if (addr_size > 0) {
+    CHECKED_MALLOC3(addrP, netaddr *, sizeof(netaddr)+2*addr_size);
+    addrP->addr = (struct sockaddr *)( (char *) addrP+sizeof(netaddr) );
+    memcpy(addrP->addr, ifr_addrP, addr_size);
 
-    if (addrP->brdcast && (mask = getSubnet(env, sock, name)) != -1) {
-      addrP->mask = mask;
+    addrP->family = family;
+    addrP->brdcast = NULL;
+    addrP->mask = prefix;
+    addrP->next = 0;
+    if (family == AF_INET) {
+      /*
+       * Deal with brodcast addr & subnet mask
+       */
+      struct sockaddr * brdcast_to = (struct sockaddr *) ((char *) addrP + sizeof(netaddr) + addr_size);
+      addrP->brdcast = getBroadcast(env, sock, name,  brdcast_to );
+
+      if (addrP->brdcast && (mask = getSubnet(env, sock, name)) != -1) {
+        addrP->mask = mask;
+      }
     }
   }
 
@@ -958,7 +1015,9 @@ netif *addif(JNIEnv *env, int sock, const char * if_name,
   /*
    * Finally insert the address on the interface
    */
-  addrP->next = currif->addr;
+  if (addrP != NULL) {
+    addrP->next = currif->addr;
+  }
   currif->addr = addrP;
 
   parent = currif;
