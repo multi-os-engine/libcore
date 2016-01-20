@@ -153,6 +153,12 @@ public class DatagramChannelTest extends junit.framework.TestCase {
         dc.close();
     }
 
+    public void test_getFileDescriptor() throws Exception {
+        DatagramSocket socket = DatagramChannel.open().socket();
+        socket.getReuseAddress();
+        assertNotNull(socket.getFileDescriptor$());
+    }
+
     private static InetAddress getNonLoopbackNetworkInterfaceAddress(boolean ipv4) throws IOException {
         Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
         while (networkInterfaces.hasMoreElements()) {
