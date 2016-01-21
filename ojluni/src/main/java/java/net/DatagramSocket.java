@@ -1291,8 +1291,8 @@ class DatagramSocket implements java.io.Closeable {
         factory = fac;
     }
 
-    /* @hide */
-    public final FileDescriptor getFileDescriptor$() {
+    /** @hide */
+    public FileDescriptor getFileDescriptor$() {
         return impl.fd;
     }
 
