@@ -335,6 +335,11 @@ public final class VMRuntime {
     public native void runHeapTasks();
 
     /**
+    * Enable all features in the runtime required by native debuggers to debug the Java code.
+    */
+    public native void enableNativeDebugging();
+
+    /**
      * Let the heap know of the new process state. This can change allocation and garbage collection
      * behavior regarding trimming and compaction.
      */
