@@ -27,7 +27,9 @@ public class CalendarTest extends junit.framework.TestCase {
 
     private static final TimeZone AMERICA_SAO_PAULO = TimeZone.getTimeZone("America/Sao_Paulo");
 
-    /** This zone's DST offset is only 30 minutes. */
+    /**
+     * This zone's DST offset is only 30 minutes.
+     */
     private static final TimeZone AUSTRALIA_LORD_HOWE = TimeZone.getTimeZone("Australia/Lord_Howe");
 
     /**
@@ -196,7 +198,7 @@ public class CalendarTest extends junit.framework.TestCase {
     }
 
     private void assertCalendarEquals(Calendar calendar,
-            int year, int month, int day, int hour, int minute) {
+                                      int year, int month, int day, int hour, int minute) {
         assertEquals(year, calendar.get(Calendar.YEAR));
         assertEquals(month, calendar.get(Calendar.MONTH));
         assertEquals(day, calendar.get(Calendar.DATE));
@@ -211,33 +213,33 @@ public class CalendarTest extends junit.framework.TestCase {
 
     // https://code.google.com/p/android/issues/detail?id=45877
     public void test_clear_45877() {
-      GregorianCalendar cal = new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles"));
-      cal.set(Calendar.YEAR, 1970);
-      cal.set(Calendar.MONTH, Calendar.JANUARY);
-      cal.set(Calendar.DAY_OF_MONTH, 1);
-      cal.clear(Calendar.HOUR_OF_DAY);
-      cal.clear(Calendar.HOUR);
-      cal.clear(Calendar.MINUTE);
-      cal.clear(Calendar.SECOND);
-      cal.clear(Calendar.MILLISECOND);
+        GregorianCalendar cal = new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles"));
+        cal.set(Calendar.YEAR, 1970);
+        cal.set(Calendar.MONTH, Calendar.JANUARY);
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        cal.clear(Calendar.HOUR_OF_DAY);
+        cal.clear(Calendar.HOUR);
+        cal.clear(Calendar.MINUTE);
+        cal.clear(Calendar.SECOND);
+        cal.clear(Calendar.MILLISECOND);
 
-      // Now we have a mix of set and unset fields.
-      assertTrue(cal.isSet(Calendar.DAY_OF_MONTH));
-      assertFalse(cal.isSet(Calendar.HOUR_OF_DAY));
+        // Now we have a mix of set and unset fields.
+        assertTrue(cal.isSet(Calendar.DAY_OF_MONTH));
+        assertFalse(cal.isSet(Calendar.HOUR_OF_DAY));
 
-      // When we call get, unset fields are computed.
-      assertEquals(0, cal.get(Calendar.HOUR_OF_DAY));
-      // And set fields stay the same.
-      assertEquals(1, cal.get(Calendar.DAY_OF_MONTH));
+        // When we call get, unset fields are computed.
+        assertEquals(0, cal.get(Calendar.HOUR_OF_DAY));
+        // And set fields stay the same.
+        assertEquals(1, cal.get(Calendar.DAY_OF_MONTH));
 
-      // ...so now everything is set.
-      assertTrue(cal.isSet(Calendar.DAY_OF_MONTH));
-      assertTrue(cal.isSet(Calendar.HOUR_OF_DAY));
+        // ...so now everything is set.
+        assertTrue(cal.isSet(Calendar.DAY_OF_MONTH));
+        assertTrue(cal.isSet(Calendar.HOUR_OF_DAY));
 
-      assertEquals(28800000, cal.getTimeInMillis());
+        assertEquals(28800000, cal.getTimeInMillis());
 
-      cal.set(Calendar.HOUR_OF_DAY, 1);
-      assertEquals(32400000, cal.getTimeInMillis());
+        cal.set(Calendar.HOUR_OF_DAY, 1);
+        assertEquals(32400000, cal.getTimeInMillis());
     }
 
     // http://b/16938922.
@@ -289,6 +291,15 @@ public class CalendarTest extends junit.framework.TestCase {
         assertFalse(c.getCalenderFields() == c2.getCalenderFields());
         // ,,, and a shallow copy of subclass fields.
         assertSame(c.getSubclassFields(), c2.getSubclassFields());
+    }
+
+    // http://b/26581303
+    public void testSetHourOfDayInEuropeLondon() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.clear();
+        calendar.setTimeZone(TimeZone.getTimeZone("Europe/London"));
+        calendar.set(Calendar.HOUR_OF_DAY, 1);
+        assertEquals(1,calendar.get(Calendar.HOUR_OF_DAY));
     }
 
     public static class FakeCalendar extends Calendar {
