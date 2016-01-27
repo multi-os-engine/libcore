@@ -72,6 +72,7 @@ import java.security.PrivilegedAction;
  * threads.
  *
  * @since 1.7
+ * @hide
  */
 
 public abstract class FileSystemProvider {

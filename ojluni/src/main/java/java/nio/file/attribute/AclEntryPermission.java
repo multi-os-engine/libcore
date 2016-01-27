@@ -30,6 +30,7 @@ package java.nio.file.attribute;
  * {@link AclEntry entry}.
  *
  * @since 1.7
+ * @hide
  */
 
 public enum AclEntryPermission {

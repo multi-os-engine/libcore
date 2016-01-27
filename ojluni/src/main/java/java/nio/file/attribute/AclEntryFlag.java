@@ -33,6 +33,7 @@ package java.nio.file.attribute;
  * AclEntryType#AUDIT} and {@link AclEntryType#ALARM} entry types.
  *
  * @since 1.7
+ * @hide
  */
 
 public enum AclEntryFlag {

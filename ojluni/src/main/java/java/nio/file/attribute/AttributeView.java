@@ -33,6 +33,7 @@ package java.nio.file.attribute;
  * type-safe methods to read or update the attributes that it supports.
  *
  * @since 1.7
+ * @hide
  */
 
 public interface AttributeView {

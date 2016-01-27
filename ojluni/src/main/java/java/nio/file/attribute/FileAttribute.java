@@ -35,6 +35,7 @@ package java.nio.file.attribute;
  *
  * @since 1.7
  * @see PosixFilePermissions#asFileAttribute
+ * @hide
  */
 
 public interface FileAttribute<T> {

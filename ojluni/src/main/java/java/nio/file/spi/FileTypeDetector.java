@@ -45,6 +45,7 @@ import java.io.IOException;
  * @see java.nio.file.Files#probeContentType(Path)
  *
  * @since 1.7
+ * @hide
  */
 
 public abstract class FileTypeDetector {

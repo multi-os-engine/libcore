@@ -37,6 +37,7 @@ package java.nio.file.attribute;
  * @since 1.7
  *
  * @see UserPrincipalLookupService#lookupPrincipalByGroupName
+ * @hide
  */
 
 public interface GroupPrincipal extends UserPrincipal { }

@@ -133,6 +133,7 @@ import java.io.IOException;
  * be more secure than requested.
  *
  * @since 1.7
+ * @hide
  */
 
 public interface PosixFileAttributeView

@@ -135,6 +135,7 @@ import java.io.IOException;
  * translation.
  *
  * @since 1.7
+ * @hide
  */
 
 public interface AclFileAttributeView

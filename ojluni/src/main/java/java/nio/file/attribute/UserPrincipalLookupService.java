@@ -48,6 +48,7 @@ import java.io.IOException;
  * @since 1.7
  *
  * @see java.nio.file.FileSystem#getUserPrincipalLookupService
+ * @hide
  */
 
 public abstract class UserPrincipalLookupService {

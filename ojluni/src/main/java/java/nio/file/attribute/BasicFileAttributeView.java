@@ -94,6 +94,7 @@ import java.io.IOException;
  * attributes as if by invoking the {@link #setTimes setTimes} method.
  *
  * @since 1.7
+ * @hide
  */
 
 public interface BasicFileAttributeView

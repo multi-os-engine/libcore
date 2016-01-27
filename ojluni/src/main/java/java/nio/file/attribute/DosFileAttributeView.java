@@ -78,6 +78,7 @@ import java.io.IOException;
  * {@link #setArchive setArchive} methods respectively.
  *
  * @since 1.7
+ * @hide
  */
 
 public interface DosFileAttributeView

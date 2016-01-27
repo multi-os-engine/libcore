@@ -32,6 +32,7 @@ import java.io.IOException;
  * the principal does not exist.
  *
  * @since 1.7
+ * @hide
  */
 
 public class UserPrincipalNotFoundException

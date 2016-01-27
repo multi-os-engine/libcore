@@ -33,6 +33,7 @@ package java.nio.file.attribute;
  * set of permissions.
  *
  * @since 1.7
+ * @hide
  */
 
 public enum PosixFilePermission {

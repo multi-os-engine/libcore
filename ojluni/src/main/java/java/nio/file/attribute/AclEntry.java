@@ -59,6 +59,7 @@ import java.util.*;
  * threads.
  *
  * @since 1.7
+ * @hide
  */
 
 public final class AclEntry {

@@ -30,6 +30,7 @@ package java.nio.file.attribute;
  * a {@link java.nio.file.FileStore}.
  *
  * @since 1.7
+ * @hide
  */
 
 public interface FileStoreAttributeView

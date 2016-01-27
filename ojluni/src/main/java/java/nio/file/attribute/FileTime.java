@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
  * @since 1.7
  * @see java.nio.file.Files#setLastModifiedTime
  * @see java.nio.file.Files#getLastModifiedTime
+ * @hide
  */
 
 public final class FileTime

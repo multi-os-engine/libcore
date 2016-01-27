@@ -29,6 +29,7 @@ package java.nio.file.attribute;
  * A typesafe enumeration of the access control entry types.
  *
  * @since 1.7
+ * @hide
  */
 
 public enum AclEntryType {

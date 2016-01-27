@@ -41,6 +41,7 @@ package java.nio.file.attribute;
  * @since 1.7
  *
  * @see BasicFileAttributeView
+ * @hide
  */
 
 public interface BasicFileAttributes {

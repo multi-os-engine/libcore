@@ -44,6 +44,7 @@ import java.io.IOException;
  * a {@link UserPrincipal}.
  *
  * @since 1.7
+ * @hide
  */
 
 public interface FileOwnerAttributeView

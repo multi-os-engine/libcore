@@ -34,6 +34,7 @@ package java.nio.file.attribute;
  * @since 1.7
  *
  * @see java.nio.file.Files#getFileAttributeView(Path,Class,java.nio.file.LinkOption[])
+ * @hide
  */
 
 public interface FileAttributeView

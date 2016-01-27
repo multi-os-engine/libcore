@@ -33,6 +33,7 @@ import java.util.*;
  * {@link PosixFilePermission} objects.
  *
  * @since 1.7
+ * @hide
  */
 
 public final class PosixFilePermissions {

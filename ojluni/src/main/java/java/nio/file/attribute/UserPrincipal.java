@@ -49,6 +49,7 @@ import java.security.Principal;
  * PosixFileAttributes#owner owner}.
  *
  * @since 1.7
+ * @hide
  */
 
 public interface UserPrincipal extends Principal { }
