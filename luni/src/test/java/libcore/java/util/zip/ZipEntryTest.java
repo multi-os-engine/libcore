@@ -145,25 +145,6 @@ public class ZipEntryTest extends junit.framework.TestCase {
     zipFile.close();
   }
 
-  public void testMaxLengthExtra_zip64() throws Exception {
-    // Not quite the max length (65535), but large enough that there's no space
-    // for the zip64 extended info header.
-    byte[] maxLengthExtra = new byte[65530];
-
-    File f = createTemporaryZipFile();
-    ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(f)),
-            true /* forceZip64 */);
-    ZipEntry ze = new ZipEntry("x");
-
-    ze.setExtra(maxLengthExtra);
-    try {
-      out.putNextEntry(ze);
-      fail();
-    } catch (ZipException expected) {
-    }
-  }
-
-
   public void testTooLongComment() throws Exception {
     String tooLongComment = makeString(65536, "z");
     ZipEntry ze = new ZipEntry("x");
