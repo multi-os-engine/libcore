@@ -27,7 +27,7 @@ import java.util.List;
  * {@link ClassLoader} implementations.
  */
 public class BaseDexClassLoader extends ClassLoader {
-    private final DexPathList pathList;
+    private DexPathList pathList;
     private final boolean sharedNamespace;
 
     /**
@@ -98,6 +98,13 @@ public class BaseDexClassLoader extends ClassLoader {
             throw cnfe;
         }
         return c;
+    }
+
+    /**
+     * @hide
+     */
+    public void addDexPath(String dexPath) {
+        this.pathList.addDexPath(dexPath, null /*optimizedDirectory*/);
     }
 
     @Override
