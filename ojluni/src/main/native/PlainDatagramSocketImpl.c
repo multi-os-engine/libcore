@@ -58,7 +58,6 @@
 
 #include "java_net_SocketOptions.h"
 #include "java_net_PlainDatagramSocketImpl.h"
-#include "java_net_NetworkInterface.h"
 #include "JNIHelp.h"
 
 #define NATIVE_METHOD(className, functionName, signature) \
@@ -1065,55 +1064,19 @@ PlainDatagramSocketImpl_datagramSocketClose(JNIEnv *env,
 
 
 /*
- * Set outgoing multicast interface designated by a NetworkInterface.
+ * Set outgoing multicast interface designated by a NetworkInterface index.
  * Throw exception if failed.
  *
  * Android changed: return 0 on success, negative on failure.
+ * Android changed: Interface index (not NetworkInterface) as the parameter
  */
-static int mcast_set_if_by_if_v4(JNIEnv *env, jobject this, int fd, jobject value) {
-    static jfieldID ni_addrsID;
-    struct in_addr in;
-    jobjectArray addrArray;
-    jsize len;
-    jobject addr;
-    int i;
-
-    if (ni_addrsID == NULL ) {
-        jclass c = (*env)->FindClass(env, "java/net/NetworkInterface");
-        // Android-changed: return -1 if null.
-        CHECK_NULL_RETURN(c, -1);
-        ni_addrsID = (*env)->GetFieldID(env, c, "addrs",
-                                        "[Ljava/net/InetAddress;");
-        // Android-changed: return -1 if null.
-        CHECK_NULL_RETURN(ni_addrsID, -1);
-    }
-
-    addrArray = (*env)->GetObjectField(env, value, ni_addrsID);
-    len = (*env)->GetArrayLength(env, addrArray);
-
-    /*
-     * Check that there is at least one address bound to this
-     * interface.
-     */
-    if (len < 1) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
-            "bad argument for IP_MULTICAST_IF2: No IP addresses bound to interface");
-        return -1;
-    }
-
-    /*
-     * We need an ipv4 address here
-     */
-    for (i = 0; i < len; i++) {
-        addr = (*env)->GetObjectArrayElement(env, addrArray, i);
-        if (getInetAddress_family(env, addr) == IPv4) {
-            in.s_addr = htonl(getInetAddress_addr(env, addr));
-            break;
-        }
-    }
+static int mcast_set_if_by_if_v4(JNIEnv *env, jobject this, int fd, jint ifindex) {
+    struct ip_mreqn req;
+    memset(&req, 0, sizeof(req));
+    req.imr_ifindex = ifindex;
 
     if (JVM_SetSockOpt(fd, IPPROTO_IP, IP_MULTICAST_IF,
-                       (const char*)&in, sizeof(in)) < 0) {
+                       (const char*)&req, sizeof(req)) < 0) {
         NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                        "Error setting socket option");
         return -1;
@@ -1125,23 +1088,12 @@ static int mcast_set_if_by_if_v4(JNIEnv *env, jobject this, int fd, jobject valu
 /*
  * Set outgoing multicast interface designated by a NetworkInterface.
  * Throw exception if failed.
+ * Android changed: Interface index (not NetworkInterface) as the parameter
  */
-#ifdef AF_INET6
-static void mcast_set_if_by_if_v6(JNIEnv *env, jobject this, int fd, jobject value) {
-    static jfieldID ni_indexID;
-    int index;
-
-    if (ni_indexID == NULL) {
-        jclass c = (*env)->FindClass(env, "java/net/NetworkInterface");
-        CHECK_NULL(c);
-        ni_indexID = (*env)->GetFieldID(env, c, "index", "I");
-        CHECK_NULL(ni_indexID);
-    }
-    index = (*env)->GetIntField(env, value, ni_indexID);
-
+static void mcast_set_if_by_if_v6(JNIEnv *env, jobject this, int fd, jint ifindex) {
     if (JVM_SetSockOpt(fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
-                       (const char*)&index, sizeof(index)) < 0) {
-        if (errno == EINVAL && index > 0) {
+                       (const char*)&ifindex, sizeof(ifindex)) < 0) {
+        if (errno == EINVAL && ifindex > 0) {
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                 "IPV6_MULTICAST_IF failed (interface has IPv4 "
                 "address only?)");
@@ -1153,56 +1105,56 @@ static void mcast_set_if_by_if_v6(JNIEnv *env, jobject this, int fd, jobject val
     }
 
 }
-#endif /* AF_INET6 */
 
+
+// mcast_set_if_by_addr_v4 and mcast_set_if_by_addr_v6 are temporarily
+// disabled for NetworkInterface switch to /sys/class/net
 /*
  * Set outgoing multicast interface designated by an InetAddress.
  * Throw exception if failed.
  *
  * Android-changed : Return type, return 0 on success, negative on failure.
  */
-static int mcast_set_if_by_addr_v4(JNIEnv *env, jobject this, int fd, jobject value) {
-    struct in_addr in;
+// static int mcast_set_if_by_addr_v4(JNIEnv *env, jobject this, int fd, jobject value) {
+//     struct in_addr in;
 
-    in.s_addr = htonl( getInetAddress_addr(env, value) );
+//     in.s_addr = htonl( getInetAddress_addr(env, value) );
 
-    if (JVM_SetSockOpt(fd, IPPROTO_IP, IP_MULTICAST_IF,
-                       (const char*)&in, sizeof(in)) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                         "Error setting socket option");
-        return -1;
-    }
+//     if (JVM_SetSockOpt(fd, IPPROTO_IP, IP_MULTICAST_IF,
+//                        (const char*)&in, sizeof(in)) < 0) {
+//         NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+//                          "Error setting socket option");
+//         return -1;
+//     }
 
-    return 0;
-}
+//     return 0;
+// }
 
 /*
  * Set outgoing multicast interface designated by an InetAddress.
  * Throw exception if failed.
  */
-#ifdef AF_INET6
-static void mcast_set_if_by_addr_v6(JNIEnv *env, jobject this, int fd, jobject value) {
-    static jclass ni_class;
-    if (ni_class == NULL) {
-        jclass c = (*env)->FindClass(env, "java/net/NetworkInterface");
-        CHECK_NULL(c);
-        ni_class = (*env)->NewGlobalRef(env, c);
-        CHECK_NULL(ni_class);
-    }
+// static void mcast_set_if_by_addr_v6(JNIEnv *env, jobject this, int fd, jobject value) {
+//     static jclass ni_class;
+//     if (ni_class == NULL) {
+//         jclass c = (*env)->FindClass(env, "java/net/NetworkInterface");
+//         CHECK_NULL(c);
+//         ni_class = (*env)->NewGlobalRef(env, c);
+//         CHECK_NULL(ni_class);
+//     }
 
-    value = NetworkInterface_getByInetAddress0(env, ni_class, value);
-    if (value == NULL) {
-        if (!(*env)->ExceptionOccurred(env)) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
-                 "bad argument for IP_MULTICAST_IF"
-                 ": address not bound to any interface");
-        }
-        return;
-    }
+//     value = NetworkInterface_getByInetAddress0(env, ni_class, value);
+//     if (value == NULL) {
+//         if (!(*env)->ExceptionOccurred(env)) {
+//             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+//                  "bad argument for IP_MULTICAST_IF"
+//                  ": address not bound to any interface");
+//         }
+//         return;
+//     }
 
-    mcast_set_if_by_if_v6(env, this, fd, value);
-}
-#endif
+//     mcast_set_if_by_if_v6(env, this, fd, value);
+// }
 
 /*
  * Sets the multicast interface.
@@ -1235,55 +1187,47 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd,
                                   jint opt, jobject value)
 {
     if (opt == java_net_SocketOptions_IP_MULTICAST_IF) {
+        // TODO: Re-write this code after NetworkInterface switches to
+        // /sys/class/net
+        // In a meantime this code throws UnsupportedOperationException
+        // just like pre-openJdk android.
         /*
          * value is an InetAddress.
          */
-#ifdef AF_INET6
-#ifdef __linux__
         // Android-changed: Return early if mcast_set_if_by_addr_v4 threw.
         // We don't want to call into the IPV6 code with a pending exception.
-        if (mcast_set_if_by_addr_v4(env, this, fd, value)) {
-            return;
-        }
-        if (ipv6_available()) {
-            mcast_set_if_by_addr_v6(env, this, fd, value);
-        }
-#else  /* __linux__ not defined */
-        if (ipv6_available()) {
-            mcast_set_if_by_addr_v6(env, this, fd, value);
-        } else {
-            mcast_set_if_by_addr_v4(env, this, fd, value);
-        }
-#endif  /* __linux__ */
-#else
-        mcast_set_if_by_addr_v4(env, this, fd, value);
-#endif  /* AF_INET6 */
+        // if (mcast_set_if_by_addr_v4(env, this, fd, value)) {
+        //     return;
+        // }
+        // if (ipv6_available()) {
+        //     mcast_set_if_by_addr_v6(env, this, fd, value);
+        // }
+        JNU_ThrowByName(env, "java/lang/UnsupportedOperationException",
+                        "Use IP_MULTICAST_IF2 on Android");
+        return;
     }
 
     if (opt == java_net_SocketOptions_IP_MULTICAST_IF2) {
         /*
-         * value is a NetworkInterface.
+         * value is a Integer (Android-changed, openJdk uses NetworkInterface)
          */
-#ifdef AF_INET6
-#ifdef __linux__
+        static jfieldID integer_valueID;
+        if (integer_valueID == NULL) {
+            jclass c = (*env)->FindClass(env, "java/lang/Integer");
+            CHECK_NULL(c);
+            integer_valueID = (*env)->GetFieldID(env, c, "value", "I");
+            CHECK_NULL(integer_valueID);
+        }
+        int index = (*env)->GetIntField(env, value, integer_valueID);
+
         // Android-changed: Return early if mcast_set_if_by_addr_v4 threw.
         // We don't want to call into the IPV6 code with a pending exception.
-        if (mcast_set_if_by_if_v4(env, this, fd, value)) {
+        if (mcast_set_if_by_if_v4(env, this, fd, index)) {
             return;
         }
         if (ipv6_available()) {
-            mcast_set_if_by_if_v6(env, this, fd, value);
+            mcast_set_if_by_if_v6(env, this, fd, index);
         }
-#else  /* __linux__ not defined */
-        if (ipv6_available()) {
-            mcast_set_if_by_if_v6(env, this, fd, value);
-        } else {
-            mcast_set_if_by_if_v4(env, this, fd, value);
-        }
-#endif  /* __linux__ */
-#else
-        mcast_set_if_by_if_v4(env, this, fd, value);
-#endif  /* AF_INET6 */
     }
 }
 
@@ -1480,60 +1424,22 @@ PlainDatagramSocketImpl_socketSetOption(JNIEnv *env,
  * SocketOptions.IP_MULTICAST_IF
  *      IPv4:   Query IPPROTO_IP/IP_MULTICAST_IF
  *              Create InetAddress
- *              IP_MULTICAST_IF returns struct ip_mreqn on 2.2
- *              kernel but struct in_addr on 2.4 kernel
- *      IPv6:   Query IPPROTO_IPV6 / IPV6_MULTICAST_IF or
- *              obtain from impl is Linux 2.2 kernel
- *              If index == 0 return InetAddress representing
- *              anyLocalAddress.
- *              If index > 0 query NetworkInterface by index
- *              and returns addrs[0]
+ *              IP_MULTICAST_IF returns in_addr
+ *      IPv6:   Disabled for NetworkInterface rewrite
  *
  * SocketOptions.IP_MULTICAST_IF2
- *      IPv4:   Query IPPROTO_IP/IP_MULTICAST_IF
- *              Query NetworkInterface by IP address and
- *              return the NetworkInterface that the address
- *              is bound too.
+ *      IPv4:   Disabled for NetworkInterface rewrite.
  *      IPv6:   Query IPPROTO_IPV6 / IPV6_MULTICAST_IF
- *              (except Linux .2 kernel)
  *              Query NetworkInterface by index and
- *              return NetworkInterface.
+ *              return it.
  */
 jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, jint opt) {
-    jboolean isIPV4 = JNI_TRUE;
-
-#ifdef AF_INET6
-    if (ipv6_available()) {
-        isIPV4 = JNI_FALSE;
-    }
-#endif
-
-    /*
-     * IPv4 implementation
-     */
-    if (isIPV4) {
-        static jclass inet4_class;
-        static jmethodID inet4_ctrID;
-
-        static jclass ni_class;
-        static jmethodID ni_ctrID;
-        static jfieldID ni_indexID;
-        static jfieldID ni_addrsID;
-
-        jobjectArray addrArray;
-        jobject addr;
-        jobject ni;
-
+    if (opt == java_net_SocketOptions_IP_MULTICAST_IF) {
         struct in_addr in;
-        struct in_addr *inP = &in;
         int len = sizeof(struct in_addr);
 
-#ifdef __linux__
-        struct ip_mreqn mreqn;
-#endif
-
         if (JVM_GetSockOpt(fd, IPPROTO_IP, IP_MULTICAST_IF,
-                           (char *)inP, &len) < 0) {
+                           (char *)&in, &len) < 0) {
             NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                              "Error getting socket option");
             return NULL;
@@ -1542,6 +1448,8 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, jint opt) {
         /*
          * Construct and populate an Inet4Address
          */
+        static jclass inet4_class;
+        static jmethodID inet4_ctrID;
         if (inet4_class == NULL) {
             jclass c = (*env)->FindClass(env, "java/net/Inet4Address");
             CHECK_NULL_RETURN(c, NULL);
@@ -1550,174 +1458,47 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, jint opt) {
             inet4_class = (*env)->NewGlobalRef(env, c);
             CHECK_NULL_RETURN(inet4_class, NULL);
         }
-        addr = (*env)->NewObject(env, inet4_class, inet4_ctrID, 0);
+        jobject addr = (*env)->NewObject(env, inet4_class, inet4_ctrID, 0);
         CHECK_NULL_RETURN(addr, NULL);
-
         setInetAddress_addr(env, addr, ntohl(in.s_addr));
 
         /*
          * For IP_MULTICAST_IF return InetAddress
          */
-        if (opt == java_net_SocketOptions_IP_MULTICAST_IF) {
-            return addr;
-        }
-
-        /*
-         * For IP_MULTICAST_IF2 we get the NetworkInterface for
-         * this address and return it
-         */
-        if (ni_class == NULL) {
-            jclass c = (*env)->FindClass(env, "java/net/NetworkInterface");
-            CHECK_NULL_RETURN(c, NULL);
-            ni_ctrID = (*env)->GetMethodID(env, c, "<init>", "()V");
-            CHECK_NULL_RETURN(ni_ctrID, NULL);
-            ni_indexID = (*env)->GetFieldID(env, c, "index", "I");
-            CHECK_NULL_RETURN(ni_indexID, NULL);
-            ni_addrsID = (*env)->GetFieldID(env, c, "addrs",
-                                            "[Ljava/net/InetAddress;");
-            CHECK_NULL_RETURN(ni_addrsID, NULL);
-            ni_class = (*env)->NewGlobalRef(env, c);
-            CHECK_NULL_RETURN(ni_class, NULL);
-        }
-        ni = NetworkInterface_getByInetAddress0(env, ni_class, addr);
-        if (ni) {
-            return ni;
-        }
-
-        /*
-         * The address doesn't appear to be bound at any known
-         * NetworkInterface. Therefore we construct a NetworkInterface
-         * with this address.
-         */
-        ni = (*env)->NewObject(env, ni_class, ni_ctrID, 0);
-        CHECK_NULL_RETURN(ni, NULL);
-
-        (*env)->SetIntField(env, ni, ni_indexID, -1);
-        addrArray = (*env)->NewObjectArray(env, 1, inet4_class, NULL);
-        CHECK_NULL_RETURN(addrArray, NULL);
-        (*env)->SetObjectArrayElement(env, addrArray, 0, addr);
-        (*env)->SetObjectField(env, ni, ni_addrsID, addrArray);
-        return ni;
+        return addr;
     }
 
-
-#ifdef AF_INET6
-    /*
-     * IPv6 implementation
-     */
-    if ((opt == java_net_SocketOptions_IP_MULTICAST_IF) ||
-        (opt == java_net_SocketOptions_IP_MULTICAST_IF2)) {
-
-        static jclass ni_class;
-        static jmethodID ni_ctrID;
-        static jfieldID ni_indexID;
-        static jfieldID ni_addrsID;
-        static jclass ia_class;
-        static jmethodID ia_anyLocalAddressID;
-
+    if (opt == java_net_SocketOptions_IP_MULTICAST_IF2) {
         int index;
         int len = sizeof(index);
 
-        jobjectArray addrArray;
-        jobject addr;
-        jobject ni;
-
-        {
-            if (JVM_GetSockOpt(fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
-                               (char*)&index, &len) < 0) {
-                NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                               "Error getting socket option");
-                return NULL;
-            }
+        if (JVM_GetSockOpt(fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+                           (char*)&index, &len) < 0) {
+            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+                                         "Error getting socket option");
+            return NULL;
         }
 
-        if (ni_class == NULL) {
-            jclass c = (*env)->FindClass(env, "java/net/NetworkInterface");
+        static jclass int_class;
+        static jmethodID int_ctrId;
+
+        if (int_class == NULL) {
+            jclass c = (*env)->FindClass(env, "java/lang/Integer");
             CHECK_NULL_RETURN(c, NULL);
-            ni_ctrID = (*env)->GetMethodID(env, c, "<init>", "()V");
-            CHECK_NULL_RETURN(ni_ctrID, NULL);
-            ni_indexID = (*env)->GetFieldID(env, c, "index", "I");
-            CHECK_NULL_RETURN(ni_indexID, NULL);
-            ni_addrsID = (*env)->GetFieldID(env, c, "addrs",
-                                            "[Ljava/net/InetAddress;");
-            CHECK_NULL_RETURN(ni_addrsID, NULL);
-
-            ia_class = (*env)->FindClass(env, "java/net/InetAddress");
-            CHECK_NULL_RETURN(ia_class, NULL);
-            ia_class = (*env)->NewGlobalRef(env, ia_class);
-            CHECK_NULL_RETURN(ia_class, NULL);
-            ia_anyLocalAddressID = (*env)->GetStaticMethodID(env,
-                                                             ia_class,
-                                                             "anyLocalAddress",
-                                                             "()Ljava/net/InetAddress;");
-            CHECK_NULL_RETURN(ia_anyLocalAddressID, NULL);
-            ni_class = (*env)->NewGlobalRef(env, c);
-            CHECK_NULL_RETURN(ni_class, NULL);
+            int_ctrId  = (*env)->GetMethodID(env, c, "<init>", "()I");
+            CHECK_NULL_RETURN(int_ctrId, NULL);
+            int_class = (*env)->NewGlobalRef(env, c);
+            CHECK_NULL_RETURN(int_class, NULL);
         }
 
-        /*
-         * If multicast to a specific interface then return the
-         * interface (for IF2) or the any address on that interface
-         * (for IF).
-         */
-        if (index > 0) {
-            ni = NetworkInterface_getByIndex0(env, ni_class,
-                                                                   index);
-            if (ni == NULL) {
-                char errmsg[255];
-                sprintf(errmsg,
-                        "IPV6_MULTICAST_IF returned index to unrecognized interface: %d",
-                        index);
-                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", errmsg);
-                return NULL;
-            }
-
-            /*
-             * For IP_MULTICAST_IF2 return the NetworkInterface
-             */
-            if (opt == java_net_SocketOptions_IP_MULTICAST_IF2) {
-                return ni;
-            }
-
-            /*
-             * For IP_MULTICAST_IF return addrs[0]
-             */
-            addrArray = (*env)->GetObjectField(env, ni, ni_addrsID);
-            if ((*env)->GetArrayLength(env, addrArray) < 1) {
-                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
-                    "IPV6_MULTICAST_IF returned interface without IP bindings");
-                return NULL;
-            }
-
-            addr = (*env)->GetObjectArrayElement(env, addrArray, 0);
-            return addr;
-        }
-
-        /*
-         * Multicast to any address - return anyLocalAddress
-         * or a NetworkInterface with addrs[0] set to anyLocalAddress
-         */
-
-        addr = (*env)->CallStaticObjectMethod(env, ia_class, ia_anyLocalAddressID,
-                                              NULL);
-        if (opt == java_net_SocketOptions_IP_MULTICAST_IF) {
-            return addr;
-        }
-
-        ni = (*env)->NewObject(env, ni_class, ni_ctrID, 0);
-        CHECK_NULL_RETURN(ni, NULL);
-        (*env)->SetIntField(env, ni, ni_indexID, -1);
-        addrArray = (*env)->NewObjectArray(env, 1, ia_class, NULL);
-        CHECK_NULL_RETURN(addrArray, NULL);
-        (*env)->SetObjectArrayElement(env, addrArray, 0, addr);
-        (*env)->SetObjectField(env, ni, ni_addrsID, addrArray);
-        return ni;
+        jobject ifindex;
+        ifindex = (*env)->NewObject(env, int_class, int_ctrId, index);
+        CHECK_NULL_RETURN(ifindex, NULL);
+        return ifindex;
     }
-#endif
+
     return NULL;
 }
-
-
 
 /*
  * Returns relevant info as a jint.
