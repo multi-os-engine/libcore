@@ -304,8 +304,11 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
                  throw new SocketException("bad argument for IP_MULTICAST_IF");
              break;
          case IP_MULTICAST_IF2:
-             if (o == null || !(o instanceof NetworkInterface))
+             if (o == null || !(o instanceof Integer || o instanceof NetworkInterface))
                  throw new SocketException("bad argument for IP_MULTICAST_IF2");
+             if (o instanceof NetworkInterface) {
+                 o = new Integer(((NetworkInterface)o).getIndex());
+             }
              break;
          case IP_MULTICAST_LOOP:
              if (o == null || !(o instanceof Boolean))
