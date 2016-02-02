@@ -376,7 +376,6 @@ non_openjdk_java_files := \
   luni/src/main/java/libcore/math/MathUtils.java \
   luni/src/main/java/libcore/net/MimeUtils.java \
   luni/src/main/java/libcore/net/NetworkSecurityPolicy.java \
-  luni/src/main/java/libcore/net/UriCodec.java \
   luni/src/main/java/libcore/net/event/NetworkEventDispatcher.java \
   luni/src/main/java/libcore/net/event/NetworkEventListener.java \
   luni/src/main/java/libcore/net/http/HttpDate.java \
