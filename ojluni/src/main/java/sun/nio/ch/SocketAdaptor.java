@@ -61,8 +61,19 @@ public class SocketAdaptor
     private volatile int timeout = 0;
 
     private SocketAdaptor(SocketChannelImpl sc) throws SocketException {
-        super((SocketImpl) null);
+        super(new HolderSocketImpl(sc.getFD()));
         this.sc = sc;
+    }
+
+    /**
+     * This class is a hack that lets code that assumes every {@code Socket} has a
+     * non-null impl field continue working for now. Hopefully in the future this
+     * can go away.
+     */
+    private static HolderSocketImpl extends SocketImpl {
+        public HolderSocketImpl(FileDescriptor fd) {
+            this.fd = fd;
+        }
     }
 
     public static Socket create(SocketChannelImpl sc) {
