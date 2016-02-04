@@ -398,7 +398,7 @@ public class ZoneInfoTest extends TestCase {
         { 1800, 1 },
         { 5400, 0 }
     };
-    ZoneInfo zoneInfoCreated = createZoneInfo(times, offsets, secondsInMillis(-1));
+    ZoneInfo zoneInfoCreated = createZoneInfo("test", times, offsets, secondsInMillis(-1));
 
     assertEquals("Read ZoneInfo does not match created one", zoneInfoCreated, zoneInfoRead);
     assertEquals("useDaylightTime() mismatch",
@@ -413,10 +413,16 @@ public class ZoneInfoTest extends TestCase {
 
   private ZoneInfo createZoneInfo(int[][] transitionTimes, int[][] transitionTypes)
       throws Exception {
-    return createZoneInfo(transitionTimes, transitionTypes, System.currentTimeMillis());
+    return createZoneInfo(getName(), transitionTimes, transitionTypes, System.currentTimeMillis());
   }
 
   private ZoneInfo createZoneInfo(int[][] transitionTimes, int[][] transitionTypes,
+      long currentTimeMillis)
+      throws Exception {
+    return createZoneInfo(getName(), transitionTimes, transitionTypes, currentTimeMillis);
+  }
+
+  private ZoneInfo createZoneInfo(String name, int[][] transitionTimes, int[][] transitionTypes,
       long currentTimeMillis)
       throws Exception {
 
@@ -460,7 +466,7 @@ public class ZoneInfoTest extends TestCase {
       baos.write(i);
     }
 
-    return ZoneInfo.makeTimeZone("TimeZone for '" + getName() + "'",
+    return ZoneInfo.makeTimeZone("TimeZone for '" + name + "'",
         new ByteBufferIterator(ByteBuffer.wrap(baos.toByteArray())), currentTimeMillis);
   }
 
