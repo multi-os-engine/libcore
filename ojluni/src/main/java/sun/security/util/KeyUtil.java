@@ -1,4 +1,5 @@
 /*
+ * Copyright 2016 The Android Open Source Project
  * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,6 +33,7 @@ import java.security.InvalidKeyException;
 import java.security.interfaces.ECKey;
 import java.security.interfaces.RSAKey;
 import java.security.interfaces.DSAKey;
+import java.security.interfaces.DSAParams;
 import java.security.spec.KeySpec;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHKey;
@@ -84,7 +86,13 @@ public final class KeyUtil {
             size = pubk.getParams().getOrder().bitLength();
         } else if (key instanceof DSAKey) {
             DSAKey pubk = (DSAKey)key;
-            size = pubk.getParams().getP().bitLength();
+            DSAParams params = pubk.getParams();
+            // DSA keys are allowed to have inherited parameters, so
+            // this may be null. However, the parent key will be
+            // rejected when it is checked.
+            if (params != null) {
+                size = params.getP().bitLength();
+            }
         } else if (key instanceof DHKey) {
             DHKey pubk = (DHKey)key;
             size = pubk.getParams().getP().bitLength();
