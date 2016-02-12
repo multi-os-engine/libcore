@@ -47,6 +47,8 @@ public abstract class SSLServerSocketFactory extends ServerSocketFactory
 {
     private static SSLServerSocketFactory defaultServerSocketFactory;
 
+    private static int lastVersion = -1;
+
     private static boolean propertyChecked;
 
     private static void log(String msg) {
@@ -77,15 +79,27 @@ public abstract class SSLServerSocketFactory extends ServerSocketFactory
      * @see SSLContext#getDefault
      */
     public static synchronized ServerSocketFactory getDefault() {
-        if (defaultServerSocketFactory != null) {
+        if (defaultServerSocketFactory != null && lastVersion == Security.getVersion()) {
             return defaultServerSocketFactory;
         }
+
+        SSLServerSocketFactory previousDefaultServerSocketFactory = defaultServerSocketFactory;
+        lastVersion = Security.getVersion();
 
         if (propertyChecked == false) {
             propertyChecked = true;
             String clsName = SSLSocketFactory.getSecurityProperty
                                         ("ssl.ServerSocketFactory.provider");
             if (clsName != null) {
+                // The instance for the default socket factory is checked for updates quite
+                // often (for instance, every time a security provider is added). Which leads
+                // to unnecessary overload and excessive error messages in case of class-loading
+                // errors. Avoid creating a new object if the class name is the same as before.
+                if (previousDefaultServerSocketFactory != null
+                        && clsName.equals(previousDefaultServerSocketFactory.getClass().getName())) {
+                    defaultServerSocketFactory = previousDefaultServerSocketFactory;
+                    return defaultServerSocketFactory;
+                }
                 log("setting up default SSLServerSocketFactory");
                 try {
                     Class cls = null;
