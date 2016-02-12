@@ -256,6 +256,7 @@ public class DirectByteBuffer extends MappedByteBuffer implements DirectBuffer {
             throw new IllegalStateException("buffer is inaccessible");
         }
         if (src.hb != null) {
+            // Heap or direct buffer with backing array.
             int spos = src.position();
             int slim = src.limit();
             assert (spos <= slim);
@@ -265,6 +266,7 @@ public class DirectByteBuffer extends MappedByteBuffer implements DirectBuffer {
             put(src.hb, src.offset + spos, srem);
             src.position(spos + srem);
         } else {
+            // Direct buffer without backing array or mmapped file.
             super.put(src);
         }
         return this;
