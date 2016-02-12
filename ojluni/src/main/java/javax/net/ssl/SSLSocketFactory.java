@@ -92,15 +92,22 @@ public abstract class SSLSocketFactory extends SocketFactory
         }
 
         lastVersion = Security.getVersion();
+        SSLSocketFactory previousDefaultSocketFactory = defaultSocketFactory;
         defaultSocketFactory = null;
 
         String clsName = getSecurityProperty("ssl.SocketFactory.provider");
+
         if (clsName != null) {
+            if (clsName.equals(previousDefaultSocketFactory.getClass().getName())) {
+                defaultSocketFactory = previousDefaultSocketFactory;
+                return defaultSocketFactory;
+            }
             log("setting up default SSLSocketFactory");
             try {
                 Class cls = null;
                 try {
                     cls = Class.forName(clsName);
+
                 } catch (ClassNotFoundException e) {
                     // Android-changed; Try the contextClassLoader first.
                     ClassLoader cl = Thread.currentThread().getContextClassLoader();
