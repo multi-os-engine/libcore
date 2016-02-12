@@ -92,10 +92,20 @@ public abstract class SSLSocketFactory extends SocketFactory
         }
 
         lastVersion = Security.getVersion();
+        SSLSocketFactory previousDefaultSocketFactory = defaultSocketFactory;
         defaultSocketFactory = null;
 
         String clsName = getSecurityProperty("ssl.SocketFactory.provider");
+
         if (clsName != null) {
+            // In theory, the class loader could potentially provide a different class with the
+            // same name. However, we would need to create the object anyway, thus missing the
+            // point. Removing this caching mechanism breaks CTS tests
+            if (previousDefaultSocketFactory != null
+                    && clsName.equals(previousDefaultSocketFactory.getClass().getName())) {
+                defaultSocketFactory = previousDefaultSocketFactory;
+                return defaultSocketFactory;
+            }
             log("setting up default SSLSocketFactory");
             try {
                 Class cls = null;
