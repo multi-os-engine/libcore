@@ -438,6 +438,13 @@ public final class DexFile {
     public static final int SELF_PATCHOAT_NEEDED = 3;
 
     /**
+     * See {@link #getDexOptNeeded(String, String, String, boolean)}.
+     *
+     * @hide
+     */
+    public static final int OAT_IS_EXTRACT_ONLY = 4;
+
+    /**
      * Returns the VM's opinion of what kind of dexopt is needed to make the
      * apk/jar file up to date.
      *
