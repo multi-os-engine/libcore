@@ -414,7 +414,7 @@ public final class DexFile {
      *
      * @hide
      */
-    public static final int NO_DEXOPT_NEEDED = 0;
+    public static final int NO_DEXOPT_NEEDED_FULLY_COMPILED = 0;
 
     /**
      * See {@link #getDexOptNeeded(String, String, String, boolean)}.
@@ -436,6 +436,20 @@ public final class DexFile {
      * @hide
      */
     public static final int SELF_PATCHOAT_NEEDED = 3;
+
+    /**
+     * See {@link #getDexOptNeeded(String, String, String, boolean)}.
+     *
+     * @hide
+     */
+    public static final int NO_DEXOPT_NEEDED_ONLY_EXTRACTED = 4;
+
+    /**
+     * See {@link #getDexOptNeeded(String, String, String, boolean)}.
+     *
+     * @hide
+     */
+    public static final int NO_DEXOPT_NEEDED_PROFILE_GUIDE_COMPILED = 5;
 
     /**
      * Returns the VM's opinion of what kind of dexopt is needed to make the
