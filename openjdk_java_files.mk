@@ -99,6 +99,7 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/lang/annotation/ElementType.java \
     ojluni/src/main/java/java/lang/annotation/IncompleteAnnotationException.java \
     ojluni/src/main/java/java/lang/annotation/Inherited.java \
+    ojluni/src/main/java/java/lang/annotation/Native.java \
     ojluni/src/main/java/java/lang/annotation/Retention.java \
     ojluni/src/main/java/java/lang/annotation/Repeatable.java \
     ojluni/src/main/java/java/lang/annotation/RetentionPolicy.java \
@@ -648,18 +649,22 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/util/AbstractSet.java \
     ojluni/src/main/java/java/util/ArrayDeque.java \
     ojluni/src/main/java/java/util/ArrayList.java \
+    ojluni/src/main/java/java/util/ArrayPrefixHelpers.java \
     ojluni/src/main/java/java/util/Arrays.java \
+    ojluni/src/main/java/java/util/ArraysParallelSortHelpers.java \
     ojluni/src/main/java/java/util/BitSet.java \
     ojluni/src/main/java/java/util/Calendar.java \
     ojluni/src/main/java/java/util/Collection.java \
     ojluni/src/main/java/java/util/Collections.java \
     ojluni/src/main/java/java/util/ComparableTimSort.java \
     ojluni/src/main/java/java/util/Comparator.java \
+    ojluni/src/main/java/java/util/Comparators.java \
     ojluni/src/main/java/java/util/ConcurrentModificationException.java \
     ojluni/src/main/java/java/util/Currency.java \
     ojluni/src/main/java/java/util/Date.java \
     ojluni/src/main/java/java/util/Deque.java \
     ojluni/src/main/java/java/util/Dictionary.java \
+    ojluni/src/main/java/java/util/DoubleSummaryStatistics.java \
     ojluni/src/main/java/java/util/DualPivotQuicksort.java \
     ojluni/src/main/java/java/util/DuplicateFormatFlagsException.java \
     ojluni/src/main/java/java/util/EmptyStackException.java \
@@ -687,6 +692,7 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/util/IllegalFormatWidthException.java \
     ojluni/src/main/java/java/util/IllformedLocaleException.java \
     ojluni/src/main/java/java/util/InputMismatchException.java \
+    ojluni/src/main/java/java/util/IntSummaryStatistics.java \
     ojluni/src/main/java/java/util/InvalidPropertiesFormatException.java \
     ojluni/src/main/java/java/util/Iterator.java \
     ojluni/src/main/java/java/util/function/BiConsumer.java \
@@ -768,6 +774,7 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/util/logging/SocketHandler.java \
     ojluni/src/main/java/java/util/logging/StreamHandler.java \
     ojluni/src/main/java/java/util/logging/XMLFormatter.java \
+    ojluni/src/main/java/java/util/LongSummaryStatistics.java \
     ojluni/src/main/java/java/util/Map.java \
     ojluni/src/main/java/java/util/MissingFormatArgumentException.java \
     ojluni/src/main/java/java/util/MissingFormatWidthException.java \
@@ -778,6 +785,10 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/util/Objects.java \
     ojluni/src/main/java/java/util/Observable.java \
     ojluni/src/main/java/java/util/Observer.java \
+    ojluni/src/main/java/java/util/Optional.java \
+    ojluni/src/main/java/java/util/OptionalDouble.java \
+    ojluni/src/main/java/java/util/OptionalInt.java \
+    ojluni/src/main/java/java/util/OptionalLong.java \
     ojluni/src/main/java/java/util/prefs/AbstractPreferences.java \
     ojluni/src/main/java/java/util/prefs/BackingStoreException.java \
     ojluni/src/main/java/java/util/prefs/Base64.java \
@@ -791,6 +802,7 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/util/prefs/PreferencesFactory.java \
     ojluni/src/main/java/java/util/prefs/Preferences.java \
     ojluni/src/main/java/java/util/prefs/XmlSupport.java \
+    ojluni/src/main/java/java/util/PrimitiveIterator.java \
     ojluni/src/main/java/java/util/PriorityQueue.java \
     ojluni/src/main/java/java/util/Properties.java \
     ojluni/src/main/java/java/util/PropertyPermission.java \
@@ -807,8 +819,46 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/util/SimpleTimeZone.java \
     ojluni/src/main/java/java/util/SortedMap.java \
     ojluni/src/main/java/java/util/SortedSet.java \
+    ojluni/src/main/java/java/util/Spliterator.java \
+    ojluni/src/main/java/java/util/Spliterators.java \
     ojluni/src/main/java/java/util/Stack.java \
+    ojluni/src/main/java/java/util/StringJoiner.java \
     ojluni/src/main/java/java/util/StringTokenizer.java \
+    ojluni/src/main/java/java/util/stream/AbstractPipeline.java \
+    ojluni/src/main/java/java/util/stream/AbstractShortCircuitTask.java \
+    ojluni/src/main/java/java/util/stream/AbstractSpinedBuffer.java \
+    ojluni/src/main/java/java/util/stream/AbstractTask.java \
+    ojluni/src/main/java/java/util/stream/BaseStream.java \
+    ojluni/src/main/java/java/util/stream/Collector.java \
+    ojluni/src/main/java/java/util/stream/Collectors.java \
+    ojluni/src/main/java/java/util/stream/DistinctOps.java \
+    ojluni/src/main/java/java/util/stream/DoublePipeline.java \
+    ojluni/src/main/java/java/util/stream/DoubleStream.java \
+    ojluni/src/main/java/java/util/stream/FindOps.java \
+    ojluni/src/main/java/java/util/stream/ForEachOps.java \
+    ojluni/src/main/java/java/util/stream/IntPipeline.java \
+    ojluni/src/main/java/java/util/stream/IntStream.java \
+    ojluni/src/main/java/java/util/stream/LongPipeline.java \
+    ojluni/src/main/java/java/util/stream/LongStream.java \
+    ojluni/src/main/java/java/util/stream/MatchOps.java \
+    ojluni/src/main/java/java/util/stream/Node.java \
+    ojluni/src/main/java/java/util/stream/Nodes.java \
+    ojluni/src/main/java/java/util/stream/PipelineHelper.java \
+    ojluni/src/main/java/java/util/stream/ReduceOps.java \
+    ojluni/src/main/java/java/util/stream/ReferencePipeline.java \
+    ojluni/src/main/java/java/util/stream/Sink.java \
+    ojluni/src/main/java/java/util/stream/SliceOps.java \
+    ojluni/src/main/java/java/util/stream/SortedOps.java \
+    ojluni/src/main/java/java/util/stream/SpinedBuffer.java \
+    ojluni/src/main/java/java/util/stream/Stream.java \
+    ojluni/src/main/java/java/util/stream/StreamOpFlag.java \
+    ojluni/src/main/java/java/util/stream/StreamShape.java \
+    ojluni/src/main/java/java/util/stream/Streams.java \
+    ojluni/src/main/java/java/util/stream/StreamSpliterators.java \
+    ojluni/src/main/java/java/util/stream/StreamSupport.java \
+    ojluni/src/main/java/java/util/stream/TerminalOp.java \
+    ojluni/src/main/java/java/util/stream/TerminalSink.java \
+    ojluni/src/main/java/java/util/stream/Tripwire.java \
     ojluni/src/main/java/java/util/Timer.java \
     ojluni/src/main/java/java/util/TimerTask.java \
     ojluni/src/main/java/java/util/TimeZone.java \
@@ -816,6 +866,7 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/util/TooManyListenersException.java \
     ojluni/src/main/java/java/util/TreeMap.java \
     ojluni/src/main/java/java/util/TreeSet.java \
+    ojluni/src/main/java/java/util/Tripwire.java \
     ojluni/src/main/java/java/util/UnknownFormatConversionException.java \
     ojluni/src/main/java/java/util/UnknownFormatFlagsException.java \
     ojluni/src/main/java/java/util/UUID.java \
@@ -990,7 +1041,6 @@ openjdk_java_files := \
     ojluni/src/main/java/com/sun/security/cert/internal/x509/X509V1CertImpl.java \
     ojluni/src/main/java/java/beans/ChangeListenerMap.java \
     ojluni/src/main/java/java/lang/Shutdown.java \
-    ojluni/src/main/java/sun/misc/FDBigInt.java \
     ojluni/src/main/java/java/lang/FloatingDecimal.java \
     ojluni/src/main/java/java/text/spi/BreakIteratorProvider.java \
     ojluni/src/main/java/java/text/spi/CollatorProvider.java \
@@ -1012,8 +1062,11 @@ openjdk_java_files := \
     ojluni/src/main/java/sun/misc/Cleaner.java \
     ojluni/src/main/java/sun/misc/CompoundEnumeration.java \
     ojluni/src/main/java/sun/misc/DoubleConsts.java \
+    ojluni/src/main/java/sun/misc/FDBigInt.java \
+    ojluni/src/main/java/sun/misc/FDBigInteger.java \
     ojluni/src/main/java/sun/misc/FileURLMapper.java \
     ojluni/src/main/java/sun/misc/FloatConsts.java \
+    ojluni/src/main/java/sun/misc/FloatingDecimal.java \
     ojluni/src/main/java/sun/misc/FormattedFloatingDecimal.java \
     ojluni/src/main/java/sun/misc/FpUtils.java \
     ojluni/src/main/java/sun/misc/Hashing.java \
@@ -1466,3 +1519,4 @@ openjdk_lambda_stub_files := \
     ojluni/src/lambda/java/java/lang/invoke/MethodHandleInfo.java \
     ojluni/src/lambda/java/java/lang/invoke/MethodHandles.java \
     ojluni/src/lambda/java/java/lang/invoke/MethodType.java \
+    ojluni/src/lambda/java/java/lang/invoke/SerializedLambda.java \

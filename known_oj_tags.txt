@@ -20,3 +20,5 @@
 @spec
 @revised
 @jls
+@implNote
+@implSpec
