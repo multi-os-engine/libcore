@@ -18,6 +18,8 @@ package dalvik.system;
 
 import java.io.File;
 
+import javax.crypto.JceSecurity;
+import java.util.UUID;
 /**
  * Provides hooks for the zygote to call back into the runtime to perform
  * parent or child specific initialization..
@@ -49,6 +51,9 @@ public final class ZygoteHooks {
         nativePostForkChild(token, debugFlags, isSystemServer, instructionSet);
 
         Math.setRandomSeedInternal(System.currentTimeMillis());
+
+        JceSecurity.clearSecureRandomState();
+        UUID.clearSecureRandomState();
     }
 
     /**

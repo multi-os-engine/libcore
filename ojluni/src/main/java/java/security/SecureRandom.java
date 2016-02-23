@@ -416,6 +416,14 @@ public class SecureRandom extends java.util.Random {
     }
 
     /**
+     * Clear the seed, so it will be lazily initialized on the next use
+     * @hide
+     */
+    synchronized public void clearSeed() {
+        secureRandomSpi.engineSetSeed(null);
+    }
+
+    /**
      * Reseeds this random object, using the eight bytes contained
      * in the given <code>long seed</code>. The given seed supplements,
      * rather than replaces, the existing seed. Thus, repeated calls

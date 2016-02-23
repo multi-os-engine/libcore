@@ -139,7 +139,12 @@ implements java.io.Serializable {
             for (int i = 0; i < state.length; i++)
                 state[i] = 0;
         }
-        state = digest.digest(seed);
+        if (seed != null) {
+            state = digest.digest(seed);
+        } else {
+            // Reset the seed, so it will be generated on next use
+            state = null;
+        }
     }
 
     private static void updateState(byte[] state, byte[] output) {

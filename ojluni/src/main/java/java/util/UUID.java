@@ -440,4 +440,12 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                   (this.leastSigBits > val.leastSigBits ? 1 :
                    0))));
     }
+
+    /**
+     * Clear the SecureRandom seed, so it will be lazily initialized on the next use
+     * @hide
+     */
+    static public void clearSecureRandomState() {
+        Holder.numberGenerator.clearSeed();
+    }
 }

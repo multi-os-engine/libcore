@@ -43,9 +43,10 @@ import sun.security.jca.GetInstance.Instance;
  * @author Jan Luehe
  * @author Sharon Liu
  * @since 1.4
+ * @hide
  */
 
-final class JceSecurity {
+final public  class JceSecurity {
 
     static final SecureRandom RANDOM = new SecureRandom();
 
@@ -336,5 +337,13 @@ final class JceSecurity {
 
     static boolean isRestricted() {
         return isRestricted;
+    }
+
+    /**
+     * Clear the SecureRandom seed, so it will be lazily initialized on the next use
+     * @hide
+     */
+    static public void clearSecureRandomState() {
+        RANDOM.clearSeed();
     }
 }
