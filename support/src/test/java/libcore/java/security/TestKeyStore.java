@@ -581,7 +581,11 @@ public final class TestKeyStore extends Assert {
         long now = System.currentTimeMillis();
         Date start = new Date(now - millisPerDay);
         Date end = new Date(now + millisPerDay);
-        BigInteger serial = BigInteger.valueOf(1);
+
+        // Generate a random serial number.
+        byte[] serialBytes = new byte[16];
+        new SecureRandom().nextBytes(serialBytes);
+        BigInteger serial = new BigInteger(1, serialBytes);
 
         String keyAlgorithm = privateKey.getAlgorithm();
         String signatureAlgorithm;

@@ -23,7 +23,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -31,6 +33,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.security.KeyManagementException;
+import java.security.KeyStore.PrivateKeyEntry;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.PrivateKey;
@@ -40,6 +43,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -47,6 +51,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.ServerSocketFactory;
@@ -56,7 +61,6 @@ import javax.net.ssl.HandshakeCompletedEvent;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SNIHostName;
-import javax.net.ssl.SNIMatcher;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
@@ -72,6 +76,22 @@ import javax.net.ssl.StandardConstants;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
+
+import com.android.org.bouncycastle.asn1.x509.CRLReason;
+import com.android.org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import com.android.org.bouncycastle.cert.X509CertificateHolder;
+import com.android.org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+import com.android.org.bouncycastle.cert.ocsp.BasicOCSPResp;
+import com.android.org.bouncycastle.cert.ocsp.BasicOCSPRespBuilder;
+import com.android.org.bouncycastle.cert.ocsp.CertificateID;
+import com.android.org.bouncycastle.cert.ocsp.CertificateStatus;
+import com.android.org.bouncycastle.cert.ocsp.OCSPResp;
+import com.android.org.bouncycastle.cert.ocsp.OCSPRespBuilder;
+import com.android.org.bouncycastle.cert.ocsp.RevokedStatus;
+import com.android.org.bouncycastle.operator.DigestCalculatorProvider;
+import com.android.org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
+import com.android.org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+
 import junit.framework.TestCase;
 import libcore.io.IoUtils;
 import libcore.io.Streams;
@@ -2190,6 +2210,91 @@ public class SSLSocketTest extends TestCase {
         client.close();
         server.close();
         context.close();
+    }
+
+    private OCSPResp generateOCSPResponse(X509Certificate serverCertJca, X509Certificate caCertJca,
+            PrivateKey caKey, CertificateStatus status) throws Exception {
+        X509CertificateHolder caCert = new JcaX509CertificateHolder(caCertJca);
+
+        DigestCalculatorProvider digCalcProv = new BcDigestCalculatorProvider();
+        BasicOCSPRespBuilder basicBuilder = new BasicOCSPRespBuilder(
+                SubjectPublicKeyInfo.getInstance(caCertJca.getPublicKey().getEncoded()),
+                digCalcProv.get(CertificateID.HASH_SHA1));
+
+        CertificateID certId = new CertificateID(digCalcProv.get(CertificateID.HASH_SHA1),
+                caCert, serverCertJca.getSerialNumber());
+
+        basicBuilder.addResponse(certId, status);
+
+        BasicOCSPResp resp = basicBuilder.build(
+                new JcaContentSignerBuilder("SHA1withRSA").build(caKey), null, new Date());
+
+        OCSPRespBuilder builder = new OCSPRespBuilder();
+        return builder.build(OCSPRespBuilder.SUCCESSFUL, resp);
+    }
+
+    private void runOCSPStapledTest(CertificateStatus certStatus, final boolean goodStatus)
+            throws Exception {
+        final TestSSLContext c = TestSSLContext.create();
+
+        final SSLSocket client = (SSLSocket) c.clientContext.getSocketFactory().createSocket(
+                c.host, c.port);
+
+        OCSPResp ocspResponse = generateOCSPResponse(
+                (X509Certificate) TestKeyStore.getServer().getPrivateKey("RSA", "RSA")
+                        .getCertificate(),
+                (X509Certificate) TestKeyStore.getIntermediateCa().getPrivateKey("RSA", "RSA")
+                        .getCertificate(),
+                TestKeyStore.getIntermediateCa().getPrivateKey("RSA", "RSA").getPrivateKey(),
+                certStatus);
+
+        // Try to set some OCSP response data.
+        Field f_sslParameters = c.serverSocket.getClass().getDeclaredField("sslParameters");
+        f_sslParameters.setAccessible(true);
+        Object sslParameters = f_sslParameters.get(c.serverSocket);
+        Method m_setOCSPResponse = sslParameters.getClass().getDeclaredMethod("setOCSPResponse", byte[].class);
+        m_setOCSPResponse.setAccessible(true);
+        m_setOCSPResponse.invoke(sslParameters, ocspResponse.getEncoded());
+
+        final SSLSocket server = (SSLSocket) c.serverSocket.accept();
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<Void> future = executor.submit(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                if (goodStatus) {
+                    server.startHandshake();
+                } else {
+                    try {
+                        server.startHandshake();
+                        fail();
+                    } catch (SSLHandshakeException expected) {
+                    }
+                }
+                return null;
+            }
+        });
+        executor.shutdown();
+        if (goodStatus) {
+            client.startHandshake();
+        } else {
+            try {
+                client.startHandshake();
+                fail();
+            } catch (SSLHandshakeException expected) {
+            }
+        }
+        future.get();
+        server.close();
+        client.close();
+        c.close();
+    }
+
+    public void test_SSLSocket_StapledOCSPReject_AbortsConnection() throws Exception {
+        runOCSPStapledTest(new RevokedStatus(new Date(), CRLReason.keyCompromise), false);
+    }
+
+    public void test_SSLSocket_StapledOCSPAccept_Success() throws Exception {
+        runOCSPStapledTest(CertificateStatus.GOOD, true);
     }
 
     /**
