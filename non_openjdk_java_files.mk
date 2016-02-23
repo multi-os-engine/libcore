@@ -114,6 +114,7 @@ non_openjdk_javadoc_files := \
   luni/src/main/java/java/util/concurrent/ForkJoinWorkerThread.java \
   luni/src/main/java/java/util/concurrent/Future.java \
   luni/src/main/java/java/util/concurrent/FutureTask.java \
+  luni/src/main/java/java/util/concurrent/Helpers.java \
   luni/src/main/java/java/util/concurrent/LinkedBlockingDeque.java \
   luni/src/main/java/java/util/concurrent/LinkedBlockingQueue.java \
   luni/src/main/java/java/util/concurrent/LinkedTransferQueue.java \
