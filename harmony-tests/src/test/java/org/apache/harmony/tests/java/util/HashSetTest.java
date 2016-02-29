@@ -222,6 +222,21 @@ public class HashSetTest extends junit.framework.TestCase {
         cloned.add(new Integer(8));
     }
 
+    public void test_forEach() throws Exception {
+      HashSet<Integer> hs = new HashSet<Integer>();
+      hs.add(0);
+      hs.add(1);
+      hs.add(2);
+
+      HashSet<Integer> output = new HashSet<Integer>();
+      hs.forEach ( k -> output.add(k) );
+
+      assertEquals(3, output.size());
+      assertTrue(output.contains(0));
+      assertTrue(output.contains(1));
+      assertTrue(output.contains(2));
+    }
+
     /**
      * Sets up the fixture, for example, open a network connection. This method
      * is called before a test is executed.

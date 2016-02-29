@@ -689,6 +689,21 @@ public class HashMapTest extends junit.framework.TestCase {
         assertFalse(entrySet.contains(copyEntry));
     }
 
+    public void test_forEach() throws Exception {
+        HashMap<String, String> map = new HashMap<String, String>();
+        map.put("one", "1");
+        map.put("two", "2");
+        map.put("three", "3");
+
+        HashMap<String, String> output = new HashMap<String, String>();
+        map.forEach((k, v) -> output.put(k,v));
+
+        assertEquals(3, output.size());
+        assertEquals(map.get("one"), output.get("one"));
+        assertEquals(map.get("two"), output.get("two"));
+        assertEquals(map.get("three"), output.get("three"));
+    }
+
     private static class MockEntry implements Map.Entry {
 
         public Object getKey() {

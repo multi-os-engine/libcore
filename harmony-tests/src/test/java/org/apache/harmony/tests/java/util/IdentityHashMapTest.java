@@ -857,6 +857,22 @@ public class IdentityHashMapTest extends junit.framework.TestCase {
         assertSame(newValue, ihm.get(key));
     }
 
+    public void test_forEach() throws Exception {
+        IdentityHashMap<String, String> map = new IdentityHashMap<String, String>();
+        map.put("one", "1");
+        map.put("two", "2");
+        map.put("three", "3");
+
+        IdentityHashMap<String, String> output = new IdentityHashMap<String, String>();
+        map.forEach((k, v) -> output.put(k,v));
+
+        assertEquals(3, output.size());
+        assertEquals(map.get("one"), output.get("one"));
+        assertEquals(map.get("two"), output.get("two"));
+        assertEquals(map.get("three"), output.get("three"));
+    }
+
+
     // comparator for IdentityHashMap objects
     private static final SerializableAssert COMPARATOR = new SerializableAssert() {
         public void assertDeserialized(Serializable initial,

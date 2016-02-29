@@ -895,6 +895,21 @@ public class HashtableTest extends junit.framework.TestCase {
         }
     }
 
+    public void test_forEach() throws Exception {
+        Hashtable<String, String> ht = new Hashtable<String, String>();
+        ht.put("1", "one");
+        ht.put("2", "two");
+        ht.put("3", "three");
+        Hashtable<String, String> output = new Hashtable<String, String>();
+
+        ht.forEach((k,v) -> output.put(k,v));
+
+        assertEquals(3, output.size());
+        assertEquals(ht.get("one"), output.get("one"));
+        assertEquals(ht.get("two"), output.get("two"));
+        assertEquals(ht.get("three"), output.get("three"));
+    }
+
     protected Hashtable hashtableClone(Hashtable s) {
         return (Hashtable) s.clone();
     }

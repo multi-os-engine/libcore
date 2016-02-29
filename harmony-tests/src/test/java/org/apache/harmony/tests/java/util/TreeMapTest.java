@@ -1955,6 +1955,21 @@ public class TreeMapTest extends junit.framework.TestCase {
         Iterator iter = subMap.values().iterator();
     }
 
+    public void test_forEach() throws Exception {
+        TreeMap<String, String> map = new TreeMap<String, String>();
+        map.put("one", "1");
+        map.put("two", "2");
+        map.put("three", "3");
+
+        TreeMap<String, String> output = new TreeMap<String, String>();
+        map.forEach((k, v) -> output.put(k,v));
+
+        assertEquals(3, output.size());
+        assertEquals(map.get("one"), output.get("one"));
+        assertEquals(map.get("two"), output.get("two"));
+        assertEquals(map.get("three"), output.get("three"));
+    }
+
     /**
      * Sets up the fixture, for example, open a network connection. This method
      * is called before a test is executed.

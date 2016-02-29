@@ -1047,6 +1047,20 @@ public class ArrayListTest extends junit.framework.TestCase {
         assertEquals("string2", it.next());
     }
 
+    public void test_forEach() throws Exception {
+        ArrayList<Integer> list = new ArrayList<Integer>();
+        list.add(0);
+        list.add(1);
+        list.add(2);
+
+        ArrayList<Integer> output = new ArrayList<Integer>();
+        list.forEach ( k -> output.add(k) );
+
+        assertEquals(3, output.size());
+        assertEquals(0, (int)output.get(0));
+        assertEquals(1, (int)output.get(1));
+        assertEquals(2, (int)output.get(2));
+    }
 
     /**
      * Sets up the fixture, for example, open a network connection. This method

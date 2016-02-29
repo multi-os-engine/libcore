@@ -395,6 +395,21 @@ public class WeakHashMapTest extends junit.framework.TestCase {
         assertEquals("Incorrect number of keys returned after gc,", 99, valuesCollection.size());
     }
 
+    public void test_forEach() throws Exception {
+        WeakHashMap<String, String> map = new WeakHashMap<String, String>();
+        map.put("one", "1");
+        map.put("two", "2");
+        map.put("three", "3");
+
+        WeakHashMap<String, String> output = new WeakHashMap<String, String>();
+        map.forEach((k, v) -> output.put(k,v));
+
+        assertEquals(3, output.size());
+        assertEquals(map.get("one"), output.get("one"));
+        assertEquals(map.get("two"), output.get("two"));
+        assertEquals(map.get("three"), output.get("three"));
+    }
+
     /**
      * Sets up the fixture, for example, open a network connection. This method
      * is called before a test is executed.

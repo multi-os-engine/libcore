@@ -1383,6 +1383,21 @@ public class VectorTest extends junit.framework.TestCase {
         }
     }
 
+    public void test_forEach() throws Exception {
+      Vector<Integer> vector = new Vector<Integer>();
+      vector.add(0);
+      vector.add(1);
+      vector.add(2);
+
+      Vector<Integer> output = new Vector<Integer>();
+      vector.forEach ( k -> output.add(k) );
+
+      assertEquals(3, output.size());
+      assertEquals(0, (int)output.get(0));
+      assertEquals(1, (int)output.get(1));
+      assertEquals(2, (int)output.get(2));
+    }
+
     /**
      * Sets up the fixture, for example, open a network connection. This method
      * is called before a test is executed.
