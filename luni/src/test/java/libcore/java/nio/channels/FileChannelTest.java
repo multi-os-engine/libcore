@@ -215,6 +215,27 @@ public class FileChannelTest extends junit.framework.TestCase {
         fc.close();
     }
 
+    // b/27351214
+    public void test_close_fromFileDescriptor() throws Exception {
+        // Create a valid FileDescriptor
+        File tmp = File.createTempFile("FileChannelTest", "tmp");
+        FileOutputStream fos = new FileOutputStream(tmp);
+        FileDescriptor fd = fos.getFD();
+        assertTrue(fd.valid());
+
+        // Create FileOutputStream&FileChannel from FileDescriptor
+        FileOutputStream fosFromFd = new FileOutputStream(fd);
+        FileChannel fc = fosFromFd.getChannel();
+
+        // Invalidate FileDescriptor
+        fos.close();
+        assertFalse(fd.valid());
+
+        // Close FileOutputStream (and FileChannel).
+        fosFromFd.close();
+    }
+
+
     private static FileChannel createFileContainingBytes(byte[] bytes) throws IOException {
         File tmp = File.createTempFile("FileChannelTest", "tmp");
         FileOutputStream fos = new FileOutputStream(tmp, true);
