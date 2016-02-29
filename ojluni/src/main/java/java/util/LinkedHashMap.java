@@ -25,7 +25,10 @@
  */
 
 package java.util;
+
 import java.io.*;
+import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 /**
  * <p>Hash table and linked list implementation of the <tt>Map</tt> interface,
@@ -501,5 +504,16 @@ public class LinkedHashMap<K,V>
      */
     protected boolean removeEldestEntry(Map.Entry<K,V> eldest) {
         return false;
+    }
+
+    // Map overrides
+    public void forEach(BiConsumer<? super K, ? super V> action) {
+        if (action == null)
+            throw new NullPointerException();
+        int mc = modCount;
+        for (LinkedHashMapEntry<K,V> e = header.after; e != header; e = e.after)
+            action.accept(e.key, e.value);
+        if (modCount != mc)
+            throw new ConcurrentModificationException();
     }
 }

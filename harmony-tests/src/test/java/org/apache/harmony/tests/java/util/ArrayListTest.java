@@ -1047,6 +1047,38 @@ public class ArrayListTest extends junit.framework.TestCase {
         assertEquals("string2", it.next());
     }
 
+    public void test_forEach() throws Exception {
+        ArrayList<Integer> list = new ArrayList<>();
+        list.add(0);
+        list.add(1);
+        list.add(2);
+
+        ArrayList<Integer> output = new ArrayList<>();
+        list.forEach(k -> output.add(k));
+
+        assertEquals(list, output);
+    }
+
+    public void test_forEach_NPE() throws Exception {
+        ArrayList<Integer> list = new ArrayList<>();
+        try {
+            list.forEach(null);
+            fail();
+        } catch(NullPointerException expected) {}
+    }
+
+    public void test_forEach_CME() throws Exception {
+        ArrayList<Integer> list = new ArrayList<>();
+        list.add(1);
+        list.add(2);
+        try {
+            list.forEach(new java.util.function.Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer t) {list.add(t);}
+                });
+            fail();
+        } catch(ConcurrentModificationException expected) {}
+    }
 
     /**
      * Sets up the fixture, for example, open a network connection. This method
