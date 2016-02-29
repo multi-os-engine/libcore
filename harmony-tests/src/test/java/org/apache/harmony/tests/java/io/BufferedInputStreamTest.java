@@ -499,8 +499,13 @@ public class BufferedInputStreamTest extends TestCase {
         BufferedInputStream buffis = new BufferedInputStream(
                 new ByteArrayInputStream(input));
         buffis.mark(5);
+        // Skipping past the mark should invlaidate it.
         buffis.skip(6);
-        buffis.reset();
+        try {
+            buffis.reset();
+            fail();
+        } catch (IOException expected) {
+        }
     }
 
     /**
@@ -542,6 +547,17 @@ public class BufferedInputStreamTest extends TestCase {
     public void test_skip_NullInputStream() throws IOException {
         BufferedInputStream buf = new BufferedInputStream(null, 5);
         assertEquals(0, buf.skip(0));
+    }
+
+    // http://b/27191898
+    public void test_skip_refillsBufferAtLeastOnce() throws IOException {
+        ByteArrayInputStream bis =  new ByteArrayInputStream(
+                "skippety_skippy_skippety_skippy".getBytes(StandardCharsets.UTF_8));
+        BufferedInputStream bufferedStream = new BufferedInputStream(bis, 8);
+        bufferedStream.read(new byte[6]);
+        bufferedStream.mark(20);
+        // assertEquals(2, bufferedStream.available());
+        assertEquals(8, bufferedStream.skip(8));
     }
 
     /**

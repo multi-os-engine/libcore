@@ -360,21 +360,50 @@ class BufferedInputStream extends FilterInputStream {
         }
         long avail = count - pos;
 
-        if (avail <= 0) {
-            // If no mark position set then don't keep in buffer
-            if (markpos <0)
-                return getInIfOpen().skip(n);
-
-            // Fill in buffer to save bytes for reset
-            fill();
-            avail = count - pos;
-            if (avail <= 0)
-                return 0;
+        // Trivial case: We have more bytes in the buffer than we've been asked to
+        // skip. We can just update our position.
+        if (avail >= n) {
+            pos += n;
+            return n;
         }
 
-        long skipped = (avail < n) ? avail : n;
-        pos += skipped;
-        return skipped;
+        // Second trivial case : We don't have a mark set. We can pretend as though we've
+        // exhausted the contents of the current buffer and directly ask the underlying stream
+        // to skip the number of bytes we need.
+        //
+        // This case also applies if we're asked to skip past the mark limit.
+        if (markpos < 0 || (((pos - markpos) + n) > marklimit)) {
+            markpos = -1;
+            pos = count;
+            return avail + getInIfOpen().skip(n - avail);
+        }
+
+        // This is the hard part. We have a mark set, this stream will attempt to buffer the
+        // entire range of bytes between [markpos, marklimit) so we might potentially need to
+        // resize and fill the buffer.
+        //
+        // Invariant: We've been asked to skip more bytes than we have available in the buffer,
+        // (avail < n). We therefore pretend as though the buffer is exhausted and then ask for
+        // it to be filled again. {@code fill} might potentially resize the buffer and read more
+        // bytes into it.
+        pos = count;
+        fill();
+        final int remaining = count - pos;
+
+        // We're left with two cases here. The first is that our fill has given us enough bytes
+        // to fulfill our skip request, we can just return n in that case. The second is that we're
+        // still short, in which case we skip less than the requested |n| bytes.
+        //
+        // This is the key difference between the original OpenJdk implementation and this code.
+        // This code guarantees that we attempt to fill() the buffer precisely once if we don't
+        // have enough bytes remaining to satisfy our skip request.
+        if (remaining >= (n - avail)) {
+            pos += (n - avail);
+            return n;
+        }
+
+        pos = count;
+        return avail + remaining;
     }
 
     /**
