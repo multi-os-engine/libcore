@@ -792,6 +792,7 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/util/prefs/Preferences.java \
     ojluni/src/main/java/java/util/prefs/XmlSupport.java \
     ojluni/src/main/java/java/util/PriorityQueue.java \
+    ojluni/src/main/java/java/util/PrimitiveIterator.java \
     ojluni/src/main/java/java/util/Properties.java \
     ojluni/src/main/java/java/util/PropertyPermission.java \
     ojluni/src/main/java/java/util/PropertyResourceBundle.java \
@@ -816,6 +817,7 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/util/TooManyListenersException.java \
     ojluni/src/main/java/java/util/TreeMap.java \
     ojluni/src/main/java/java/util/TreeSet.java \
+    ojluni/src/main/java/java/util/Tripwire.java \
     ojluni/src/main/java/java/util/UnknownFormatConversionException.java \
     ojluni/src/main/java/java/util/UnknownFormatFlagsException.java \
     ojluni/src/main/java/java/util/UUID.java \
