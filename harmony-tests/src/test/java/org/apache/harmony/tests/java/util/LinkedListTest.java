@@ -937,6 +937,8 @@ public class LinkedListTest extends junit.framework.TestCase {
         assertNull(testList.peekLast());
     }
 
+
+
     /**
      * java.util.LinkedList#Serialization()
      */
