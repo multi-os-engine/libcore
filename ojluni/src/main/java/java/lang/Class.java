@@ -2028,7 +2028,8 @@ public final
         // search iftable which has a flattened and uniqued list of interfaces
         Object[] iftable = ifTable;
         if (iftable != null) {
-            for (int i = 0; i < iftable.length; i += 2) {
+            // Search backwards so more specific interfaces are searched first.
+            for (int i = iftable.length - 2; i >= 0; i -= 2) {
                 Class<?> ifc = (Class<?>) iftable[i];
                 Method result = ifc.getPublicMethodRecursive(name, parameterTypes);
                 if (result != null && Modifier.isPublic(result.getAccessFlags())) {
