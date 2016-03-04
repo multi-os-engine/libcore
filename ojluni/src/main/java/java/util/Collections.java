@@ -3707,6 +3707,12 @@ public class Collections {
         }
 
         private Object readResolve() { return reverseOrder(); }
+
+        // Android-changed: Pulled in overridden method from OpenJDK 8.
+        @Override
+        public Comparator<Comparable<Object>> reversed() {
+            return Comparator.naturalOrder();
+        }
     }
 
     /**
