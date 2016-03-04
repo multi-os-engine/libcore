@@ -170,6 +170,7 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/lang/ProcessImpl.java \
     ojluni/src/main/java/java/lang/Process.java \
     ojluni/src/main/java/java/lang/Readable.java \
+    ojluni/src/main/java/java/lang/invoke/SerializedLambda.java \
     ojluni/src/main/java/java/lang/reflect/AccessibleObject.java \
     ojluni/src/main/java/java/lang/reflect/AnnotatedElement.java \
     ojluni/src/main/java/java/lang/reflect/Array.java \
@@ -813,6 +814,8 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/util/SimpleTimeZone.java \
     ojluni/src/main/java/java/util/SortedMap.java \
     ojluni/src/main/java/java/util/SortedSet.java \
+    ojluni/src/main/java/java/util/Spliterator.java \
+    ojluni/src/main/java/java/util/Spliterators.java \
     ojluni/src/main/java/java/util/Stack.java \
     ojluni/src/main/java/java/util/StringTokenizer.java \
     ojluni/src/main/java/java/util/Timer.java \
