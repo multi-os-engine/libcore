@@ -33,7 +33,9 @@ import java.lang.reflect.Array;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
+
 
 /**
  * This class consists exclusively of static methods that operate on or return
@@ -1146,10 +1148,12 @@ public class Collections {
         public void forEach(Consumer<? super E> action) {
             c.forEach(action);
         }
+
         @Override
         public boolean removeIf(Predicate<? super E> filter) {
             throw new UnsupportedOperationException();
         }
+
         @SuppressWarnings("unchecked")
         @Override
         public Spliterator<E> spliterator() {
@@ -1452,8 +1456,63 @@ public class Collections {
 
         // Override default methods in Map
         @Override
+        @SuppressWarnings("unchecked")
+        public V getOrDefault(Object k, V defaultValue) {
+            // Safe cast as we don't change the value
+            return ((Map<K, V>)m).getOrDefault(k, defaultValue);
+        }
+
+        @Override
         public void forEach(BiConsumer<? super K, ? super V> action) {
             m.forEach(action);
+        }
+
+        @Override
+        public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V putIfAbsent(K key, V value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(Object key, Object value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean replace(K key, V oldValue, V newValue) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V replace(K key, V value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V computeIfPresent(K key,
+                                  BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V compute(K key,
+                         BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V merge(K key, V value,
+                       BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
         }
 
         /**
@@ -2260,10 +2319,55 @@ public class Collections {
         public String toString() {
             synchronized (mutex) {return m.toString();}
         }
+
         // Override default methods in Map
+        @Override
+        public V getOrDefault(Object k, V defaultValue) {
+            synchronized (mutex) {return m.getOrDefault(k, defaultValue);}
+        }
         @Override
         public void forEach(BiConsumer<? super K, ? super V> action) {
             synchronized (mutex) {m.forEach(action);}
+        }
+        @Override
+        public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+            synchronized (mutex) {m.replaceAll(function);}
+        }
+        @Override
+        public V putIfAbsent(K key, V value) {
+            synchronized (mutex) {return m.putIfAbsent(key, value);}
+        }
+        @Override
+        public boolean remove(Object key, Object value) {
+            synchronized (mutex) {return m.remove(key, value);}
+        }
+        @Override
+        public boolean replace(K key, V oldValue, V newValue) {
+            synchronized (mutex) {return m.replace(key, oldValue, newValue);}
+        }
+        @Override
+        public V replace(K key, V value) {
+            synchronized (mutex) {return m.replace(key, value);}
+        }
+        @Override
+        public V computeIfAbsent(K key,
+                                 Function<? super K, ? extends V> mappingFunction) {
+            synchronized (mutex) {return m.computeIfAbsent(key, mappingFunction);}
+        }
+        @Override
+        public V computeIfPresent(K key,
+                                  BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            synchronized (mutex) {return m.computeIfPresent(key, remappingFunction);}
+        }
+        @Override
+        public V compute(K key,
+                         BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            synchronized (mutex) {return m.compute(key, remappingFunction);}
+        }
+        @Override
+        public V merge(K key, V value,
+                       BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+            synchronized (mutex) {return m.merge(key, value, remappingFunction);}
         }
 
         private void writeObject(ObjectOutputStream s) throws IOException {
@@ -3531,8 +3635,63 @@ public class Collections {
 
         // Override default methods in Map
         @Override
+        @SuppressWarnings("unchecked")
+        public V getOrDefault(Object k, V defaultValue) {
+            return defaultValue;
+        }
+
+        @Override
         public void forEach(BiConsumer<? super K, ? super V> action) {
             Objects.requireNonNull(action);
+        }
+
+        @Override
+        public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+            Objects.requireNonNull(function);
+        }
+
+        @Override
+        public V putIfAbsent(K key, V value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(Object key, Object value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean replace(K key, V oldValue, V newValue) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V replace(K key, V value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V computeIfAbsent(K key,
+                                 Function<? super K, ? extends V> mappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V computeIfPresent(K key,
+                                  BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V compute(K key,
+                         BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V merge(K key, V value,
+                       BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
         }
 
         // Preserves singleton property
@@ -3728,10 +3887,63 @@ public class Collections {
 
         // Override default methods in Map
         @Override
+        public V getOrDefault(Object key, V defaultValue) {
+            return eq(key, k) ? v : defaultValue;
+        }
+
+        @Override
         public void forEach(BiConsumer<? super K, ? super V> action) {
             action.accept(k, v);
         }
 
+        @Override
+        public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V putIfAbsent(K key, V value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(Object key, Object value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean replace(K key, V oldValue, V newValue) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V replace(K key, V value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V computeIfAbsent(K key,
+                                 Function<? super K, ? extends V> mappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V computeIfPresent(K key,
+                                  BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V compute(K key,
+                         BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V merge(K key, V value,
+                       BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     // Miscellaneous
