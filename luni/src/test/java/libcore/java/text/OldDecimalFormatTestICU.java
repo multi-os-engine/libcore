@@ -49,9 +49,9 @@ public class OldDecimalFormatTestICU extends TestCase {
         assertEquals("sigDigit doesn't work", "1.23", format.format(1.23004));
 
         format.applyPattern("@@###E0");
-        assertEquals("1.23E1", format.format(12.3));
+        assertEquals("1.23e1", format.format(12.3));
         format.applyPattern("0.0###E0");
-        assertEquals("1.23E1", format.format(12.3));
+        assertEquals("1.23e1", format.format(12.3));
 
         try {
             format.applyPattern("@00");
@@ -106,21 +106,21 @@ public class OldDecimalFormatTestICU extends TestCase {
     // AndroidOnly: special feature of icu4c
     public void test_positiveExponentSign() throws Exception {
         format.applyPattern("0.###E+0");
-        assertEquals("1E+2", format.format(100));
-        assertEquals("1E-2", format.format(0.01));
+        assertEquals("1e+2", format.format(100));
+        assertEquals("1e-2", format.format(0.01));
         assertEquals(100, format.parse("1E+2").intValue());
         assertEquals(0.01f, format.parse("1E-2").floatValue());
 
         format.applyPattern("0.###E0 m/s");
-        assertEquals("1E2 m/s", format.format(100));
+        assertEquals("1e2 m/s", format.format(100));
         assertEquals(100, format.parse("1E2 m/s").intValue());
 
         format.applyPattern("00.###E0");
-        assertEquals("12.3E-4", format.format(0.00123));
+        assertEquals("12.3e-4", format.format(0.00123));
         assertEquals(0.00123f, format.parse("12.3E-4").floatValue());
 
         format.applyPattern("##0.####E0");
-        assertEquals("12.345E3", format.format(12345));
+        assertEquals("12.345e3", format.format(12345));
         assertEquals(12345, format.parse("12.345E3").intValue());
 
         try {

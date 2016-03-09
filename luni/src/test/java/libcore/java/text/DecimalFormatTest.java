@@ -30,7 +30,7 @@ import java.util.Locale;
 public class DecimalFormatTest extends junit.framework.TestCase {
     public void test_exponentSeparator() throws Exception {
         DecimalFormat df = new DecimalFormat("0E0");
-        assertEquals("1E4", df.format(12345.));
+        assertEquals("1e4", df.format(12345.));
 
         DecimalFormatSymbols dfs = df.getDecimalFormatSymbols();
         dfs.setExponentSeparator("-useless-api-");
