@@ -1064,30 +1064,30 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (2) + "max fractional digits (2) == 4
-        formatTester.format(df, "00.0E0", 0.0);
-        formatTester.format(df, "10.0E-1", 1.0);
-        formatTester.format(df, "12.0E0", 12.0);
-        formatTester.format(df, "12.3E1", 123.0);
-        formatTester.format(df, "12.34E2", 1234.0);
-        formatTester.format(df, "12.35E3", 12346.0);
-        formatTester.format(df, "10.0E4", 99999.0);
-        formatTester.format(df, "12.0E-1", 1.2);
-        formatTester.format(df, "12.3E0", 12.3);
-        formatTester.format(df, "12.34E1", 123.4);
-        formatTester.format(df, "12.35E2", 1234.6);
-        formatTester.format(df, "10.0E3", 9999.9);
-        formatTester.format(df, "10.0E-2", 0.1);
-        formatTester.format(df, "12.0E-2", 0.12);
-        formatTester.format(df, "12.3E-2", 0.123);
-        formatTester.format(df, "12.34E-2", 0.1234);
-        formatTester.format(df, "12.35E-2", 0.12346);
-        formatTester.format(df, "10.0E-1", 0.99999);
-        formatTester.format(df, "-10.0E-1", -1.0);
-        formatTester.format(df, "-12.0E0", -12.0);
-        formatTester.format(df, "-12.3E1", -123.0);
-        formatTester.format(df, "-12.34E2", -1234.0);
-        formatTester.format(df, "-12.35E3", -12346.0);
-        formatTester.format(df, "-10.0E4", -99999.0);
+        formatTester.format(df, "00.0e0", 0.0);
+        formatTester.format(df, "10.0e-1", 1.0);
+        formatTester.format(df, "12.0e0", 12.0);
+        formatTester.format(df, "12.3e1", 123.0);
+        formatTester.format(df, "12.34e2", 1234.0);
+        formatTester.format(df, "12.35e3", 12346.0);
+        formatTester.format(df, "10.0e4", 99999.0);
+        formatTester.format(df, "12.0e-1", 1.2);
+        formatTester.format(df, "12.3e0", 12.3);
+        formatTester.format(df, "12.34e1", 123.4);
+        formatTester.format(df, "12.35e2", 1234.6);
+        formatTester.format(df, "10.0e3", 9999.9);
+        formatTester.format(df, "10.0e-2", 0.1);
+        formatTester.format(df, "12.0e-2", 0.12);
+        formatTester.format(df, "12.3e-2", 0.123);
+        formatTester.format(df, "12.34e-2", 0.1234);
+        formatTester.format(df, "12.35e-2", 0.12346);
+        formatTester.format(df, "10.0e-1", 0.99999);
+        formatTester.format(df, "-10.0e-1", -1.0);
+        formatTester.format(df, "-12.0e0", -12.0);
+        formatTester.format(df, "-12.3e1", -123.0);
+        formatTester.format(df, "-12.34e2", -1234.0);
+        formatTester.format(df, "-12.35e3", -12346.0);
+        formatTester.format(df, "-10.0e4", -99999.0);
 
         df = new DecimalFormat("#00.0##E0", dfs);
         // ["#00.0##E0",isDecimalSeparatorAlwaysShown=false,groupingSize=0,multiplier=1,
@@ -1097,36 +1097,36 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (2) + "max fractional digits (3) == 5
-        formatTester.format(df, "100E-3", 0.1);
-        formatTester.format(df, "120E-3", 0.12);
-        formatTester.format(df, "123E-3", 0.123);
-        formatTester.format(df, "123.4E-3", 0.1234);
-        formatTester.format(df, "123.46E-3", 0.1234567);
-        formatTester.format(df, "10E-3", 0.01);
-        formatTester.format(df, "12E-3", 0.012);
-        formatTester.format(df, "12.3E-3", 0.0123);
-        formatTester.format(df, "12.34E-3", 0.01234);
-        formatTester.format(df, "12.346E-3", 0.01234567);
-        formatTester.format(df, "1.0E-3", 0.001);
-        formatTester.format(df, "1.2E-3", 0.0012);
-        formatTester.format(df, "1.23E-3", 0.00123);
-        formatTester.format(df, "1.234E-3", 0.001234);
-        formatTester.format(df, "1.2346E-3", 0.001234567);
-        formatTester.format(df, "100E-6", 0.0001);
-        formatTester.format(df, "120E-6", 0.00012);
-        formatTester.format(df, "123E-6", 0.000123);
-        formatTester.format(df, "123.4E-6", 0.0001234);
-        formatTester.format(df, "123.46E-6", 0.0001234567);
-        formatTester.format(df, "0.0E0", 0.0);
-        formatTester.format(df, "1.0E0", 1.0);
-        formatTester.format(df, "12E0", 12.0);
-        formatTester.format(df, "123E0", 123.0);
-        formatTester.format(df, "1.234E3", 1234.0);
-        formatTester.format(df, "12.345E3", 12345.0);
-        formatTester.format(df, "123.46E3", 123456.0);
-        formatTester.format(df, "1.2346E6", 1234567.0);
-        formatTester.format(df, "12.346E6", 12345678.0);
-        formatTester.format(df, "100E6", 99999999.0);
+        formatTester.format(df, "100e-3", 0.1);
+        formatTester.format(df, "120e-3", 0.12);
+        formatTester.format(df, "123e-3", 0.123);
+        formatTester.format(df, "123.4e-3", 0.1234);
+        formatTester.format(df, "123.46e-3", 0.1234567);
+        formatTester.format(df, "10e-3", 0.01);
+        formatTester.format(df, "12e-3", 0.012);
+        formatTester.format(df, "12.3e-3", 0.0123);
+        formatTester.format(df, "12.34e-3", 0.01234);
+        formatTester.format(df, "12.346e-3", 0.01234567);
+        formatTester.format(df, "1.0e-3", 0.001);
+        formatTester.format(df, "1.2e-3", 0.0012);
+        formatTester.format(df, "1.23e-3", 0.00123);
+        formatTester.format(df, "1.234e-3", 0.001234);
+        formatTester.format(df, "1.2346e-3", 0.001234567);
+        formatTester.format(df, "100e-6", 0.0001);
+        formatTester.format(df, "120e-6", 0.00012);
+        formatTester.format(df, "123e-6", 0.000123);
+        formatTester.format(df, "123.4e-6", 0.0001234);
+        formatTester.format(df, "123.46e-6", 0.0001234567);
+        formatTester.format(df, "0.0e0", 0.0);
+        formatTester.format(df, "1.0e0", 1.0);
+        formatTester.format(df, "12e0", 12.0);
+        formatTester.format(df, "123e0", 123.0);
+        formatTester.format(df, "1.234e3", 1234.0);
+        formatTester.format(df, "12.345e3", 12345.0);
+        formatTester.format(df, "123.46e3", 123456.0);
+        formatTester.format(df, "1.2346e6", 1234567.0);
+        formatTester.format(df, "12.346e6", 12345678.0);
+        formatTester.format(df, "100e6", 99999999.0);
 
         df = new DecimalFormat("#.0E0", dfs);
         // ["#.0E0",isDecimalSeparatorAlwaysShown=false,groupingSize=0,multiplier=1,
@@ -1136,12 +1136,12 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (0) + "max fractional digits (1) == 1
-        formatTester.format(df, "0.0E0", 0.0);
-        formatTester.format(df, "1.0E0", 1.0);
-        formatTester.format(df, "1.0E1", 12.0);
-        formatTester.format(df, "1.0E2", 123.0);
-        formatTester.format(df, "1.0E3", 1234.0);
-        formatTester.format(df, "1.0E4", 9999.0);
+        formatTester.format(df, "0.0e0", 0.0);
+        formatTester.format(df, "1.0e0", 1.0);
+        formatTester.format(df, "1.0e1", 12.0);
+        formatTester.format(df, "1.0e2", 123.0);
+        formatTester.format(df, "1.0e3", 1234.0);
+        formatTester.format(df, "1.0e4", 9999.0);
 
         df = new DecimalFormat("0.E0", dfs);
         // ["0.E0",isDecimalSeparatorAlwaysShown=true,groupingSize=0,multiplier=1,negativePrefix=-,
@@ -1151,12 +1151,12 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (1) + "max fractional digits (0) == 1
-        formatTester.format(df, "0E0", 0.0);
-        formatTester.format(df, "1E0", 1.0);
-        formatTester.format(df, "1E1", 12.0);
-        formatTester.format(df, "1E2", 123.0);
-        formatTester.format(df, "1E3", 1234.0);
-        formatTester.format(df, "1E4", 9999.0);
+        formatTester.format(df, "0e0", 0.0);
+        formatTester.format(df, "1e0", 1.0);
+        formatTester.format(df, "1e1", 12.0);
+        formatTester.format(df, "1e2", 123.0);
+        formatTester.format(df, "1e3", 1234.0);
+        formatTester.format(df, "1e4", 9999.0);
 
         df = new DecimalFormat("##0.00#E0", dfs);
         // ["##0.00#E0",isDecimalSeparatorAlwaysShown=false,groupingSize=0,multiplier=1,
@@ -1166,18 +1166,18 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (1) + "max fractional digits (3) == 4
-        formatTester.format(df, "100E-3", 0.1);
-        formatTester.format(df, "123.5E-3", 0.1234567);
-        formatTester.format(df, "1.00E0", 0.9999999);
-        formatTester.format(df, "10.0E-3", 0.01);
-        formatTester.format(df, "12.35E-3", 0.01234567);
-        formatTester.format(df, "100E-3", 0.09999999);
-        formatTester.format(df, "1.00E-3", 0.001);
-        formatTester.format(df, "1.235E-3", 0.001234567);
-        formatTester.format(df, "10.0E-3", 0.009999999);
-        formatTester.format(df, "100E-6", 0.0001);
-        formatTester.format(df, "123.5E-6", 0.0001234567);
-        formatTester.format(df, "1.00E-3", 0.0009999999);
+        formatTester.format(df, "100e-3", 0.1);
+        formatTester.format(df, "123.5e-3", 0.1234567);
+        formatTester.format(df, "1.00e0", 0.9999999);
+        formatTester.format(df, "10.0e-3", 0.01);
+        formatTester.format(df, "12.35e-3", 0.01234567);
+        formatTester.format(df, "100e-3", 0.09999999);
+        formatTester.format(df, "1.00e-3", 0.001);
+        formatTester.format(df, "1.235e-3", 0.001234567);
+        formatTester.format(df, "10.0e-3", 0.009999999);
+        formatTester.format(df, "100e-6", 0.0001);
+        formatTester.format(df, "123.5e-6", 0.0001234567);
+        formatTester.format(df, "1.00e-3", 0.0009999999);
 
         df = new DecimalFormat("###0.00#E0", dfs);
         // ["###0.00#E0",isDecimalSeparatorAlwaysShown=false,groupingSize=0,multiplier=1,
@@ -1187,21 +1187,21 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (1) + "max fractional digits (3) == 4
-        formatTester.format(df, "1000E-4", 0.1);
-        formatTester.format(df, "1235E-4", 0.12345678);
-        formatTester.format(df, "1.00E0", 0.99999999);
-        formatTester.format(df, "100E-4", 0.01);
-        formatTester.format(df, "123.5E-4", 0.012345678);
-        formatTester.format(df, "1000E-4", 0.099999999);
-        formatTester.format(df, "10.0E-4", 0.001);
-        formatTester.format(df, "12.35E-4", 0.0012345678);
-        formatTester.format(df, "100E-4", 0.0099999999);
-        formatTester.format(df, "1.00E-4", 0.0001);
-        formatTester.format(df, "1.235E-4", 0.00012345678);
-        formatTester.format(df, "10.0E-4", 0.00099999999);
-        formatTester.format(df, "1000E-8", 0.00001);
-        formatTester.format(df, "1235E-8", 0.000012345678);
-        formatTester.format(df, "1.00E-4", 0.000099999999);
+        formatTester.format(df, "1000e-4", 0.1);
+        formatTester.format(df, "1235e-4", 0.12345678);
+        formatTester.format(df, "1.00e0", 0.99999999);
+        formatTester.format(df, "100e-4", 0.01);
+        formatTester.format(df, "123.5e-4", 0.012345678);
+        formatTester.format(df, "1000e-4", 0.099999999);
+        formatTester.format(df, "10.0e-4", 0.001);
+        formatTester.format(df, "12.35e-4", 0.0012345678);
+        formatTester.format(df, "100e-4", 0.0099999999);
+        formatTester.format(df, "1.00e-4", 0.0001);
+        formatTester.format(df, "1.235e-4", 0.00012345678);
+        formatTester.format(df, "10.0e-4", 0.00099999999);
+        formatTester.format(df, "1000e-8", 0.00001);
+        formatTester.format(df, "1235e-8", 0.000012345678);
+        formatTester.format(df, "1.00e-4", 0.000099999999);
 
         df = new DecimalFormat("###0.0#E0", dfs);
         // ["###0.0#E0",isDecimalSeparatorAlwaysShown=false,groupingSize=0,multiplier=1,
@@ -1211,21 +1211,21 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (1) + "max fractional digits (2) == 3
-        formatTester.format(df, "1000E-4", 0.1);
-        formatTester.format(df, "1230E-4", 0.1234567);
-        formatTester.format(df, "1.0E0", 0.9999999);
-        formatTester.format(df, "100E-4", 0.01);
-        formatTester.format(df, "123E-4", 0.01234567);
-        formatTester.format(df, "1000E-4", 0.09999999);
-        formatTester.format(df, "10E-4", 0.001);
-        formatTester.format(df, "12.3E-4", 0.001234567);
-        formatTester.format(df, "100E-4", 0.009999999);
-        formatTester.format(df, "1.0E-4", 0.0001);
-        formatTester.format(df, "1.23E-4", 0.0001234567);
-        formatTester.format(df, "10E-4", 0.0009999999);
-        formatTester.format(df, "1000E-8", 0.00001);
-        formatTester.format(df, "1230E-8", 0.00001234567);
-        formatTester.format(df, "1.0E-4", 0.00009999999);
+        formatTester.format(df, "1000e-4", 0.1);
+        formatTester.format(df, "1230e-4", 0.1234567);
+        formatTester.format(df, "1.0e0", 0.9999999);
+        formatTester.format(df, "100e-4", 0.01);
+        formatTester.format(df, "123e-4", 0.01234567);
+        formatTester.format(df, "1000e-4", 0.09999999);
+        formatTester.format(df, "10e-4", 0.001);
+        formatTester.format(df, "12.3e-4", 0.001234567);
+        formatTester.format(df, "100e-4", 0.009999999);
+        formatTester.format(df, "1.0e-4", 0.0001);
+        formatTester.format(df, "1.23e-4", 0.0001234567);
+        formatTester.format(df, "10e-4", 0.0009999999);
+        formatTester.format(df, "1000e-8", 0.00001);
+        formatTester.format(df, "1230e-8", 0.00001234567);
+        formatTester.format(df, "1.0e-4", 0.00009999999);
 
         df = new DecimalFormat("##0.0E0", dfs);
         // ["##0.0E0",isDecimalSeparatorAlwaysShown=false,groupingSize=0,multiplier=1,
@@ -1235,14 +1235,14 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (1) + "max fractional digits (1) == 2
-        formatTester.format(df, "0.0E0", 0.0);
-        formatTester.format(df, "1.0E0", 1.0);
-        formatTester.format(df, "12E0", 12.0);
-        formatTester.format(df, "120E0", 123.0);
-        formatTester.format(df, "1.2E3", 1234.0);
-        formatTester.format(df, "12E3", 12346.0);
-        formatTester.format(df, "100E3", 99999.0);
-        formatTester.format(df, "1.0E6", 999999.0);
+        formatTester.format(df, "0.0e0", 0.0);
+        formatTester.format(df, "1.0e0", 1.0);
+        formatTester.format(df, "12e0", 12.0);
+        formatTester.format(df, "120e0", 123.0);
+        formatTester.format(df, "1.2e3", 1234.0);
+        formatTester.format(df, "12e3", 12346.0);
+        formatTester.format(df, "100e3", 99999.0);
+        formatTester.format(df, "1.0e6", 999999.0);
 
         df = new DecimalFormat("0.#E0", dfs);
         // ["0.#E0",isDecimalSeparatorAlwaysShown=false,groupingSize=0,multiplier=1,
@@ -1252,12 +1252,12 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (1) + "max fractional digits (1) == 2
-        formatTester.format(df, "0E0", 0.0);
-        formatTester.format(df, "1E0", 1.0);
-        formatTester.format(df, "1.2E1", 12.0);
-        formatTester.format(df, "1.2E2", 123.0);
-        formatTester.format(df, "1.2E3", 1234.0);
-        formatTester.format(df, "1E4", 9999.0);
+        formatTester.format(df, "0e0", 0.0);
+        formatTester.format(df, "1e0", 1.0);
+        formatTester.format(df, "1.2e1", 12.0);
+        formatTester.format(df, "1.2e2", 123.0);
+        formatTester.format(df, "1.2e3", 1234.0);
+        formatTester.format(df, "1e4", 9999.0);
 
         df = new DecimalFormat(".0E0", dfs);
         // [".0E0",isDecimalSeparatorAlwaysShown=true,groupingSize=0,multiplier=1,negativePrefix=-,
@@ -1267,12 +1267,12 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (0) + "max fractional digits (1) == 2
-        formatTester.format(df, ".0E0", 0.0);
-        formatTester.format(df, ".1E1", 1.0);
-        formatTester.format(df, ".1E2", 12.0);
-        formatTester.format(df, ".1E3", 123.0);
-        formatTester.format(df, ".1E4", 1234.0);
-        formatTester.format(df, ".1E5", 9999.0);
+        formatTester.format(df, ".0e0", 0.0);
+        formatTester.format(df, ".1e1", 1.0);
+        formatTester.format(df, ".1e2", 12.0);
+        formatTester.format(df, ".1e3", 123.0);
+        formatTester.format(df, ".1e4", 1234.0);
+        formatTester.format(df, ".1e5", 9999.0);
 
         formatTester.throwFailures();
     }
@@ -1289,7 +1289,7 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (2) + "max fractional digits (2) == 4
-        formatTester.format(df, "-00.0E0", -0.0);
+        formatTester.format(df, "-00.0e0", -0.0);
 
         df = new DecimalFormat("##0.0E0", dfs);
         // ["##0.0E0",isDecimalSeparatorAlwaysShown=false,groupingSize=0,multiplier=1,
@@ -1299,7 +1299,7 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (1) + "max fractional digits (1) == 2
-        formatTester.format(df, "-0.0E0", -0.0);
+        formatTester.format(df, "-0.0e0", -0.0);
 
         df = new DecimalFormat("#.0E0", dfs);
         // ["#.0E0",isDecimalSeparatorAlwaysShown=false,groupingSize=0,multiplier=1,
@@ -1309,7 +1309,7 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (0) + "max fractional digits (1) == 2
-        formatTester.format(df, "-0.0E0", -0.0);
+        formatTester.format(df, "-0.0e0", -0.0);
 
         df = new DecimalFormat("0.#E0", dfs);
         // ["0.#E0",isDecimalSeparatorAlwaysShown=false,groupingSize=0,multiplier=1,
@@ -1319,7 +1319,7 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (1) + "max fractional digits (1) == 2
-        formatTester.format(df, "-0E0", -0.0);
+        formatTester.format(df, "-0e0", -0.0);
 
         df = new DecimalFormat(".0E0", dfs);
         // [".0E0",isDecimalSeparatorAlwaysShown=true,groupingSize=0,multiplier=1,negativePrefix=-,
@@ -1329,7 +1329,7 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (0) + "max fractional digits (1) == 1
-        formatTester.format(df, "-.0E0", -0.0);
+        formatTester.format(df, "-.0e0", -0.0);
 
         formatTester.throwFailures();
     }
@@ -1367,19 +1367,19 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (2) + "max fractional digits (2) == 4
-        formatTester.format(df, "00.0E0", 0);
-        formatTester.format(df, "10.0E-1", 1);
-        formatTester.format(df, "12.0E0", 12);
-        formatTester.format(df, "12.3E1", 123);
-        formatTester.format(df, "12.34E2", 1234);
-        formatTester.format(df, "12.35E3", 12346);
-        formatTester.format(df, "10.0E4", 99999);
-        formatTester.format(df, "-10.0E-1", -1);
-        formatTester.format(df, "-12.0E0", -12);
-        formatTester.format(df, "-12.3E1", -123);
-        formatTester.format(df, "-12.34E2", -1234);
-        formatTester.format(df, "-12.35E3", -12346);
-        formatTester.format(df, "-10.0E4", -99999);
+        formatTester.format(df, "00.0e0", 0);
+        formatTester.format(df, "10.0e-1", 1);
+        formatTester.format(df, "12.0e0", 12);
+        formatTester.format(df, "12.3e1", 123);
+        formatTester.format(df, "12.34e2", 1234);
+        formatTester.format(df, "12.35e3", 12346);
+        formatTester.format(df, "10.0e4", 99999);
+        formatTester.format(df, "-10.0e-1", -1);
+        formatTester.format(df, "-12.0e0", -12);
+        formatTester.format(df, "-12.3e1", -123);
+        formatTester.format(df, "-12.34e2", -1234);
+        formatTester.format(df, "-12.35e3", -12346);
+        formatTester.format(df, "-10.0e4", -99999);
 
         df = new DecimalFormat("##0.0E0", dfs);
         // ["##0.0E0",isDecimalSeparatorAlwaysShown=false,groupingSize=0,multiplier=1,
@@ -1389,14 +1389,14 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (1) + "max fractional digits (1) == 2
-        formatTester.format(df, "0.0E0", 0);
-        formatTester.format(df, "1.0E0", 1);
-        formatTester.format(df, "12E0", 12);
-        formatTester.format(df, "120E0", 123);
-        formatTester.format(df, "1.2E3", 1234);
-        formatTester.format(df, "12E3", 12346);
-        formatTester.format(df, "100E3", 99999);
-        formatTester.format(df, "1.0E6", 999999);
+        formatTester.format(df, "0.0e0", 0);
+        formatTester.format(df, "1.0e0", 1);
+        formatTester.format(df, "12e0", 12);
+        formatTester.format(df, "120e0", 123);
+        formatTester.format(df, "1.2e3", 1234);
+        formatTester.format(df, "12e3", 12346);
+        formatTester.format(df, "100e3", 99999);
+        formatTester.format(df, "1.0e6", 999999);
 
         df = new DecimalFormat("#00.0##E0", dfs);
         // ["##0.0E0",isDecimalSeparatorAlwaysShown=false,groupingSize=0,multiplier=1,
@@ -1406,16 +1406,16 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (2) + "max fractional digits (3) == 5
-        formatTester.format(df, "0.0E0", 0);
-        formatTester.format(df, "1.0E0", 1);
-        formatTester.format(df, "12E0", 12);
-        formatTester.format(df, "123E0", 123);
-        formatTester.format(df, "1.234E3", 1234);
-        formatTester.format(df, "12.345E3", 12345);
-        formatTester.format(df, "123.46E3", 123456);
-        formatTester.format(df, "1.2346E6", 1234567);
-        formatTester.format(df, "12.346E6", 12345678);
-        formatTester.format(df, "100E6", 99999999);
+        formatTester.format(df, "0.0e0", 0);
+        formatTester.format(df, "1.0e0", 1);
+        formatTester.format(df, "12e0", 12);
+        formatTester.format(df, "123e0", 123);
+        formatTester.format(df, "1.234e3", 1234);
+        formatTester.format(df, "12.345e3", 12345);
+        formatTester.format(df, "123.46e3", 123456);
+        formatTester.format(df, "1.2346e6", 1234567);
+        formatTester.format(df, "12.346e6", 12345678);
+        formatTester.format(df, "100e6", 99999999);
 
         df = new DecimalFormat("#.0E0", dfs);
         // ["#.0E0",isDecimalSeparatorAlwaysShown=false,groupingSize=0,multiplier=1,
@@ -1425,12 +1425,12 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (0) + "max fractional digits (1) == 1
-        formatTester.format(df, "0.0E0", 0);
-        formatTester.format(df, "1.0E0", 1);
-        formatTester.format(df, "1.0E1", 12);
-        formatTester.format(df, "1.0E2", 123);
-        formatTester.format(df, "1.0E3", 1234);
-        formatTester.format(df, "1.0E4", 9999);
+        formatTester.format(df, "0.0e0", 0);
+        formatTester.format(df, "1.0e0", 1);
+        formatTester.format(df, "1.0e1", 12);
+        formatTester.format(df, "1.0e2", 123);
+        formatTester.format(df, "1.0e3", 1234);
+        formatTester.format(df, "1.0e4", 9999);
 
         df = new DecimalFormat("0.#E0", dfs);
         // ["0.#E0",isDecimalSeparatorAlwaysShown=false,groupingSize=0,multiplier=1,
@@ -1440,12 +1440,12 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (1) + "max fractional digits (1) == 2
-        formatTester.format(df, "0E0", 0);
-        formatTester.format(df, "1E0", 1);
-        formatTester.format(df, "1.2E1", 12);
-        formatTester.format(df, "1.2E2", 123);
-        formatTester.format(df, "1.2E3", 1234);
-        formatTester.format(df, "1E4", 9999);
+        formatTester.format(df, "0e0", 0);
+        formatTester.format(df, "1e0", 1);
+        formatTester.format(df, "1.2e1", 12);
+        formatTester.format(df, "1.2e2", 123);
+        formatTester.format(df, "1.2e3", 1234);
+        formatTester.format(df, "1e4", 9999);
 
         df = new DecimalFormat(".0E0", dfs);
         // [".0E0",isDecimalSeparatorAlwaysShown=true,groupingSize=0,multiplier=1,negativePrefix=-,
@@ -1455,12 +1455,12 @@ public class DecimalFormatTest extends TestCase {
         // Scientific notation => use significant digit logic
         // '@' not present: Significant digits: Min: 1,
         // Max: "min integer digits" (0) + "max fractional digits (1) == 1
-        formatTester.format(df, ".0E0", 0);
-        formatTester.format(df, ".1E1", 1);
-        formatTester.format(df, ".1E2", 12);
-        formatTester.format(df, ".1E3", 123);
-        formatTester.format(df, ".1E4", 1234);
-        formatTester.format(df, ".1E5", 9999);
+        formatTester.format(df, ".0e0", 0);
+        formatTester.format(df, ".1e1", 1);
+        formatTester.format(df, ".1e2", 12);
+        formatTester.format(df, ".1e3", 123);
+        formatTester.format(df, ".1e4", 1234);
+        formatTester.format(df, ".1e5", 9999);
 
         formatTester.throwFailures();
     }

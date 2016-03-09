@@ -58,7 +58,7 @@ public class Support_DecimalFormat extends Support_Format {
 
     // test Exponential
     format = new DecimalFormat("000000000.0#E0");
-    text = "100000007.6E-1";
+    text = "100000007.6e-1";
     t_FormatWithField(11, format, number, text, NumberFormat.Field.INTEGER, 0, 9);
     t_FormatWithField(12, format, number, text, NumberFormat.Field.DECIMAL_SEPARATOR, 9, 10);
     t_FormatWithField(13, format, number, text, NumberFormat.Field.FRACTION, 10, 11);
