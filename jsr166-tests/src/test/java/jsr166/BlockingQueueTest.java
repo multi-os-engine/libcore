@@ -36,13 +36,11 @@ public abstract class BlockingQueueTest extends JSR166TestCase {
      */
 
     /** Like suite(), but non-static */
-    // android-note: Explicitly instantiated.
-    //
-    // public Test testSuite() {
-    //    // TODO: filter the returned tests using the configuration
-    //    // information provided by the subclass via protected methods.
-    //    return new TestSuite(this.getClass());
-    // }
+    public Test testSuite() {
+        // TODO: filter the returned tests using the configuration
+        // information provided by the subclass via protected methods.
+        return new TestSuite(this.getClass());
+    }
 
     //----------------------------------------------------------------
     // Configuration methods
@@ -239,6 +237,8 @@ public abstract class BlockingQueueTest extends JSR166TestCase {
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
+
+                assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
             }});
 
         barrier.await();
@@ -352,20 +352,20 @@ public abstract class BlockingQueueTest extends JSR166TestCase {
                 assertEquals((pass == 0), q.contains(elts[i]));
                 assertEquals((pass == 0), q.remove(elts[i]));
                 assertFalse(q.contains(elts[i]));
-                assertTrue(q.contains(elts[i-1]));
+                assertTrue(q.contains(elts[i - 1]));
                 if (i < size - 1)
-                    assertTrue(q.contains(elts[i+1]));
+                    assertTrue(q.contains(elts[i + 1]));
             }
         }
         if (size > 0)
             assertTrue(q.contains(elts[0]));
-        for (int i = size-2; i >= 0; i -= 2) {
+        for (int i = size - 2; i >= 0; i -= 2) {
             assertTrue(q.contains(elts[i]));
-            assertFalse(q.contains(elts[i+1]));
+            assertFalse(q.contains(elts[i + 1]));
             assertTrue(q.remove(elts[i]));
             assertFalse(q.contains(elts[i]));
-            assertFalse(q.remove(elts[i+1]));
-            assertFalse(q.contains(elts[i+1]));
+            assertFalse(q.remove(elts[i + 1]));
+            assertFalse(q.contains(elts[i + 1]));
         }
         checkEmpty(q);
     }
