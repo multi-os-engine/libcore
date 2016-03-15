@@ -90,7 +90,7 @@ public class CipherSuiteTest extends TestCase {
         assertNotNull(name, MessageDigest.getInstance(hashName));
 
         int macLength = cs.getMACLength();
-        assertTrue(name, macLength == 0 || macLength == 16 || macLength == 20);
+        assertTrue(name, macLength == 0 || macLength == 16 || macLength == 20 || macLength == 32 );
 
         assertTrue(name,
                    cs.isExportable() == name.contains("_EXPORT_")
