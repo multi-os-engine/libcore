@@ -34,11 +34,14 @@ public class LinkedTransferQueueTest extends JSR166TestCase {
         public boolean permitsNulls() { return false; }
     }
 
-    public static class Generic extends BlockingQueueTest {
-        protected BlockingQueue emptyCollection() {
-            return new LinkedTransferQueue();
-        }
-    }
+    // android-note: These tests have been moved into their own separate
+    // classes to work around CTS issues.
+    //
+    // public static class Generic extends BlockingQueueTest {
+    //     protected BlockingQueue emptyCollection() {
+    //         return new LinkedTransferQueue();
+    //     }
+    // }
 
     // android-note: Removed because the CTS runner does a bad job of
     // retrying tests that have suite() declarations.
