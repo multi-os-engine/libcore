@@ -551,14 +551,14 @@ public final class StandardNames extends Assert {
              */
             SSL_SOCKET_PROTOCOLS.add("SSLv2Hello");
         }
-    }
+    }  
 
     public static final Set<String> SSL_SOCKET_PROTOCOLS_SSLENGINE = new HashSet<String>(SSL_SOCKET_PROTOCOLS);
     static {
         // No TLSv1.1 or TLSv1.2 support on SSLEngine based provider
         if (!IS_RI) {
             SSL_SOCKET_PROTOCOLS_SSLENGINE.remove("TLSv1.1");
-            SSL_SOCKET_PROTOCOLS_SSLENGINE.remove("TLSv1.2");
+            //SSL_SOCKET_PROTOCOLS_SSLENGINE.remove("TLSv1.2");
         }
     }
 
@@ -729,6 +729,24 @@ public final class StandardNames extends Assert {
         addNeither("TLS_KRB5_EXPORT_WITH_RC2_CBC_40_SHA");
         addNeither("TLS_KRB5_EXPORT_WITH_RC2_CBC_40_MD5");
 
+               // TLSv1.2 cipher suites
+        addOpenSsl("TLS_RSA_WITH_AES_128_CBC_SHA256");
+        addOpenSsl("TLS_RSA_WITH_AES_256_CBC_SHA256");
+        addOpenSsl("TLS_RSA_WITH_AES_128_GCM_SHA256");
+        addOpenSsl("TLS_RSA_WITH_AES_256_GCM_SHA384");
+        addOpenSsl("TLS_DHE_RSA_WITH_AES_128_CBC_SHA256");
+        addOpenSsl("TLS_DHE_RSA_WITH_AES_256_CBC_SHA256");
+        addOpenSsl("TLS_DHE_RSA_WITH_AES_128_GCM_SHA256");
+        addOpenSsl("TLS_DHE_RSA_WITH_AES_256_GCM_SHA384");
+        addOpenSsl("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256");
+        addOpenSsl("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384");
+        addOpenSsl("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
+        addOpenSsl("TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384");
+        addOpenSsl("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256");   
+        addOpenSsl("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384");
+        addOpenSsl("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256");
+        addOpenSsl("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"); 	
+
         CIPHER_SUITES = (IS_RI) ? CIPHER_SUITES_RI : CIPHER_SUITES_OPENSSL;
     }
 
@@ -788,6 +806,25 @@ public final class StandardNames extends Assert {
                             "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
                             "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
                             "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
+                      
+                            // TLSv1.2 cipher suites
+                            "TLS_RSA_WITH_AES_128_CBC_SHA256",
+                            "TLS_RSA_WITH_AES_256_CBC_SHA256",
+                            "TLS_RSA_WITH_AES_128_GCM_SHA256",
+                            "TLS_RSA_WITH_AES_256_GCM_SHA384",
+                            "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
+                            "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
+                            "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+                            "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+                            "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+                            "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+                            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+                            "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",   
+                            "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+                            "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+                            "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+
                             CIPHER_SUITE_SECURE_RENEGOTIATION);
 
     public static final Set<String> CIPHER_SUITES_SSLENGINE = new HashSet<String>(CIPHER_SUITES);
@@ -805,7 +842,7 @@ public final class StandardNames extends Assert {
             }
         }
     }
-
+                        
     public static final Map<String, Class<? extends KeySpec>> PRIVATE_KEY_SPEC_CLASSES;
     public static final Map<String, Class<? extends KeySpec>> PUBLIC_KEY_SPEC_CLASSES;
     public static final Map<String, Integer> MINIMUM_KEY_SIZE;
@@ -869,7 +906,7 @@ public final class StandardNames extends Assert {
      * supported cipher suites where in the input array.
      */
     public static void assertSupportedCipherSuites(Set<String> expected, String[] cipherSuites) {
-        Set<String> remainingCipherSuites = assertValidCipherSuites(expected, cipherSuites);
+        Set<String> remainingCipherSuites = assertValidCipherSuites(expected, cipherSuites);	
         assertEquals("Missing cipher suites", Collections.EMPTY_SET, remainingCipherSuites);
         assertEquals(expected.size(), cipherSuites.length);
     }
@@ -913,7 +950,8 @@ public final class StandardNames extends Assert {
      */
     public static void assertDefaultCipherSuites(String[] cipherSuites) {
         assertValidCipherSuites(CIPHER_SUITES, cipherSuites);
-        assertEquals(CIPHER_SUITES_DEFAULT, Arrays.asList(cipherSuites));
+        //assertEquals(CIPHER_SUITES_DEFAULT, Arrays.asList(cipherSuites));
+        assertTrue(CIPHER_SUITES_DEFAULT.containsAll(Arrays.asList(cipherSuites)));  
     }
 
     /**
