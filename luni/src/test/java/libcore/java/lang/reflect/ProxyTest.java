@@ -411,4 +411,26 @@ public final class ProxyTest extends TestCase {
         assertFalse(field.isAnnotationPresent(Deprecated.class));
       }
     }
+
+    public interface DefaultMethod {
+      static Object RETURNED = new Object();
+      default Object test() {
+        return RETURNED;
+      }
+    }
+
+    // Make sure we can proxy default methods.
+    public void testProxyDefault() throws Exception {
+      Object OUT = new Object();
+      // Just always return the different object OUT.
+      InvocationHandler handler = (o, m, oa) -> OUT;
+      DefaultMethod dm = (DefaultMethod) Proxy.newProxyInstance(
+          Thread.currentThread().getContextClassLoader(),
+          new Class[] { DefaultMethod.class },
+          handler);
+
+      assertTrue(dm != null);
+      assertEquals(OUT, dm.test());
+      assertTrue(OUT != DefaultMethod.RETURNED);
+    }
 }
