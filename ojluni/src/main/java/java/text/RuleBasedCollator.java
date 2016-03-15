@@ -307,6 +307,9 @@ public class RuleBasedCollator extends Collator {
     /**
      * Gets the table-based rules for the collation object.
      *
+     * <p>The returned string will be empty unless you constructed the instance yourself.
+     * The string forms of the collation rules are omitted to save space on the device.
+     *
      * @return returns the collation rules that the table collation object
      * was created from.
      */
