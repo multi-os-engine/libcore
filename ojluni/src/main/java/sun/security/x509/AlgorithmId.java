@@ -571,13 +571,17 @@ public class AlgorithmId implements Serializable, DerEncoder {
                                 String stdAlgName = provs[i].getProperty(alias);
                                 if (stdAlgName != null) {
                                     stdAlgName = stdAlgName.toUpperCase(Locale.ENGLISH);
-                                }
-                                if (stdAlgName != null &&
-                                        oidTable.get(stdAlgName) == null) {
-                                    ObjectIdentifier oid =
-                                        new ObjectIdentifier(oidString);
-                                    oidTable.put(stdAlgName, oid);
-                                    nameTable.put(oid, stdAlgName);
+                                    try {
+                                        ObjectIdentifier oid = new ObjectIdentifier(oidString);
+                                        if (!oidTable.containsKey(stdAlgName)) {
+                                            oidTable.put(stdAlgName, oid);
+                                        }
+                                        if (!nameTable.containsKey(oid)) {
+                                            nameTable.put(oid, stdAlgName);
+                                        }
+                                    } catch (IOException e) {
+                                        // Not an OID
+                                    }
                                 }
                             } else {
                                 // Android-changed: If the alias isn't specified with an explicit
@@ -596,10 +600,12 @@ public class AlgorithmId implements Serializable, DerEncoder {
                                     String stdAlgName = provs[i].getProperty(alias);
                                     if (stdAlgName != null) {
                                         stdAlgName = stdAlgName.toUpperCase(Locale.ENGLISH);
-                                    }
-                                    if (stdAlgName != null && oidTable.get(stdAlgName) == null) {
-                                        oidTable.put(stdAlgName, oid);
-                                        nameTable.put(oid, stdAlgName);
+                                        if (!oidTable.containsKey(stdAlgName)) {
+                                            oidTable.put(stdAlgName, oid);
+                                        }
+                                        if (!nameTable.containsKey(oid)) {
+                                            nameTable.put(oid, stdAlgName);
+                                        }
                                     }
                                 }
                             }
