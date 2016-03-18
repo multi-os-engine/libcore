@@ -406,5 +406,4 @@ public class CopyOnWriteArraySetTest extends JSR166TestCase {
         assertEquals(x, y);
         assertEquals(y, x);
     }
-
 }
