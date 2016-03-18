@@ -4,9 +4,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -360,7 +360,23 @@ public class DoubleTest extends TestCase {
         // Test for method boolean java.lang.Double.isInfinite(double)
         assertTrue("Infinity check failed", Double.isInfinite(Double.NEGATIVE_INFINITY)
                 && (Double.isInfinite(Double.POSITIVE_INFINITY))
-                && !(Double.isInfinite(Double.MAX_VALUE)));
+                && !(Double.isInfinite(Double.MAX_VALUE))
+                && !(Double.isInfinite(Double.MIN_VALUE))
+                && !(Double.isInfinite(Double.Nan))
+                && !(Double.isInfinite(0.0)));
+    }
+
+    /**
+     * java.lang.Double#isFinite(double)
+     */
+    public void test_isFiniteD() {
+        // Test for method boolean java.lang.Double.isFinite(double)
+        assertTrue("Finity check failed", !Double.isFinite(Double.NEGATIVE_INFINITY)
+                && (!Double.isFinite(Double.POSITIVE_INFINITY))
+                && (Double.isFinite(Double.MAX_VALUE))
+                && (Double.isFinite(Double.MIN_VALUE))
+                && !(Double.isFinite(Double.Nan))
+                && (Double.isFinite(0.0)));
     }
 
     /**
