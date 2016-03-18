@@ -38,6 +38,7 @@ import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import java.util.function.UnaryOperator;
 
 
 /**
@@ -1162,16 +1163,6 @@ public class Collections {
         public Spliterator<E> spliterator() {
             return (Spliterator<E>)c.spliterator();
         }
-        @SuppressWarnings("unchecked")
-        @Override
-        public Stream<E> stream() {
-            return (Stream<E>)c.stream();
-        }
-        @SuppressWarnings("unchecked")
-        @Override
-        public Stream<E> parallelStream() {
-            return (Stream<E>)c.parallelStream();
-        }
     }
 
     /**
@@ -1304,6 +1295,14 @@ public class Collections {
         public int indexOf(Object o)            {return list.indexOf(o);}
         public int lastIndexOf(Object o)        {return list.lastIndexOf(o);}
         public boolean addAll(int index, Collection<? extends E> c) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public void replaceAll(UnaryOperator<E> operator) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public void sort(Comparator<? super E> c) {
             throw new UnsupportedOperationException();
         }
         public ListIterator<E> listIterator()   {return listIterator(0);}
@@ -1616,16 +1615,6 @@ public class Collections {
                         (Spliterator<Map.Entry<K, V>>) c.spliterator());
             }
 
-            @Override
-            public Stream<Entry<K,V>> stream() {
-                return StreamSupport.stream(spliterator(), false);
-            }
-
-            @Override
-            public Stream<Entry<K,V>> parallelStream() {
-                return StreamSupport.stream(spliterator(), true);
-            }
-
             public Iterator<Map.Entry<K,V>> iterator() {
                 return new Iterator<Map.Entry<K,V>>() {
                     private final Iterator<? extends Map.Entry<? extends K, ? extends V>> i = c.iterator();
@@ -1906,14 +1895,7 @@ public class Collections {
         public Spliterator<E> spliterator() {
             return c.spliterator(); // Must be manually synched by user!
         }
-        @Override
-        public Stream<E> stream() {
-            return c.stream(); // Must be manually synched by user!
-        }
-        @Override
-        public Stream<E> parallelStream() {
-            return c.parallelStream(); // Must be manually synched by user!
-        }
+
         private void writeObject(ObjectOutputStream s) throws IOException {
             synchronized (mutex) {s.defaultWriteObject();}
         }
@@ -2172,6 +2154,15 @@ public class Collections {
                 return new SynchronizedList<>(list.subList(fromIndex, toIndex),
                                             mutex);
             }
+        }
+
+        @Override
+        public void replaceAll(UnaryOperator<E> operator) {
+            synchronized (mutex) {list.replaceAll(operator);}
+        }
+        @Override
+        public void sort(Comparator<? super E> c) {
+            synchronized (mutex) {list.sort(c);}
         }
 
         /**
@@ -2683,11 +2674,6 @@ public class Collections {
         }
         @Override
         public Spliterator<E> spliterator() {return c.spliterator();}
-        @Override
-        public Stream<E> stream()           {return c.stream();}
-        @Override
-        public Stream<E> parallelStream()   {return c.parallelStream();}
-
     }
 
     /**
@@ -2865,6 +2851,14 @@ public class Collections {
 
         public boolean addAll(int index, Collection<? extends E> c) {
             return list.addAll(index, checkedCopyOf(c));
+        }
+        @Override
+        public void replaceAll(UnaryOperator<E> operator) {
+            list.replaceAll(operator);
+        }
+        @Override
+        public void sort(Comparator<? super E> c) {
+            list.sort(c);
         }
         public ListIterator<E> listIterator()   { return listIterator(0); }
 
@@ -3606,6 +3600,15 @@ public class Collections {
         @Override
         public Spliterator<E> spliterator() { return Spliterators.emptySpliterator(); }
 
+        @Override
+        public void replaceAll(UnaryOperator<E> operator) {
+            Objects.requireNonNull(operator);
+        }
+        @Override
+        public void sort(Comparator<? super E> c) {
+        }
+
+
         // Preserves singleton property
         private Object readResolve() {
             return EMPTY_LIST;
@@ -3911,6 +3914,12 @@ public class Collections {
         public Spliterator<E> spliterator() {
             return singletonSpliterator(element);
         }
+        public void replaceAll(UnaryOperator<E> operator) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public void sort(Comparator<? super E> c) {
+        }
     }
 
     /**
@@ -4137,22 +4146,6 @@ public class Collections {
                 throw new IllegalArgumentException("fromIndex(" + fromIndex +
                                                    ") > toIndex(" + toIndex + ")");
             return new CopiesList<>(toIndex - fromIndex, element);
-        }
-
-        // Override default methods in Collection
-        @Override
-        public Stream<E> stream() {
-            return IntStream.range(0, n).mapToObj(i -> element);
-        }
-
-        @Override
-        public Stream<E> parallelStream() {
-            return IntStream.range(0, n).parallel().mapToObj(i -> element);
-        }
-
-        @Override
-        public Spliterator<E> spliterator() {
-            return stream().spliterator();
         }
     }
 
@@ -4549,6 +4542,8 @@ public class Collections {
         public boolean retainAll(Collection<?> c)   {return s.retainAll(c);}
         // addAll is the only inherited implementation
 
+        private static final long serialVersionUID = 2454657854757543876L;
+
         // Override default methods in Collection
         @Override
         public void forEach(Consumer<? super E> action) {
@@ -4558,15 +4553,6 @@ public class Collections {
         public boolean removeIf(Predicate<? super E> filter) {
             return s.removeIf(filter);
         }
-
-        @Override
-        public Spliterator<E> spliterator() {return s.spliterator();}
-        @Override
-        public Stream<E> stream()           {return s.stream();}
-        @Override
-        public Stream<E> parallelStream()   {return s.parallelStream();}
-
-        private static final long serialVersionUID = 2454657854757543876L;
 
         private void readObject(java.io.ObjectInputStream stream)
             throws IOException, ClassNotFoundException
@@ -4633,12 +4619,5 @@ public class Collections {
         public boolean removeIf(Predicate<? super E> filter) {
             return q.removeIf(filter);
         }
-
-        @Override
-        public Spliterator<E> spliterator() {return q.spliterator();}
-        @Override
-        public Stream<E> stream()           {return q.stream();}
-        @Override
-        public Stream<E> parallelStream()   {return q.parallelStream();}
     }
 }
