@@ -33,11 +33,15 @@
 
 extern "C" {
 
+extern void register_java_io_Console(JNIEnv* env);
 extern void register_java_io_FileDescriptor(JNIEnv*);
 extern void register_java_io_FileInputStream(JNIEnv*);
 extern void register_java_io_FileOutputStream(JNIEnv*);
 extern void register_java_io_FileSystem(JNIEnv*);
+extern void register_java_io_ObjectInputStream(JNIEnv*);
+extern void register_java_io_ObjectOutputStream(JNIEnv*);
 extern void register_java_io_ObjectStreamClass(JNIEnv*);
+extern void register_java_io_UnixFileSystem(JNIEnv*);
 extern void register_java_lang_Double(JNIEnv*);
 extern void register_java_lang_Float(JNIEnv*);
 extern void register_java_lang_ProcessEnvironment(JNIEnv*);
@@ -58,12 +62,14 @@ extern void register_java_net_PlainDatagramSocketImpl(JNIEnv*);
 extern void register_java_net_PlainSocketImpl(JNIEnv*);
 extern void register_java_net_SocketInputStream(JNIEnv*);
 extern void register_java_net_SocketOutputStream(JNIEnv*);
+extern void register_java_nio_Bits(JNIEnv* env);
 extern void register_java_nio_MappedByteBuffer(JNIEnv* env);
 extern void register_java_util_zip_Adler32(JNIEnv* env);
 extern void register_java_util_zip_CRC32(JNIEnv*);
 extern void register_java_util_zip_Deflater(JNIEnv*);
 extern void register_java_util_zip_Inflater(JNIEnv*);
 extern void register_java_util_zip_ZipFile(JNIEnv*);
+extern void register_java_util_prefs_FileSystemPreferences(JNIEnv*);
 extern void register_sun_net_spi_DefaultProxySelector(JNIEnv*);
 extern void register_sun_nio_ch_DatagramChannelImpl(JNIEnv*);
 extern void register_sun_nio_ch_DatagramDispatcher(JNIEnv*);

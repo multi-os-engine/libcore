@@ -29,7 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import static android.system.OsConstants.*;
 
-public final class IoUtils {
+public final class fIoUtils {
     private IoUtils() {
     }
 
