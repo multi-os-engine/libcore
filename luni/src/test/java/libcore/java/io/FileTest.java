@@ -350,4 +350,11 @@ public class FileTest extends junit.framework.TestCase {
     }
 
     private static native void nativeTestFilesWithSurrogatePairs(String base);
+
+    // http://b/27731686
+    public void testBug27731686() {
+        File file = new File("/test1", "/");
+        assertEquals("/test1", file.getPath());
+        assertEquals("test1", file.getName());
+    }
 }
