@@ -22,6 +22,9 @@ import junit.framework.TestCase;
 import libcore.java.lang.ref.FinalizationTester;
 
 public final class ThreadTest extends TestCase {
+    static {
+        System.loadLibrary("javacoretests");
+    }
 
     /**
      * getContextClassLoader returned a non-application class loader.
@@ -166,6 +169,9 @@ public final class ThreadTest extends TestCase {
         // Expect to see the traces of all threads (not just t2)
         assertTrue("Must have traces for all threads", visibleTraces.get() > 1);
     }
+
+    // http://b/27748318
+    public native void testNativeThreadNames() throws Exception;
 
     private Thread newThread(final AtomicInteger finalizedThreadsCount, final int size) {
         return new Thread() {
