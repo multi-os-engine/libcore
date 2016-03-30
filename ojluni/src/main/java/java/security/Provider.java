@@ -976,8 +976,6 @@ public abstract class Provider extends Properties {
 
     private static void addEngine(String name, boolean sp, String paramName) {
         EngineDescription ed = new EngineDescription(name, sp, paramName);
-        // also index by canonical name to avoid toLowerCase() for some lookups
-        knownEngines.put(name.toLowerCase(ENGLISH), ed);
         knownEngines.put(name, ed);
     }
 
@@ -1033,9 +1031,6 @@ public abstract class Provider extends Properties {
     private static String getEngineName(String s) {
         // try original case first, usually correct
         EngineDescription e = knownEngines.get(s);
-        if (e == null) {
-            e = knownEngines.get(s.toLowerCase(ENGLISH));
-        }
         return (e == null) ? s : e.name;
     }
 
@@ -1532,5 +1527,4 @@ public abstract class Provider extends Properties {
     public boolean isRegistered() {
         return registered;
     }
-
 }
