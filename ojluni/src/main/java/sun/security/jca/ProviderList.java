@@ -63,7 +63,7 @@ public final class ProviderList {
     private final static Provider[] P0 = new Provider[0];
 
     // constant for an ProviderList with no elements
-    static final ProviderList EMPTY = new ProviderList(PC0, true);
+    static final ProviderList EMPTY = new ProviderList(new ArrayList<>(), true);
 
     // dummy provider object to use during initialization
     // used to avoid explicit null checks in various places
@@ -96,14 +96,13 @@ public final class ProviderList {
         if (providerList.getProvider(p.getName()) != null) {
             return providerList;
         }
-        List<ProviderConfig> list = new ArrayList<>
-                                    (Arrays.asList(providerList.configs));
+        ArrayList<ProviderConfig> list = new ArrayList<>(providerList.configs);
         int n = list.size();
         if ((position < 0) || (position > n)) {
             position = n;
         }
         list.add(position, new ProviderConfig(p));
-        return new ProviderList(list.toArray(PC0), true);
+        return new ProviderList(list, true);
     }
 
     public static ProviderList remove(ProviderList providerList, String name) {
@@ -112,11 +111,11 @@ public final class ProviderList {
             return providerList;
         }
         // copy all except matching to new list
-        ProviderConfig[] configs = new ProviderConfig[providerList.size() - 1];
+        ArrayList<ProviderConfig> configs = new ArrayList<>(providerList.size() - 1);
         int j = 0;
         for (ProviderConfig config : providerList.configs) {
             if (config.getProvider().getName().equals(name) == false) {
-                configs[j++] = config;
+                configs.add(config);
             }
         }
         return new ProviderList(configs, true);
@@ -125,15 +124,15 @@ public final class ProviderList {
     // Create a new ProviderList from the specified Providers.
     // This method is for use by SunJSSE.
     public static ProviderList newList(Provider ... providers) {
-        ProviderConfig[] configs = new ProviderConfig[providers.length];
+        ArrayList<ProviderConfig> configs = new ArrayList<>(providers.length);
         for (int i = 0; i < providers.length; i++) {
-            configs[i] = new ProviderConfig(providers[i]);
+            configs.add(new ProviderConfig(providers[i]));
         }
         return new ProviderList(configs, true);
     }
 
     // configuration of the providers
-    private final ProviderConfig[] configs;
+    private final ArrayList<ProviderConfig> configs;
 
     // flag indicating whether all configs have been loaded successfully
     private volatile boolean allLoaded;
@@ -141,17 +140,17 @@ public final class ProviderList {
     // List returned by providers()
     private final List<Provider> userList = new AbstractList<Provider>() {
         public int size() {
-            return configs.length;
+            return configs.size();
         }
         public Provider get(int index) {
-            return getProvider(index);
+            return getProvider(configs.get(index));
         }
     };
 
     /**
      * Create a new ProviderList from an array of configs
      */
-    private ProviderList(ProviderConfig[] configs, boolean allLoaded) {
+    private ProviderList(ArrayList<ProviderConfig> configs, boolean allLoaded) {
         this.configs = configs;
         this.allLoaded = allLoaded;
     }
@@ -160,7 +159,7 @@ public final class ProviderList {
      * Return a new ProviderList parsed from the java.security Properties.
      */
     private ProviderList() {
-        List<ProviderConfig> configList = new ArrayList<>();
+        ArrayList<ProviderConfig> configList = new ArrayList<>();
         for (int i = 1; true; i++) {
             String entry = Security.getProperty("security.provider." + i);
             if (entry == null) {
@@ -187,7 +186,7 @@ public final class ProviderList {
                 configList.add(config);
             }
         }
-        configs = configList.toArray(PC0);
+        configs = configList;
         if (debug != null) {
             debug.println("provider configuration: " + configList);
         }
@@ -200,7 +199,7 @@ public final class ProviderList {
      * possible recursion and deadlock during verification.
      */
     ProviderList getJarList(String[] jarClassNames) {
-        List<ProviderConfig> newConfigs = new ArrayList<>();
+        ArrayList<ProviderConfig> newConfigs = new ArrayList<>();
         for (String className : jarClassNames) {
             ProviderConfig newConfig = new ProviderConfig(className);
             for (ProviderConfig config : configs) {
@@ -216,20 +215,20 @@ public final class ProviderList {
             }
             newConfigs.add(newConfig);
         }
-        ProviderConfig[] configArray = newConfigs.toArray(PC0);
-        return new ProviderList(configArray, false);
+
+        return new ProviderList(newConfigs, false);
     }
 
     public int size() {
-        return configs.length;
+        return configs.size();
     }
 
     /**
      * Return the Provider at the specified index. Returns EMPTY_PROVIDER
      * if the provider could not be loaded at this time.
      */
-    Provider getProvider(int index) {
-        Provider p = configs[index].getProvider();
+    Provider getProvider(ProviderConfig config) {
+        Provider p = config.getProvider();
         return (p != null) ? p : EMPTY_PROVIDER;
     }
 
@@ -244,7 +243,7 @@ public final class ProviderList {
 
     private ProviderConfig getProviderConfig(String name) {
         int index = getIndex(name);
-        return (index != -1) ? configs[index] : null;
+        return (index != -1) ? configs.get(index) : null;
     }
 
     // return the Provider with the specified name or null
@@ -258,8 +257,8 @@ public final class ProviderList {
      * installed or -1 if it is not present in this ProviderList.
      */
     public int getIndex(String name) {
-        for (int i = 0; i < configs.length; i++) {
-            Provider p = getProvider(i);
+        for (int i = 0; i < configs.size(); i++) {
+            Provider p = getProvider(configs.get(i));
             if (p.getName().equals(name)) {
                 return i;
             }
@@ -270,20 +269,20 @@ public final class ProviderList {
     // attempt to load all Providers not already loaded
     private int loadAll() {
         if (allLoaded) {
-            return configs.length;
+            return configs.size();
         }
         if (debug != null) {
             debug.println("Loading all providers");
             new Exception("Call trace").printStackTrace();
         }
         int n = 0;
-        for (int i = 0; i < configs.length; i++) {
-            Provider p = configs[i].getProvider();
+        for (ProviderConfig config : configs) {
+            Provider p = config.getProvider();
             if (p != null) {
                 n++;
             }
         }
-        if (n == configs.length) {
+        if (n == configs.size()) {
             allLoaded = true;
         }
         return n;
@@ -296,14 +295,14 @@ public final class ProviderList {
      */
     ProviderList removeInvalid() {
         int n = loadAll();
-        if (n == configs.length) {
+        if (n == configs.size()) {
             return this;
         }
-        ProviderConfig[] newConfigs = new ProviderConfig[n];
-        for (int i = 0, j = 0; i < configs.length; i++) {
-            ProviderConfig config = configs[i];
+
+        ArrayList<ProviderConfig> newConfigs = new ArrayList<ProviderConfig>(n);
+        for (ProviderConfig config : configs) {
             if (config.isLoaded()) {
-                newConfigs[j++] = config;
+                newConfigs.add(config);
             }
         }
         return new ProviderList(newConfigs, true);
@@ -316,7 +315,7 @@ public final class ProviderList {
 
     // return a String representation of this ProviderList
     public String toString() {
-        return Arrays.asList(configs).toString();
+        return configs.toString();
     }
 
     /**
@@ -326,8 +325,8 @@ public final class ProviderList {
      * algorithm.
      */
     public Service getService(String type, String name) {
-        for (int i = 0; i < configs.length; i++) {
-            Provider p = getProvider(i);
+        for (ProviderConfig config : configs) {
+            Provider p = getProvider(config);
             Service s = p.getService(type, name);
             if (s != null) {
                 return s;
@@ -426,11 +425,11 @@ public final class ProviderList {
                 } else if ((services != null) && (services.size() > index)) {
                     return services.get(index);
                 }
-                if (providerIndex >= configs.length) {
+                if (providerIndex >= configs.size()) {
                     return null;
                 }
                 // check all algorithms in this provider before moving on
-                Provider p = getProvider(providerIndex++);
+                Provider p = getProvider(configs.get(providerIndex++));
                 if (type != null) {
                     // simple lookup
                     Service s = p.getService(type, algorithm);
