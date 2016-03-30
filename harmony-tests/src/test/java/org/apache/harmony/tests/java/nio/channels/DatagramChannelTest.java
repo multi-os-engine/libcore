@@ -17,6 +17,8 @@
 
 package org.apache.harmony.tests.java.nio.channels;
 
+import android.system.ErrnoException;
+import android.system.OsConstants;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -35,6 +37,7 @@ import java.nio.channels.UnsupportedAddressTypeException;
 import java.nio.channels.spi.SelectorProvider;
 import junit.framework.TestCase;
 import libcore.io.IoUtils;
+import libcore.io.Libcore;
 
 /**
  * Test for DatagramChannel
@@ -2517,5 +2520,33 @@ public class DatagramChannelTest extends TestCase {
         assertFalse(dc.isOpen());
 
         dc.socket().getLocalSocketAddress();
+    }
+
+    // b/27294715
+    public void test_concurrentShutdown() throws IOException {
+        DatagramChannel dc = DatagramChannel.open();
+        dc.configureBlocking(true);
+        dc.bind(new InetSocketAddress(Inet6Address.LOOPBACK, 0));
+
+        final Thread killer = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(2000);
+                    try {
+                        Libcore.os.shutdown(dc.socket().getFileDescriptor$(), OsConstants.SHUT_RDWR);
+                    } catch (ErrnoException expected) {
+                        assertEquals(OsConstants.ENOTCONN, expected.errno);
+                    }
+                    Libcore.os.close(dc.socket().getFileDescriptor$());
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
+        killer.start();
+
+        ByteBuffer dst = ByteBuffer.allocate(CAPACITY_NORMAL);
+        assertEquals(null, dc.receive(dst));
+        assertEquals(0, dst.position());
     }
 }

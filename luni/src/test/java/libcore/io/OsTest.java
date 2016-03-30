@@ -457,6 +457,34 @@ public class OsTest extends TestCase {
     }
   }
 
+  // b/27294715
+  public void test_recvfrom_concurrentShutdown() throws Exception {
+      final FileDescriptor serverFd = Libcore.os.socket(AF_INET, SOCK_DGRAM, 0);
+      Libcore.os.bind(serverFd, InetAddress.getByName("127.0.0.1"), 0);
+
+      final Thread killer = new Thread(new Runnable() {
+          public void run() {
+              try {
+                  Thread.sleep(2000);
+                  try {
+                      Libcore.os.shutdown(serverFd, SHUT_RDWR);
+                  } catch (ErrnoException expected) {
+                      assertEquals(ENOTCONN, expected.errno);
+                  }
+                  Libcore.os.close(serverFd);
+              } catch (Exception ex) {
+                  throw new RuntimeException(ex);
+              }
+          }
+      });
+      killer.start();
+
+      ByteBuffer buffer = ByteBuffer.allocate(16);
+      InetSocketAddress srcAddress = new InetSocketAddress();
+      int received = Libcore.os.recvfrom(serverFd, buffer, 0, srcAddress);
+      assertTrue(received == 0);
+  }
+
   public void test_xattr() throws Exception {
     final String NAME_TEST = "user.meow";
 
