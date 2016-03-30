@@ -26,9 +26,9 @@
 package sun.security.util;
 
 import java.math.BigInteger;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A utility class for debuging.
@@ -37,71 +37,13 @@ import java.util.Locale;
  */
 public class Debug {
 
-    private String prefix;
+    private static final String args = null;
 
-    private static String args;
+    private final String prefix;
 
-    static {
-        args = java.security.AccessController.doPrivileged
-                (new sun.security.action.GetPropertyAction
-                ("java.security.debug"));
-
-        String args2 = java.security.AccessController.doPrivileged
-                (new sun.security.action.GetPropertyAction
-                ("java.security.auth.debug"));
-
-        if (args == null) {
-            args = args2;
-        } else {
-            if (args2 != null)
-               args = args + "," + args2;
-        }
-
-        if (args != null) {
-            args = marshal(args);
-            if (args.equals("help")) {
-                Help();
-            }
-        }
+    private Debug(String prefix) {
+        this.prefix = prefix;
     }
-
-    public static void Help()
-    {
-        System.err.println();
-        System.err.println("all           turn on all debugging");
-        System.err.println("access        print all checkPermission results");
-        System.err.println("combiner      SubjectDomainCombiner debugging");
-        System.err.println("gssloginconfig");
-        System.err.println("configfile    JAAS ConfigFile loading");
-        System.err.println("configparser  JAAS ConfigFile parsing");
-        System.err.println("              GSS LoginConfigImpl debugging");
-        System.err.println("jar           jar verification");
-        System.err.println("logincontext  login context results");
-        System.err.println("policy        loading and granting");
-        System.err.println("provider      security provider debugging");
-        System.err.println("scl           permissions SecureClassLoader assigns");
-        System.err.println();
-        System.err.println("The following can be used with access:");
-        System.err.println();
-        System.err.println("stack         include stack trace");
-        System.err.println("domain        dump all domains in context");
-        System.err.println("failure       before throwing exception, dump stack");
-        System.err.println("              and domain that didn't have permission");
-        System.err.println();
-        System.err.println("The following can be used with stack and domain:");
-        System.err.println();
-        System.err.println("permission=<classname>");
-        System.err.println("              only dump output if specified permission");
-        System.err.println("              is being checked");
-        System.err.println("codebase=<URL>");
-        System.err.println("              only dump output if specified codebase");
-        System.err.println("              is being checked");
-
-        System.err.println();
-        System.err.println("Note: Separate multiple options with a comma");
-        System.exit(0);
-    }
-
 
     /**
      * Get a Debug object corresponding to whether or not the given
@@ -120,8 +62,7 @@ public class Debug {
     public static Debug getInstance(String option, String prefix)
     {
         if (isOn(option)) {
-            Debug d = new Debug();
-            d.prefix = prefix;
+            Debug d = new Debug(prefix);
             return d;
         } else {
             return null;
@@ -163,14 +104,6 @@ public class Debug {
         System.err.println(prefix + ":");
     }
 
-    /**
-     * print a message to stderr that is prefixed with the prefix.
-     */
-
-    public static void println(String prefix, String message)
-    {
-        System.err.println(prefix + ": "+message);
-    }
 
     /**
      * return a hexadecimal printed representation of the specified
