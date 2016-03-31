@@ -54,5 +54,19 @@ public class CertPathValidatorSpiTest {
         doThrow(new CertPathValidatorException()).when(cpvs).engineValidate(null, null);
         cpvs.engineValidate(null, null);
     }
+
+    @Test(expected = InvalidAlgorithmParameterException.class)
+    public void engineValidate_throws_InvalidAlgorithmParameterException() throws Exception {
+        CertPathValidatorSpi cpvs = mock(CertPathValidatorSpi.class);
+        doThrow(new InvalidAlgorithmParameterException()).when(cpvs).engineValidate(null, null);
+        cpvs.engineValidate(null, null);
+    }
+
+    @Test
+    public void engineGetRevocationChecker() throws Exception {
+        CertPathValidatorSpi cpvs = mock(CertPathValidatorSpi.class);
+        when(cpvs.engineGetRevocationChecker()).thenReturn(null);
+        assertNull(cpvs.engineGetRevocationChecker());
+        verify(cpvs, times(1)).engineGetRevocationChecker();
     }
 }
