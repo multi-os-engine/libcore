@@ -32,7 +32,6 @@ import java.lang.annotation.AnnotationFormatError;
 import com.android.dex.Dex;
 import java.util.Comparator;
 import java.util.List;
-import libcore.reflect.AnnotationAccess;
 import libcore.reflect.Types;
 
 /**
@@ -195,12 +194,8 @@ public final
     }
 
     @Override public boolean isAnnotationPresent(Class<? extends Annotation> annotationType) {
-        if (annotationType == null) {
-            throw new NullPointerException("annotationType == null");
-        }
-        return isAnnotationPresentNative(annotationType);
+        return super.isAnnotationPresent(annotationType);
     }
-    private native boolean isAnnotationPresentNative(Class<? extends Annotation> annotationType);
 
     /**
      * Returns an array of {@code Type} objects that represent the formal
@@ -558,7 +553,9 @@ public final
     /**
      * @since 1.5
      */
-    @Override public native Annotation[] getDeclaredAnnotations();
+    @Override public Annotation[] getDeclaredAnnotations() {
+        return super.getDeclaredAnnotations();
+    }
 
     /**
      * @throws NullPointerException {@inheritDoc}
