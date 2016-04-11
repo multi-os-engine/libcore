@@ -30,7 +30,8 @@ import java.util.Arrays;
 import java.util.Locale;
 import junit.framework.TestCase;
 
-public class StringTest extends TestCase {
+public class
+        StringTest extends TestCase {
     public void testIsEmpty() {
         assertTrue("".isEmpty());
         assertFalse("x".isEmpty());
@@ -317,6 +318,19 @@ public class StringTest extends TestCase {
         assertEquals("-h-e-l-l-o- -w-o-r-l-d-", "hello world".replace("", "-"));
         assertEquals("-w-o-r-l-d-", "hello world".substring(6).replace("", "-"));
         assertEquals("-*-w-*-o-*-r-*-l-*-d-*-", "hello world".substring(6).replace("", "-*-"));
+    }
+
+    public void test_replace() {
+        // Replace on an empty string is a no-op.
+        assertEquals("", "".replace("foo", "bar"));
+        // Replace on a string which doesn't contain the target sequence is a no-op.
+        assertEquals("baz", "baz".replace("foo", "bar"));
+        // Test that we iterate forward on the string.
+        assertEquals("mmmba", "bababa".replace("baba", "mmm"));
+        // Test replacements at the end of the string.
+        assertEquals("foodie", "foolish".replace("lish", "die"));
+        // Test a string that has multiple replacements.
+        assertEquals("hahahaha", "kkkk".replace("k", "ha"));
     }
 
     public void test_String_getBytes() throws Exception {
