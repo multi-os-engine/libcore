@@ -153,11 +153,19 @@ public class DateFormatSymbolsTest extends junit.framework.TestCase {
             String[] row = array[i];
             // America/Santiago is somewhat arbitrary; we just want a zone we have to generate
             // "GMT" strings for the short names.
+<<<<<<< HEAD   (8e4200 Merge "Fixes and improvements for SerializationTest" into ki)
             if (row[0].equals("America/Santiago")) {
                 assertEquals("Chile Standard Time", row[1]);
                 assertEquals("GMT-03:00", row[2]);
                 assertEquals("Chile Summer Time", row[3]);
                 assertEquals("GMT-03:00", row[4]);
+=======
+            if (row[0].equals("Pacific/Apia")) {
+                assertEquals("Apia Standard Time", row[1]);
+                assertEquals("GMT+13:00", row[2]);
+                assertEquals("Apia Daylight Time", row[3]);
+                assertEquals("GMT+14:00", row[4]);
+>>>>>>> BRANCH (fe2075 Merge "DO NOT MERGE: "Pacific/Apia" is now "Apia Standard Ti)
             }
         }
     }

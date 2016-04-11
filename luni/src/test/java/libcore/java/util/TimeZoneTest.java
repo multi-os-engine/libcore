@@ -256,12 +256,21 @@ public class TimeZoneTest extends TestCase {
     }
 
     // http://b/7955614
+<<<<<<< HEAD   (8e4200 Merge "Fixes and improvements for SerializationTest" into ki)
     public void test_getDisplayName_GMT_short_names() throws Exception {
         TimeZone tz = TimeZone.getTimeZone("America/Santiago");
         assertEquals("Chile Summer Time", tz.getDisplayName(true, TimeZone.LONG, Locale.US));
         assertEquals("Chile Standard Time", tz.getDisplayName(false, TimeZone.LONG, Locale.US));
         assertEquals("GMT-03:00", tz.getDisplayName(true, TimeZone.SHORT, Locale.US));
         assertEquals("GMT-03:00", tz.getDisplayName(false, TimeZone.SHORT, Locale.US));
+=======
+    public void testApia() throws Exception {
+        TimeZone tz = TimeZone.getTimeZone("Pacific/Apia");
+        assertEquals("Apia Daylight Time", tz.getDisplayName(true, TimeZone.LONG, Locale.US));
+        assertEquals("Apia Standard Time", tz.getDisplayName(false, TimeZone.LONG, Locale.US));
+        assertEquals("GMT+14:00", tz.getDisplayName(true, TimeZone.SHORT, Locale.US));
+        assertEquals("GMT+13:00", tz.getDisplayName(false, TimeZone.SHORT, Locale.US));
+>>>>>>> BRANCH (fe2075 Merge "DO NOT MERGE: "Pacific/Apia" is now "Apia Standard Ti)
     }
 
     private static boolean isGmtString(String s) {
