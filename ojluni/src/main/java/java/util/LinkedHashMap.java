@@ -26,6 +26,8 @@
 
 package java.util;
 
+import sun.misc.Hashing;
+
 import java.io.*;
 import java.util.function.Consumer;
 import java.util.function.BiConsumer;
@@ -264,11 +266,9 @@ public class LinkedHashMap<K,V>
      * faster to iterate using our linked list.
      */
     @Override
-    void transfer(HashMapEntry[] newTable, boolean rehash) {
+    void transfer(HashMapEntry[] newTable) {
         int newCapacity = newTable.length;
         for (LinkedHashMapEntry<K,V> e = header.after; e != header; e = e.after) {
-            if (rehash)
-                e.hash = (e.key == null) ? 0 : hash(e.key);
             int index = indexFor(e.hash, newCapacity);
             e.next = newTable[index];
             newTable[index] = e;
