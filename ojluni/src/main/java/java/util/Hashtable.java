@@ -26,6 +26,8 @@
 
 package java.util;
 
+import sun.misc.Hashing;
+
 import java.io.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -169,82 +171,6 @@ public class Hashtable<K,V>
     private static final long serialVersionUID = 1421746759512286392L;
 
     /**
-     * The default threshold of map capacity above which alternative hashing is
-     * used for String keys. Alternative hashing reduces the incidence of
-     * collisions due to weak hash code calculation for String keys.
-     * <p>
-     * This value may be overridden by defining the system property
-     * {@code jdk.map.althashing.threshold}. A property value of {@code 1}
-     * forces alternative hashing to be used at all times whereas
-     * {@code -1} value ensures that alternative hashing is never used.
-     */
-    static final int ALTERNATIVE_HASHING_THRESHOLD_DEFAULT = Integer.MAX_VALUE;
-
-    /**
-     * holds values which can't be initialized until after VM is booted.
-     */
-    private static class Holder {
-
-        /**
-         * Table capacity above which to switch to use alternative hashing.
-         */
-        static final int ALTERNATIVE_HASHING_THRESHOLD;
-
-        static {
-            String altThreshold = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction(
-                    "jdk.map.althashing.threshold"));
-
-            int threshold;
-            try {
-                threshold = (null != altThreshold)
-                        ? Integer.parseInt(altThreshold)
-                        : ALTERNATIVE_HASHING_THRESHOLD_DEFAULT;
-
-                // disable alternative hashing if -1
-                if (threshold == -1) {
-                    threshold = Integer.MAX_VALUE;
-                }
-
-                if (threshold < 0) {
-                    throw new IllegalArgumentException("value must be positive integer.");
-                }
-            } catch(IllegalArgumentException failed) {
-                throw new Error("Illegal value for 'jdk.map.althashing.threshold'", failed);
-            }
-
-            ALTERNATIVE_HASHING_THRESHOLD = threshold;
-        }
-    }
-
-    /**
-     * A randomizing value associated with this instance that is applied to
-     * hash code of keys to make hash collisions harder to find.
-     */
-    transient int hashSeed;
-
-    /**
-     * Initialize the hashing mask value.
-     */
-    final boolean initHashSeedAsNeeded(int capacity) {
-        boolean currentAltHashing = hashSeed != 0;
-        boolean useAltHashing = sun.misc.VM.isBooted() &&
-                (capacity >= Holder.ALTERNATIVE_HASHING_THRESHOLD);
-        boolean switching = currentAltHashing ^ useAltHashing;
-        if (switching) {
-            hashSeed = useAltHashing
-                ? sun.misc.Hashing.randomHashSeed(this)
-                : 0;
-        }
-        return switching;
-    }
-
-    private int hash(Object k) {
-        // hashSeed will be zero if alternative hashing is disabled.
-        return hashSeed ^ k.hashCode();
-    }
-
-    /**
      * Constructs a new, empty hashtable with the specified initial
      * capacity and the specified load factor.
      *
@@ -265,7 +191,6 @@ public class Hashtable<K,V>
         this.loadFactor = loadFactor;
         table = new HashtableEntry[initialCapacity];
         threshold = (initialCapacity <= MAX_ARRAY_SIZE + 1) ? initialCapacity : MAX_ARRAY_SIZE + 1;
-        initHashSeedAsNeeded(initialCapacity);
     }
 
     /**
@@ -409,7 +334,7 @@ public class Hashtable<K,V>
      */
     public synchronized boolean containsKey(Object key) {
         HashtableEntry tab[] = table;
-        int hash = hash(key);
+        int hash = Hashing.singleWordWangJenkinsHash(key);
         int index = (hash & 0x7FFFFFFF) % tab.length;
         for (HashtableEntry<K,V> e = tab[index] ; e != null ; e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
@@ -436,7 +361,7 @@ public class Hashtable<K,V>
      */
     public synchronized V get(Object key) {
         HashtableEntry tab[] = table;
-        int hash = hash(key);
+        int hash = Hashing.singleWordWangJenkinsHash(key);
         int index = (hash & 0x7FFFFFFF) % tab.length;
         for (HashtableEntry<K,V> e = tab[index] ; e != null ; e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
@@ -477,7 +402,6 @@ public class Hashtable<K,V>
 
         modCount++;
         threshold = (int)Math.min(newCapacity * loadFactor, MAX_ARRAY_SIZE + 1);
-        boolean rehash = initHashSeedAsNeeded(newCapacity);
 
         table = newMap;
 
@@ -486,9 +410,6 @@ public class Hashtable<K,V>
                 HashtableEntry<K,V> e = old;
                 old = old.next;
 
-                if (rehash) {
-                    e.hash = hash(e.key);
-                }
                 int index = (e.hash & 0x7FFFFFFF) % newCapacity;
                 e.next = newMap[index];
                 newMap[index] = e;
@@ -521,7 +442,7 @@ public class Hashtable<K,V>
 
         // Makes sure the key is not already in the hashtable.
         HashtableEntry tab[] = table;
-        int hash = hash(key);
+        int hash = Hashing.singleWordWangJenkinsHash(key);
         int index = (hash & 0x7FFFFFFF) % tab.length;
         for (HashtableEntry<K,V> e = tab[index] ; e != null ; e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
@@ -537,7 +458,7 @@ public class Hashtable<K,V>
             rehash();
 
             tab = table;
-            hash = hash(key);
+            hash = Hashing.singleWordWangJenkinsHash(key);
             index = (hash & 0x7FFFFFFF) % tab.length;
         }
 
@@ -559,7 +480,7 @@ public class Hashtable<K,V>
      */
     public synchronized V remove(Object key) {
         HashtableEntry tab[] = table;
-        int hash = hash(key);
+        int hash = Hashing.singleWordWangJenkinsHash(key);
         int index = (hash & 0x7FFFFFFF) % tab.length;
         for (HashtableEntry<K,V> e = tab[index], prev = null ; e != null ; prev = e, e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
@@ -766,7 +687,7 @@ public class Hashtable<K,V>
             Map.Entry entry = (Map.Entry)o;
             Object key = entry.getKey();
             HashtableEntry[] tab = table;
-            int hash = hash(key);
+            int hash = Hashing.singleWordWangJenkinsHash(key);
             int index = (hash & 0x7FFFFFFF) % tab.length;
 
             for (HashtableEntry e = tab[index]; e != null; e = e.next)
@@ -781,7 +702,7 @@ public class Hashtable<K,V>
             Map.Entry<K,V> entry = (Map.Entry<K,V>) o;
             K key = entry.getKey();
             HashtableEntry[] tab = table;
-            int hash = hash(key);
+            int hash = Hashing.singleWordWangJenkinsHash(key);
             int index = (hash & 0x7FFFFFFF) % tab.length;
 
             for (HashtableEntry<K,V> e = tab[index], prev = null; e != null;
@@ -1065,7 +986,6 @@ public class Hashtable<K,V>
         HashtableEntry<K,V>[] newTable = new HashtableEntry[length];
         threshold = (int) Math.min(length * loadFactor, MAX_ARRAY_SIZE + 1);
         count = 0;
-        initHashSeedAsNeeded(length);
 
         // Read the number of elements and then all the key/value objects
         for (; elements > 0; elements--) {
@@ -1096,7 +1016,7 @@ public class Hashtable<K,V>
         }
         // Makes sure the key is not already in the hashtable.
         // This should not happen in deserialized version.
-        int hash = hash(key);
+        int hash = Hashing.singleWordWangJenkinsHash(key);
         int index = (hash & 0x7FFFFFFF) % tab.length;
         for (HashtableEntry<K,V> e = tab[index] ; e != null ; e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
