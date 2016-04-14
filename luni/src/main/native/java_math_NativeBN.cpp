@@ -108,6 +108,17 @@ static jlong NativeBN_getNativeFinalizer(JNIEnv*, jclass) {
   return static_cast<jlong>(reinterpret_cast<uintptr_t>(&BN_free));
 }
 
+static_assert(std::numeric_limits<BN_ULONG>::is_specialized, "Unexpected BN_ULONG");
+
+constexpr BN_ULONG TOO_BIG = std::numeric_limits<BN_ULONG>::max();
+
+// Return n as BN_ULONG if it's non-negative and easily fits, TOO_BIG otherwise.
+// Used as optimization; may unnecessarily return TOO_BIG.
+static BN_ULONG toBnUlong(const BIGNUM* n) {
+    if (BN_is_negative(n)) return TOO_BIG;
+    return BN_get_word(n);  // Ignores sign.
+}
+
 static void NativeBN_BN_free(JNIEnv* env, jclass, jlong a) {
   if (!oneValidHandle(env, a)) return;
   BN_free(toBigNum(a));
@@ -536,9 +547,43 @@ static void NativeBN_BN_exp(JNIEnv* env, jclass, jlong r, jlong a, jlong p) {
 }
 
 static void NativeBN_BN_div(JNIEnv* env, jclass, jlong dv, jlong rem, jlong m, jlong d) {
-  if (!fourValidHandles(env, (rem ? rem : dv), (dv ? dv : rem), m, d)) return;
-  Unique_BN_CTX ctx(BN_CTX_new());
-  BN_div(toBigNum(dv), toBigNum(rem), toBigNum(m), toBigNum(d), ctx.get());
+  if (!fourValidHandles(env, (rem ? rem : dv), (dv ? dv : rem), m, d)) return;  // WHY????
+  // makeValid() in BigInt throws on allocation failure, because BN_new below throws.
+  // I think this test can only fail due to a bug or premature finalization.
+  // The latter is now impossible.  And just returning here seems like a disaster anyway.
+  BIGNUM* dividend = toBigNum(m);
+  BIGNUM* divisor = toBigNum(d);
+  BIGNUM* result = toBigNum(dv);
+  BIGNUM* remainder = toBigNum(rem);
+  // The single word case is appreciably faster.
+  // TODO: Perhaps handle a single word negative divisor as well?
+  BN_ULONG short_divisor = toBnUlong(divisor);
+  if (short_divisor != TOO_BIG && short_divisor != 0) {
+    BIGNUM* nonNullResult;
+    if (dv == 0) {
+      nonNullResult = BN_dup(dividend);
+    } else {
+      nonNullResult = BN_copy(result, dividend);
+    }
+    if (nonNullResult != 0) {
+      BN_ULONG remainder_word = BN_div_word(nonNullResult, short_divisor);
+      if (dv == 0) {
+        BN_free(nonNullResult);
+      }
+      if (remainder_word != (BN_ULONG)-1) {
+        if (rem != 0) {
+          if (BN_set_word(remainder, remainder_word)) {
+            // No exceptions.
+            return;
+          }
+        } else {
+          return;
+        }
+      }  // In the other cases we encountered an error, and let the general case handle it.
+    }
+  }
+  Unique_BN_CTX ctx(BN_CTX_new());  // out of memory handling???
+  BN_div(result, remainder, dividend, divisor, ctx.get());
   throwExceptionIfNecessary(env);
 }
 
