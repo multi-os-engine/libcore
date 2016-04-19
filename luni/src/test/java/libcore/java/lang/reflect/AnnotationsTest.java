@@ -291,11 +291,11 @@ public final class AnnotationsTest extends TestCase {
         RepeatableAnnotation[] annotations = aPackage
                 .getDeclaredAnnotationsByType(RepeatableAnnotation.class);
         assertNotNull(annotations);
-        assertEquals(2, annotations.length);
+        assertEquals(0, annotations.length);
 
         // The non-"WithType" methods will see the wrapper annotation
-        assertPresent(true, aPackage, RepeatableAnnotations.class);
-        assertDeclared(true, aPackage, RepeatableAnnotations.class);
+        assertPresent(false, aPackage, RepeatableAnnotations.class);
+        assertDeclared(false, aPackage, RepeatableAnnotations.class);
     }
 
     public void testRetentionPolicy() {

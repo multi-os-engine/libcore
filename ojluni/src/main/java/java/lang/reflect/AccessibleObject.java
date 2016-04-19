@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2014 The Android Open Source Project
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ package java.lang.reflect;
 import java.security.AccessController;
 import sun.reflect.Reflection;
 import java.lang.annotation.Annotation;
-
-import libcore.reflect.AnnotatedElements;
 
 /**
  * The AccessibleObject class is the base class for Field, Method and
@@ -174,12 +172,22 @@ public class AccessibleObject implements AnnotatedElement {
     }
 
     /**
+     * {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
-    public boolean isAnnotationPresent(
-        Class<? extends Annotation> annotationClass) {
-        return getAnnotation(annotationClass) != null;
+    @Override
+    public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
+        return AnnotatedElement.super.isAnnotationPresent(annotationClass);
+    }
+
+   /**
+     * @throws NullPointerException {@inheritDoc}
+     * @since 1.8
+     */
+    @Override
+    public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
+        throw new AssertionError("All subclasses should override this method");
     }
 
     /**
@@ -190,36 +198,33 @@ public class AccessibleObject implements AnnotatedElement {
     }
 
     /**
-     * @since 1.5
+     * @throws NullPointerException {@inheritDoc}
+     * @since 1.8
      */
-    public Annotation[] getDeclaredAnnotations()  {
-        throw new AssertionError("All subclasses should override this method");
+    @Override
+    public <T extends Annotation> T getDeclaredAnnotation(Class<T> annotationClass) {
+        // Only annotations on classes are inherited, for all other
+        // objects getDeclaredAnnotation is the same as
+        // getAnnotation.
+        return getAnnotation(annotationClass);
     }
 
     /**
-     * {@inheritDoc}
+     * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
     @Override
     public <T extends Annotation> T[] getDeclaredAnnotationsByType(Class<T> annotationClass) {
-      return AnnotatedElements.getDeclaredAnnotationsByType(this, annotationClass);
+        // Only annotations on classes are inherited, for all other
+        // objects getDeclaredAnnotationsByType is the same as
+        // getAnnotationsByType.
+        return getAnnotationsByType(annotationClass);
     }
 
     /**
-     * {@inheritDoc}
-     * @since 1.8
+     * @since 1.5
      */
-    @Override
-    public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
-      return AnnotatedElements.getAnnotationsByType(this, annotationClass);
-    }
-
-    /**
-     * {@inheritDoc}
-     * @since 1.8
-     */
-    @Override
-    public <T extends Annotation> Annotation getDeclaredAnnotation(Class<T> annotationClass) {
-      return AnnotatedElements.getDeclaredAnnotation(this, annotationClass);
+    public Annotation[] getDeclaredAnnotations()  {
+        throw new AssertionError("All subclasses should override this method");
     }
 }
