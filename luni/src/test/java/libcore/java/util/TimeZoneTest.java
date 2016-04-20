@@ -261,7 +261,7 @@ public class TimeZoneTest extends TestCase {
         assertEquals("Chile Summer Time", tz.getDisplayName(true, TimeZone.LONG, Locale.US));
         assertEquals("Chile Standard Time", tz.getDisplayName(false, TimeZone.LONG, Locale.US));
         assertEquals("GMT-03:00", tz.getDisplayName(true, TimeZone.SHORT, Locale.US));
-        assertEquals("GMT-03:00", tz.getDisplayName(false, TimeZone.SHORT, Locale.US));
+        assertEquals("GMT-04:00", tz.getDisplayName(false, TimeZone.SHORT, Locale.US));
     }
 
     private static boolean isGmtString(String s) {

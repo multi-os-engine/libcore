@@ -155,7 +155,7 @@ public class DateFormatSymbolsTest extends junit.framework.TestCase {
             // "GMT" strings for the short names.
             if (row[0].equals("America/Santiago")) {
                 assertEquals("Chile Standard Time", row[1]);
-                assertEquals("GMT-03:00", row[2]);
+                assertEquals("GMT-04:00", row[2]);
                 assertEquals("Chile Summer Time", row[3]);
                 assertEquals("GMT-03:00", row[4]);
             }
