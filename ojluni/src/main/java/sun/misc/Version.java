@@ -280,7 +280,7 @@ public class Version {
                     int nextChar = 3;
                     try {
                         String uu = cs.subSequence(1, 3).toString();
-                        jvm_update_version = Integer.valueOf(uu).intValue();
+                        jvm_update_version = Integer.parseInt(uu);
                         if (cs.length() >= 4) {
                             char c = cs.charAt(3);
                             if (c >= 'a' && c <= 'z') {
@@ -304,8 +304,7 @@ public class Version {
                         if (s.charAt(0) == 'b' && s.length() == 3 &&
                             Character.isDigit(s.charAt(1)) &&
                             Character.isDigit(s.charAt(2))) {
-                            jvm_build_number =
-                                Integer.valueOf(s.substring(1, 3)).intValue();
+                            jvm_build_number = Integer.parseInt(s.substring(1, 3));
                             break;
                         }
                     }
