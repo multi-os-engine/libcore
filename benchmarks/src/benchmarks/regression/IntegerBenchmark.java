@@ -140,7 +140,7 @@ public class IntegerBenchmark {
         int t = 0;
         for (int i = 0; i < reps; ++i) {
             for (int j = 0; j < intStrings.length; ++j) {
-                t += Integer.valueOf(intStrings[j]);
+                t += Integer.parseInt(intStrings[j]);
             }
         }
         return t;
