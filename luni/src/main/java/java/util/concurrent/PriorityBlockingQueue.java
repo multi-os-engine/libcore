@@ -257,29 +257,32 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
      * @param oldCap the length of the array
      */
     private void tryGrow(Object[] array, int oldCap) {
-        lock.unlock(); // must release and then re-acquire main lock
         Object[] newArray = null;
-        if (allocationSpinLock == 0 &&
-            U.compareAndSwapInt(this, ALLOCATIONSPINLOCK, 0, 1)) {
-            try {
-                int newCap = oldCap + ((oldCap < 64) ?
-                                       (oldCap + 2) : // grow faster if small
-                                       (oldCap >> 1));
-                if (newCap - MAX_ARRAY_SIZE > 0) {    // possible overflow
-                    int minCap = oldCap + 1;
-                    if (minCap < 0 || minCap > MAX_ARRAY_SIZE)
-                        throw new OutOfMemoryError();
-                    newCap = MAX_ARRAY_SIZE;
+        lock.unlock(); // must release and then re-acquire main lock
+        try {
+            if (allocationSpinLock == 0 &&
+                    U.compareAndSwapInt(this, ALLOCATIONSPINLOCK, 0, 1)) {
+                try {
+                    int newCap = oldCap + ((oldCap < 64) ?
+                            (oldCap + 2) : // grow faster if small
+                            (oldCap >> 1));
+                    if (newCap - MAX_ARRAY_SIZE > 0) {    // possible overflow
+                        int minCap = oldCap + 1;
+                        if (minCap < 0 || minCap > MAX_ARRAY_SIZE)
+                            throw new OutOfMemoryError();
+                        newCap = MAX_ARRAY_SIZE;
+                    }
+                    if (newCap > oldCap && queue == array)
+                        newArray = new Object[newCap];
+                } finally {
+                    allocationSpinLock = 0;
                 }
-                if (newCap > oldCap && queue == array)
-                    newArray = new Object[newCap];
-            } finally {
-                allocationSpinLock = 0;
             }
+            if (newArray == null) // back off if another thread is allocating
+                Thread.yield();
+        } finally {
+            lock.lock();
         }
-        if (newArray == null) // back off if another thread is allocating
-            Thread.yield();
-        lock.lock();
         if (newArray != null && queue == array) {
             queue = newArray;
             System.arraycopy(array, 0, newArray, 0, oldCap);
