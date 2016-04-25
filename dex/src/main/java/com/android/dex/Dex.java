@@ -174,9 +174,9 @@ public final class Dex {
     }
 
     public void writeTo(File dexOut) throws IOException {
-        OutputStream out = new FileOutputStream(dexOut);
-        writeTo(out);
-        out.close();
+        try (OutputStream out = new FileOutputStream(dexOut)) {
+            writeTo(out);
+        }
     }
 
     public TableOfContents getTableOfContents() {
