@@ -238,7 +238,7 @@ public class DateFormatSymbolsTest extends junit.framework.TestCase {
         if (retVal.length != val.length)
             fail("Returned wrong array");
         for (int i = 0; i < val.length; i++)
-            assertTrue("Failed to set strings", retVal[i].equals(val[i]));
+            assertTrue("Failed to set strings", Arrays.equals(retVal[i], val[i]));
     }
 
     /**

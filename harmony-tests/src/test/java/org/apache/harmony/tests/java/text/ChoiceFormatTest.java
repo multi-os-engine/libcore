@@ -300,9 +300,9 @@ public class ChoiceFormatTest extends TestCase {
         // java.text.ChoiceFormat.getFormats()
         String[] orgFormats = (String[]) formats.clone();
         String[] f = (String[]) f1.getFormats();
-        assertTrue("Wrong formats", f.equals(formats));
+        assertTrue("Wrong formats", Arrays.equals(f, formats));
         f[0] = "Modified";
-        assertTrue("Formats copied", !f.equals(orgFormats));
+        assertTrue("Formats copied", !Arrays.equals(f, orgFormats));
     }
 
     /**
@@ -312,9 +312,9 @@ public class ChoiceFormatTest extends TestCase {
         // Test for method double [] java.text.ChoiceFormat.getLimits()
         double[] orgLimits = (double[]) limits.clone();
         double[] l = f1.getLimits();
-        assertTrue("Wrong limits", l.equals(limits));
+        assertTrue("Wrong limits", Arrays.equals(l, limits));
         l[0] = 3.14527;
-        assertTrue("Limits copied", !l.equals(orgLimits));
+        assertTrue("Limits copied", !Arrays.equals(l, orgLimits));
     }
 
     /**
