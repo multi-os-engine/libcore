@@ -3021,7 +3021,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     protected ForkJoinTask<?> pollSubmission() {
         WorkQueue[] ws; int wl; WorkQueue w; ForkJoinTask<?> t;
-        int r = ThreadLocalRandom.nextSecondarySeed();
         if ((ws = workQueues) != null && (wl = ws.length) > 0) {
             for (int m = wl - 1, i = 0; i < wl; ++i) {
                 if ((w = ws[(i << 1) & m]) != null && (t = w.poll()) != null)

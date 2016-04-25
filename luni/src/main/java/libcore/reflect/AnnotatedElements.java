@@ -116,9 +116,6 @@ public final class AnnotatedElements {
     // }
     //
     // Use reflection to access these values.
-    Class<T[]> annotationArrayClass =
-        (Class<T[]>)((T[])Array.newInstance(annotationClass, 0)).getClass();
-
     Method valuesMethod;
     try {
       valuesMethod = annotation.getClass().getDeclaredMethod("value");
