@@ -589,7 +589,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         final Thread thread;
         /** Initial task to run.  Possibly null. */
         Runnable firstTask;
-        /** Per-thread task counter */
+        /** Per-thread task counter (approximate value) */
         volatile long completedTasks;
 
         /**
@@ -1142,6 +1142,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                     }
                 } finally {
                     task = null;
+                    // volatile increment (not 100% thread safe)
                     w.completedTasks++;
                     w.unlock();
                 }
