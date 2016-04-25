@@ -1340,7 +1340,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal>, Serial
     public BigDecimal divideToIntegralValue(BigDecimal divisor) {
         BigInteger integralValue; // the integer of result
         BigInteger powerOfTen; // some power of ten
-        BigInteger quotAndRem[] = {getUnscaledValue()};
+
         long newScale = (long)this.scale - divisor.scale;
         long tempScale = 0;
         int i = 1;
@@ -1365,7 +1365,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal>, Serial
             integralValue = getUnscaledValue().multiply(powerOfTen).divide( divisor.getUnscaledValue() );
             // To strip trailing zeros approximating to the preferred scale
             while (!integralValue.testBit(0)) {
-                quotAndRem = integralValue.divideAndRemainder(TEN_POW[i]);
+                BigInteger[] quotAndRem = integralValue.divideAndRemainder(TEN_POW[i]);
                 if ((quotAndRem[1].signum() == 0)
                         && (tempScale - i >= newScale)) {
                     tempScale -= i;
