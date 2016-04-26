@@ -359,5 +359,10 @@ public class NetworkSecurityPolicyTest extends TestCase {
 
             return isCleartextTrafficPermitted();
         }
+
+        @Override
+        public boolean isCTVerificationRequired(String hostname) {
+            return false;
+        }
     }
 }
