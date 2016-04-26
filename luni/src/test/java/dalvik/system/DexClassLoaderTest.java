@@ -393,4 +393,39 @@ public class DexClassLoaderTest extends TestCase {
     public void test_twoJar_diff_getResourceAsStream() throws Exception {
         createLoaderAndCallMethod("test.TestMethods", "test_diff_getResourceAsStream", jar1, jar2);
     }
+
+    /**
+     * Test that a DexClassLoader can be used to generate optimized code, then
+     * a subsequent PathClassLoader can be used to load the optimized code.
+     */
+    public void testDexThenPathClassLoader() throws Exception {
+      File dex = new File(srcDir, "loading-test-for-opt-test.dex");
+      copyResource("loading-test.dex", dex);
+
+      File odexdir = new File(new File(srcDir, "oat"), VMRuntime.getCurrentInstructionSet());
+      assertTrue(odexdir.mkdirs());
+
+      // Initially there should be no optimized code for dex file.
+      assertTrue(DexFile.isDexOptNeeded(dex.getAbsolutePath()));
+
+      // Executing code from the dex loader should cause optimized code to be
+      // generated.
+      DexClassLoader dexloader = new DexClassLoader(dex.getAbsolutePath(),
+          odexdir.getAbsolutePath(), null, ClassLoader.getSystemClassLoader());
+      Class c = dexloader.loadClass("test.Test1");
+      Method m = c.getMethod("test", (Class[]) null);
+      assertSame("blort", m.invoke(null, (Object[]) null));
+
+      // Move the generated code to the right location to be used by a
+      // PathClassLoader.
+      File oat = new File(odexdir, "loading-test-for-opt-test.dex");
+      File odex = new File(odexdir, "loading-test-for-opt-test.odex");
+      oat.renameTo(odex);
+
+      // Now there should be optimized code for the dex file.
+      assertFalse(DexFile.isDexOptNeeded(dex.getAbsolutePath()));
+
+      cleanUpDir(odexdir);
+      odexdir.delete();
+    }
 }
