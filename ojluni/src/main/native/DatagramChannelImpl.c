@@ -208,7 +208,9 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
         }
 
         if (isa == NULL) {
-            JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+            if (!(*env)->ExceptionCheck(env)) {
+		JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+	    }
             return IOS_THROWN;
         }
 
