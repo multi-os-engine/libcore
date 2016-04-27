@@ -19,6 +19,8 @@ package libcore.java.math;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.util.Locale;
+
 import junit.framework.TestCase;
 
 public final class BigDecimalTest extends TestCase {
@@ -107,5 +109,38 @@ public final class BigDecimalTest extends TestCase {
 
         assertFalse(zero.equals(other));
         assertFalse(other.equals(zero));
+    }
+
+    public void testDivideRounding() {
+        BigDecimal n = BigDecimal.ONE;
+        BigDecimal d = new BigDecimal(Long.MIN_VALUE);
+
+        assertEquals("DOWN", new BigDecimal("0"), n.divide(d, 0, RoundingMode.DOWN));
+        assertEquals("UP", new BigDecimal("-1"), n.divide(d, 0, RoundingMode.UP));
+        assertEquals("FLOOR", new BigDecimal("-1"), n.divide(d, 0, RoundingMode.FLOOR));
+        assertEquals("CEILING", new BigDecimal("0"), n.divide(d, 0, RoundingMode.CEILING));
+        assertEquals("HALF_EVEN", new BigDecimal("0"), n.divide(d, 0, RoundingMode.HALF_EVEN));
+        assertEquals("HALF_UP", new BigDecimal("0"), n.divide(d, 0, RoundingMode.HALF_UP));
+        assertEquals("HALF_DOWN", new BigDecimal("0"), n.divide(d, 0, RoundingMode.HALF_DOWN));
+    }
+
+    private static void checkDivide(String expected, long n, long d, int scale, RoundingMode rm) {
+        assertEquals(String.format(Locale.US, "%d/%d [%d, %s]", n, d, scale, rm.name()),
+                new BigDecimal(expected),
+                new BigDecimal(n).divide(new BigDecimal(d), scale, rm));
+    }
+
+    public void testDivide() {
+        checkDivide("1", Long.MAX_VALUE, Long.MAX_VALUE / 2 + 1, 0, RoundingMode.DOWN);
+        checkDivide("2", Long.MAX_VALUE, Long.MAX_VALUE / 2, 0, RoundingMode.DOWN);
+        checkDivide("0.50", Long.MAX_VALUE / 2, Long.MAX_VALUE, 2, RoundingMode.HALF_UP);
+        checkDivide("0.50", Long.MIN_VALUE / 2, Long.MIN_VALUE, 2, RoundingMode.HALF_UP);
+        checkDivide("0.5000", Long.MIN_VALUE / 2, Long.MIN_VALUE, 4, RoundingMode.HALF_UP);
+        // (-2^62 + 1) / (-2^63) = (2^62 - 1) / 2^63 = 0.5 - 2^-63
+        checkDivide("0", Long.MIN_VALUE / 2 + 1, Long.MIN_VALUE, 0, RoundingMode.HALF_UP);
+        checkDivide("1", Long.MIN_VALUE / 2, Long.MIN_VALUE, 0, RoundingMode.HALF_UP);
+        checkDivide("0", Long.MIN_VALUE / 2, Long.MIN_VALUE, 0, RoundingMode.HALF_DOWN);
+        // (-2^62 - 1) / (-2^63) = (2^62 + 1) / 2^63 = 0.5 + 2^-63
+        checkDivide("1", Long.MIN_VALUE / 2 - 1, Long.MIN_VALUE, 0, RoundingMode.HALF_DOWN);
     }
 }
