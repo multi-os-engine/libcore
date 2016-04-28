@@ -2602,6 +2602,66 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
         connection.disconnect();
     }
 
+    // http://b/27908885 - Android includes a default Content-Type for some HTTP methods.
+    public void testContentTypeDefaulting() throws Exception {
+        server.play();
+
+        // PUT, POST and DELETE default the Content-Type to "application/x-www-form-urlencoded".
+        // checkContentTypeHeader(method, includeRequestBody, expectContentTypeDefaulting)
+        checkContentTypeHeader("PUT", false, true);
+        checkContentTypeHeader("PUT", true, true);
+        checkContentTypeHeader("POST", false, true);
+        checkContentTypeHeader("POST", true, true);
+        checkContentTypeHeader("DELETE", false, true);
+        checkContentTypeHeader("DELETE", true, true);
+
+        // GET, HEAD. OPTIONS and TRACE do not default the Content-Type. These do not permit a
+        // request body.
+        // checkContentTypeHeader(method, includeRequestBody, expectContentTypeDefaulting)
+        checkContentTypeHeader("GET", false, false);
+        checkContentTypeHeader("HEAD", false, false);
+        checkContentTypeHeader("OPTIONS", false, false);
+        checkContentTypeHeader("TRACE", false, false);
+
+        // GET does not support a request body, but adding a request body to a GET turns it into a
+        // POST which does.
+        checkContentTypeHeader("GET", true, true);
+    }
+
+    private void checkContentTypeHeader(String httpMethod, boolean includeRequestBody,
+            boolean expectContentTypeDefaulting) throws Exception {
+        server.enqueue(new MockResponse());
+        HttpURLConnection connection = (HttpURLConnection) server.getUrl("/").openConnection();
+        connection.setRequestMethod(httpMethod);
+
+        // Optionally add a body to the request.
+        byte[] requestBody = new byte[] { 'A', 'B', 'C', 'D' };
+        if (includeRequestBody) {
+            connection.setDoOutput(true);
+            connection.setFixedLengthStreamingMode(requestBody.length);
+            OutputStream outputStream = connection.getOutputStream();
+            outputStream.write(requestBody);
+            outputStream.close();
+        }
+        assertEquals(200, connection.getResponseCode());
+
+        // Confirm the body was correctly sent to the server.
+        RecordedRequest recordedRequest = server.takeRequest();
+        if (includeRequestBody) {
+            assertTrue(Arrays.equals(requestBody, recordedRequest.getBody()));
+        } else {
+            assertEquals(0, recordedRequest.getBody().length);
+        }
+
+        // Confirm the Content-Type was defaulted, or not, as expected.
+        if (expectContentTypeDefaulting) {
+            assertEquals("application/x-www-form-urlencoded",
+                    recordedRequest.getHeader("Content-Type"));
+        } else {
+            assertNull(recordedRequest.getHeader("Content-Type"));
+        }
+    }
+
     // http://b/4361656
     public void testUrlContainsQueryButNoPath() throws Exception {
         server.enqueue(new MockResponse().setBody("A"));
