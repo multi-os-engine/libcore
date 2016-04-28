@@ -151,6 +151,56 @@ public final class BigDecimalTest extends TestCase {
     }
 
     /**
+     * Test a bunch of pairings with even/odd numerator and denominator whose
+     * result is near +/- 0.5.
+     */
+    public void testDivideRounding_sign() {
+        // positive numerator and denominator, even/odd values
+        checkDivide("0", 49, 100, 0, RoundingMode.HALF_UP);
+        checkDivide("1", 50, 100, 0, RoundingMode.HALF_UP);
+        checkDivide("1", 51, 101, 0, RoundingMode.HALF_UP);
+        checkDivide("0", 50, 101, 0, RoundingMode.HALF_UP);
+        checkDivide("0", Long.MAX_VALUE / 2, Long.MAX_VALUE, 0, RoundingMode.HALF_UP);
+
+        // Same with negative numerator and denominator
+        checkDivide("0", -49, -100, 0, RoundingMode.HALF_UP);
+        checkDivide("1", -50, -100, 0, RoundingMode.HALF_UP);
+        checkDivide("1", -51, -101, 0, RoundingMode.HALF_UP);
+        checkDivide("0", -50, -101, 0, RoundingMode.HALF_UP);
+        checkDivide("0", -(Long.MAX_VALUE / 2), -Long.MAX_VALUE, 0, RoundingMode.HALF_UP);
+
+        // Same with negative numerator
+        checkDivide("0", -49, 100, 0, RoundingMode.HALF_UP);
+        checkDivide("-1", -50, 100, 0, RoundingMode.HALF_UP);
+        checkDivide("-1", -51, 101, 0, RoundingMode.HALF_UP);
+        checkDivide("0", -50, 101, 0, RoundingMode.HALF_UP);
+        checkDivide("0", -(Long.MAX_VALUE / 2), Long.MAX_VALUE, 0, RoundingMode.HALF_UP);
+
+        // Same with negative denominator
+        checkDivide("0", 49, -100, 0, RoundingMode.HALF_UP);
+        checkDivide("-1", 50, -100, 0, RoundingMode.HALF_UP);
+        checkDivide("-1", 51, -101, 0, RoundingMode.HALF_UP);
+        checkDivide("0", 50, -101, 0, RoundingMode.HALF_UP);
+        checkDivide("0", Long.MAX_VALUE / 2, -Long.MAX_VALUE, 0, RoundingMode.HALF_UP);
+    }
+
+    public void testDivideByOne() {
+        long[] na = new long[] {
+                Long.MIN_VALUE,
+                Long.MIN_VALUE + 1,
+                Long.MAX_VALUE,
+                Long.MAX_VALUE - 1,
+                0,
+                -1,
+                1,
+                10, 43, 314159265358979323L, // arbitrary values
+        };
+        for (long n : na) {
+            checkDivide(Long.toString(n), n, 1, 0, RoundingMode.UNNECESSARY);
+        }
+    }
+
+    /**
      * Tests that Long.MIN_VALUE / -1 doesn't overflow back to Long.MIN_VALUE,
      * like it would in long arithmetic.
      */
