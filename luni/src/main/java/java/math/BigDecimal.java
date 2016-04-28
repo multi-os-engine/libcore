@@ -2724,10 +2724,24 @@ public class BigDecimal extends Number implements Comparable<BigDecimal>, Serial
      * respectively, using overflow and rounding safe arithmetics.
      */
     private static int compareForRounding(long n, long d) {
-        long halfD = d / 2;
+        // Instead of comparing abs(n/d) to 0.5, we compare abs(n) to abs(d/2) because
+        // compareAbs(n/d, 0.5) == compareAbs(n/(d/2), 1) == compareAbs(n, d/2).
+        long halfD = d / 2; //  rounds towards 0
         if (n == halfD || n == -halfD) {
-            return (int) (d & 1);
+            // In absolute terms: Because n == halfD, we know that 2 * n + parity == d
+            // for some parity value 0 or 1. This means that n == d/2 (result 0) if
+            // parity is 0, or n < d/2 (result -1) if parity is 1. In either case, the
+            // result is -parity.
+            // Since we're calculating in absolute terms, we need the absolute parity
+            // (d & 1) as opposed to the signed parity (d % 2) which would be -1 for
+            // negative odd values of d.
+            int parity = (int) d & 1;
+            return -parity; // returns 0 or -1
         } else {
+            // In absolute terms, either 2 * n + 1 < d (in the case of n < halfD),
+            // or 2 * n > d (in the case of n > halfD).
+            // In either case, comparing n against halfD gets the right result
+            // -1 or +1, respectively.
             return compareAbsoluteValues(n, halfD);
         }
     }
