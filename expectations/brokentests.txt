@@ -143,5 +143,13 @@
   names: [
       "org.apache.harmony.tests.java.lang.reflect.GenericSignatureFormatErrorTest#test_signatureFormatError"
   ]
+},
+{
+  description: "Unable to execute Support_AvailTest",
+  result: EXEC_FAILED,
+  bug: 28535603,
+  names: [
+      "com.android.org.apache.harmony.luni.tests.internal.process.SystemProcessTest#test_interrupt"
+  ]
 }
 ]
