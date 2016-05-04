@@ -391,10 +391,7 @@ class ServerSocketChannelImpl
                                InetSocketAddress[] isaa)
         throws IOException;
 
-    private static native void initIDs();
-
     static {
-        initIDs();
         nd = new SocketDispatcher();
     }
 

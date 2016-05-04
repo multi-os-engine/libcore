@@ -57,10 +57,9 @@ static jfieldID dci_senderPortID; /* sender port in sun.nio.ch.DatagramChannelIm
 static jclass isa_class;        /* java.net.InetSocketAddress */
 static jmethodID isa_ctorID;    /*   .InetSocketAddress(InetAddress, int) */
 
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_DatagramChannelImpl_initIDs(JNIEnv *env, jclass clazz)
+static void DatagramChannelImpl_initIDs(JNIEnv *env)
 {
-    clazz = (*env)->FindClass(env, "java/net/InetSocketAddress");
+    jclass clazz = (*env)->FindClass(env, "java/net/InetSocketAddress");
     isa_class = (*env)->NewGlobalRef(env, clazz);
     isa_ctorID = (*env)->GetMethodID(env, clazz, "<init>",
                                      "(Ljava/net/InetAddress;I)V");
@@ -259,12 +258,12 @@ Java_sun_nio_ch_DatagramChannelImpl_send0(JNIEnv *env, jobject this,
 }
 
 static JNINativeMethod gMethods[] = {
-  NATIVE_METHOD(DatagramChannelImpl, initIDs, "()V"),
   NATIVE_METHOD(DatagramChannelImpl, disconnect0, "(Ljava/io/FileDescriptor;Z)V"),
   NATIVE_METHOD(DatagramChannelImpl, receive0, "(Ljava/io/FileDescriptor;JIZ)I"),
   NATIVE_METHOD(DatagramChannelImpl, send0, "(ZLjava/io/FileDescriptor;JILjava/net/InetAddress;I)I"),
 };
 
 void register_sun_nio_ch_DatagramChannelImpl(JNIEnv* env) {
-  jniRegisterNativeMethods(env, "sun/nio/ch/DatagramChannelImpl", gMethods, NELEM(gMethods));
+    jniRegisterNativeMethods(env, "sun/nio/ch/DatagramChannelImpl", gMethods, NELEM(gMethods));
+    DatagramChannelImpl_initIDs(env);
 }

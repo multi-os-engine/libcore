@@ -48,14 +48,6 @@ extern "C" {
 JNIEXPORT jint JNICALL ServerSocketChannelImpl_accept0
   (JNIEnv *, jobject, jobject, jobject, jobjectArray);
 
-/*
- * Class:     sun_nio_ch_ServerSocketChannelImpl
- * Method:    initIDs
- * Signature: ()V
- */
-JNIEXPORT void JNICALL ServerSocketChannelImpl_initIDs
-  (JNIEnv *, jclass);
-
 #ifdef __cplusplus
 }
 #endif

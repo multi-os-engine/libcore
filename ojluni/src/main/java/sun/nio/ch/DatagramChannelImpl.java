@@ -1113,9 +1113,6 @@ class DatagramChannelImpl
 
 
     // -- Native methods --
-
-    private static native void initIDs();
-
     private static native void disconnect0(FileDescriptor fd, boolean isIPv6)
         throws IOException;
 
@@ -1126,9 +1123,4 @@ class DatagramChannelImpl
     private native int send0(boolean preferIPv6, FileDescriptor fd, long address,
                              int len, InetAddress addr, int port)
         throws IOException;
-
-    static {
-        initIDs();
-    }
-
 }

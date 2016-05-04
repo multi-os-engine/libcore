@@ -57,8 +57,7 @@ static jclass isa_class;        /* java.net.InetSocketAddress */
 static jmethodID isa_ctorID;    /*   .InetSocketAddress(InetAddress, int) */
 
 
-JNIEXPORT void JNICALL
-ServerSocketChannelImpl_initIDs(JNIEnv *env, jclass c)
+static void ServerSocketChannelImpl_initIDs(JNIEnv *env)
 {
     jclass cls;
 
@@ -125,11 +124,11 @@ ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
 
 
 static JNINativeMethod gMethods[] = {
-  NATIVE_METHOD(ServerSocketChannelImpl, initIDs, "()V"),
   NATIVE_METHOD(ServerSocketChannelImpl, accept0,
                 "(Ljava/io/FileDescriptor;Ljava/io/FileDescriptor;[Ljava/net/InetSocketAddress;)I"),
 };
 
 void register_sun_nio_ch_ServerSocketChannelImpl(JNIEnv* env) {
-  jniRegisterNativeMethods(env, "sun/nio/ch/ServerSocketChannelImpl", gMethods, NELEM(gMethods));
+    jniRegisterNativeMethods(env, "sun/nio/ch/ServerSocketChannelImpl", gMethods, NELEM(gMethods));
+    ServerSocketChannelImpl_initIDs(env);
 }
