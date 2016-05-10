@@ -1526,5 +1526,13 @@
   names: [
     "libcore.java.util.concurrent.CopyOnWriteArrayListTest#testSubListAtomicAdds"
   ]
+},
+{
+  description: "URLClassLoader doesn't work on Android for jar files",
+  bug: 28535349,
+  result: EXEC_FAILED,
+  names: [
+    "com.android.org.apache.harmony.luni.tests.java.net.URLClassLoaderImplTest#test_Constructor$Ljava_net_URLLjava_lang_ClassLoaderLjava_net_URLStreamHandlerFactory"
+  ]
 }
 ]
