@@ -88,6 +88,60 @@ public class ProcessBuilderTest extends AbstractResourceLeakageDetectorTestCase 
         assertTrue(file.delete());
     }
 
+    /**
+     * Tests that for Processes whose input is redirected to {@code INHERIT}, the
+     * {@code process.getOutputStream()} returns a null output stream (ie. an
+     * OutputStream that doesn't accept any output).
+     */
+    public void testRedirectInherit_inputHasNullOutputStream() throws Exception {
+        Process process = new ProcessBuilder("cat") // consumes input
+                .redirectInput(Redirect.INHERIT)
+                .start();
+        OutputStream nullOutputStream = process.getOutputStream();
+        try {
+            nullOutputStream.write(42); // arbitrary value
+            fail("Should have thrown IOException");
+        } catch (IOException expected) {
+            // expected
+        }
+    }
+
+    /**
+     * Tests that a Process whose input is redirected to {@code INHERIT}
+     * will observe empty input, consistent with {@code /dev/null}.
+     */
+    public void testRedirectInherit_inputObervedByProcessIsEmpty() throws Exception {
+        // consumes and prints any available input
+        ProcessBuilder pb = new ProcessBuilder("cat")
+                .redirectInput(Redirect.INHERIT);
+        // terminates quickly and prints no output because the input is empty
+        checkProcessExecution(pb, ResultCodes.ZERO, "", "","");
+    }
+
+    /**
+     * Tests that a process's output cannot be observed in the regular
+     * manner if it's redirected to {@code INHERIT}.
+     */
+    public void testRedirectInherit_output() throws Exception {
+        String msg = TAG + ": message for testRedirectInherit_output()";
+        // will produce output, which is redirected
+        ProcessBuilder pb = new ProcessBuilder("echo", msg).redirectOutput(Redirect.INHERIT);
+        // without attempting to provide input, check for no observed output/error
+        checkProcessExecution(pb, ResultCodes.ZERO, "", "", "");
+    }
+
+    /**
+     * Tests that a process's error cannot be observed in the regular
+     * manner if it's redirected to {@code INHERIT}.
+     */
+    public void testRedirectInherit_error() throws Exception {
+        // will produce error, which is redirected
+        ProcessBuilder pb = new ProcessBuilder("ls", "/missing-file/" + TAG)
+                .redirectError(Redirect.INHERIT);
+        // without attempting to provide input, check for no observed output/error
+        checkProcessExecution(pb, ResultCodes.NONZERO, "", "", "");
+    }
+
     public void testRedirectFile_error() throws Exception {
         File file = File.createTempFile(TAG, "err");
         String processInput = "";
