@@ -30,6 +30,7 @@ import java.io.*;
 import java.lang.ref.SoftReference;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.*;
 import java.security.CodeSigner;
 import java.security.cert.Certificate;
@@ -175,8 +176,20 @@ class JarFile extends ZipFile {
     }
 
     private synchronized Manifest getManifestFromReference() throws IOException {
-        Manifest man = manRef != null ? manRef.get() : null;
+        Manifest man = null;
+        boolean timeRecreate = false;
+        if (manRef != null) {
+            man = manRef.get();
+            if (man == null) {
+                System.logE("Cleared soft reference for JarFile: " + this.getName());
+                timeRecreate = true;
+            }
+        }
 
+        long start = 0, end = 0;
+        if (timeRecreate) {
+            start = System.nanoTime();
+        }
         if (man == null) {
 
             JarEntry manEntry = getManEntry();
@@ -195,6 +208,13 @@ class JarFile extends ZipFile {
                 manRef = new SoftReference(man);
             }
         }
+
+        if (timeRecreate) {
+            end = System.nanoTime();
+            System.logE("Time taken to recreate manifest: " +
+                    TimeUnit.NANOSECONDS.toMillis(end - start));
+        }
+
         return man;
     }
 
