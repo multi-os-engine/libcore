@@ -66,17 +66,10 @@ import sun.security.jca.GetInstance.Instance;
  * CertPathBuilderResult cpbr = cpb.build(params);
  * </pre>
  *
- * <p>Every implementation of the Java platform is required to support the
- * following standard {@code CertPathBuilder} algorithm:
+ * <p> Latest Android version provides the following {@code CertPathBuilder} algorithm:
  * <ul>
  * <li>{@code PKIX}</li>
  * </ul>
- * This algorithm is described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathBuilder">
- * CertPathBuilder section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
- * Consult the release documentation for your implementation to see if any
- * other algorithms are supported.
  *
  * <p>
  * <b>Concurrent Access</b>
