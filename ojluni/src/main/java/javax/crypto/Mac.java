@@ -54,19 +54,17 @@ import sun.security.jca.GetInstance.Instance;
  * e.g., MD5 or SHA-1, in combination with a secret shared key. HMAC is
  * specified in RFC 2104.
  *
- * <p> Every implementation of the Java platform is required to support
- * the following standard <code>Mac</code> algorithms:
+ * <p> Latest Android version provides the following <code>Mac</code> algorithms:
  * <ul>
- * <li><tt>HmacMD5</tt></li>
- * <li><tt>HmacSHA1</tt></li>
- * <li><tt>HmacSHA256</tt></li>
+ * <li><tt>HMACMD5</tt></li>
+ * <li><tt>HMACSHA1</tt></li>
+ * <li><tt>HMACSHA224</tt></li>
+ * <li><tt>HMACSHA256</tt></li>
+ * <li><tt>HMACSHA384</tt></li>
+ * <li><tt>HMACSHA512</tt></li>
+ * <li><tt>PBEWITHHMACSHA</tt></li>
+ * <li><tt>PBEWITHHMACSHA1</tt></li>
  * </ul>
- * These algorithms are described in the
- * <a href="{@docRoot}/../technotes/guides/security/StandardNames.html#Mac">
- * Mac section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
- * Consult the release documentation for your implementation to see if any
- * other algorithms are supported.
  *
  * @author Jan Luehe
  *

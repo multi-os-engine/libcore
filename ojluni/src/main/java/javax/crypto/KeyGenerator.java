@@ -84,22 +84,20 @@ import sun.security.jca.GetInstance.Instance;
  * (via a call to an <code>init</code> method), each provider must
  * supply (and document) a default initialization.
  *
- * <p> Every implementation of the Java platform is required to support the
- * following standard <code>KeyGenerator</code> algorithms with the keysizes in
- * parentheses:
+ * <p> Latest Android version provides the following <code>KeyGenerator</code> algorithms:
  * <ul>
- * <li><tt>AES</tt> (128)</li>
- * <li><tt>DES</tt> (56)</li>
- * <li><tt>DESede</tt> (168)</li>
- * <li><tt>HmacSHA1</tt></li>
- * <li><tt>HmacSHA256</tt></li>
+ * <li><tt>AES</tt></li>
+ * <li><tt>ARC4</tt></li>
+ * <li><tt>BLOWFISH</tt></li>
+ * <li><tt>DES</tt></li>
+ * <li><tt>DESEDE</tt></li>
+ * <li><tt>HMACMD5</tt></li>
+ * <li><tt>HMACSHA1</tt></li>
+ * <li><tt>HMACSHA224</tt></li>
+ * <li><tt>HMACSHA256</tt></li>
+ * <li><tt>HMACSHA384</tt></li>
+ * <li><tt>HMACSHA512</tt></li>
  * </ul>
- * These algorithms are described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyGenerator">
- * KeyGenerator section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
- * Consult the release documentation for your implementation to see if any
- * other algorithms are supported.
  *
  * @author Jan Luehe
  *
