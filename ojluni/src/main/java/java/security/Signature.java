@@ -99,19 +99,31 @@ import sun.security.jca.GetInstance.Instance;
  * the superclass are intended for cryptographic service providers who wish to
  * supply their own implementations of digital signature algorithms.
  *
- * <p> Every implementation of the Java platform is required to support the
- * following standard <code>Signature</code> algorithms:
+ * <p>  Android provides the following standard <code>Signature</code> algorithms:
  * <ul>
- * <li><tt>SHA1withDSA</tt></li>
- * <li><tt>SHA1withRSA</tt></li>
- * <li><tt>SHA256withRSA</tt></li>
+ * <li><tt>MD5WITHRSA</tt></li>
+ * <li><tt>NONEWITHDSA</tt></li>
+ * <li><tt>NONEWITHECDSA</tt></li>
+ * <li><tt>NONEWITHRSA</tt></li>
+ * <li><tt>SHA1WITHDSA</tt></li>
+ * <li><tt>SHA1WITHECDSA</tt></li>
+ * <li><tt>SHA1WITHRSA</tt></li>
+ * <li><tt>SHA1WITHRSA/PSS</tt></li>
+ * <li><tt>SHA224WITHDSA</tt></li>
+ * <li><tt>SHA224WITHECDSA</tt></li>
+ * <li><tt>SHA224WITHRSA</tt></li>
+ * <li><tt>SHA224WITHRSA/PSS</tt></li>
+ * <li><tt>SHA256WITHDSA</tt></li>
+ * <li><tt>SHA256WITHECDSA</tt></li>
+ * <li><tt>SHA256WITHRSA</tt></li>
+ * <li><tt>SHA256WITHRSA/PSS</tt></li>
+ * <li><tt>SHA384WITHECDSA</tt></li>
+ * <li><tt>SHA384WITHRSA</tt></li>
+ * <li><tt>SHA384WITHRSA/PSS</tt></li>
+ * <li><tt>SHA512WITHECDSA</tt></li>
+ * <li><tt>SHA512WITHRSA</tt></li>
+ * <li><tt>SHA512WITHRSA/PSS</tt></li>
  * </ul>
- * These algorithms are described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#Signature">
- * Signature section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
- * Consult the release documentation for your implementation to see if any
- * other algorithms are supported.
  *
  * @author Benjamin Renaud
  *

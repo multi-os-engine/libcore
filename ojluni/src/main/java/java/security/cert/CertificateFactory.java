@@ -91,24 +91,16 @@ import sun.security.jca.GetInstance.Instance;
  * }
  * </pre>
  *
- * <p> Every implementation of the Java platform is required to support the
- * following standard <code>CertificateFactory</code> type:
+ * <p> Android provider the following standard <code>CertificateFactory</code> type:
  * <ul>
  * <li><tt>X.509</tt></li>
+ * <li><tt>X509</tt></li>
  * </ul>
  * and the following standard <code>CertPath</code> encodings:
  * <ul>
  * <li><tt>PKCS7</tt></li>
  * <li><tt>PkiPath</tt></li>
  * </ul>
- * The type and encodings are described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertificateFactory">
- * CertificateFactory section</a> and the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathEncodings">
- * CertPath Encodings section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
- * Consult the release documentation for your implementation to see if any
- * other types or encodings are supported.
  *
  * @author Hemma Prafullchandra
  * @author Jan Luehe

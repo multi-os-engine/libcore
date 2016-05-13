@@ -66,19 +66,11 @@ import java.security.spec.AlgorithmParameterSpec;
  * default modulus prime size of 1024 bits for the generation of DSA
  * parameters.
  *
- * <p> Every implementation of the Java platform is required to support the
- * following standard <code>AlgorithmParameterGenerator</code> algorithms and
- * keysizes in parentheses:
+ * <p> Android provides the following standard <code>AlgorithmParameterGenerator</code> algorithms:
  * <ul>
- * <li><tt>DiffieHellman</tt> (1024)</li>
+ * <li><tt>DH</tt> (1024)</li>
  * <li><tt>DSA</tt> (1024)</li>
  * </ul>
- * These algorithms are described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#AlgorithmParameterGenerator">
- * AlgorithmParameterGenerator section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
- * Consult the release documentation for your implementation to see if any
- * other algorithms are supported.
  *
  * @author Jan Luehe
  *

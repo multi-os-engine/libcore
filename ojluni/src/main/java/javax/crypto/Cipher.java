@@ -119,32 +119,73 @@ import sun.security.jca.GetInstance.Instance;
  *     cipher.update(...);     // Multi-part update
  *     cipher.doFinal(...);    // conclusion of operation
  * </pre>
- * Every implementation of the Java platform is required to support
- * the following standard <code>Cipher</code> transformations with the keysizes
- * in parentheses:
+ * <p> Android provides the following standard <code>Cipher</code> transformations:
  * <ul>
- * <li><tt>AES/CBC/NoPadding</tt> (128)</li>
- * <li><tt>AES/CBC/PKCS5Padding</tt> (128)</li>
- * <li><tt>AES/ECB/NoPadding</tt> (128)</li>
- * <li><tt>AES/ECB/PKCS5Padding</tt> (128)</li>
- * <li><tt>DES/CBC/NoPadding</tt> (56)</li>
- * <li><tt>DES/CBC/PKCS5Padding</tt> (56)</li>
- * <li><tt>DES/ECB/NoPadding</tt> (56)</li>
- * <li><tt>DES/ECB/PKCS5Padding</tt> (56)</li>
- * <li><tt>DESede/CBC/NoPadding</tt> (168)</li>
- * <li><tt>DESede/CBC/PKCS5Padding</tt> (168)</li>
- * <li><tt>DESede/ECB/NoPadding</tt> (168)</li>
- * <li><tt>DESede/ECB/PKCS5Padding</tt> (168)</li>
- * <li><tt>RSA/ECB/PKCS1Padding</tt> (1024, 2048)</li>
- * <li><tt>RSA/ECB/OAEPWithSHA-1AndMGF1Padding</tt> (1024, 2048)</li>
- * <li><tt>RSA/ECB/OAEPWithSHA-256AndMGF1Padding</tt> (1024, 2048)</li>
+ * <li><tt>AES</tt></li>
+ * <li><tt>AES/CBC/NOPADDING</tt></li>
+ * <li><tt>AES/CBC/PKCS5PADDING</tt></li>
+ * <li><tt>AES/CBC/PKCS7PADDING</tt></li>
+ * <li><tt>AES/CFB/NOPADDING</tt></li>
+ * <li><tt>AES/CFB/PKCS5PADDING</tt></li>
+ * <li><tt>AES/CFB/PKCS7PADDING</tt></li>
+ * <li><tt>AES/CTR/NOPADDING</tt></li>
+ * <li><tt>AES/CTR/PKCS5PADDING</tt></li>
+ * <li><tt>AES/CTR/PKCS7PADDING</tt></li>
+ * <li><tt>AES/ECB/NOPADDING</tt></li>
+ * <li><tt>AES/ECB/PKCS5PADDING</tt></li>
+ * <li><tt>AES/ECB/PKCS7PADDING</tt></li>
+ * <li><tt>AES/GCM/NOPADDING</tt></li>
+ * <li><tt>AES/OFB/NOPADDING</tt></li>
+ * <li><tt>AES/OFB/PKCS5PADDING</tt></li>
+ * <li><tt>AES/OFB/PKCS7PADDING</tt></li>
+ * <li><tt>AESWRAP</tt></li>
+ * <li><tt>ARC4</tt></li>
+ * <li><tt>BLOWFISH</tt></li>
+ * <li><tt>DES</tt></li>
+ * <li><tt>DESEDE</tt></li>
+ * <li><tt>DESEDE/CBC/NOPADDING</tt></li>
+ * <li><tt>DESEDE/CBC/PKCS5PADDING</tt></li>
+ * <li><tt>DESEDE/CBC/PKCS7PADDING</tt></li>
+ * <li><tt>DESEDE/CFB/NOPADDING</tt></li>
+ * <li><tt>DESEDE/CFB/PKCS5PADDING</tt></li>
+ * <li><tt>DESEDE/CFB/PKCS7PADDING</tt></li>
+ * <li><tt>DESEDE/ECB/NOPADDING</tt></li>
+ * <li><tt>DESEDE/ECB/PKCS5PADDING</tt></li>
+ * <li><tt>DESEDE/ECB/PKCS7PADDING</tt></li>
+ * <li><tt>DESEDE/OFB/NOPADDING</tt></li>
+ * <li><tt>DESEDE/OFB/PKCS5PADDING</tt></li>
+ * <li><tt>DESEDE/OFB/PKCS7PADDING</tt></li>
+ * <li><tt>DESEDEWRAP</tt></li>
+ * <li><tt>PBEWITHMD5AND128BITAES-CBC-OPENSSL</tt></li>
+ * <li><tt>PBEWITHMD5AND192BITAES-CBC-OPENSSL</tt></li>
+ * <li><tt>PBEWITHMD5AND256BITAES-CBC-OPENSSL</tt></li>
+ * <li><tt>PBEWITHMD5ANDDES</tt></li>
+ * <li><tt>PBEWITHMD5ANDRC2</tt></li>
+ * <li><tt>PBEWITHSHA1ANDDES</tt></li>
+ * <li><tt>PBEWITHSHA1ANDRC2</tt></li>
+ * <li><tt>PBEWITHSHA256AND128BITAES-CBC-BC</tt></li>
+ * <li><tt>PBEWITHSHA256AND192BITAES-CBC-BC</tt></li>
+ * <li><tt>PBEWITHSHA256AND256BITAES-CBC-BC</tt></li>
+ * <li><tt>PBEWITHSHAAND128BITAES-CBC-BC</tt></li>
+ * <li><tt>PBEWITHSHAAND128BITRC2-CBC</tt></li>
+ * <li><tt>PBEWITHSHAAND128BITRC4</tt></li>
+ * <li><tt>PBEWITHSHAAND192BITAES-CBC-BC</tt></li>
+ * <li><tt>PBEWITHSHAAND2-KEYTRIPLEDES-CBC</tt></li>
+ * <li><tt>PBEWITHSHAAND256BITAES-CBC-BC</tt></li>
+ * <li><tt>PBEWITHSHAAND3-KEYTRIPLEDES-CBC</tt></li>
+ * <li><tt>PBEWITHSHAAND40BITRC2-CBC</tt></li>
+ * <li><tt>PBEWITHSHAAND40BITRC4</tt></li>
+ * <li><tt>PBEWITHSHAANDTWOFISH-CBC</tt></li>
+ * <li><tt>RSA</tt></li>
+ * <li><tt>RSA/ECB/NOPADDING</tt></li>
+ * <li><tt>RSA/ECB/OAEPPADDING</tt></li>
+ * <li><tt>RSA/ECB/OAEPWITHSHA-1ANDMGF1PADDING</tt></li>
+ * <li><tt>RSA/ECB/OAEPWITHSHA-224ANDMGF1PADDING</tt></li>
+ * <li><tt>RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING</tt></li>
+ * <li><tt>RSA/ECB/OAEPWITHSHA-384ANDMGF1PADDING</tt></li>
+ * <li><tt>RSA/ECB/OAEPWITHSHA-512ANDMGF1PADDING</tt></li>
+ * <li><tt>RSA/ECB/PKCS1PADDING</tt></li>
  * </ul>
- * These transformations are described in the
- * <a href="{@docRoot}/../technotes/guides/security/StandardNames.html#Cipher">
- * Cipher section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
- * Consult the release documentation for your implementation to see if any
- * other transformations are supported.
  *
  * @author Jan Luehe
  * @see KeyGenerator
