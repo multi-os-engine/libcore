@@ -30,8 +30,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 import libcore.io.Base64;
 import libcore.io.IoUtils;
 import libcore.java.util.AbstractResourceLeakageDetectorTestCase;
@@ -62,6 +65,49 @@ public class ProcessBuilderTest extends AbstractResourceLeakageDetectorTestCase 
 
     public void test_redirectErrorStream_false() throws Exception {
         assertRedirectErrorStream(false, "out\n", "err\n");
+    }
+
+    public void testRedirectInherit_logcat() throws Exception {
+        String childProcessMessage = TAG + ": stdout of child process";
+        String thisProcessMessage = TAG + ": stdout of parent process";
+        // clear logcat
+        assertEquals("logcat -c", 0, new ProcessBuilder("logcat", "-c").start().waitFor());
+
+        System.out.println(thisProcessMessage);
+
+        ProcessBuilder processBuilder = new ProcessBuilder("echo", childProcessMessage)
+                .redirectInput(INHERIT)
+                .redirectOutput(INHERIT)
+                .redirectError(INHERIT);
+        // succeeds with no input, no output/error observable via the Process object
+        checkProcessExecution(processBuilder, ResultCodes.ZERO, "", "", "");
+
+        String logcatOutput = readLogcat();
+        assertTrue("Logcat output differs from expectations: >>>"+logcatOutput+"<<<",
+                logcatOutput.contains(childProcessMessage)
+                        && logcatOutput.contains(thisProcessMessage));
+    }
+
+    private String readLogcat() throws Exception {
+        Process logcatProcess = new ProcessBuilder("logcat").start();
+        StringReader logcatOutputReader = new StringReader(logcatProcess.getInputStream());
+        Thread thread = new Thread("read logcat output") {
+            @Override
+            public void run() {
+                try {
+                    logcatOutputReader.read();
+                } catch (IOException e) {
+                    fail("IOException: " + e.getMessage());
+                }
+            }
+        };
+        try {
+            thread.start();
+            logcatOutputReader.waitForFinish(5, TimeUnit.SECONDS);
+        } finally {
+            thread.interrupt();
+        }
+        return logcatOutputReader.getStringReadSoFar();
     }
 
     public void testRedirectFile_input() throws Exception {
@@ -332,17 +378,23 @@ public class ProcessBuilderTest extends AbstractResourceLeakageDetectorTestCase 
      */
     private static void checkProcessExecution(ProcessBuilder pb,
             ResultCodes expectedResultCode, String processInput,
-            String expectedOutput, String expectedError) throws Exception {
+            String expectedOutput, String expectedError) throws IOException {
         Process process = pb.start();
         Future<String> processOutput = asyncRead(process.getInputStream());
         Future<String> processError = asyncRead(process.getErrorStream());
         try (OutputStream outputStream = process.getOutputStream()) {
             outputStream.write(processInput.getBytes(Charset.defaultCharset()));
         }
-        int actualResultCode = process.waitFor();
-        expectedResultCode.assertMatches(actualResultCode);
-        assertEquals(expectedOutput, processOutput.get());
-        assertEquals(expectedError, processError.get());
+        try {
+            int actualResultCode = process.waitFor();
+            expectedResultCode.assertMatches(actualResultCode);
+            assertEquals(expectedOutput, processOutput.get());
+            assertEquals(expectedError, processError.get());
+        } catch (InterruptedException e) {
+            fail("Unexpected interruption: " + e.getMessage());
+        } catch (ExecutionException e) {
+            fail("Unexpected ExecutionException: " + e.getCause().getMessage());
+        }
     }
 
     private static void checkSetAndGet(Redirect in, Redirect out, Redirect err, ProcessBuilder pb) {
@@ -362,14 +414,48 @@ public class ProcessBuilderTest extends AbstractResourceLeakageDetectorTestCase 
         assertEquals(a.hashCode(), b.hashCode());
     }
 
-    static String readAsString(InputStream inputStream) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        byte[] data = new byte[1024];
-        int numRead;
-        while ((numRead = inputStream.read(data)) >= 0) {
-            outputStream.write(data, 0, numRead);
+    static class StringReader {
+        private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        private final InputStream inputStream;
+        private final CountDownLatch countDownLatch = new CountDownLatch(1);
+
+        public StringReader(InputStream inputStream) {
+            this.inputStream = inputStream;
         }
-        return new String(outputStream.toByteArray(), Charset.defaultCharset());
+
+        public String read() throws IOException {
+            try {
+                byte[] data = new byte[1024];
+                int numRead;
+                while ((numRead = inputStream.read(data)) >= 0) {
+                    synchronized (outputStream) {
+                        outputStream.write(data, 0, numRead);
+                    }
+                }
+                return getStringReadSoFar();
+            } finally {
+                countDownLatch.countDown();
+            }
+        }
+
+        byte[] getBytesReadSoFar() {
+            synchronized (outputStream) {
+                return outputStream.toByteArray();
+            }
+        }
+
+        void waitForFinish(int timeout, TimeUnit timeUnit) throws InterruptedException {
+            countDownLatch.await(timeout, timeUnit);
+        }
+
+        String getStringReadSoFar() {
+            return new String(getBytesReadSoFar(), Charset.defaultCharset());
+        }
+    }
+
+    static String readAsString(InputStream inputStream) throws IOException {
+        return new StringReader(inputStream).read();
     }
 
     /**
