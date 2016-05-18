@@ -108,7 +108,6 @@ static jfieldID ni_ib4maskID;
 
 /** Private methods declarations **/
 static jobject createNetworkInterface(JNIEnv *env, netif *ifs);
-static int     getFlags0(JNIEnv *env, jstring  ifname);
 
 static netif  *enumInterfaces(JNIEnv *env);
 
@@ -382,47 +381,6 @@ JNIEXPORT jobjectArray JNICALL NetworkInterface_getAll
     return netIFArr;
 }
 
-
-/*
- * Class:     java_net_NetworkInterface
- * Method:    isUp0
- * Signature: (Ljava/lang/String;I)Z
- */
-JNIEXPORT jboolean JNICALL NetworkInterface_isUp0(JNIEnv *env, jclass cls, jstring name, jint index) {
-    int ret = getFlags0(env, name);
-    return ((ret & IFF_UP) && (ret & IFF_RUNNING)) ? JNI_TRUE :  JNI_FALSE;
-}
-
-/*
- * Class:     java_net_NetworkInterface
- * Method:    isP2P0
- * Signature: (Ljava/lang/String;I)Z
- */
-JNIEXPORT jboolean JNICALL NetworkInterface_isP2P0(JNIEnv *env, jclass cls, jstring name, jint index) {
-    int ret = getFlags0(env, name);
-    return (ret & IFF_POINTOPOINT) ? JNI_TRUE :  JNI_FALSE;
-}
-
-/*
- * Class:     java_net_NetworkInterface
- * Method:    isLoopback0
- * Signature: (Ljava/lang/String;I)Z
- */
-JNIEXPORT jboolean JNICALL NetworkInterface_isLoopback0(JNIEnv *env, jclass cls, jstring name, jint index) {
-  int ret = getFlags0(env, name);
-  return (ret & IFF_LOOPBACK) ? JNI_TRUE :  JNI_FALSE;
-}
-
-/*
- * Class:     java_net_NetworkInterface
- * Method:    supportsMulticast0
- * Signature: (Ljava/lang/String;I)Z
- */
-JNIEXPORT jboolean JNICALL NetworkInterface_supportsMulticast0(JNIEnv *env, jclass cls, jstring name, jint index) {
-  int ret = getFlags0(env, name);
-  return (ret & IFF_MULTICAST) ? JNI_TRUE :  JNI_FALSE;
-}
-
 /*
  * Class:       java_net_NetworkInterface
  * Method:      getMTU0
@@ -452,38 +410,6 @@ JNIEXPORT jint JNICALL NetworkInterface_getMTU0(JNIEnv *env, jclass class, jstri
 }
 
 /*** Private methods definitions ****/
-
-static int getFlags0(JNIEnv *env, jstring name) {
-  jboolean isCopy;
-  int ret, sock;
-  const char* name_utf;
-  int flags = 0;
-
-  name_utf = (*env)->GetStringUTFChars(env, name, &isCopy);
-
-  if ((sock = openSocketWithFallback(env, name_utf)) < 0) {
-    (*env)->ReleaseStringUTFChars(env, name, name_utf);
-    return -1;
-  }
-
-  name_utf = (*env)->GetStringUTFChars(env, name, &isCopy);
-
-  ret = getFlags(sock, name_utf, &flags);
-
-  untagSocket(env, sock);
-  close(sock);
-  (*env)->ReleaseStringUTFChars(env, name, name_utf);
-
-  if (ret < 0) {
-    NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "IOCTL  SIOCGLIFFLAGS failed");
-    return -1;
-  }
-
-  return flags;
-}
-
-
-
 
 /*
  * Create a NetworkInterface object, populate the name and index, and
@@ -1066,10 +992,6 @@ static int getFlags(int sock, const char *ifname, int *flags) {
 
 static JNINativeMethod gMethods[] = {
   NATIVE_METHOD(NetworkInterface, getMTU0, "(Ljava/lang/String;I)I"),
-  NATIVE_METHOD(NetworkInterface, supportsMulticast0, "(Ljava/lang/String;I)Z"),
-  NATIVE_METHOD(NetworkInterface, isLoopback0, "(Ljava/lang/String;I)Z"),
-  NATIVE_METHOD(NetworkInterface, isP2P0, "(Ljava/lang/String;I)Z"),
-  NATIVE_METHOD(NetworkInterface, isUp0, "(Ljava/lang/String;I)Z"),
   NATIVE_METHOD(NetworkInterface, getAll, "()[Ljava/net/NetworkInterface;"),
   NATIVE_METHOD(NetworkInterface, getByInetAddress0, "(Ljava/net/InetAddress;)Ljava/net/NetworkInterface;"),
   NATIVE_METHOD(NetworkInterface, getByIndex0, "(I)Ljava/net/NetworkInterface;"),
