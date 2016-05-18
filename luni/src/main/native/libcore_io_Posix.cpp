@@ -1236,6 +1236,16 @@ static jint Posix_ioctlInt(JNIEnv* env, jobject, jobject javaFd, jint cmd, jobje
     return rc;
 }
 
+static jint Posix_ioctlFlags(JNIEnv* env, jobject, jobject javaFd, jstring javaInterfaceName) {
+     struct ifreq req;
+     if (!fillIfreq(env, javaInterfaceName, req)) {
+        throwErrnoException(env, "ioctl");
+     }
+     int fd = jniGetFDFromFileDescriptor(env, javaFd);
+     throwIfMinusOne(env, "ioctl", TEMP_FAILURE_RETRY(ioctl(fd, SIOCGIFFLAGS, &req)));
+     return req.ifr_flags;
+}
+
 static jboolean Posix_isatty(JNIEnv* env, jobject, jobject javaFd) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     return TEMP_FAILURE_RETRY(isatty(fd)) == 1;
@@ -2012,6 +2022,7 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(Posix, inet_pton, "(ILjava/lang/String;)Ljava/net/InetAddress;"),
     NATIVE_METHOD(Posix, ioctlInetAddress, "(Ljava/io/FileDescriptor;ILjava/lang/String;)Ljava/net/InetAddress;"),
     NATIVE_METHOD(Posix, ioctlInt, "(Ljava/io/FileDescriptor;ILandroid/util/MutableInt;)I"),
+    NATIVE_METHOD(Posix, ioctlFlags, "(Ljava/io/FileDescriptor;Ljava/lang/String;)I"),
     NATIVE_METHOD(Posix, isatty, "(Ljava/io/FileDescriptor;)Z"),
     NATIVE_METHOD(Posix, kill, "(II)V"),
     NATIVE_METHOD(Posix, lchown, "(Ljava/lang/String;II)V"),

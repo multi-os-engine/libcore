@@ -95,6 +95,7 @@ public final class Posix implements Os {
     public native InetAddress inet_pton(int family, String address);
     public native InetAddress ioctlInetAddress(FileDescriptor fd, int cmd, String interfaceName) throws ErrnoException;
     public native int ioctlInt(FileDescriptor fd, int cmd, MutableInt arg) throws ErrnoException;
+    public native int ioctlFlags(FileDescriptor fd, String interfaceName) throws ErrnoException;
     public native boolean isatty(FileDescriptor fd);
     public native void kill(int pid, int signal) throws ErrnoException;
     public native void lchown(String path, int uid, int gid) throws ErrnoException;

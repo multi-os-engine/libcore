@@ -25,10 +25,18 @@
 
 package java.net;
 
+import android.system.ErrnoException;
+
+import java.io.FileDescriptor;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
+
+import libcore.io.IoUtils;
+import libcore.io.Libcore;
 import sun.security.action.*;
 import java.security.AccessController;
+
+import static android.system.OsConstants.*;
 
 /**
  * This class represents a Network Interface made up of a name,
@@ -374,7 +382,7 @@ public final class NetworkInterface {
      */
 
     public boolean isUp() throws SocketException {
-        return isUp0(name, index);
+        return (getFlags() & IFF_UP) != 0;
     }
 
     /**
@@ -386,7 +394,7 @@ public final class NetworkInterface {
      */
 
     public boolean isLoopback() throws SocketException {
-        return isLoopback0(name, index);
+        return (getFlags() & IFF_LOOPBACK) != 0;
     }
 
     /**
@@ -401,7 +409,7 @@ public final class NetworkInterface {
      */
 
     public boolean isPointToPoint() throws SocketException {
-        return isP2P0(name, index);
+        return (getFlags() & IFF_POINTOPOINT) != 0;
     }
 
     /**
@@ -413,7 +421,7 @@ public final class NetworkInterface {
      */
 
     public boolean supportsMulticast() throws SocketException {
-        return supportsMulticast0(name, index);
+        return (getFlags() & IFF_MULTICAST) != 0;
     }
 
     /**
@@ -462,10 +470,20 @@ public final class NetworkInterface {
         return virtual;
     }
 
-    private native static boolean isUp0(String name, int ind) throws SocketException;
-    private native static boolean isLoopback0(String name, int ind) throws SocketException;
-    private native static boolean supportsMulticast0(String name, int ind) throws SocketException;
-    private native static boolean isP2P0(String name, int ind) throws SocketException;
+    private int getFlags() throws SocketException {
+        FileDescriptor fd = null;
+        try {
+            fd = Libcore.os.socket(AF_INET, SOCK_DGRAM, 0);
+            return Libcore.os.ioctlFlags(fd, name);
+        } catch (ErrnoException e) {
+            throw e.rethrowAsSocketException();
+        } catch (Exception ex) {
+            throw new SocketException(ex);
+        } finally {
+            IoUtils.closeQuietly(fd);
+        }
+    }
+
     private native static int getMTU0(String name, int ind) throws SocketException;
 
     /**

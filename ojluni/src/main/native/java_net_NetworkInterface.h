@@ -68,38 +68,6 @@ JNIEXPORT jobject JNICALL NetworkInterface_getByInetAddress0
 
 /*
  * Class:     java_net_NetworkInterface
- * Method:    isUp0
- * Signature: (Ljava/lang/String;I)Z
- */
-JNIEXPORT jboolean JNICALL NetworkInterface_isUp0
-  (JNIEnv *, jclass, jstring, jint);
-
-/*
- * Class:     java_net_NetworkInterface
- * Method:    isLoopback0
- * Signature: (Ljava/lang/String;I)Z
- */
-JNIEXPORT jboolean JNICALL NetworkInterface_isLoopback0
-  (JNIEnv *, jclass, jstring, jint);
-
-/*
- * Class:     java_net_NetworkInterface
- * Method:    supportsMulticast0
- * Signature: (Ljava/lang/String;I)Z
- */
-JNIEXPORT jboolean JNICALL NetworkInterface_supportsMulticast0
-  (JNIEnv *, jclass, jstring, jint);
-
-/*
- * Class:     java_net_NetworkInterface
- * Method:    isP2P0
- * Signature: (Ljava/lang/String;I)Z
- */
-JNIEXPORT jboolean JNICALL NetworkInterface_isP2P0
-  (JNIEnv *, jclass, jstring, jint);
-
-/*
- * Class:     java_net_NetworkInterface
  * Method:    getMacAddr0
  * Signature: ([BLjava/lang/String;I)[B
  */
