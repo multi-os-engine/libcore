@@ -36,6 +36,11 @@ LOCAL_SRC_FILES := \
     ObjectStreamClass.c \
     ObjectOutputStream.c \
     ObjectInputStream.c \
+    GnomeFileTypeDetector.c \
+    LinuxNativeDispatcher.c \
+    LinuxWatchService.c \
+    UnixCopyFile.c \
+    UnixNativeDispatcher.c \
     InetAddress.c \
     net_util.c \
     net_util_md.c \
