@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,19 @@
 
 package java.lang.annotation;
 
+
 /**
- * Indicates that annotations with a type are to be documented by javadoc
- * and similar tools by default.  This type should be used to annotate the
- * declarations of types whose annotations affect the use of annotated
- * elements by their clients.  If a type declaration is annotated with
- * Documented, its annotations become part of the public API
- * of the annotated elements.
+ * Indicates that a field defining a constant value may be referenced
+ * from native code.
  *
- * @author  Joshua Bloch
- * @since 1.5
+ * The annotation may be used as a hint by tools that generate native
+ * header files to determine whether a header file is required, and
+ * if so, what declarations it should contain.
+ *
+ * @since 1.8
  */
 @Documented
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.ANNOTATION_TYPE)
-public @interface Documented {
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.SOURCE)
+public @interface Native {
 }
