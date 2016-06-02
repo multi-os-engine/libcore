@@ -375,6 +375,13 @@ class FileTreeWalker implements Closeable {
 
         } while (ev == null);
 
+        if (followLinks && Files.isSymbolicLink(ev.file())) {
+            try {
+                return new Event(ev.type, Files.readSymbolicLink(ev.file), ev.attrs, ev.ioe);
+            } catch (IOException ioe) {
+                return new Event(ev.type, ev.file, ioe);
+            }
+        }
         return ev;
     }
 
