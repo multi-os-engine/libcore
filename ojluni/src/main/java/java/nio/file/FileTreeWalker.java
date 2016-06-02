@@ -375,6 +375,15 @@ class FileTreeWalker implements Closeable {
 
         } while (ev == null);
 
+        // Android-changed: Expectation from the next method when called with
+        // FileVisitOptions#Follow_Link to return the target files instead of symbolic links.
+        if (followLinks && Files.isSymbolicLink(ev.file())) {
+            try {
+                return new Event(ev.type, Files.readSymbolicLink(ev.file), ev.attrs, ev.ioe);
+            } catch (IOException ioe) {
+                return new Event(ev.type, ev.file, ioe);
+            }
+        }
         return ev;
     }
 
