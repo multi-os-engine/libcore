@@ -920,10 +920,14 @@ public final class URLConnectionTest extends TestCase {
      */
     public void testProxyConnectIncludesProxyHeadersOnly()
             throws IOException, InterruptedException {
+        Authenticator.setDefault(new SimpleAuthenticator());
         RecordingHostnameVerifier hostnameVerifier = new RecordingHostnameVerifier();
         TestSSLContext testSSLContext = createDefaultTestSSLContext();
 
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), true);
+        server.enqueue(new MockResponse()
+                .setResponseCode(407)
+                .addHeader("Proxy-Authenticate: Basic realm=\"localhost\""));
         server.enqueue(new MockResponse()
                 .setSocketPolicy(SocketPolicy.UPGRADE_TO_SSL_AT_END)
                 .clearHeaders());
@@ -934,18 +938,33 @@ public final class URLConnectionTest extends TestCase {
         HttpsURLConnection connection = (HttpsURLConnection) url.openConnection(
                 server.toProxyAddress());
         connection.addRequestProperty("Private", "Secret");
-        connection.addRequestProperty("Proxy-Authorization", "bar");
         connection.addRequestProperty("User-Agent", "baz");
         connection.setSSLSocketFactory(testSSLContext.clientContext.getSocketFactory());
         connection.setHostnameVerifier(hostnameVerifier);
         assertContent("encrypted response from the origin server", connection);
 
-        RecordedRequest connect = server.takeRequest();
-        assertContainsNoneMatching(connect.getHeaders(), "Private.*");
-        assertContains(connect.getHeaders(), "Proxy-Authorization: bar");
-        assertContains(connect.getHeaders(), "User-Agent: baz");
-        assertContains(connect.getHeaders(), "Host: android.com");
-        assertContains(connect.getHeaders(), "Proxy-Connection: Keep-Alive");
+        // connect1 and connect2 are tunnel requests which potentially tunnel multiple requests;
+        // Thus we can't expect its headers to exactly match those of the wrapped request.
+        // See https://github.com/square/okhttp/commit/457fb428a729c50c562822571ea9b13e689648f3
+        RecordedRequest connect1 = server.takeRequest();
+        {
+            List<String> headers = connect1.getHeaders();
+            assertContainsNoneMatching(headers, "Private.*");
+            assertContainsNoneMatching(headers, "Proxy\\-Authorization.*");
+            assertHeaderPresent(connect1, "User-Agent");
+            assertContains(headers, "Host: android.com");
+            assertContains(headers, "Proxy-Connection: Keep-Alive");
+        }
+
+        RecordedRequest connect2 = server.takeRequest();
+        {
+            List<String> headers = connect2.getHeaders();
+            assertContainsNoneMatching(headers, "Private.*");
+            assertHeaderPresent(connect2, "Proxy-Authorization");
+            assertHeaderPresent(connect1, "User-Agent");
+            assertContains(headers, "Host: android.com");
+            assertContains(headers, "Proxy-Connection: Keep-Alive");
+        }
 
         RecordedRequest get = server.takeRequest();
         assertContains(get.getHeaders(), "Private: Secret");
@@ -1810,8 +1829,10 @@ public final class URLConnectionTest extends TestCase {
 
             // The first URI will be the initial request. We want to inspect the redirect.
             URI uri = proxySelectorUris.get(1);
-            // The HttpURLConnectionImpl converts %0 -> %250. i.e. it escapes the %.
-            assertEquals(redirectPath + "?foo=%250&bar=%00", uri.toString());
+            // The proxy is selected by Address alone (not the whole target URI).
+            // In OkHttp, HttpEngine.createAddress() converts to an Address and the
+            // RouteSelector converts back to address.url().
+            assertEquals(server2.getUrl("/").toString(), uri.toString());
         } finally {
             ProxySelector.setDefault(originalSelector);
             server2.shutdown();
@@ -2871,6 +2892,11 @@ public final class URLConnectionTest extends TestCase {
 
     private void assertContent(String expected, URLConnection connection) throws IOException {
         assertContent(expected, connection, Integer.MAX_VALUE);
+    }
+
+    private static void assertHeaderPresent(RecordedRequest request, String headerName) {
+        assertNotNull(headerName + " missing: " + request.getHeaders(),
+                request.getHeader(headerName));
     }
 
     private void assertContains(List<String> list, String value) {
