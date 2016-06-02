@@ -91,10 +91,6 @@ import static com.google.mockwebserver.SocketPolicy.DISCONNECT_AT_START;
 import static com.google.mockwebserver.SocketPolicy.FAIL_HANDSHAKE;
 import static com.google.mockwebserver.SocketPolicy.SHUTDOWN_INPUT_AT_END;
 import static com.google.mockwebserver.SocketPolicy.SHUTDOWN_OUTPUT_AT_END;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.spy;
 
 public final class URLConnectionTest extends AbstractResourceLeakageDetectorTestCase {
 
@@ -1970,22 +1966,23 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
                 @Override
                 protected Socket configureSocket(Socket socket) throws IOException {
                     final int attemptNumber = socketCreationCount[0]++;
-                    Answer socketConnectAnswer = new Answer() {
-                        @Override public Object answer(InvocationOnMock invocation)
-                                throws Throwable {
-                            int timeoutArg = (int) invocation.getArguments()[1];
-                            socketConnectTimeouts[attemptNumber] = timeoutArg;
-                            throw new SocketTimeoutException(
-                                "Simulated timeout after " + timeoutArg);
+                    // Create a fake Socket that intercepts connect() calls.
+                    Socket result = new Socket() {
+                        @Override
+                        public void connect(SocketAddress endpoint, int timeout)
+                                throws IOException {
+                            socketConnectTimeouts[attemptNumber] = timeout;
+                            throw new SocketTimeoutException("Simulated timeout after " + timeout);
+                        }
+
+                        @Override
+                        public void connect(SocketAddress endpoint) throws IOException {
+                            // This is the same thing the super class does as of 2016-06,
+                            // we're just making it explicit here.
+                            connect(endpoint, 0);
                         }
                     };
-
-                    Socket socketSpy = spy(socket);
-                    // Create a partial mock that wraps the actual socket and intercepts the
-                    // connect(SocketAddress, int) method.
-                    doAnswer(socketConnectAnswer)
-                        .when(socketSpy).connect(any(SocketAddress.class), anyInt());
-                    return socketSpy;
+                    return result;
                 }
             });
 
