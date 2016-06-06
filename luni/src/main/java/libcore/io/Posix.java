@@ -16,20 +16,7 @@
 
 package libcore.io;
 
-import android.system.ErrnoException;
-import android.system.GaiException;
-import android.system.StructAddrinfo;
-import android.system.StructFlock;
-import android.system.StructGroupReq;
-import android.system.StructGroupSourceReq;
-import android.system.StructLinger;
-import android.system.StructPasswd;
-import android.system.StructPollfd;
-import android.system.StructStat;
-import android.system.StructStatVfs;
-import android.system.StructTimeval;
-import android.system.StructUcred;
-import android.system.StructUtsname;
+import android.system.*;
 import android.util.MutableInt;
 import android.util.MutableLong;
 import java.io.FileDescriptor;
@@ -91,7 +78,9 @@ public final class Posix implements Os {
     public native int gettid();
     public native int getuid();
     public native int getxattr(String path, String name, byte[] outValue) throws ErrnoException;
+    public native StructIfaddrs[] getifaddrs() throws ErrnoException;
     public native String if_indextoname(int index);
+    public native int if_nametoindex(String name);
     public native InetAddress inet_pton(int family, String address);
     public native int ioctlFlags(FileDescriptor fd, String interfaceName) throws ErrnoException;
     public native InetAddress ioctlInetAddress(FileDescriptor fd, int cmd, String interfaceName) throws ErrnoException;

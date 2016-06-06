@@ -34,6 +34,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <ifaddrs.h>
 #include <linux/rtnetlink.h>
 #include <net/if.h>
 #include <netdb.h>
@@ -1186,12 +1187,103 @@ static jint Posix_getxattr(JNIEnv* env, jobject, jstring javaPath,
     return size;
 }
 
+static jobjectArray Posix_getifaddrs(JNIEnv* env, jobject) {
+    static jmethodID ctor = env->GetMethodID(JniConstants::structIfaddrs, "<init>",
+            "(Ljava/lang/String;ILjava/net/InetAddress;Ljava/net/InetAddress;Ljava/net/InetAddress;[B)V");
+
+    struct ifaddrs* ifaddr;
+    jobjectArray result;
+    throwIfMinusOne(env, "getifaddrs", getifaddrs(&ifaddr));
+
+    // Count results so we know how to size the output array.
+    jint ifCount = 0;
+    for (struct ifaddrs* ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        ++ifCount;
+    }
+    if (ifCount == 0) {
+        freeifaddrs(ifaddr);
+        return NULL;
+    }
+
+    // Prepare output array.
+    result = env->NewObjectArray(ifCount, JniConstants::structIfaddrs, NULL);
+    if (result == NULL) {
+        freeifaddrs(ifaddr);
+        return NULL;
+    }
+
+    // Traverse the list and populate the output array.
+    int index = 0;
+    for (struct ifaddrs* ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next, ++index) {
+        jstring name = env->NewStringUTF(ifa->ifa_name);
+        jint flags = ifa->ifa_flags;
+        struct sockaddr_storage* interfaceAddr =
+            reinterpret_cast<sockaddr_storage*>(ifa->ifa_addr);
+        struct sockaddr_storage* netmaskAddr =
+            reinterpret_cast<sockaddr_storage*>(ifa->ifa_netmask);
+        struct sockaddr_storage* broadAddr =
+            reinterpret_cast<sockaddr_storage*>(ifa->ifa_broadaddr);
+
+        jobject addr, netmask, broad;
+        jbyteArray hwaddr = NULL;
+        if (interfaceAddr != NULL) {
+            switch (interfaceAddr->ss_family) {
+            case AF_INET:
+            case AF_INET6:
+                // IPv4 / IPv6.
+                addr = sockaddrToInetAddress(env, *interfaceAddr, NULL);
+                netmask = sockaddrToInetAddress(env, *netmaskAddr, NULL);
+                broad = (broadAddr != NULL && (ifa->ifa_flags & IFF_BROADCAST)) ?
+                        sockaddrToInetAddress(env, *broadAddr, NULL) :
+                        NULL;
+                break;
+            case AF_PACKET:
+                // Raw Interface.
+                struct sockaddr_ll* sll = reinterpret_cast<struct sockaddr_ll*>(ifa->ifa_addr);
+
+                bool allZero = true;
+                for (int i = 0; i < sll->sll_halen; ++i) {
+                    if (sll->sll_addr[i] != 0) {
+                        allZero = false;
+                        break;
+                    }
+                }
+
+                if (!allZero) {
+                    hwaddr = env->NewByteArray(sll->sll_halen);
+                    env->SetByteArrayRegion(hwaddr, 0, sll->sll_halen,
+                                            reinterpret_cast<const jbyte*>(sll->sll_addr));
+                }
+                addr = netmask = broad = NULL;
+                break;
+            }
+        } else {
+            // Keep an entry in case the interface has no IP/MAC address.
+            // http://b/29243557/
+            addr = netmask = broad = NULL;
+        }
+
+        jobject o = env->NewObject(JniConstants::structIfaddrs, ctor, name, flags, addr, netmask,
+                                   broad, hwaddr);
+        env->SetObjectArrayElement(result, index, o);
+    }
+
+    freeifaddrs(ifaddr);
+    return result;
+}
+
 static jstring Posix_if_indextoname(JNIEnv* env, jobject, jint index) {
     char buf[IF_NAMESIZE];
     char* name = if_indextoname(index, buf);
     // if_indextoname(3) returns NULL on failure, which will come out of NewStringUTF unscathed.
     // There's no useful information in errno, so we don't bother throwing. Callers can null-check.
     return env->NewStringUTF(name);
+}
+
+static jint Posix_if_nametoindex(JNIEnv* env, jobject, jstring name) {
+    const char* cname = env->GetStringUTFChars(name, NULL);
+    jint index = if_nametoindex(cname);
+    return index;
 }
 
 static jobject Posix_inet_pton(JNIEnv* env, jobject, jint family, jstring javaName) {
@@ -2028,7 +2120,9 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(Posix, gettid, "()I"),
     NATIVE_METHOD(Posix, getuid, "()I"),
     NATIVE_METHOD(Posix, getxattr, "(Ljava/lang/String;Ljava/lang/String;[B)I"),
+    NATIVE_METHOD(Posix, getifaddrs, "()[Landroid/system/StructIfaddrs;"),
     NATIVE_METHOD(Posix, if_indextoname, "(I)Ljava/lang/String;"),
+    NATIVE_METHOD(Posix, if_nametoindex, "(Ljava/lang/String;)I"),
     NATIVE_METHOD(Posix, inet_pton, "(ILjava/lang/String;)Ljava/net/InetAddress;"),
     NATIVE_METHOD(Posix, ioctlFlags, "(Ljava/io/FileDescriptor;Ljava/lang/String;)I"),
     NATIVE_METHOD(Posix, ioctlInetAddress, "(Ljava/io/FileDescriptor;ILjava/lang/String;)Ljava/net/InetAddress;"),
