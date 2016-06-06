@@ -46,6 +46,20 @@ public class InterfaceAddress {
     InterfaceAddress() {
     }
 
+    InterfaceAddress(InetAddress address, Inet4Address broadcast, InetAddress netmask) {
+        this.address = address;
+        this.broadcast = broadcast;
+        this.maskLength = countPrefixLength(netmask);
+    }
+
+    private short countPrefixLength(InetAddress netmask) {
+        short count = 0;
+        for (byte b : netmask.getAddress()) {
+            for (; b != 0; b <<= 1, ++count);
+        }
+        return count;
+    }
+
     /**
      * Returns an {@code InetAddress} for this address.
      *
