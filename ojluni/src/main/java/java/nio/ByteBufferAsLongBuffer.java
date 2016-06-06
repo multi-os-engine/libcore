@@ -33,28 +33,18 @@ class ByteBufferAsLongBuffer extends LongBuffer {                 // package-pri
     protected final int offset;
     private final ByteOrder order;
 
-    ByteBufferAsLongBuffer(ByteBuffer bb, ByteOrder order) {
-        super(-1, 0,
-                bb.remaining() >> 3,
-                bb.remaining() >> 3);
-        this.bb = bb;
-        this.isReadOnly = bb.isReadOnly;
-        this.address = bb.address;
-        this.order = order;
-        int cap = this.capacity();
-        this.limit(cap);
-        int pos = this.position();
-        assert (pos <= cap);
-        offset = pos;
-    }
-
     ByteBufferAsLongBuffer(ByteBuffer bb,
                            int mark, int pos, int lim, int cap,
                            int off, ByteOrder order) {
         super(mark, pos, lim, cap);
         this.bb = bb;
         this.isReadOnly = bb.isReadOnly;
-        this.address = bb.address;
+        // There are only two possibility for the type of ByteBuffer "bb", viz, DirectByteBuffer and
+        // HeapByteBuffer. We only have to initialize the field when bb is an instance of
+        // DirectByteBuffer.
+        if (bb instanceof DirectByteBuffer) {
+            this.address = ((DirectByteBuffer) bb).memoryRef.allocatedAddress + bb.offset + off;
+        }
         this.order = order;
         offset = off;
     }

@@ -17,6 +17,9 @@
 package org.apache.harmony.tests.java.nio;
 
 
+import java.nio.ByteOrder;
+import java.nio.DirectByteBuffer;
+
 public class SliceDirectByteBufferTest extends DirectByteBufferTest {
 
     protected void setUp() throws Exception {
@@ -24,6 +27,25 @@ public class SliceDirectByteBufferTest extends DirectByteBufferTest {
         buf.position(1);
         buf = buf.slice();
         baseBuf = buf;
+    }
+
+    public void test_values() throws Exception {
+        DirectByteBuffer dirBuf = (DirectByteBuffer) DirectByteBuffer.allocateDirect(10);
+        dirBuf.put((byte) 'a');
+        if (dirBuf.order() == ByteOrder.BIG_ENDIAN) {
+            dirBuf.order(ByteOrder.LITTLE_ENDIAN);
+        } else {
+            dirBuf.order(ByteOrder.BIG_ENDIAN);
+        }
+        DirectByteBuffer dupDirBuf = (DirectByteBuffer) dirBuf.slice();
+        assertEquals(dirBuf.address() + 1, dupDirBuf.address());
+        assertEquals(dirBuf.array(), dupDirBuf.array());
+        assertEquals(dirBuf.order(), dupDirBuf.order());
+        assertEquals(0, dupDirBuf.position());
+        assertEquals(dirBuf.mark(), dupDirBuf.mark());
+        assertEquals(dirBuf.arrayOffset() + 1, dupDirBuf.arrayOffset());
+        assertEquals(dirBuf.isReadOnly(), dupDirBuf.isReadOnly());
+        assertEquals(dirBuf.capacity() - 1, dupDirBuf.capacity());
     }
 
     protected void tearDown() throws Exception {

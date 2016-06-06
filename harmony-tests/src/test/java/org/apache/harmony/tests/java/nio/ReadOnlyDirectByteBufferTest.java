@@ -17,6 +17,9 @@
 package org.apache.harmony.tests.java.nio;
 
 
+import java.nio.ByteOrder;
+import java.nio.DirectByteBuffer;
+
 public class ReadOnlyDirectByteBufferTest extends DirectByteBufferTest {
 
     protected void setUp() throws Exception {
@@ -28,6 +31,23 @@ public class ReadOnlyDirectByteBufferTest extends DirectByteBufferTest {
 
     protected void tearDown() throws Exception {
         super.tearDown();
+    }
+
+    public void test_values() throws Exception {
+        DirectByteBuffer dirBuf = (DirectByteBuffer) DirectByteBuffer.allocateDirect(10);
+        dirBuf.put((byte) 'a');
+        if (dirBuf.order() == ByteOrder.BIG_ENDIAN) {
+            dirBuf.order(ByteOrder.LITTLE_ENDIAN);
+        } else {
+            dirBuf.order(ByteOrder.BIG_ENDIAN);
+        }
+        DirectByteBuffer dupDirBuf = (DirectByteBuffer) dirBuf.asReadOnlyBuffer();
+        assertEquals(dirBuf.address(), dupDirBuf.address());
+        assertEquals(dirBuf.order(), dupDirBuf.order());
+        assertEquals(dirBuf.position(), dupDirBuf.position());
+        assertEquals(dirBuf.mark(), dupDirBuf.mark());
+        assertTrue(dupDirBuf.isReadOnly());
+        assertEquals(dirBuf.capacity(), dupDirBuf.capacity());
     }
     
     public void testIsReadOnly() {

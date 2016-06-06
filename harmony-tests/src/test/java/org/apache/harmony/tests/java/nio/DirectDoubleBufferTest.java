@@ -15,8 +15,12 @@
  */
 package org.apache.harmony.tests.java.nio;
 
+import java.lang.reflect.Field;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.DirectByteBuffer;
+import java.nio.DoubleBuffer;
 
 public class DirectDoubleBufferTest extends DoubleBufferTest {
     public void setUp(){
@@ -48,6 +52,21 @@ public class DirectDoubleBufferTest extends DoubleBufferTest {
             fail("Should throw UnsupportedOperationException"); //$NON-NLS-1$
         } catch (UnsupportedOperationException e) {
         }
+    }
+
+    public void testAddress() throws NoSuchFieldException, IllegalAccessException {
+        DirectByteBuffer directByteBuffer = (DirectByteBuffer) ByteBuffer.allocateDirect(10);
+        directByteBuffer.put((byte)'a');
+        DoubleBuffer doubleBuffer = directByteBuffer.asDoubleBuffer();
+        Field addressFieldDDB  = Buffer.class.getDeclaredField("address");
+        addressFieldDDB.setAccessible(true);
+        long addressDDB = (long)addressFieldDDB.get(doubleBuffer);
+
+        Field addressFieldDB  = Buffer.class.getDeclaredField("address");
+        addressFieldDB.setAccessible(true);
+        long addressDB = (long)addressFieldDB.get(directByteBuffer);
+
+        assertEquals(addressDB + 1, addressDDB);
     }
 
     public void testIsDirect() {

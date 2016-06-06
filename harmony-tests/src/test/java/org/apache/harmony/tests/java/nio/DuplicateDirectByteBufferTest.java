@@ -17,12 +17,34 @@
 package org.apache.harmony.tests.java.nio;
 
 
+import java.nio.ByteOrder;
+import java.nio.DirectByteBuffer;
+
 public class DuplicateDirectByteBufferTest extends DirectByteBufferTest {
 
     protected void setUp() throws Exception {
         super.setUp();
         buf = buf.duplicate();
         baseBuf = buf;
+    }
+
+    public void test_values() throws Exception {
+        DirectByteBuffer dirBuf = (DirectByteBuffer) DirectByteBuffer.allocateDirect(10);
+        dirBuf.put((byte) 'a');
+        if (dirBuf.order() == ByteOrder.BIG_ENDIAN) {
+            dirBuf.order(ByteOrder.LITTLE_ENDIAN);
+        } else {
+            dirBuf.order(ByteOrder.BIG_ENDIAN);
+        }
+        DirectByteBuffer dupDirBuf = (DirectByteBuffer) dirBuf.duplicate();
+        assertEquals(dirBuf.address(), dupDirBuf.address());
+        assertEquals(dirBuf.array(), dupDirBuf.array());
+        assertEquals(dirBuf.order(), dupDirBuf.order());
+        assertEquals(dirBuf.position(), dupDirBuf.position());
+        assertEquals(dirBuf.mark(), dupDirBuf.mark());
+        assertEquals(dirBuf.arrayOffset(), dupDirBuf.arrayOffset());
+        assertEquals(dirBuf.isReadOnly(), dupDirBuf.isReadOnly());
+        assertEquals(dirBuf.capacity(), dupDirBuf.capacity());
     }
 
     protected void tearDown() throws Exception {
