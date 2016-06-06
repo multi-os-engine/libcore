@@ -15,8 +15,12 @@
  */
 package org.apache.harmony.tests.java.nio;
 
+import java.lang.reflect.Field;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.DirectByteBuffer;
+import java.nio.FloatBuffer;
 
 public class DirectFloatBufferTest extends FloatBufferTest {
     public void setUp(){
@@ -49,6 +53,21 @@ public class DirectFloatBufferTest extends FloatBufferTest {
         } catch (UnsupportedOperationException e) {
             //expected
         }
+    }
+
+    public void testAddress() throws NoSuchFieldException, IllegalAccessException {
+        DirectByteBuffer directByteBuffer = (DirectByteBuffer) ByteBuffer.allocateDirect(10);
+        directByteBuffer.put((byte)'a');
+        FloatBuffer floatBuffer = directByteBuffer.asFloatBuffer();
+        Field addressFieldFB  = Buffer.class.getDeclaredField("address");
+        addressFieldFB.setAccessible(true);
+        long addressFB = (long)addressFieldFB.get(floatBuffer);
+
+        Field addressFieldDB  = Buffer.class.getDeclaredField("address");
+        addressFieldDB.setAccessible(true);
+        long addressDB = (long)addressFieldDB.get(directByteBuffer);
+
+        assertEquals(addressDB + 1, addressFB);
     }
 
     public void testIsDirect() {

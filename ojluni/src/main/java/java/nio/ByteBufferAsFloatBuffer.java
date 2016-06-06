@@ -33,28 +33,18 @@ class ByteBufferAsFloatBuffer extends FloatBuffer {       // package-private
     protected final int offset;
     private final ByteOrder order;
 
-    ByteBufferAsFloatBuffer(ByteBuffer bb, ByteOrder order) {   // package-private
-        super(-1, 0,
-                bb.remaining() >> 2,
-                bb.remaining() >> 2);
-        this.bb = bb;
-        this.isReadOnly = bb.isReadOnly;
-        this.address = bb.address;
-        this.order = order;
-        int cap = this.capacity();
-        this.limit(cap);
-        int pos = this.position();
-        assert (pos <= cap);
-        offset = pos;
-    }
-
     ByteBufferAsFloatBuffer(ByteBuffer bb,
                             int mark, int pos, int lim, int cap,
                             int off, ByteOrder order) {
         super(mark, pos, lim, cap);
         this.bb = bb;
         this.isReadOnly = bb.isReadOnly;
-        this.address = bb.address;
+        // There are only two possibility for the type of ByteBuffer "bb", viz, DirectByteBuffer and
+        // HeapByteBuffer. We only have to initialize the field when bb is an instance of
+        // DirectByteBuffer.
+        if (bb instanceof DirectByteBuffer) {
+            this.address = ((DirectByteBuffer) bb).memoryRef.allocatedAddress + bb.offset + off;
+        }
         this.order = order;
         offset = off;
     }
