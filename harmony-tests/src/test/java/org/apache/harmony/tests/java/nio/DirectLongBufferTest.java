@@ -17,7 +17,10 @@ package org.apache.harmony.tests.java.nio;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-
+import java.nio.DirectByteBuffer;
+import java.nio.LongBuffer;
+import java.nio.NIOAccess;
+import libcore.io.SizeOf;
 
 public class DirectLongBufferTest extends LongBufferTest {
     public void setUp(){
@@ -50,6 +53,18 @@ public class DirectLongBufferTest extends LongBufferTest {
         } catch (UnsupportedOperationException e) {
             //expected
         }
+    }
+
+    // http://b/28964300
+    public void testJNIAccessByAddress() throws Exception {
+        DirectByteBuffer directByteBuffer = (DirectByteBuffer) ByteBuffer.allocateDirect(10);
+        directByteBuffer.put((byte)'a');
+        LongBuffer longBuffer = directByteBuffer.asLongBuffer();
+        longBuffer.put(1L);
+        long addressDB = NIOAccess.getBasePointer(directByteBuffer);
+        long addressLB = NIOAccess.getBasePointer(longBuffer);
+
+        assertEquals(addressDB + SizeOf.LONG, addressLB);
     }
 
     public void testIsDirect() {

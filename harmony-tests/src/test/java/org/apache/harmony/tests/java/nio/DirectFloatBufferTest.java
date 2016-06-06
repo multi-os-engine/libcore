@@ -17,6 +17,10 @@ package org.apache.harmony.tests.java.nio;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.DirectByteBuffer;
+import java.nio.FloatBuffer;
+import java.nio.NIOAccess;
+import libcore.io.SizeOf;
 
 public class DirectFloatBufferTest extends FloatBufferTest {
     public void setUp(){
@@ -49,6 +53,18 @@ public class DirectFloatBufferTest extends FloatBufferTest {
         } catch (UnsupportedOperationException e) {
             //expected
         }
+    }
+
+    // http://b/28964300
+    public void testJNIAccessByAddress() throws Exception {
+        DirectByteBuffer directByteBuffer = (DirectByteBuffer) ByteBuffer.allocateDirect(10);
+        directByteBuffer.put((byte)'a');
+        FloatBuffer floatBuffer = directByteBuffer.asFloatBuffer();
+        floatBuffer.put((float)1.0);
+        long addressDB = NIOAccess.getBasePointer(directByteBuffer);
+        long addressFB = NIOAccess.getBasePointer(floatBuffer);
+
+        assertEquals(addressDB + SizeOf.FLOAT, addressFB);
     }
 
     public void testIsDirect() {
