@@ -112,20 +112,16 @@ public class DirectByteBuffer extends MappedByteBuffer implements DirectBuffer {
 
     // For duplicates and slices
     //
-    DirectByteBuffer(MemoryRef memoryRef,         // package-private
-                     int mark, int pos, int lim, int cap,
-                     int off) {
-        this(memoryRef, mark, pos, lim, cap, off, false);
-    }
 
     DirectByteBuffer(MemoryRef memoryRef,         // package-private
                      int mark, int pos, int lim, int cap,
-                     int off, boolean isReadOnly) {
+                     int off, boolean isReadOnly, boolean byteOrder) {
         super(mark, pos, lim, cap, memoryRef.buffer, off);
         this.isReadOnly = isReadOnly;
         this.memoryRef = memoryRef;
         address = memoryRef.allocatedAddress + off;
         cleaner = null;
+        this.bigEndian = byteOrder;
     }
 
     @Override
@@ -148,7 +144,8 @@ public class DirectByteBuffer extends MappedByteBuffer implements DirectBuffer {
         int rem = (pos <= lim ? lim - pos : 0);
         int off = pos + offset;
         assert (off >= 0);
-        return new DirectByteBuffer(memoryRef, -1, 0, rem, rem, off, isReadOnly);
+        return new DirectByteBuffer(memoryRef, -1, 0, rem, rem, off, isReadOnly,
+                bigEndian /* ByteOrder */);
     }
 
     public ByteBuffer duplicate() {
@@ -161,7 +158,8 @@ public class DirectByteBuffer extends MappedByteBuffer implements DirectBuffer {
                 this.limit(),
                 this.capacity(),
                 offset,
-                isReadOnly);
+                isReadOnly,
+                bigEndian /* ByteOrder */);
     }
 
     public ByteBuffer asReadOnlyBuffer() {
@@ -174,7 +172,8 @@ public class DirectByteBuffer extends MappedByteBuffer implements DirectBuffer {
                 this.limit(),
                 this.capacity(),
                 offset,
-                true);
+                true /* isReadOnly */,
+                bigEndian /* ByteOrder */);
     }
 
     @Override

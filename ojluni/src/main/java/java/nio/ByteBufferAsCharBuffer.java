@@ -33,28 +33,17 @@ class ByteBufferAsCharBuffer extends CharBuffer {      // package-private
     protected final int offset;
     private final ByteOrder order;
 
-    ByteBufferAsCharBuffer(ByteBuffer bb, ByteOrder order) {   // package-private
-        super(-1, 0,
-                bb.remaining() >> 1,
-                bb.remaining() >> 1);
-        this.bb = bb;
-        this.isReadOnly = bb.isReadOnly;
-        this.address = bb.address;
-        this.order = order;
-        int cap = this.capacity();
-        this.limit(cap);
-        int pos = this.position();
-        assert (pos <= cap);
-        offset = pos;
-    }
-
     ByteBufferAsCharBuffer(ByteBuffer bb,
                            int mark, int pos, int lim, int cap,
                            int off, ByteOrder order) {
         super(mark, pos, lim, cap);
         this.bb = bb;
         this.isReadOnly = bb.isReadOnly;
-        this.address = bb.address;
+        if (bb instanceof DirectByteBuffer) {
+            this.address = ((DirectByteBuffer) bb).memoryRef.allocatedAddress + bb.offset + off;
+        } else {
+            this.address = bb.address + bb.offset;
+        }
         this.order = order;
         offset = off;
     }
