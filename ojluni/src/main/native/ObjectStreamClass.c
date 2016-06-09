@@ -67,29 +67,12 @@ ObjectStreamClass_hasStaticInitializer(JNIEnv *env, jclass this,
         return JNI_FALSE;
     }
 
-    /*
-     * Check superclass for static initializer as well--if the same method ID
-     * is returned, then the static initializer is from a superclass.
-     * Empirically, this step appears to be unnecessary in 1.4; however, the
-     * JNI spec makes no guarantee that GetStaticMethodID will not return the
-     * ID for a superclass initializer.
-     */
-
-    if ((superCl = (*env)->GetSuperclass(env, clazz)) == NULL) {
-        return JNI_TRUE;
-    }
-    superClinitId =
-        (*env)->GetStaticMethodID(env, superCl, "<clinit>", "()V");
-    if (superClinitId == NULL) {        /* error thrown */
-        jthrowable th = (*env)->ExceptionOccurred(env);
-        (*env)->ExceptionClear(env);    /* normal return */
-        if (!(*env)->IsInstanceOf(env, th, noSuchMethodErrCl)) {
-            (*env)->Throw(env, th);
-        }
-        return JNI_TRUE;
-    }
-
-    return (clinitId != superClinitId);
+    // Android-changed, removed check for superclass clinitId != child clinitId.
+    // While technicaly valid check, android has been always returning true
+    // in this particular case.
+    // We're returning true to enable deserializing classes without explicit serialVersionID
+    // that would fail in this check (b/29064453).
+    return JNI_TRUE;
 }
 
 static JNINativeMethod gMethods[] = {

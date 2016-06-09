@@ -236,4 +236,41 @@ public class ObjectStreamClassTest extends TestCase {
         assertNotNull(obj);
         assertTrue(obj instanceof String);
     }
+
+    // Class without <clinit> method
+    public static class NoClinitParent {
+    }
+    // Class without <clinit> method
+    public static class NoClinitChildWithNoClinitParent extends NoClinitParent{
+    }
+
+    // Class with <clinit> method
+    public static class ClinitParent {
+        // This field will trigger creation of <clinit> method for this class
+        private static final String TAG = ClinitParent.class.getName();
+    }
+    // Class without <clinit> but with parent that has <clinit> method
+    public static class NoClinitChildWithClinitParent extends ClinitParent {
+        private static final String TAG = ClinitParent.class.getName();
+    }
+
+    // http://b/29064453
+    public void testHasClinit() throws Exception {
+        Method hasStaticInitializer =
+            ObjectStreamClass.class.getDeclaredMethod("hasStaticInitializer", Class.class);
+        hasStaticInitializer.setAccessible(true);
+
+        assertTrue((Boolean)
+                   hasStaticInitializer.invoke(null, ClinitParent.class));
+        // RI will return correctly False in this case, but android has been returning true
+        // in this particular case. We're returning true to enable deserializing classes
+        // like NoClinitChildWithClinitParent without explicit serialVersionID field.
+        assertTrue((Boolean)
+                   hasStaticInitializer.invoke(null, NoClinitChildWithClinitParent.class));
+
+        assertFalse((Boolean)
+                   hasStaticInitializer.invoke(null, NoClinitParent.class));
+        assertFalse((Boolean)
+                   hasStaticInitializer.invoke(null, NoClinitChildWithNoClinitParent.class));
+    }
 }
