@@ -35,17 +35,17 @@
 extern "C" {
 #endif
 #undef sun_nio_ch_IOStatus_EOF
-#define sun_nio_ch_IOStatus_EOF -1L
+#define sun_nio_ch_IOStatus_EOF (-1L)
 #undef sun_nio_ch_IOStatus_UNAVAILABLE
-#define sun_nio_ch_IOStatus_UNAVAILABLE -2L
+#define sun_nio_ch_IOStatus_UNAVAILABLE (-2L)
 #undef sun_nio_ch_IOStatus_INTERRUPTED
-#define sun_nio_ch_IOStatus_INTERRUPTED -3L
+#define sun_nio_ch_IOStatus_INTERRUPTED (-3L)
 #undef sun_nio_ch_IOStatus_UNSUPPORTED
-#define sun_nio_ch_IOStatus_UNSUPPORTED -4L
+#define sun_nio_ch_IOStatus_UNSUPPORTED (-4L)
 #undef sun_nio_ch_IOStatus_THROWN
-#define sun_nio_ch_IOStatus_THROWN -5L
+#define sun_nio_ch_IOStatus_THROWN (-5L)
 #undef sun_nio_ch_IOStatus_UNSUPPORTED_CASE
-#define sun_nio_ch_IOStatus_UNSUPPORTED_CASE -6L
+#define sun_nio_ch_IOStatus_UNSUPPORTED_CASE (-6L)
 #ifdef __cplusplus
 }
 #endif

@@ -35,9 +35,9 @@
 extern "C" {
 #endif
 #undef java_lang_Long_serialVersionUID
-#define java_lang_Long_serialVersionUID -8742448824652078965LL
+#define java_lang_Long_serialVersionUID (-8742448824652078965LL)
 #undef java_lang_Long_MIN_VALUE
-#define java_lang_Long_MIN_VALUE -9223372036854775808LL
+#define java_lang_Long_MIN_VALUE (-9223372036854775808LL)
 #undef java_lang_Long_MAX_VALUE
 #define java_lang_Long_MAX_VALUE 9223372036854775807LL
 #undef java_lang_Long_SIZE

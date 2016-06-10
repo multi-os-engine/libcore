@@ -33,8 +33,8 @@
 
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
+    (_result) = _cmd; \
+  } while(((_result) == -1) && (errno == EINTR)); \
 } while(0)
 
 #include "JNIHelp.h"
