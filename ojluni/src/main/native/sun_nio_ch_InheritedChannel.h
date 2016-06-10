@@ -35,7 +35,7 @@
 extern "C" {
 #endif
 #undef sun_nio_ch_InheritedChannel_UNKNOWN
-#define sun_nio_ch_InheritedChannel_UNKNOWN -1L
+#define sun_nio_ch_InheritedChannel_UNKNOWN (-1L)
 #undef sun_nio_ch_InheritedChannel_SOCK_STREAM
 #define sun_nio_ch_InheritedChannel_SOCK_STREAM 1L
 #undef sun_nio_ch_InheritedChannel_SOCK_DGRAM

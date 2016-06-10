@@ -63,9 +63,9 @@
  * Header field access macros
  */
 #define CH(b, n) (((unsigned char *)(b))[n])
-#define SH(b, n) (CH(b, n) | (CH(b, n+1) << 8))
-#define LG(b, n) ((SH(b, n) | (SH(b, n+2) << 16)) &0xffffffffUL)
-#define LL(b, n) (((jlong)LG(b, n)) | (((jlong)LG(b, n+4)) << 32))
+#define SH(b, n) (CH(b, n) | (CH(b, (n)+1) << 8))
+#define LG(b, n) ((SH(b, n) | (SH(b, (n)+2) << 16)) &0xffffffffUL)
+#define LL(b, n) (((jlong)LG(b, n)) | (((jlong)LG(b, (n)+4)) << 32))
 #define GETSIG(b) LG(b, 0)
 
 /*

@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 #undef sun_nio_ch_UnixAsynchronousSocketChannelImpl_ST_UNINITIALIZED
-#define sun_nio_ch_UnixAsynchronousSocketChannelImpl_ST_UNINITIALIZED -1L
+#define sun_nio_ch_UnixAsynchronousSocketChannelImpl_ST_UNINITIALIZED (-1L)
 #undef sun_nio_ch_UnixAsynchronousSocketChannelImpl_ST_UNCONNECTED
 #define sun_nio_ch_UnixAsynchronousSocketChannelImpl_ST_UNCONNECTED 0L
 #undef sun_nio_ch_UnixAsynchronousSocketChannelImpl_ST_PENDING

@@ -72,14 +72,14 @@
 
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
+    (_result) = _cmd; \
+  } while(((_result) == -1) && (errno == EINTR)); \
 } while(0)
 
 #define RESTARTABLE_RETURN_PTR(_cmd, _result) do { \
   do { \
-    _result = _cmd; \
-  } while((_result == NULL) && (errno == EINTR)); \
+    (_result) = _cmd; \
+  } while(((_result) == NULL) && (errno == EINTR)); \
 } while(0)
 
 static jfieldID attrs_st_mode;
