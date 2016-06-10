@@ -35,7 +35,7 @@
 extern "C" {
 #endif
 #undef sun_nio_ch_ServerSocketChannelImpl_ST_UNINITIALIZED
-#define sun_nio_ch_ServerSocketChannelImpl_ST_UNINITIALIZED -1L
+#define sun_nio_ch_ServerSocketChannelImpl_ST_UNINITIALIZED (-1L)
 #undef sun_nio_ch_ServerSocketChannelImpl_ST_INUSE
 #define sun_nio_ch_ServerSocketChannelImpl_ST_INUSE 0L
 #undef sun_nio_ch_ServerSocketChannelImpl_ST_KILLED

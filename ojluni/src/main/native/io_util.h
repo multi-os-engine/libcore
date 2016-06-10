@@ -86,18 +86,18 @@ void throwFileNotFoundException(JNIEnv *env, jstring path);
 
 #define WITH_PLATFORM_STRING(env, strexp, var)                                \
     if (1) {                                                                  \
-        const char *var;                                                      \
+        const char *(var);                                                    \
         jstring _##var##str = (strexp);                                       \
         if (_##var##str == NULL) {                                            \
             JNU_ThrowNullPointerException((env), NULL);                       \
             goto _##var##end;                                                 \
         }                                                                     \
-        var = JNU_GetStringPlatformChars((env), _##var##str, NULL);           \
-        if (var == NULL) goto _##var##end;
+        (var) = JNU_GetStringPlatformChars((env), _##var##str, NULL);         \
+        if ((var) == NULL) goto _##var##end;
 
 #define WITH_FIELD_PLATFORM_STRING(env, object, id, var)                      \
     WITH_PLATFORM_STRING(env,                                                 \
-                         ((object == NULL)                                    \
+                         (((object) == NULL)                                  \
                           ? NULL                                              \
                           : (*(env))->GetObjectField((env), (object), (id))), \
                          var)
@@ -114,14 +114,14 @@ void throwFileNotFoundException(JNIEnv *env, jstring path);
 
 #define WITH_UNICODE_STRING(env, strexp, var)                                 \
     if (1) {                                                                  \
-        const jchar *var;                                                     \
+        const jchar *(var);                                                   \
         jstring _##var##str = (strexp);                                       \
         if (_##var##str == NULL) {                                            \
             JNU_ThrowNullPointerException((env), NULL);                       \
             goto _##var##end;                                                 \
         }                                                                     \
-        var = (*(env))->GetStringChars((env), _##var##str, NULL);             \
-        if (var == NULL) goto _##var##end;
+        (var) = (*(env))->GetStringChars((env), _##var##str, NULL);           \
+        if ((var) == NULL) goto _##var##end;
 
 #define END_UNICODE_STRING(env, var)                                          \
         (*(env))->ReleaseStringChars(env, _##var##str, var);                  \

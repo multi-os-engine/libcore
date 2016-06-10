@@ -37,7 +37,7 @@ public:
      * internal on-stack buffer will be used. Otherwise a heap buffer will
      * be allocated.
      */
-    LocalArray(size_t desiredByteCount) : mSize(desiredByteCount) {
+    explicit LocalArray(size_t desiredByteCount) : mSize(desiredByteCount) {
         if (desiredByteCount > STACK_BYTE_COUNT) {
             mPtr = new char[mSize];
         } else {
