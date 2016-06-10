@@ -60,7 +60,7 @@ private:
     do {                                            \
         _rc = (exp);                                \
         if (_rc == -1) {                            \
-            if (fd.isClosed() || errno != EINTR) {  \
+            if ((fd).isClosed() || errno != EINTR) {\
                 break;                              \
             }                                       \
         }                                           \
