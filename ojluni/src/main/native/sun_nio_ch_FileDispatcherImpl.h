@@ -35,7 +35,7 @@
 extern "C" {
 #endif
 #undef sun_nio_ch_FileDispatcherImpl_NO_LOCK
-#define sun_nio_ch_FileDispatcherImpl_NO_LOCK -1L
+#define sun_nio_ch_FileDispatcherImpl_NO_LOCK (-1L)
 #undef sun_nio_ch_FileDispatcherImpl_LOCKED
 #define sun_nio_ch_FileDispatcherImpl_LOCKED 0L
 #undef sun_nio_ch_FileDispatcherImpl_RET_EX_LOCK

@@ -44,8 +44,8 @@
         (*env)->SetIntField(env, (*env)->GetObjectField(env, (this), (fid)),IO_fd_fdID, (fd))
 
 #define GET_FD(this, fid) \
-    (*env)->GetObjectField(env, (this), (fid)) == NULL ? \
-        -1 : (*env)->GetIntField(env, (*env)->GetObjectField(env, (this), (fid)), IO_fd_fdID)
+    ((*env)->GetObjectField(env, (this), (fid)) == NULL ? \
+        -1 : (*env)->GetIntField(env, (*env)->GetObjectField(env, (this), (fid)), IO_fd_fdID))
 
 /*
  * Macros to set/get fd when inside java.io.FileDescriptor
@@ -64,8 +64,9 @@
 
 /*
  * On Solaris, the handle field is unused
+ * NOLINT: clang-tidy does not like non-terminated statement.
  */
-#define SET_HANDLE(fd) return (jlong)-1
+#define SET_HANDLE(fd) return (jlong)-1  /* NOLINT */
 
 /*
  * IO helper function(s)
