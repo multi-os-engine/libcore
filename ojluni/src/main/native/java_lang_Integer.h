@@ -35,9 +35,9 @@
 extern "C" {
 #endif
 #undef java_lang_Integer_serialVersionUID
-#define java_lang_Integer_serialVersionUID -8742448824652078965LL
+#define java_lang_Integer_serialVersionUID (-8742448824652078965LL)
 #undef java_lang_Integer_MIN_VALUE
-#define java_lang_Integer_MIN_VALUE -2147483648L
+#define java_lang_Integer_MIN_VALUE (-2147483648L)
 #undef java_lang_Integer_MAX_VALUE
 #define java_lang_Integer_MAX_VALUE 2147483647L
 #undef java_lang_Integer_SIZE
