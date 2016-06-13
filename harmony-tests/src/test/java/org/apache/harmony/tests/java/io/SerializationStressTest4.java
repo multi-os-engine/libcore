@@ -30,6 +30,7 @@ import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -187,43 +188,22 @@ public class SerializationStressTest4 extends SerializationStressTest {
 
     }
 
-    public void test_writeObject_Collections_UnmodifiableCollection() {
+    public void test_writeObject_Collections_UnmodifiableCollection() throws Exception {
         // Test for method void
-        // java.io.ObjectOutputStream.writeObject(java.util.Collections.UnmodifiableCollection)
+        // java.io.ObjectOutputStream.writeObject(java.util.Collections.SynchronizedCollection)
 
-        Object objToSave = null;
-        Object objLoaded = null;
+        Collection<?> objToSave = java.util.Collections.unmodifiableCollection(SET);
+        Collection<?> objLoaded = (Collection<?>) dumpAndReload(objToSave);
 
-        try {
-            objToSave = Collections.unmodifiableCollection(SET);
-            if (DEBUG)
-                System.out.println("Obj = " + objToSave);
-            objLoaded = dumpAndReload(objToSave);
-
-            // Has to have worked
-            boolean equals;
-            equals = ((java.util.Collection) objToSave).size() == ((java.util.Collection) objLoaded)
-                    .size();
-            if (equals) {
-                java.util.Iterator iter1 = ((java.util.Collection) objToSave)
-                        .iterator(), iter2 = ((java.util.Collection) objLoaded)
-                        .iterator();
-                while (iter1.hasNext())
-                    equals = equals && iter1.next().equals(iter2.next());
-            }
-            assertTrue(MSG_TEST_FAILED + objToSave, equals);
-        } catch (IOException e) {
-            fail("IOException serializing " + objToSave + " : "
-                    + e.getMessage());
-        } catch (ClassNotFoundException e) {
-            fail("ClassNotFoundException reading Object type : "
-                    + e.getMessage());
-        } catch (Error err) {
-            System.out.println("Error when obj = " + objToSave);
-            // err.printStackTrace();
-            throw err;
+        assertEquals(objToSave.size(), objLoaded.size());
+        Iterator<?> iter1 = objToSave.iterator();
+        Iterator<?> iter2 = objLoaded.iterator();
+        while (iter1.hasNext()) {
+            assertTrue(iter2.hasNext());
+            assertEquals(iter1.next(), iter2.next());
         }
 
+        assertFalse(iter1.hasNext());
     }
 
     public void test_writeObject_Format() {
@@ -1420,42 +1400,22 @@ public class SerializationStressTest4 extends SerializationStressTest {
 
     }
 
-    public void test_writeObject_Collections_SynchronizedCollection() {
+    public void test_writeObject_Collections_SynchronizedCollection() throws Exception {
         // Test for method void
         // java.io.ObjectOutputStream.writeObject(java.util.Collections.SynchronizedCollection)
 
-        Object objToSave = null;
-        Object objLoaded = null;
+        Collection<?> objToSave = java.util.Collections.synchronizedCollection(SET);
+        Collection<?> objLoaded = (Collection<?>) dumpAndReload(objToSave);
 
-        try {
-            objToSave = java.util.Collections.synchronizedCollection(SET);
-            if (DEBUG)
-                System.out.println("Obj = " + objToSave);
-            objLoaded = dumpAndReload(objToSave);
-
-            // Has to have worked
-            boolean equals;
-            equals = ((java.util.Collection) objToSave).size() == ((java.util.Collection) objLoaded)
-                    .size();
-            if (equals) {
-                java.util.Iterator iter1 = ((java.util.Collection) objToSave)
-                        .iterator(), iter2 = ((java.util.Collection) objLoaded)
-                        .iterator();
-                while (iter1.hasNext())
-                    equals = equals && iter1.next().equals(iter2.next());
-            }
-            assertTrue(MSG_TEST_FAILED + objToSave, equals);
-        } catch (IOException e) {
-            fail("Exception serializing " + objToSave + " : " + e.getMessage());
-        } catch (ClassNotFoundException e) {
-            fail("ClassNotFoundException reading Object type: "
-                    + e.getMessage());
-        } catch (Error err) {
-            System.out.println("Error when obj = " + objToSave);
-            // err.printStackTrace();
-            throw err;
+        assertEquals(objToSave.size(), objLoaded.size());
+        Iterator<?> iter1 = objToSave.iterator();
+        Iterator<?> iter2 = objLoaded.iterator();
+        while (iter1.hasNext()) {
+            assertTrue(iter2.hasNext());
+            assertEquals(iter1.next(), iter2.next());
         }
 
+        assertFalse(iter1.hasNext());
     }
 
     public void test_writeObject_Random() {
