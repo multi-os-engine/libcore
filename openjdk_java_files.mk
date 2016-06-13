@@ -100,6 +100,7 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/lang/annotation/ElementType.java \
     ojluni/src/main/java/java/lang/annotation/IncompleteAnnotationException.java \
     ojluni/src/main/java/java/lang/annotation/Inherited.java \
+    ojluni/src/main/java/java/lang/annotation/Native.java \
     ojluni/src/main/java/java/lang/annotation/Retention.java \
     ojluni/src/main/java/java/lang/annotation/Repeatable.java \
     ojluni/src/main/java/java/lang/annotation/RetentionPolicy.java \
