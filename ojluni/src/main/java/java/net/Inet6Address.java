@@ -50,7 +50,7 @@ import static android.system.OsConstants.*;
  *   address. This is the full form.  For example,
  *
  *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td><tt>1080:0:0:0:8:800:200C:417A</tt><td></tr>
+ *   <tr><td>{@code 1080:0:0:0:8:800:200C:417A}<td></tr>
  *   </table></blockquote>
  *
  *   <p> Note that it is not necessary to write the leading zeros in
@@ -67,7 +67,7 @@ import static android.system.OsConstants.*;
  *   zeros in an address. For example,
  *
  *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td><tt>1080::8:800:200C:417A</tt><td></tr>
+ *   <tr><td>{@code 1080::8:800:200C:417A}<td></tr>
  *   </table></blockquote>
  *
  *   <li><p> An alternative form that is sometimes more convenient
@@ -78,8 +78,8 @@ import static android.system.OsConstants.*;
  *   standard IPv4 representation address, for example,
  *
  *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td><tt>::FFFF:129.144.52.38</tt><td></tr>
- *   <tr><td><tt>::129.144.52.38</tt><td></tr>
+ *   <tr><td>{@code ::FFFF:129.144.52.38}<td></tr>
+ *   <tr><td>{@code ::129.144.52.38}<td></tr>
  *   </table></blockquote>
  *
  *   <p> where "::FFFF:d.d.d.d" and "::d.d.d.d" are, respectively, the
@@ -88,23 +88,23 @@ import static android.system.OsConstants.*;
  *   in the "d.d.d.d" form. The following forms are invalid:
  *
  *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td><tt>::FFFF:d.d.d</tt><td></tr>
- *   <tr><td><tt>::FFFF:d.d</tt><td></tr>
- *   <tr><td><tt>::d.d.d</tt><td></tr>
- *   <tr><td><tt>::d.d</tt><td></tr>
+ *   <tr><td>{@code ::FFFF:d.d.d}<td></tr>
+ *   <tr><td>{@code ::FFFF:d.d}<td></tr>
+ *   <tr><td>{@code ::d.d.d}<td></tr>
+ *   <tr><td>{@code ::d.d}<td></tr>
  *   </table></blockquote>
  *
  *   <p> The following form:
  *
  *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td><tt>::FFFF:d</tt><td></tr>
+ *   <tr><td>{@code ::FFFF:d}<td></tr>
  *   </table></blockquote>
  *
  *   <p> is valid, however it is an unconventional representation of
  *   the IPv4-compatible IPv6 address,
  *
  *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td><tt>::255.255.0.d</tt><td></tr>
+ *   <tr><td>{@code ::255.255.0.d}<td></tr>
  *   </table></blockquote>
  *
  *   <p> while "::d" corresponds to the general IPv6 address
@@ -250,7 +250,7 @@ class Inet6Address extends InetAddress {
     /**
      * Create an Inet6Address in the exact manner of {@link InetAddress#getByAddress(String,byte[])}
      * except that the IPv6 scope_id is set to the value corresponding to the given interface
-     * for the address type specified in <code>addr</code>.
+     * for the address type specified in {@code addr}.
      * The call will fail with an UnknownHostException if the given interface does not have a numeric
      * scope_id assigned for the given address type (eg. link-local or site-local).
      * See <a href="Inet6Address.html#scoped">here</a> for a description of IPv6
@@ -460,7 +460,7 @@ class Inet6Address extends InetAddress {
      * address. 11111111 at the start of the address identifies the
      * address as being a multicast address.
      *
-     * @return a <code>boolean</code> indicating if the InetAddress is
+     * @return a {@code boolean} indicating if the InetAddress is
      * an IP multicast address
      * @since JDK1.1
      */
@@ -471,7 +471,7 @@ class Inet6Address extends InetAddress {
 
     /**
      * Utility routine to check if the InetAddress in a wildcard address.
-     * @return a <code>boolean</code> indicating if the Inetaddress is
+     * @return a {@code boolean} indicating if the Inetaddress is
      *         a wildcard address.
      * @since 1.4
      */
@@ -487,7 +487,7 @@ class Inet6Address extends InetAddress {
     /**
      * Utility routine to check if the InetAddress is a loopback address.
      *
-     * @return a <code>boolean</code> indicating if the InetAddress is
+     * @return a {@code boolean} indicating if the InetAddress is
      * a loopback address; or false otherwise.
      * @since 1.4
      */
@@ -503,7 +503,7 @@ class Inet6Address extends InetAddress {
     /**
      * Utility routine to check if the InetAddress is an link local address.
      *
-     * @return a <code>boolean</code> indicating if the InetAddress is
+     * @return a {@code boolean} indicating if the InetAddress is
      * a link local address; or false if address is not a link local unicast address.
      * @since 1.4
      */
@@ -516,7 +516,7 @@ class Inet6Address extends InetAddress {
     /**
      * Utility routine to check if the InetAddress is a site local address.
      *
-     * @return a <code>boolean</code> indicating if the InetAddress is
+     * @return a {@code boolean} indicating if the InetAddress is
      * a site local address; or false if address is not a site local unicast address.
      * @since 1.4
      */
@@ -529,7 +529,7 @@ class Inet6Address extends InetAddress {
     /**
      * Utility routine to check if the multicast address has global scope.
      *
-     * @return a <code>boolean</code> indicating if the address has
+     * @return a {@code boolean} indicating if the address has
      *         is a multicast address of global scope, false if it is not
      *         of global scope or it is not a multicast address
      * @since 1.4
@@ -543,7 +543,7 @@ class Inet6Address extends InetAddress {
     /**
      * Utility routine to check if the multicast address has node scope.
      *
-     * @return a <code>boolean</code> indicating if the address has
+     * @return a {@code boolean} indicating if the address has
      *         is a multicast address of node-local scope, false if it is not
      *         of node-local scope or it is not a multicast address
      * @since 1.4
@@ -557,7 +557,7 @@ class Inet6Address extends InetAddress {
     /**
      * Utility routine to check if the multicast address has link scope.
      *
-     * @return a <code>boolean</code> indicating if the address has
+     * @return a {@code boolean} indicating if the address has
      *         is a multicast address of link-local scope, false if it is not
      *         of link-local scope or it is not a multicast address
      * @since 1.4
@@ -571,7 +571,7 @@ class Inet6Address extends InetAddress {
     /**
      * Utility routine to check if the multicast address has site scope.
      *
-     * @return a <code>boolean</code> indicating if the address has
+     * @return a {@code boolean} indicating if the address has
      *         is a multicast address of site-local scope, false if it is not
      *         of site-local scope or it is not a multicast address
      * @since 1.4
@@ -585,7 +585,7 @@ class Inet6Address extends InetAddress {
     /**
      * Utility routine to check if the multicast address has organization scope.
      *
-     * @return a <code>boolean</code> indicating if the address has
+     * @return a {@code boolean} indicating if the address has
      *         is a multicast address of organization-local scope,
      *         false if it is not of organization-local scope
      *         or it is not a multicast address
@@ -598,9 +598,9 @@ class Inet6Address extends InetAddress {
     }
 
     /**
-     * Returns the raw IP address of this <code>InetAddress</code>
+     * Returns the raw IP address of this {@code InetAddress}
      * object. The result is in network byte order: the highest order
-     * byte of the address is in <code>getAddress()[0]</code>.
+     * byte of the address is in {@code getAddress()[0]}.
      *
      * @return  the raw IP address of this object.
      */
@@ -686,18 +686,18 @@ class Inet6Address extends InetAddress {
 
     /**
      * Compares this object against the specified object.
-     * The result is <code>true</code> if and only if the argument is
-     * not <code>null</code> and it represents the same IP address as
+     * The result is {@code true} if and only if the argument is
+     * not {@code null} and it represents the same IP address as
      * this object.
      * <p>
-     * Two instances of <code>InetAddress</code> represent the same IP
+     * Two instances of {@code InetAddress} represent the same IP
      * address if the length of the byte arrays returned by
-     * <code>getAddress</code> is the same for both, and each of the
+     * {@code getAddress} is the same for both, and each of the
      * array components is the same for the byte arrays.
      *
      * @param   obj   the object to compare against.
-     * @return  <code>true</code> if the objects are the same;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the objects are the same;
+     *          {@code false} otherwise.
      * @see     java.net.InetAddress#getAddress()
      */
     @Override
@@ -720,7 +720,7 @@ class Inet6Address extends InetAddress {
      * Utility routine to check if the InetAddress is an
      * IPv4 compatible IPv6 address.
      *
-     * @return a <code>boolean</code> indicating if the InetAddress is
+     * @return a {@code boolean} indicating if the InetAddress is
      * an IPv4 compatible IPv6 address; or false if address is IPv4 address.
      * @since 1.4
      */

@@ -69,8 +69,8 @@ public interface CookiePolicy {
      *
      * @param uri       the URI to consult accept policy with
      * @param cookie    the HttpCookie object in question
-     * @return          <tt>true</tt> if this cookie should be accepted;
-     *                  otherwise, <tt>false</tt>
+     * @return          {@code true} if this cookie should be accepted;
+     *                  otherwise, {@code false}
      */
     public boolean shouldAccept(URI uri, HttpCookie cookie);
 }

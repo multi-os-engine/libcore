@@ -101,7 +101,7 @@ public final class IDN {
      * @param input     the string to be processed
      * @param flag      process flag; can be 0 or any logical OR of possible flags
      *
-     * @return the translated <tt>String</tt>
+     * @return the translated {@code String}
      *
      * @throws IllegalArgumentException   if the input string doesn't conform to RFC 3490 specification
      */
@@ -126,7 +126,7 @@ public final class IDN {
      *
      * @param input     the string to be processed
      *
-     * @return the translated <tt>String</tt>
+     * @return the translated {@code String}
      *
      * @throws IllegalArgumentException   if the input string doesn't conform to RFC 3490 specification
      */
@@ -151,7 +151,7 @@ public final class IDN {
      * @param input     the string to be processed
      * @param flag      process flag; can be 0 or any logical OR of possible flags
      *
-     * @return the translated <tt>String</tt>
+     * @return the translated {@code String}
      */
     public static String toUnicode(String input, int flag) {
         try {
@@ -191,7 +191,7 @@ public final class IDN {
      *
      * @param input     the string to be processed
      *
-     * @return the translated <tt>String</tt>
+     * @return the translated {@code String}
      */
     public static String toUnicode(String input) {
         return toUnicode(input, 0);

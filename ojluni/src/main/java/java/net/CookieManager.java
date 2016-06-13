@@ -132,7 +132,7 @@ public class CookieManager extends CookieHandler
      *
      * <p>This constructor will create new cookie manager with default
      * cookie store and accept policy. The effect is same as
-     * <tt>CookieManager(null, null)</tt>.
+     * {@code CookieManager(null, null)}.
      */
     public CookieManager() {
         this(null, null);
@@ -142,12 +142,12 @@ public class CookieManager extends CookieHandler
     /**
      * Create a new cookie manager with specified cookie store and cookie policy.
      *
-     * @param store     a <tt>CookieStore</tt> to be used by cookie manager.
-     *                  if <tt>null</tt>, cookie manager will use a default one,
+     * @param store     a {@code CookieStore} to be used by cookie manager.
+     *                  if {@code null}, cookie manager will use a default one,
      *                  which is an in-memory CookieStore implmentation.
-     * @param cookiePolicy      a <tt>CookiePolicy</tt> instance
+     * @param cookiePolicy      a {@code CookiePolicy} instance
      *                          to be used by cookie manager as policy callback.
-     *                          if <tt>null</tt>, ACCEPT_ORIGINAL_SERVER will
+     *                          if {@code null}, ACCEPT_ORIGINAL_SERVER will
      *                          be used.
      */
     public CookieManager(CookieStore store,
@@ -171,11 +171,11 @@ public class CookieManager extends CookieHandler
     /**
      * To set the cookie policy of this cookie manager.
      *
-     * <p> A instance of <tt>CookieManager</tt> will have
+     * <p> A instance of {@code CookieManager} will have
      * cookie policy ACCEPT_ORIGINAL_SERVER by default. Users always
      * can call this method to set another cookie policy.
      *
-     * @param cookiePolicy      the cookie policy. Can be <tt>null</tt>, which
+     * @param cookiePolicy      the cookie policy. Can be {@code null}, which
      *                          has no effects on current cookie policy.
      */
     public void setCookiePolicy(CookiePolicy cookiePolicy) {

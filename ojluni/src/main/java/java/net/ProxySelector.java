@@ -83,9 +83,9 @@ public abstract class ProxySelector {
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
-     * {@link NetPermission}<tt>("getProxySelector")</tt>
+     * {@link NetPermission}{@code ("getProxySelector")}
      * @see #setDefault(ProxySelector)
-     * @return the system-wide <code>ProxySelector</code>
+     * @return the system-wide {@code ProxySelector}
      * @since 1.5
      */
     public static ProxySelector getDefault() {
@@ -102,11 +102,11 @@ public abstract class ProxySelector {
      * Note: non-standard protocol handlers may ignore this setting.
      *
      * @param ps The HTTP proxy selector, or
-     *          <code>null</code> to unset the proxy selector.
+     *          {@code null} to unset the proxy selector.
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
-     * {@link NetPermission}<tt>("setProxySelector")</tt>
+     * {@link NetPermission}{@code ("setProxySelector")}
      *
      * @see #getDefault()
      * @since 1.5
@@ -128,7 +128,7 @@ public abstract class ProxySelector {
      * <LI>http URI for http connections</LI>
      * <LI>https URI for https connections
      * <LI>ftp URI for ftp connections</LI>
-     * <LI><code>socket://host:port</code><br>
+     * <LI>{@code socket://host:port}<br>
      *     for tcp client sockets connections</LI>
      * </UL>
      *

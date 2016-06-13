@@ -40,14 +40,14 @@ public class UnknownServiceException extends IOException {
     private static final long serialVersionUID = -4169033248853639508L;
 
     /**
-     * Constructs a new <code>UnknownServiceException</code> with no
+     * Constructs a new {@code UnknownServiceException} with no
      * detail message.
      */
     public UnknownServiceException() {
     }
 
     /**
-     * Constructs a new <code>UnknownServiceException</code> with the
+     * Constructs a new {@code UnknownServiceException} with the
      * specified detail message.
      *
      * @param   msg   the detail message.
