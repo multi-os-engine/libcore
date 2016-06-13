@@ -411,6 +411,11 @@ class XmlSupport {
 
             NodeList entries = xmlMap.getChildNodes();
             for (int i=0, numEntries=entries.getLength(); i<numEntries; i++) {
+                // Android added, not every child node is an Element
+                // (may be a text data, new-line for example).
+                if (!(entries.item(i) instanceof Element)) {
+                    continue;
+                }
                 Element entry = (Element) entries.item(i);
                 m.put(entry.getAttribute("key"), entry.getAttribute("value"));
             }
