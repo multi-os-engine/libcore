@@ -101,11 +101,13 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     private MockWebServer server;
     private AndroidShimResponseCache cache;
     private String hostName;
+    private List<TestSSLContext> testSSLContextsToClose;
 
     @Override protected void setUp() throws Exception {
         super.setUp();
         server = new MockWebServer();
         hostName = server.getHostName();
+        testSSLContextsToClose = new ArrayList<>();
     }
 
     @Override protected void tearDown() throws Exception {
@@ -122,6 +124,9 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
         if (cache != null) {
             cache.delete();
             cache = null;
+        }
+        for (TestSSLContext testSSLContext : testSSLContextsToClose) {
+            testSSLContext.close();
         }
         super.tearDown();
     }
@@ -521,7 +526,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     }
 
     public void testConnectViaHttps() throws IOException, InterruptedException {
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
 
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), false);
         server.enqueue(new MockResponse().setBody("this response comes via HTTPS"));
@@ -538,7 +543,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     }
 
     public void testConnectViaHttpsReusingConnections() throws IOException, InterruptedException {
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
         SSLSocketFactory clientSocketFactory = testSSLContext.clientContext.getSocketFactory();
 
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), false);
@@ -560,7 +565,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
 
     public void testConnectViaHttpsReusingConnectionsDifferentFactories()
             throws IOException, InterruptedException {
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
 
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), false);
         server.enqueue(new MockResponse().setBody("this response comes via HTTPS"));
@@ -588,6 +593,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     public void testConnectViaHttpsToUntrustedServer() throws IOException, InterruptedException {
         TestSSLContext testSSLContext = TestSSLContext.create(TestKeyStore.getClientCA2(),
                                                               TestKeyStore.getServer());
+        testSSLContextsToClose.add(testSSLContext);
 
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), false);
         server.enqueue(new MockResponse()); // unused
@@ -666,7 +672,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     }
 
     private void testConnectViaDirectProxyToHttps(ProxyConfig proxyConfig) throws Exception {
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
 
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), false);
         server.enqueue(new MockResponse().setBody("this response comes via HTTPS"));
@@ -704,7 +710,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
      * through a proxy. http://b/3097277
      */
     private void testConnectViaHttpProxyToHttps(ProxyConfig proxyConfig) throws Exception {
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
         RecordingHostnameVerifier hostnameVerifier = new RecordingHostnameVerifier();
 
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), true);
@@ -737,7 +743,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
      * Tolerate bad https proxy response when using HttpResponseCache. http://b/6754912
      */
     public void testConnectViaHttpProxyToHttpsUsingBadProxyAndHttpResponseCache() throws Exception {
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
 
         initResponseCache();
 
@@ -912,7 +918,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     public void testProxyConnectIncludesProxyHeadersOnly()
             throws IOException, InterruptedException {
         RecordingHostnameVerifier hostnameVerifier = new RecordingHostnameVerifier();
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
 
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), true);
         server.enqueue(new MockResponse()
@@ -945,7 +951,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
 
     public void testProxyAuthenticateOnConnect() throws Exception {
         Authenticator.setDefault(new SimpleAuthenticator());
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), true);
         server.enqueue(new MockResponse()
                 .setResponseCode(407)
@@ -980,7 +986,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     // Don't disconnect after building a tunnel with CONNECT
     // http://code.google.com/p/android/issues/detail?id=37221
     public void testProxyWithConnectionClose() throws IOException {
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), true);
         server.enqueue(new MockResponse()
                 .setSocketPolicy(SocketPolicy.UPGRADE_TO_SSL_AT_END)
@@ -1449,7 +1455,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
      * http://code.google.com/p/android/issues/detail?id=12860
      */
     private void testSecureStreamingPost(StreamingMode streamingMode) throws Exception {
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), false);
         server.enqueue(new MockResponse().setBody("Success!"));
         server.play();
@@ -1660,7 +1666,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     }
 
     public void testRedirectedOnHttps() throws IOException, InterruptedException {
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), false);
         server.enqueue(new MockResponse()
                 .setResponseCode(HttpURLConnection.HTTP_MOVED_TEMP)
@@ -1682,7 +1688,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     }
 
     public void testNotRedirectedFromHttpsToHttp() throws IOException, InterruptedException {
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), false);
         server.enqueue(new MockResponse()
                 .setResponseCode(HttpURLConnection.HTTP_MOVED_TEMP)
@@ -1919,7 +1925,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
         SSLSocketFactory defaultSSLSocketFactory = HttpsURLConnection.getDefaultSSLSocketFactory();
         HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
         try {
-            TestSSLContext testSSLContext = TestSSLContext.create();
+            TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
             server.useHttps(testSSLContext.serverContext.getSocketFactory(), false);
             server.enqueue(new MockResponse().setBody("ABC"));
             server.enqueue(new MockResponse().setBody("DEF"));
@@ -2681,7 +2687,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     }
 
     public void testSslFallback_allSupportedProtocols() throws Exception {
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
 
         String[] allSupportedProtocols = { "TLSv1.2", "TLSv1.1", "TLSv1", "SSLv3" };
         SSLSocketFactory serverSocketFactory =
@@ -2734,7 +2740,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     }
 
     public void testSslFallback_defaultProtocols() throws Exception {
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
 
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), false);
         server.enqueue(new MockResponse().setSocketPolicy(FAIL_HANDSHAKE));
@@ -2784,7 +2790,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     }
 
     public void testInspectSslBeforeConnect() throws Exception {
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), false);
         server.enqueue(new MockResponse());
         server.play();
@@ -2819,7 +2825,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
      * http://code.google.com/p/android/issues/detail?id=24431
      */
     public void testInspectSslAfterConnect() throws Exception {
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), false);
         server.enqueue(new MockResponse());
         server.play();
@@ -2840,7 +2846,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
 
     // http://b/26769689
     public void testSSLSocketFactoryWithIpv6LiteralHostname() throws Exception {
-        TestSSLContext testSSLContext = TestSSLContext.create();
+        TestSSLContext testSSLContext = createAndRegisterDefaultTestSSLContext();
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), false);
         server.enqueue(new MockResponse());
         server.play();
@@ -2917,6 +2923,12 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
 
     private Set<String> newSet(String... elements) {
         return new HashSet<String>(Arrays.asList(elements));
+    }
+
+    private TestSSLContext createAndRegisterDefaultTestSSLContext() {
+        TestSSLContext result = TestSSLContext.create();
+        testSSLContextsToClose.add(result);
+        return result;
     }
 
     enum TransferKind {
