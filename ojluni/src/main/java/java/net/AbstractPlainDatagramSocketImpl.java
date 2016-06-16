@@ -65,6 +65,13 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
     private final static boolean connectDisabled = os.contains("OS X");
 
     /**
+     * Load net library into runtime.
+     */
+    static {
+        init();
+    }
+
+    /**
      * Creates a datagram socket
      */
     protected synchronized void create() throws SocketException {
@@ -386,4 +393,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
     protected boolean nativeConnectDisabled() {
         return connectDisabled;
     }
+
+    native int dataAvailable();
+    private static native void init();
 }
