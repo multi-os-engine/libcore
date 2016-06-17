@@ -322,6 +322,13 @@ public final class VMDebug {
             throws IOException;
 
     /**
+     * Attaches an agent to the VM.
+     *
+     * @param path The path to the .so agent.
+     */
+    public static native void attachAgent(String path) throws IOException;
+
+    /**
      * Primes the register map cache.
      */
     public static native boolean cacheRegisterMap(String classAndMethodDesc);
