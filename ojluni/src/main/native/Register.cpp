@@ -52,6 +52,7 @@ extern void register_java_lang_Math(JNIEnv*);
 extern void register_java_lang_System(JNIEnv*);
 extern void register_java_lang_Thread(JNIEnv*);
 extern void register_java_lang_UNIXProcess(JNIEnv*);
+extern void register_java_net_AbstractPlainDatagramSocketImpl(JNIEnv*);
 extern void register_java_net_DatagramPacket(JNIEnv*);
 extern void register_java_net_Inet4Address(JNIEnv*);
 extern void register_java_net_Inet6Address(JNIEnv*);
@@ -140,6 +141,7 @@ jint JNI_OnLoad(JavaVM* vm, void*) { JNIEnv* env;
     register_java_net_Inet6AddressImpl(env);
     register_java_net_SocketInputStream(env);
     register_java_net_SocketOutputStream(env);
+    register_java_net_AbstractPlainDatagramSocketImpl(env); /* TODO: REORDER TO ALPHABETICAL ORDER */
     register_java_nio_Bits(env);
     register_java_util_prefs_FileSystemPreferences(env);
     register_sun_nio_ch_ServerSocketChannelImpl(env);
