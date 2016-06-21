@@ -19,5 +19,5 @@ package libcore.io;
 public final class Libcore {
     private Libcore() { }
 
-    public static Os os = new BlockGuardOs(new Posix());
+    public static final Os os = new BlockGuardOs(new Posix());
 }
