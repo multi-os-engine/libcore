@@ -1194,14 +1194,11 @@ public final class URL implements java.io.Serializable {
             if (handler == null) {
                 try {
                     if (protocol.equals("file")) {
-                        handler = (URLStreamHandler)Class.
-                            forName("sun.net.www.protocol.file.Handler").newInstance();
+                        handler = new sun.net.www.protocol.file.Handler();
                     } else if (protocol.equals("ftp")) {
-                        handler = (URLStreamHandler)Class.
-                            forName("sun.net.www.protocol.ftp.Handler").newInstance();
+                        handler = new sun.net.www.protocol.ftp.Handler();
                     } else if (protocol.equals("jar")) {
-                        handler = (URLStreamHandler)Class.
-                            forName("sun.net.www.protocol.jar.Handler").newInstance();
+                        handler = new sun.net.www.protocol.jar.Handler();
                     } else if (protocol.equals("http")) {
                         handler = (URLStreamHandler)Class.
                             forName("com.android.okhttp.HttpHandler").newInstance();
