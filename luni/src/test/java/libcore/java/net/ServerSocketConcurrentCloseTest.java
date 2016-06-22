@@ -34,6 +34,20 @@ public class ServerSocketConcurrentCloseTest extends TestCase {
         }
         final ExposedServerSocket serverSocket = new ExposedServerSocket();
         serverSocket.close();
+        final CountDownLatch testCompletedLatch = new CountDownLatch(1);
+        Thread thread = new Thread("Fail if test did't complete quickly") {
+            public void run() {
+                try {
+                    boolean completed = testCompletedLatch.await(5, TimeUnit.SECONDS);
+                    if (!completed) {
+                        fail("Test failed to complete within time limit");
+                    }
+                } catch (InterruptedException e) {
+                    fail("Unexpectedly interrupted: " + e);
+                }
+            }
+        };
+        thread.start();
         try {
             // Hack: Need to subclass to access the protected constructor without reflection
             Socket socket = new Socket((SocketImpl) null) { };
@@ -43,6 +57,8 @@ public class ServerSocketConcurrentCloseTest extends TestCase {
             // expected
         } catch (IOException e) {
             throw new AssertionError(e);
+        } finally {
+            testCompletedLatch.countDown();
         }
     }
 
