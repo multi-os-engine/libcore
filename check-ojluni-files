@@ -1,0 +1,19 @@
+#!/bin/bash
+
+##### Script to check whether the files openjdk_java_files.mk match
+##### those in the corresponding directory.
+
+# Need to do it this nasty way (creating a Makefile on the fly and executing the bash command inside it)
+# as to read the openjdk_java_files variable from an .mk file.
+make -s -f <(cat <<EOF
+include openjdk_java_files.mk
+check_openjdk_java_files: ; /bin/bash -c 'diff <(for i in \$(openjdk_java_files); do echo "\$\$i"; done | sort)  <( find ojluni/src/main/java -type f | grep '\''\.java\$\$'\'' | sort )'
+EOF)
+
+if [ $? -eq 0 ]; then
+    echo 'No differences found'
+else
+    echo 'Differences found'
+    exit 1
+fi
+
