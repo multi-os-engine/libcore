@@ -259,7 +259,12 @@ public abstract class FileLock implements AutoCloseable {
     }
 
     /**
-     * Tells whether or not this lock overlaps the given lock range.  </p>
+     * Tells whether or not this lock overlaps the given lock range.
+     *
+     * @param   position
+     *          The starting position of the lock range
+     * @param   size
+     *          The size of the lock range
      *
      * @return  <tt>true</tt> if, and only if, this lock and the given lock
      *          range overlap by at least one byte

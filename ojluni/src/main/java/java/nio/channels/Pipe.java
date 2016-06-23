@@ -63,6 +63,9 @@ public abstract class Pipe {
     {
         /**
          * Constructs a new instance of this class.
+         *
+         * @param  provider
+         *         The selector provider
          */
         protected SourceChannel(SelectorProvider provider) {
             super(provider);
@@ -94,6 +97,9 @@ public abstract class Pipe {
     {
         /**
          * Initializes a new instance of this class.
+         *
+         * @param  provider
+         *         The selector provider
          */
         protected SinkChannel(SelectorProvider provider) {
             super(provider);
