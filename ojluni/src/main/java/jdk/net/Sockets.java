@@ -25,6 +25,7 @@
 
 package jdk.net;
 
+<<<<<<< 24df58bd6065b4d0ead43e1b328ae1a06c404032
 import java.net.*;
 import java.io.IOException;
 import java.io.FileDescriptor;
@@ -35,6 +36,23 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Collections;
+=======
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.DatagramSocket;
+import java.net.MulticastSocket;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketOption;
+import java.net.StandardSocketOptions;
+import java.security.AccessController;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+
+>>>>>>> Port openJDK8 sun.nio.ch changes
 import sun.net.ExtendedOptionsImpl;
 
 /**
@@ -55,7 +73,12 @@ import sun.net.ExtendedOptionsImpl;
  *
  * @see java.nio.channels.NetworkChannel
  */
+<<<<<<< 24df58bd6065b4d0ead43e1b328ae1a06c404032
 //@jdk.Exported
+=======
+// TODO: Renable @jdk.Exported annotation.
+// @jdk.Exported
+>>>>>>> Port openJDK8 sun.nio.ch changes
 public class Sockets {
 
     private final static HashMap<Class<?>,Set<SocketOption<?>>>
@@ -228,7 +251,12 @@ public class Sockets {
      *
      * @see java.net.StandardSocketOptions
      */
+<<<<<<< 24df58bd6065b4d0ead43e1b328ae1a06c404032
     public static <T> void setOption(ServerSocket s, SocketOption<T> name, T value) throws IOException
+=======
+    public static <T> void setOption(ServerSocket s, SocketOption<T> name, T value) throws
+            IOException
+>>>>>>> Port openJDK8 sun.nio.ch changes
     {
         if (!isSupported(ServerSocket.class, name)) {
             throw new UnsupportedOperationException(name.name());
@@ -287,7 +315,12 @@ public class Sockets {
      *
      * @see java.net.StandardSocketOptions
      */
+<<<<<<< 24df58bd6065b4d0ead43e1b328ae1a06c404032
     public static <T> void setOption(DatagramSocket s, SocketOption<T> name, T value) throws IOException
+=======
+    public static <T> void setOption(DatagramSocket s, SocketOption<T> name, T value) throws
+            IOException
+>>>>>>> Port openJDK8 sun.nio.ch changes
     {
         if (!isSupported(s.getClass(), name)) {
             throw new UnsupportedOperationException(name.name());

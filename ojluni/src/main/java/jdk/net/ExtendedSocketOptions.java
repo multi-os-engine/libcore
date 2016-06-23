@@ -32,7 +32,11 @@ import java.net.SocketOption;
  * {@link java.net.StandardSocketOptions}. These options may be platform
  * specific.
  */
+<<<<<<< 24df58bd6065b4d0ead43e1b328ae1a06c404032
 //@jdk.Exported
+=======
+// @jdk.Exported
+>>>>>>> Port openJDK8 sun.nio.ch changes
 public final class ExtendedSocketOptions {
 
     private static class ExtSocketOption<T> implements SocketOption<T> {

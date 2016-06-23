@@ -25,6 +25,7 @@
 
 package sun.net;
 
+<<<<<<< 24df58bd6065b4d0ead43e1b328ae1a06c404032
 import java.net.*;
 import jdk.net.*;
 import java.io.IOException;
@@ -36,6 +37,14 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Collections;
+=======
+import java.io.FileDescriptor;
+import java.net.SocketOption;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
+import jdk.net.*;
+>>>>>>> Port openJDK8 sun.nio.ch changes
 
 /**
  * Contains the native implementation for extended socket options
@@ -86,6 +95,7 @@ public class ExtendedOptionsImpl {
      *
      * SO_FLOW_SLA
      */
+<<<<<<< 24df58bd6065b4d0ead43e1b328ae1a06c404032
     // Android-changed: Linux does not support flow operations.
     public static void setFlowOption(FileDescriptor fd, SocketFlow f) {
         throw new UnsupportedOperationException("unsupported socket option");
@@ -98,4 +108,9 @@ public class ExtendedOptionsImpl {
     public static boolean flowSupported() {
         return false;
     }
+=======
+    public static native void setFlowOption(FileDescriptor fd, SocketFlow f);
+    public static native void getFlowOption(FileDescriptor fd, SocketFlow f);
+    public static native boolean flowSupported();
+>>>>>>> Port openJDK8 sun.nio.ch changes
 }

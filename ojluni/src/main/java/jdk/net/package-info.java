@@ -28,5 +28,9 @@
  * socket classes.
  */
 
+<<<<<<< 24df58bd6065b4d0ead43e1b328ae1a06c404032
 @jdk.Exported
+=======
+// @jdk.Exported
+>>>>>>> Port openJDK8 sun.nio.ch changes
 package jdk.net;

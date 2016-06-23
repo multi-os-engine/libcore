@@ -43,7 +43,12 @@ import java.lang.annotation.Native;
  * When a security manager is installed, a {@link NetworkPermission}
  * is required to set or get this option.
  */
+<<<<<<< 24df58bd6065b4d0ead43e1b328ae1a06c404032
 //@jdk.Exported
+=======
+// TODO(shubhamajmera): renable @jdk.Exported annotation.
+// @jdk.Exported
+>>>>>>> Port openJDK8 sun.nio.ch changes
 public class SocketFlow {
 
     private static final int UNSET = -1;
@@ -64,7 +69,11 @@ public class SocketFlow {
      * one of these statuses, which reflect the state of socket's
      * flow.
      */
+<<<<<<< 24df58bd6065b4d0ead43e1b328ae1a06c404032
 //    @jdk.Exported
+=======
+    // @jdk.Exported
+>>>>>>> Port openJDK8 sun.nio.ch changes
     public enum Status {
         /**
          * Set or get socket option has not been called yet. Status
