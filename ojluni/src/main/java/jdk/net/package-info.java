@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,10 @@
  * questions.
  */
 
-package sun.nio.ch;
-
-import java.net.SocketOption;
-
 /**
- * Defines socket options that are supported by the implementation
- * but not defined in StandardSocketOptions.
+ * Platform specific socket options for the {@code java.net} and {@code java.nio.channels}
+ * socket classes.
  */
 
-class ExtendedSocketOption {
-    private ExtendedSocketOption() { }
-
-    static final SocketOption<Boolean> SO_OOBINLINE =
-        new SocketOption<Boolean>() {
-            public String name() { return "SO_OOBINLINE"; }
-            public Class<Boolean> type() { return Boolean.class; }
-            public String toString() { return name(); }
-        };
-}
+// @jdk.Exported
+package jdk.net;
