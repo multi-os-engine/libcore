@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 import sun.net.NetHooks;
+import sun.net.ExtendedOptionsImpl;
 
 /**
  * Base implementation of AsynchronousSocketChannel
@@ -428,6 +429,10 @@ abstract class AsynchronousSocketChannelImpl
                     throw new AlreadyBoundException();
                 InetSocketAddress isa = (local == null) ?
                     new InetSocketAddress(0) : Net.checkAddress(local);
+                SecurityManager sm = System.getSecurityManager();
+                if (sm != null) {
+                    sm.checkListen(isa.getPort());
+                }
                 NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
                 Net.bind(fd, isa.getAddress(), isa.getPort());
                 localAddress = Net.localAddress(fd);
@@ -504,6 +509,9 @@ abstract class AsynchronousSocketChannelImpl
             set.add(StandardSocketOptions.SO_KEEPALIVE);
             set.add(StandardSocketOptions.SO_REUSEADDR);
             set.add(StandardSocketOptions.TCP_NODELAY);
+            if (ExtendedOptionsImpl.flowSupported()) {
+                set.add(jdk.net.ExtendedSocketOptions.SO_FLOW_SLA);
+            }
             return Collections.unmodifiableSet(set);
         }
     }

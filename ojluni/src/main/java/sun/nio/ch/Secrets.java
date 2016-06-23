@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,39 @@
 
 package sun.nio.ch;
 
+import java.nio.channels.SocketChannel;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.spi.SelectorProvider;
+import java.io.FileDescriptor;
 import java.io.IOException;
-import java.nio.channels.*;
-import java.nio.channels.spi.*;
 
-public class DevPollSelectorProvider
-    extends SelectorProviderImpl
-{
-    public AbstractSelector openSelector() throws IOException {
-        return new DevPollSelectorImpl(this);
+/**
+ * Provides access to implementation private constructors and methods.
+ */
+
+public final class Secrets {
+    private Secrets() { }
+
+    private static SelectorProvider provider() {
+        SelectorProvider p = SelectorProvider.provider();
+        if (!(p instanceof SelectorProviderImpl))
+            throw new UnsupportedOperationException();
+        return p;
     }
 
-    public Channel inheritedChannel() throws IOException {
-        return InheritedChannel.getChannel();
+    public static SocketChannel newSocketChannel(FileDescriptor fd) {
+        try {
+            return new SocketChannelImpl(provider(), fd, false);
+        } catch (IOException ioe) {
+            throw new AssertionError(ioe);
+        }
+    }
+
+    public static ServerSocketChannel newServerSocketChannel(FileDescriptor fd) {
+        try {
+            return new ServerSocketChannelImpl(provider(), fd, false);
+        } catch (IOException ioe) {
+            throw new AssertionError(ioe);
+        }
     }
 }

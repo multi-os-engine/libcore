@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,10 @@
  * questions.
  */
 
-package sun.nio.ch;
+/**
+ * Platform specific socket options for the {@code java.net} and {@code java.nio.channels}
+ * socket classes.
+ */
 
-import java.io.IOException;
-import java.nio.channels.*;
-import java.nio.channels.spi.*;
-
-public class DevPollSelectorProvider
-    extends SelectorProviderImpl
-{
-    public AbstractSelector openSelector() throws IOException {
-        return new DevPollSelectorImpl(this);
-    }
-
-    public Channel inheritedChannel() throws IOException {
-        return InheritedChannel.getChannel();
-    }
-}
+@jdk.Exported
+package jdk.net;
