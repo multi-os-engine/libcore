@@ -847,6 +847,7 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/util/function/ToLongBiFunction.java \
     ojluni/src/main/java/java/util/function/ToLongFunction.java \
     ojluni/src/main/java/java/util/function/UnaryOperator.java \
+    ojluni/src/main/java/java/util/function/package-info.java \
     ojluni/src/main/java/java/util/jar/Attributes.java \
     ojluni/src/main/java/java/util/jar/JarEntry.java \
     ojluni/src/main/java/java/util/jar/JarException.java \
@@ -1243,7 +1244,6 @@ openjdk_java_files := \
     ojluni/src/main/java/sun/net/www/http/KeepAliveStreamCleaner.java \
     ojluni/src/main/java/sun/net/www/http/PosterOutputStream.java \
     ojluni/src/main/java/sun/net/www/protocol/file/FileURLConnection.java \
-    ojluni/src/main/java/sun/net/www/protocol/file/Handler.java \
     ojluni/src/main/java/sun/net/www/protocol/file/Handler.java \
     ojluni/src/main/java/sun/net/www/protocol/ftp/FtpURLConnection.java \
     ojluni/src/main/java/sun/net/www/protocol/ftp/Handler.java \
