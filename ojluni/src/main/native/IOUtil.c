@@ -43,8 +43,8 @@ static jfieldID fd_fdID;        /* for jint 'fd' in java.io.FileDescriptor */
 
 static void IOUtil_initIDs(JNIEnv *env)
 {
-    jclass clazz = (*env)->FindClass(env, "java/io/FileDescriptor");
-    fd_fdID = (*env)->GetFieldID(env, clazz, "descriptor", "I");
+    CHECK_NULL(jclass clazz = (*env)->FindClass(env, "java/io/FileDescriptor"));
+    CHECK_NULL(fd_fdID = (*env)->GetFieldID(env, clazz, "descriptor", "I"));
 }
 
 JNIEXPORT jboolean JNICALL
@@ -138,6 +138,15 @@ IOUtil_fdLimit(JNIEnv *env, jclass this)
     }
 }
 
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_IOUtil_iovMax(JNIEnv *env, jclass this)
+{
+    jlong iov_max = sysconf(_SC_IOV_MAX);
+    if (iov_max == -1)
+        iov_max = 16;
+    return (jint)iov_max;
+}
+
 /* Declared in nio_util.h for use elsewhere in NIO */
 
 jint
@@ -162,16 +171,6 @@ convertReturnVal(JNIEnv *env, jint n, jboolean reading)
         return IOS_THROWN;
     }
 }
-
-JNIEXPORT jint JNICALL
-IOUtil_iovMax(JNIEnv *env, jclass this)
-{
-    jlong iov_max = sysconf(_SC_IOV_MAX);
-    if (iov_max == -1)
-        iov_max = 16;
-    return (jint)iov_max;
-}
-
 
 /* Declared in nio_util.h for use elsewhere in NIO */
 

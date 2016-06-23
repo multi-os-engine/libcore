@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2014 The Android Open Source Project
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,15 +36,15 @@ import java.util.*;
 
 import dalvik.system.BlockGuard;
 import sun.net.ResourceManager;
-
+import sun.net.ExtendedOptionsImpl;
 
 /**
  * An implementation of DatagramChannels.
  */
 
 class DatagramChannelImpl
-    extends DatagramChannel
-    implements SelChImpl
+        extends DatagramChannel
+        implements SelChImpl
 {
 
     // Used to make native read and write calls
@@ -109,13 +109,13 @@ class DatagramChannelImpl
 
 
     public DatagramChannelImpl(SelectorProvider sp)
-        throws IOException
+            throws IOException
     {
         super(sp);
         ResourceManager.beforeUdpCreate();
         try {
             this.family = Net.isIPv6Available() ?
-                StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
+                    StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
             this.fd = Net.socket(family, false);
             this.fdVal = IOUtil.fdVal(fd);
             this.state = ST_UNCONNECTED;
@@ -126,11 +126,11 @@ class DatagramChannelImpl
     }
 
     public DatagramChannelImpl(SelectorProvider sp, ProtocolFamily family)
-        throws IOException
+            throws IOException
     {
         super(sp);
         if ((family != StandardProtocolFamily.INET) &&
-            (family != StandardProtocolFamily.INET6))
+                (family != StandardProtocolFamily.INET6))
         {
             if (family == null)
                 throw new NullPointerException("'family' is null");
@@ -149,11 +149,11 @@ class DatagramChannelImpl
     }
 
     public DatagramChannelImpl(SelectorProvider sp, FileDescriptor fd)
-        throws IOException
+            throws IOException
     {
         super(sp);
         this.family = Net.isIPv6Available() ?
-            StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
+                StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
         this.fd = fd;
         this.fdVal = IOUtil.fdVal(fd);
         this.state = ST_UNCONNECTED;
@@ -173,6 +173,7 @@ class DatagramChannelImpl
         synchronized (stateLock) {
             if (!isOpen())
                 throw new ClosedChannelException();
+            // Perform security check before returning address
             return Net.getRevealedLocalAddress(localAddress);
         }
     }
@@ -188,7 +189,7 @@ class DatagramChannelImpl
 
     @Override
     public <T> DatagramChannel setOption(SocketOption<T> name, T value)
-        throws IOException
+            throws IOException
     {
         if (name == null)
             throw new NullPointerException();
@@ -198,16 +199,9 @@ class DatagramChannelImpl
         synchronized (stateLock) {
             ensureOpen();
 
-            if (name == StandardSocketOptions.IP_TOS) {
-                // IPv4 only; no-op for IPv6
-                if (family == StandardProtocolFamily.INET) {
-                    Net.setSocketOption(fd, family, name, value);
-                }
-                return this;
-            }
-
-            if (name == StandardSocketOptions.IP_MULTICAST_TTL ||
-                name == StandardSocketOptions.IP_MULTICAST_LOOP)
+            if (name == StandardSocketOptions.IP_TOS ||
+                    name == StandardSocketOptions.IP_MULTICAST_TTL ||
+                    name == StandardSocketOptions.IP_MULTICAST_LOOP)
             {
                 // options are protocol dependent
                 Net.setSocketOption(fd, family, name, value);
@@ -249,7 +243,7 @@ class DatagramChannelImpl
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getOption(SocketOption<T> name)
-        throws IOException
+            throws IOException
     {
         if (name == null)
             throw new NullPointerException();
@@ -259,17 +253,9 @@ class DatagramChannelImpl
         synchronized (stateLock) {
             ensureOpen();
 
-            if (name == StandardSocketOptions.IP_TOS) {
-                // IPv4 only; always return 0 on IPv6
-                if (family == StandardProtocolFamily.INET) {
-                    return (T) Net.getSocketOption(fd, family, name);
-                } else {
-                    return (T) Integer.valueOf(0);
-                }
-            }
-
-            if (name == StandardSocketOptions.IP_MULTICAST_TTL ||
-                name == StandardSocketOptions.IP_MULTICAST_LOOP)
+            if (name == StandardSocketOptions.IP_TOS ||
+                    name == StandardSocketOptions.IP_MULTICAST_TTL ||
+                    name == StandardSocketOptions.IP_MULTICAST_LOOP)
             {
                 return (T) Net.getSocketOption(fd, family, name);
             }
@@ -321,6 +307,9 @@ class DatagramChannelImpl
             set.add(StandardSocketOptions.IP_MULTICAST_IF);
             set.add(StandardSocketOptions.IP_MULTICAST_TTL);
             set.add(StandardSocketOptions.IP_MULTICAST_LOOP);
+            if (ExtendedOptionsImpl.flowSupported()) {
+                set.add(jdk.net.ExtendedSocketOptions.SO_FLOW_SLA);
+            }
             return Collections.unmodifiableSet(set);
         }
     }
@@ -376,8 +365,8 @@ class DatagramChannelImpl
                         InetSocketAddress isa = (InetSocketAddress)sender;
                         try {
                             security.checkAccept(
-                                isa.getAddress().getHostAddress(),
-                                isa.getPort());
+                                    isa.getAddress().getHostAddress(),
+                                    isa.getPort());
                         } catch (SecurityException se) {
                             // Ignore packet
                             bb.clear();
@@ -401,7 +390,7 @@ class DatagramChannelImpl
     }
 
     private int receive(FileDescriptor fd, ByteBuffer dst)
-        throws IOException
+            throws IOException
     {
         int pos = dst.position();
         int lim = dst.limit();
@@ -429,18 +418,18 @@ class DatagramChannelImpl
     }
 
     private int receiveIntoNativeBuffer(FileDescriptor fd, ByteBuffer bb,
-                                        int rem, int pos)
-        throws IOException
+            int rem, int pos)
+            throws IOException
     {
         int n = receive0(fd, ((DirectBuffer)bb).address() + pos, rem,
-                         isConnected());
+                isConnected());
         if (n > 0)
             bb.position(pos + n);
         return n;
     }
 
     public int send(ByteBuffer src, SocketAddress target)
-        throws IOException
+            throws IOException
     {
         if (src == null)
             throw new NullPointerException();
@@ -461,13 +450,13 @@ class DatagramChannelImpl
                             sm.checkMulticast(ia);
                         } else {
                             sm.checkConnect(ia.getHostAddress(),
-                                            isa.getPort());
+                                    isa.getPort());
                         }
                     }
                 } else { // Connected case; Check address then write
                     if (!target.equals(remoteAddress)) {
                         throw new IllegalArgumentException(
-                            "Connected address not equal to target address");
+                                "Connected address not equal to target address");
                     }
                     return write(src);
                 }
@@ -500,7 +489,7 @@ class DatagramChannelImpl
     }
 
     private int send(FileDescriptor fd, ByteBuffer src, InetSocketAddress target)
-        throws IOException
+            throws IOException
     {
         if (src instanceof DirectBuffer)
             return sendFromNativeBuffer(fd, src, target);
@@ -530,8 +519,8 @@ class DatagramChannelImpl
     }
 
     private int sendFromNativeBuffer(FileDescriptor fd, ByteBuffer bb,
-                                     InetSocketAddress target)
-        throws IOException
+            InetSocketAddress target)
+            throws IOException
     {
         int pos = bb.position();
         int lim = bb.limit();
@@ -542,7 +531,7 @@ class DatagramChannelImpl
         int written;
         try {
             written = send0(preferIPv6, fd, ((DirectBuffer)bb).address() + pos,
-                            rem, target.getAddress(), target.getPort());
+                    rem, target.getAddress(), target.getPort());
         } catch (PortUnreachableException pue) {
             if (isConnected())
                 throw pue;
@@ -581,7 +570,7 @@ class DatagramChannelImpl
     }
 
     public long read(ByteBuffer[] dsts, int offset, int length)
-        throws IOException
+            throws IOException
     {
         if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
             throw new IndexOutOfBoundsException();
@@ -637,7 +626,7 @@ class DatagramChannelImpl
     }
 
     public long write(ByteBuffer[] srcs, int offset, int length)
-        throws IOException
+            throws IOException
     {
         if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
             throw new IndexOutOfBoundsException();
@@ -746,11 +735,11 @@ class DatagramChannelImpl
                     SecurityManager sm = System.getSecurityManager();
                     if (sm != null)
                         sm.checkConnect(isa.getAddress().getHostAddress(),
-                                        isa.getPort());
+                                isa.getPort());
                     int n = Net.connect(family,
-                                        fd,
-                                        isa.getAddress(),
-                                        isa.getPort());
+                            fd,
+                            isa.getAddress(),
+                            isa.getPort());
                     if (n <= 0)
                         throw new Error();      // Can't happen
 
@@ -776,7 +765,7 @@ class DatagramChannelImpl
                             }
                             do {
                                 tmpBuf.clear();
-                            } while (read(tmpBuf) > 0);
+                            } while (receive(tmpBuf) != null);
                         } finally {
                             if (blocking) {
                                 configureBlocking(true);
@@ -799,7 +788,7 @@ class DatagramChannelImpl
                     SecurityManager sm = System.getSecurityManager();
                     if (sm != null)
                         sm.checkConnect(isa.getAddress().getHostAddress(),
-                                        isa.getPort());
+                                isa.getPort());
                     boolean isIPv6 = (family == StandardProtocolFamily.INET6);
                     disconnect0(fd, isIPv6);
                     remoteAddress = null;
@@ -818,9 +807,9 @@ class DatagramChannelImpl
      * optional source address.
      */
     private MembershipKey innerJoin(InetAddress group,
-                                    NetworkInterface interf,
-                                    InetAddress source)
-        throws IOException
+            NetworkInterface interf,
+            InetAddress source)
+            throws IOException
     {
         if (!group.isMulticastAddress())
             throw new IllegalArgumentException("Group not a multicast address");
@@ -866,7 +855,7 @@ class DatagramChannelImpl
 
             MembershipKeyImpl key;
             if ((family == StandardProtocolFamily.INET6) &&
-                ((group instanceof Inet6Address) || Net.canJoin6WithIPv4Group()))
+                    ((group instanceof Inet6Address) || Net.canJoin6WithIPv4Group()))
             {
                 int index = interf.getIndex();
                 if (index == -1)
@@ -875,7 +864,7 @@ class DatagramChannelImpl
                 // need multicast and source address as byte arrays
                 byte[] groupAddress = Net.inet6AsByteArray(group);
                 byte[] sourceAddress = (source == null) ? null :
-                    Net.inet6AsByteArray(source);
+                        Net.inet6AsByteArray(source);
 
                 // join the group
                 int n = Net.join6(fd, groupAddress, index, sourceAddress);
@@ -883,7 +872,7 @@ class DatagramChannelImpl
                     throw new UnsupportedOperationException();
 
                 key = new MembershipKeyImpl.Type6(this, group, interf, source,
-                                                  groupAddress, index, sourceAddress);
+                        groupAddress, index, sourceAddress);
 
             } else {
                 // need IPv4 address to identify interface
@@ -901,7 +890,7 @@ class DatagramChannelImpl
                     throw new UnsupportedOperationException();
 
                 key = new MembershipKeyImpl.Type4(this, group, interf, source,
-                                                  groupAddress, targetAddress, sourceAddress);
+                        groupAddress, targetAddress, sourceAddress);
             }
 
             registry.add(key);
@@ -911,17 +900,17 @@ class DatagramChannelImpl
 
     @Override
     public MembershipKey join(InetAddress group,
-                              NetworkInterface interf)
-        throws IOException
+            NetworkInterface interf)
+            throws IOException
     {
         return innerJoin(group, interf, null);
     }
 
     @Override
     public MembershipKey join(InetAddress group,
-                              NetworkInterface interf,
-                              InetAddress source)
-        throws IOException
+            NetworkInterface interf,
+            InetAddress source)
+            throws IOException
     {
         if (source == null)
             throw new NullPointerException("source address is null");
@@ -939,12 +928,12 @@ class DatagramChannelImpl
             try {
                 if (key instanceof MembershipKeyImpl.Type6) {
                     MembershipKeyImpl.Type6 key6 =
-                        (MembershipKeyImpl.Type6)key;
+                            (MembershipKeyImpl.Type6)key;
                     Net.drop6(fd, key6.groupAddress(), key6.index(), key6.source());
                 } else {
                     MembershipKeyImpl.Type4 key4 = (MembershipKeyImpl.Type4)key;
                     Net.drop4(fd, key4.groupAddress(), key4.interfaceAddress(),
-                        key4.source());
+                            key4.source());
                 }
             } catch (IOException ioe) {
                 // should not happen
@@ -961,7 +950,7 @@ class DatagramChannelImpl
      * datagrams.
      */
     void block(MembershipKeyImpl key, InetAddress source)
-        throws IOException
+            throws IOException
     {
         assert key.channel() == this;
         assert key.sourceAddress() == null;
@@ -978,15 +967,15 @@ class DatagramChannelImpl
 
             int n;
             if (key instanceof MembershipKeyImpl.Type6) {
-                 MembershipKeyImpl.Type6 key6 =
-                    (MembershipKeyImpl.Type6)key;
+                MembershipKeyImpl.Type6 key6 =
+                        (MembershipKeyImpl.Type6)key;
                 n = Net.block6(fd, key6.groupAddress(), key6.index(),
-                               Net.inet6AsByteArray(source));
+                        Net.inet6AsByteArray(source));
             } else {
                 MembershipKeyImpl.Type4 key4 =
-                    (MembershipKeyImpl.Type4)key;
+                        (MembershipKeyImpl.Type4)key;
                 n = Net.block4(fd, key4.groupAddress(), key4.interfaceAddress(),
-                               Net.inet4AsInt(source));
+                        Net.inet4AsInt(source));
             }
             if (n == IOStatus.UNAVAILABLE) {
                 // ancient kernel
@@ -1009,14 +998,14 @@ class DatagramChannelImpl
             try {
                 if (key instanceof MembershipKeyImpl.Type6) {
                     MembershipKeyImpl.Type6 key6 =
-                        (MembershipKeyImpl.Type6)key;
+                            (MembershipKeyImpl.Type6)key;
                     Net.unblock6(fd, key6.groupAddress(), key6.index(),
-                                 Net.inet6AsByteArray(source));
+                            Net.inet6AsByteArray(source));
                 } else {
                     MembershipKeyImpl.Type4 key4 =
-                        (MembershipKeyImpl.Type4)key;
+                            (MembershipKeyImpl.Type4)key;
                     Net.unblock4(fd, key4.groupAddress(), key4.interfaceAddress(),
-                                 Net.inet4AsInt(source));
+                            Net.inet4AsInt(source));
                 }
             } catch (IOException ioe) {
                 // should not happen
@@ -1069,31 +1058,30 @@ class DatagramChannelImpl
      * Translates native poll revent set into a ready operation set
      */
     public boolean translateReadyOps(int ops, int initialOps,
-                                     SelectionKeyImpl sk) {
+            SelectionKeyImpl sk) {
         int intOps = sk.nioInterestOps(); // Do this just once, it synchronizes
         int oldOps = sk.nioReadyOps();
         int newOps = initialOps;
 
-        if ((ops & PollArrayWrapper.POLLNVAL) != 0) {
+        if ((ops & Net.POLLNVAL) != 0) {
             // This should only happen if this channel is pre-closed while a
             // selection operation is in progress
             // ## Throw an error if this channel has not been pre-closed
             return false;
         }
 
-        if ((ops & (PollArrayWrapper.POLLERR
-                    | PollArrayWrapper.POLLHUP)) != 0) {
+        if ((ops & (Net.POLLERR | Net.POLLHUP)) != 0) {
             newOps = intOps;
             sk.nioReadyOps(newOps);
             return (newOps & ~oldOps) != 0;
         }
 
-        if (((ops & PollArrayWrapper.POLLIN) != 0) &&
-            ((intOps & SelectionKey.OP_READ) != 0))
+        if (((ops & Net.POLLIN) != 0) &&
+                ((intOps & SelectionKey.OP_READ) != 0))
             newOps |= SelectionKey.OP_READ;
 
-        if (((ops & PollArrayWrapper.POLLOUT) != 0) &&
-            ((intOps & SelectionKey.OP_WRITE) != 0))
+        if (((ops & Net.POLLOUT) != 0) &&
+                ((intOps & SelectionKey.OP_WRITE) != 0))
             newOps |= SelectionKey.OP_WRITE;
 
         sk.nioReadyOps(newOps);
@@ -1108,6 +1096,28 @@ class DatagramChannelImpl
         return translateReadyOps(ops, 0, sk);
     }
 
+    // package-private
+    int poll(int events, long timeout) throws IOException {
+        assert Thread.holdsLock(blockingLock()) && !isBlocking();
+
+        synchronized (readLock) {
+            int n = 0;
+            try {
+                begin();
+                synchronized (stateLock) {
+                    if (!isOpen())
+                        return 0;
+                    readerThread = NativeThread.current();
+                }
+                n = Net.poll(fd, events, timeout);
+            } finally {
+                readerThread = 0;
+                end(n > 0);
+            }
+            return n;
+        }
+    }
+
     /**
      * Translates an interest operation set into a native poll event set
      */
@@ -1115,11 +1125,11 @@ class DatagramChannelImpl
         int newOps = 0;
 
         if ((ops & SelectionKey.OP_READ) != 0)
-            newOps |= PollArrayWrapper.POLLIN;
+            newOps |= Net.POLLIN;
         if ((ops & SelectionKey.OP_WRITE) != 0)
-            newOps |= PollArrayWrapper.POLLOUT;
+            newOps |= Net.POLLOUT;
         if ((ops & SelectionKey.OP_CONNECT) != 0)
-            newOps |= PollArrayWrapper.POLLIN;
+            newOps |= Net.POLLIN;
         sk.selector.putEventOps(sk, newOps);
     }
 
@@ -1137,15 +1147,15 @@ class DatagramChannelImpl
     private static native void initIDs();
 
     private static native void disconnect0(FileDescriptor fd, boolean isIPv6)
-        throws IOException;
+            throws IOException;
 
     private native int receive0(FileDescriptor fd, long address, int len,
-                                boolean connected)
-        throws IOException;
+            boolean connected)
+            throws IOException;
 
     private native int send0(boolean preferIPv6, FileDescriptor fd, long address,
-                             int len, InetAddress addr, int port)
-        throws IOException;
+            int len, InetAddress addr, int port)
+            throws IOException;
 
     static {
         initIDs();
