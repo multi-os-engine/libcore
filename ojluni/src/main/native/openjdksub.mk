@@ -75,6 +75,7 @@ LOCAL_SRC_FILES := \
     Character.cpp \
     Register.cpp \
     socket_tagger_util.cpp \
+    ExtendedOptionsImpl.c \
 
 LOCAL_C_INCLUDES += \
        libcore/$(srcdir) \

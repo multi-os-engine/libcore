@@ -100,6 +100,7 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/lang/annotation/ElementType.java \
     ojluni/src/main/java/java/lang/annotation/IncompleteAnnotationException.java \
     ojluni/src/main/java/java/lang/annotation/Inherited.java \
+    ojluni/src/main/java/java/lang/annotation/Native.java \
     ojluni/src/main/java/java/lang/annotation/Retention.java \
     ojluni/src/main/java/java/lang/annotation/Repeatable.java \
     ojluni/src/main/java/java/lang/annotation/RetentionPolicy.java \
@@ -1153,6 +1154,12 @@ openjdk_java_files := \
     ojluni/src/main/java/java/util/spi/LocaleNameProvider.java \
     ojluni/src/main/java/java/util/spi/LocaleServiceProvider.java \
     ojluni/src/main/java/java/util/spi/TimeZoneNameProvider.java \
+    ojluni/src/main/java/jdk/net/ExtendedSocketOptions.java \
+    ojluni/src/main/java/jdk/net/NetworkPermission.java \
+    ojluni/src/main/java/jdk/net/NetworkPermission.java \
+    ojluni/src/main/java/jdk/net/SocketFlow.java \
+    ojluni/src/main/java/jdk/net/Sockets.java \
+    ojluni/src/main/java/jdk/net/package-info.java \
     ojluni/src/main/java/sun/misc/ASCIICaseInsensitiveComparator.java \
     ojluni/src/main/java/sun/misc/BASE64Decoder.java \
     ojluni/src/main/java/sun/misc/BASE64Encoder.java \
@@ -1169,6 +1176,7 @@ openjdk_java_files := \
     ojluni/src/main/java/sun/misc/FpUtils.java \
     ojluni/src/main/java/sun/misc/Hashing.java \
     ojluni/src/main/java/sun/misc/HexDumpEncoder.java \
+    ojluni/src/main/java/sun/misc/InnocuousThread.java \
     ojluni/src/main/java/sun/misc/InvalidJarIndexException.java \
     ojluni/src/main/java/sun/misc/IoTrace.java \
     ojluni/src/main/java/sun/misc/IOUtils.java \
@@ -1192,6 +1200,7 @@ openjdk_java_files := \
     ojluni/src/main/java/sun/misc/VM.java \
     ojluni/src/main/java/sun/net/ApplicationProxy.java \
     ojluni/src/main/java/sun/net/ConnectionResetException.java \
+    ojluni/src/main/java/sun/net/ExtendedOptionsImpl.java \
     ojluni/src/main/java/sun/net/ftp/FtpClient.java \
     ojluni/src/main/java/sun/net/ftp/FtpClientProvider.java \
     ojluni/src/main/java/sun/net/ftp/FtpDirEntry.java \
@@ -1286,7 +1295,6 @@ openjdk_java_files := \
     ojluni/src/main/java/sun/nio/ch/AsynchronousFileChannelImpl.java \
     ojluni/src/main/java/sun/nio/ch/AsynchronousServerSocketChannelImpl.java \
     ojluni/src/main/java/sun/nio/ch/AsynchronousSocketChannelImpl.java \
-    ojluni/src/main/java/sun/nio/ch/BsdAsynchronousChannelProvider.java \
     ojluni/src/main/java/sun/nio/ch/Cancellable.java \
     ojluni/src/main/java/sun/nio/ch/ChannelInputStream.java \
     ojluni/src/main/java/sun/nio/ch/CompletedFuture.java \
