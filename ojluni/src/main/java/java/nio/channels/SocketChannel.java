@@ -120,6 +120,9 @@ public abstract class SocketChannel
 
     /**
      * Initializes a new instance of this class.
+     *
+     * @param  provider
+     *         The provider that created this channel
      */
     protected SocketChannel(SelectorProvider provider) {
         super(provider);
@@ -152,6 +155,8 @@ public abstract class SocketChannel
      *
      * @param  remote
      *         The remote address to which the new channel is to be connected
+     *
+     * @return  A new, and connected, socket channel
      *
      * @throws  AsynchronousCloseException
      *          If another thread closes this channel
@@ -222,6 +227,10 @@ public abstract class SocketChannel
      * @throws  UnsupportedAddressTypeException     {@inheritDoc}
      * @throws  ClosedChannelException              {@inheritDoc}
      * @throws  IOException                         {@inheritDoc}
+     * @throws  SecurityException
+     *          If a security manager has been installed and its
+     *          {@link SecurityManager#checkListen checkListen} method denies
+     *          the operation
      *
      * @since 1.7
      */
@@ -492,5 +501,26 @@ public abstract class SocketChannel
     public final long write(ByteBuffer[] srcs) throws IOException {
         return write(srcs, 0, srcs.length);
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * If there is a security manager set, its {@code checkConnect} method is
+     * called with the local address and {@code -1} as its arguments to see
+     * if the operation is allowed. If the operation is not allowed,
+     * a {@code SocketAddress} representing the
+     * {@link java.net.InetAddress#getLoopbackAddress loopback} address and the
+     * local port of the channel's socket is returned.
+     *
+     * @return  The {@code SocketAddress} that the socket is bound to, or the
+     *          {@code SocketAddress} representing the loopback address if
+     *          denied by the security manager, or {@code null} if the
+     *          channel's socket is not bound
+     *
+     * @throws  ClosedChannelException     {@inheritDoc}
+     * @throws  IOException                {@inheritDoc}
+     */
+    @Override
+    public abstract SocketAddress getLocalAddress() throws IOException;
 
 }
