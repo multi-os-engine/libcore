@@ -140,7 +140,10 @@ public abstract class SelectableChannel
 
     /**
      * Retrieves the key representing the channel's registration with the given
-     * selector.  </p>
+     * selector.
+     *
+     * @param   sel
+     *          The selector
      *
      * @return  The key returned when this channel was last registered with the
      *          given selector, or <tt>null</tt> if this channel is not

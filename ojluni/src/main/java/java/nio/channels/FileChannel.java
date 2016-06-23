@@ -229,7 +229,7 @@ public abstract class FileChannel
      *   written synchronously to the underlying storage device. (see <a
      *   href="../file/package-summary.html#integrity"> Synchronized I/O file
      *   integrity</a>). </td>
-     * <tr>
+     * </tr>
      * <tr>
      *   <td> {@link StandardOpenOption#DSYNC DSYNC} </td>
      *   <td> Requires that every update to the file's content be written
@@ -287,6 +287,7 @@ public abstract class FileChannel
         return provider.newFileChannel(path, options, attrs);
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"}) // generic array construction
     private static final FileAttribute<?>[] NO_ATTRIBUTES = new FileAttribute[0];
 
     /**
