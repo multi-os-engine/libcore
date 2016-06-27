@@ -2183,11 +2183,17 @@ class Thread implements Runnable {
          * spuriously return for any reason, and this situation
          * can safely be construed as just such a spurious return.
          */
-        long delayMillis = time - System.currentTimeMillis();
-
-        if (delayMillis <= 0) {
+        final long currentTime = System.currentTimeMillis();
+        if (time <= currentTime) {
             parkState = ParkState.UNPARKED;
         } else {
+            long delayMillis = time - currentTime;
+            // Long.MAX_VALUE / NANOS_PER_MILLI (0x8637BD05SF6) is the largest
+            // long value that won't overflow to negative value when
+            // multiplyed by NANOS_PER_MILLI (10^6).
+            if (delayMillis > (Long.MAX_VALUE / NANOS_PER_MILLI)) {
+                delayMillis = (Long.MAX_VALUE / NANOS_PER_MILLI);
+            }
             parkFor$(delayMillis * NANOS_PER_MILLI);
         }
         }
