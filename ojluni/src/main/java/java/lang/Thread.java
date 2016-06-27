@@ -2185,7 +2185,10 @@ class Thread implements Runnable {
          */
         long delayMillis = time - System.currentTimeMillis();
 
-        if (delayMillis <= 0) {
+        // Long.MAX_VALUE / NANOS_PER_MILLI (0x8637BD05SF6) is the largest
+        // long value that won't overflow to negative value when
+        // multiplyed by NANOS_PER_MILLI (10^6).
+        if (delayMillis <= 0 || delayMillis > (Long.MAX_VALUE / NANOS_PER_MILLI)) {
             parkState = ParkState.UNPARKED;
         } else {
             parkFor$(delayMillis * NANOS_PER_MILLI);
