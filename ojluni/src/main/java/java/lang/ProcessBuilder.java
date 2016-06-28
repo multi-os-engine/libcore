@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +64,7 @@ import java.util.Map;
  * working directory of the current process, usually the directory
  * named by the system property {@code user.dir}.
  *
- * <li><a name="redirect-input">a source of <i>standard input</i>.
+ * <li><a name="redirect-input">a source of <i>standard input</i></a>.
  * By default, the subprocess reads input from a pipe.  Java code
  * can access this pipe via the output stream returned by
  * {@link Process#getOutputStream()}.  However, standard input may
@@ -81,7 +80,7 @@ import java.util.Map;
  * </ul>
  *
  * <li><a name="redirect-output">a destination for <i>standard output</i>
- * and <i>standard error</i>.  By default, the subprocess writes standard
+ * and <i>standard error</i></a>.  By default, the subprocess writes standard
  * output and standard error to pipes.  Java code can access these pipes
  * via the input streams returned by {@link Process#getInputStream()} and
  * {@link Process#getErrorStream()}.  However, standard output and
@@ -554,6 +553,7 @@ public final class ProcessBuilder
          * Redirect.from(file).type() == Redirect.Type.READ
          * }</pre>
          *
+         * @param file The {@code File} for the {@code Redirect}.
          * @throws NullPointerException if the specified file is null
          * @return a redirect to read from the specified file
          */
@@ -580,6 +580,7 @@ public final class ProcessBuilder
          * Redirect.to(file).type() == Redirect.Type.WRITE
          * }</pre>
          *
+         * @param file The {@code File} for the {@code Redirect}.
          * @throws NullPointerException if the specified file is null
          * @return a redirect to write to the specified file
          */
@@ -610,6 +611,7 @@ public final class ProcessBuilder
          * Redirect.appendTo(file).type() == Redirect.Type.APPEND
          * }</pre>
          *
+         * @param file The {@code File} for the {@code Redirect}.
          * @throws NullPointerException if the specified file is null
          * @return a redirect to append to the specified file
          */
@@ -1012,11 +1014,16 @@ public final class ProcessBuilder
         String prog = cmdarray[0];
 
         SecurityManager security = System.getSecurityManager();
-        if (security != null) {
+        if (security != null)
             security.checkExec(prog);
-        }
 
         String dir = directory == null ? null : directory.toString();
+
+        for (int i = 1; i < cmdarray.length; i++) {
+            if (cmdarray[i].indexOf('\u0000') >= 0) {
+                throw new IOException("invalid null character in command");
+            }
+        }
 
         try {
             return ProcessImpl.start(cmdarray,
@@ -1031,9 +1038,9 @@ public final class ProcessBuilder
                 // Can not disclose the fail reason for read-protected files.
                 try {
                     security.checkRead(prog);
-                } catch (AccessControlException ace) {
+                } catch (SecurityException se) {
                     exceptionInfo = "";
-                    cause = ace;
+                    cause = se;
                 }
             }
             // It's much easier for us to create a high-quality error
