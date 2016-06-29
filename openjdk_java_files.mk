@@ -1174,6 +1174,7 @@ openjdk_java_files := \
     ojluni/src/main/java/sun/misc/FpUtils.java \
     ojluni/src/main/java/sun/misc/Hashing.java \
     ojluni/src/main/java/sun/misc/HexDumpEncoder.java \
+    ojluni/src/main/java/sun/misc/InnocuousThread.java \
     ojluni/src/main/java/sun/misc/InvalidJarIndexException.java \
     ojluni/src/main/java/sun/misc/IoTrace.java \
     ojluni/src/main/java/sun/misc/IOUtils.java \
@@ -1278,7 +1279,6 @@ openjdk_java_files := \
     ojluni/src/main/java/sun/nio/ch/AsynchronousFileChannelImpl.java \
     ojluni/src/main/java/sun/nio/ch/AsynchronousServerSocketChannelImpl.java \
     ojluni/src/main/java/sun/nio/ch/AsynchronousSocketChannelImpl.java \
-    ojluni/src/main/java/sun/nio/ch/BsdAsynchronousChannelProvider.java \
     ojluni/src/main/java/sun/nio/ch/Cancellable.java \
     ojluni/src/main/java/sun/nio/ch/ChannelInputStream.java \
     ojluni/src/main/java/sun/nio/ch/CompletedFuture.java \
