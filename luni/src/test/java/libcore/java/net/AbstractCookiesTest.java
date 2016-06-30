@@ -523,6 +523,7 @@ public abstract class AbstractCookiesTest extends TestCase {
 
         try {
             cookieStore.add(null, cookieA);
+            fail();
         } catch (NullPointerException expected) {
             // the RI crashes even though the cookie does get added to the store; sigh
             expected.printStackTrace();
@@ -530,6 +531,7 @@ public abstract class AbstractCookiesTest extends TestCase {
         assertEquals(Arrays.asList(cookieA), cookieStore.getCookies());
         try {
             cookieStore.add(null, cookieB);
+            fail();
         } catch (NullPointerException expected) {
         }
         assertEquals(Arrays.asList(cookieA, cookieB), cookieStore.getCookies());

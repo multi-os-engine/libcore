@@ -1927,7 +1927,7 @@ public class CollectionsTest extends junit.framework.TestCase {
 
         try {
             c.removeIf(x -> true);
-            fail("Allowed modification of set");
+            fail("Allowed wmodification of set");
         } catch (UnsupportedOperationException expected) {}
     }
 
