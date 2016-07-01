@@ -38,6 +38,15 @@ class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         init();
     }
 
+    protected void socketSetOption(int opt, Object val) throws SocketException {
+        try {
+            socketSetOption0(opt, val);
+        } catch (SocketException se) {
+            if (!connected)
+                throw se;
+        }
+    }
+
     protected synchronized native void bind0(int lport, InetAddress laddr)
         throws SocketException;
 
@@ -68,7 +77,7 @@ class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 
     protected native void datagramSocketClose();
 
-    protected native void socketSetOption(int opt, Object val)
+    protected native void socketSetOption0(int opt, Object val)
         throws SocketException;
 
     protected native Object socketGetOption(int opt) throws SocketException;
