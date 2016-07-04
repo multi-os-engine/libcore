@@ -164,6 +164,9 @@ public class HttpCookieTest extends TestCase {
 
         match = HttpCookie.domainMatches(null, "b.a.AJAX.com");
         assertFalse(match);
+
+        match = HttpCookie.domainMatches("foo.local", "foo");
+        assertTrue(match);
     }
 
     /**
