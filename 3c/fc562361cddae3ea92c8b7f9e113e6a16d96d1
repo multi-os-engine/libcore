@@ -1,0 +1,8 @@
+Presubmit-Verified+1: Treehugger Robot <treehugger-gerrit@google.com>
+Code-Review+2: Przemyslaw Szczepaniak <pszczepaniak@google.com>
+Verified+1: Yi Kong <yikong@google.com>
+Submitted-by: Yi Kong <yikong@google.com>
+Submitted-at: Mon, 04 Jul 2016 10:52:03 +0000
+Reviewed-on: https://android-review.googlesource.com/245050
+Project: platform/libcore
+Branch: refs/heads/master
