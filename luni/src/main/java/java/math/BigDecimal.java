@@ -937,11 +937,22 @@ public class BigDecimal extends Number implements Comparable<BigDecimal>, Serial
         }
         /* Let be: this = [u1,s1] and multiplicand = [u2,s2] so:
          * this x multiplicand = [ s1 * s2 , s1 + s2 ] */
-        if(this.bitLength + multiplicand.bitLength < 64) {
-            return valueOf(this.smallValue*multiplicand.smallValue, safeLongToInt(newScale));
+
+        // unscaled result using long arithmetic
+        long resultSmallValueForFastPath = this.smallValue * multiplicand.smallValue;
+        // whether long (rather than BigInteger) arithmetic is sufficient
+        boolean isFastPath = (this.bitLength + multiplicand.bitLength < 64) &&
+                // Avoid the case where result's unscaled value should be +2^63 but
+                // fast path resultSmallValueForFastPath overflowed to -2^63. b/19185440
+                ((resultSmallValueForFastPath != Long.MIN_VALUE) ||
+                        Math.signum(smallValue) * Math.signum(multiplicand.smallValue) < 0);
+        if (isFastPath) {
+            return valueOf(resultSmallValueForFastPath, safeLongToInt(newScale));
+        } else {
+            BigInteger resultUnscaledValue = this.getUnscaledValue().multiply(
+                    multiplicand.getUnscaledValue());
+            return new BigDecimal(resultUnscaledValue, safeLongToInt(newScale));
         }
-        return new BigDecimal(this.getUnscaledValue().multiply(
-                multiplicand.getUnscaledValue()), safeLongToInt(newScale));
     }
 
     /**
