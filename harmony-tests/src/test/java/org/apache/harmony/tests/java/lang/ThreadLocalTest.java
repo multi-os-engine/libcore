@@ -147,4 +147,50 @@ public class ThreadLocalTest extends TestCase {
                 THREADVALUE.result);
 
     }
+
+    /**
+     * java.lang.ThreadLocal#withInitial()
+     */
+    public void test_withInitial() {
+        // The ThreadLocal has to run once for each thread that touches the
+        // ThreadLocal
+        final Object INITIAL_VALUE = "'foo'";
+        final Object OTHER_VALUE = "'bar'";
+        final ThreadLocal<Object> l1 = ThreadLocal.withInitial(() -> INITIAL_VALUE);
+
+        assertTrue("ThreadLocal's initial value should be " + INITIAL_VALUE
+                + " but is " + l1.get(), l1.get() == INITIAL_VALUE);
+
+        l1.set(OTHER_VALUE);
+        assertTrue("ThreadLocal's value should be " + OTHER_VALUE
+                + " but is " + l1.get(), l1.get() == OTHER_VALUE);
+
+
+        // We need this because inner types cannot assign to variables in
+        // container method. But assigning to object slots in the container
+        // method is ok.
+        class ResultSlot {
+            public Object result = null;
+        }
+
+        final ResultSlot THREADVALUE = new ResultSlot();
+        Thread t = new Thread() {
+            @Override
+            public void run() {
+                THREADVALUE.result = l1.get();
+            }
+        };
+
+        // Wait for the other Thread assign what it observes as the value of the
+        // variable
+        t.start();
+        try {
+            t.join();
+        } catch (InterruptedException ie) {
+            fail("Interrupted!!");
+        }
+
+        assertTrue("ThreadLocal's initial value in other Thread should be "
+                + INITIAL_VALUE, THREADVALUE.result == INITIAL_VALUE);
+    }
 }
