@@ -352,8 +352,8 @@ public class ChoiceFormat extends NumberFormat {
     /**
      * Get the limits passed in the constructor.
      *
-     * <p>The contents of the array are the same as the array passed into the constructor but the
-     * array will not be the same array.
+     * <p>Returns a copy of the array supplied to the constructor or the most recent call to
+     * {@link #setChoices(double[], String[])}.
      *
      * @return the limits.
      */
@@ -365,8 +365,8 @@ public class ChoiceFormat extends NumberFormat {
     /**
      * Get the formats passed in the constructor.
      *
-     * <p>The contents of the array are the same as the array passed into the constructor but the
-     * array will not be the same array.
+     * <p>Returns a copy of the array supplied to the constructor or the most recent call to
+     * {@link #setChoices(double[], String[])}.
      *
      * @return the formats.
      */
