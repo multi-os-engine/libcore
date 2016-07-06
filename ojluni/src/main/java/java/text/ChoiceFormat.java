@@ -352,10 +352,8 @@ public class ChoiceFormat extends NumberFormat {
     /**
      * Get the limits passed in the constructor.
      *
-     * <p>The contents of the array are the same as the array passed into the constructor but the
-     * array will not be the same array.
-     *
-     * @return the limits.
+     * @return a copy of the double[] array supplied to the constructor or the most recent call to
+     * {@link #setChoices(double[], String[])}.
      */
     public double[] getLimits() {
         double[] newLimits = Arrays.copyOf(choiceLimits, choiceLimits.length);
@@ -365,10 +363,8 @@ public class ChoiceFormat extends NumberFormat {
     /**
      * Get the formats passed in the constructor.
      *
-     * <p>The contents of the array are the same as the array passed into the constructor but the
-     * array will not be the same array.
-     *
-     * @return the formats.
+     * @return a copy of the String[] array supplied to the constructor or the most recent call to
+     * {@link #setChoices(double[], String[])}.
      */
     public Object[] getFormats() {
         Object[] newFormats = Arrays.copyOf(choiceFormats, choiceFormats.length);
