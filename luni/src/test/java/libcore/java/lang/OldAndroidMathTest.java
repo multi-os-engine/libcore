@@ -101,13 +101,40 @@ public class OldAndroidMathTest extends TestCase {
         double answer = Math.tan(Math.atan(1.0));
         assertTrue("Returned incorrect arc tangent: " + answer, answer <= 1.0
                 && answer >= 9.9999999999999983E-1);
+
+        double negativeZero = Math.copySign(0d, -1d);
+        assertEquals("wrong atan(1)", Math.PI / 4, Math.atan(1d), 0);
+        assertEquals("wrong atan(-1)", -Math.PI / 4, Math.atan(-1), 0);
+        assertEquals("wrong atan(+INF)", Math.PI / 2, Math.atan(Double.POSITIVE_INFINITY), 0);
+        assertEquals("wrong atan(-INF)", -Math.PI / 2, Math.atan(Double.NEGATIVE_INFINITY), 0);
+        assertEquals("wrong atan(0)", 0, Math.atan(0d), 0);
+        assertTrue("Wrong sign for atan(0)",
+                Math.copySign(1, Math.atan(0d)) == 1);
+        assertEquals("wrong atan(-0)", negativeZero, Math.atan(negativeZero), 0);
+        assertTrue("Wrong sign for atan(-1)",
+                Math.copySign(1, Math.atan(negativeZero)) == -1);
     }
 
     public void testAtan2DD() {
-        // Test for method double java.lang.Math.atan2(double, double)
-        double answer = Math.atan(Math.tan(1.0));
-        assertTrue("Returned incorrect arc tangent: " + answer, answer <= 1.0
-                && answer >= 9.9999999999999983E-1);
+        assertEquals("wrong atan2(0, 1)", 0, Math.atan2(0, 1), 0);
+        assertEquals("wrong atan2(1, 1)", Math.PI / 4, Math.atan2(1, 1), 0);
+        assertEquals("wrong atan2(1, 0)", Math.PI / 2, Math.atan2(1, 0), 0);
+        assertEquals("wrong atan2(1, -1)", 3 * Math.PI / 4, Math.atan2(1, -1), 0);
+        assertEquals("wrong atan2(0, -1)", Math.PI, Math.atan2(0, -1), 0);
+        assertEquals("wrong atan2(-1, -1)", -3 * Math.PI / 4, Math.atan2(-1, -1), 0);
+        assertEquals("wrong atan2(-1, 0)", -Math.PI / 2, Math.atan2(-1, 0), 0);
+        assertEquals("wrong atan2(-1, 1)", -Math.PI / 4, Math.atan2(-1, 1), 0);
+
+        // zeroe values
+        double negativeZero = Math.copySign(0d, -1d);
+        assertEquals("wrong atan2(+0, +0)", 0, Math.atan2(+0, +0), 0);
+        assertTrue("Wrong sign for atan2(+0, +0)",
+                Math.copySign(1, Math.atan2(+0, +0)) == 1);;
+        assertEquals("wrong atan2(+0, -0)", Math.PI, Math.atan2(+0, negativeZero), 0);
+        assertEquals("wrong atan2(-0, +0)", -0, Math.atan2(negativeZero, +0), 0);
+        assertTrue("Wrong sign for atan2(-0, +0)",
+                Math.copySign(1, Math.atan2(negativeZero, +0)) == -1);
+        assertEquals("wrong atan2(-0, -0)", -Math.PI, Math.atan2(negativeZero, negativeZero), 0);
     }
 
     public void testCbrtD() {
