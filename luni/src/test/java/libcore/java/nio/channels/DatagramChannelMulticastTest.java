@@ -90,7 +90,8 @@ public class DatagramChannelMulticastTest extends TestCase {
             boolean atLeastOneInterface = false;
             while (interfaces.hasMoreElements() && (atLeastOneInterface == false)) {
                 networkInterface1 = interfaces.nextElement();
-                if (willWorkForMulticast(networkInterface1)) {
+                if (willWorkForMulticast(networkInterface1)
+                        && willWorkForIPv6AndIPv4(networkInterface1)) {
                     atLeastOneInterface = true;
                 }
             }
@@ -1040,6 +1041,20 @@ public class DatagramChannelMulticastTest extends TestCase {
                 // explicitly here anyway.
                 && !iface.isLoopback() && iface.supportsMulticast()
                 && iface.getInetAddresses().hasMoreElements();
+    }
+
+    private static boolean willWorkForIPv6AndIPv4(NetworkInterface iface) {
+        boolean supportsIPv4 = false;
+        boolean supportsIPv6 = false;
+        for (InterfaceAddress interfaceAddress : iface.getInterfaceAddresses()) {
+            if (!supportsIPv4 && interfaceAddress.getAddress() instanceof Inet4Address) {
+                supportsIPv4 = true;
+            } else if (!supportsIPv6 && interfaceAddress.getAddress() instanceof Inet6Address) {
+                supportsIPv6 = true;
+            }
+            if (supportsIPv4 && supportsIPv6) break;
+        }
+        return supportsIPv4 && supportsIPv6;
     }
 
     private static void sendMulticastMessage(InetAddress group, int port, String msg)
