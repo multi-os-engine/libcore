@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,17 @@
 #endif
 
 
-#if defined(__linux__) || defined(MACOSX)
+/*
+   AIX needs a workaround for I/O cancellation, see:
+   http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/close.htm
+   ...
+   The close subroutine is blocked until all subroutines which use the file
+   descriptor return to usr space. For example, when a thread is calling close
+   and another thread is calling select with the same file descriptor, the
+   close subroutine does not return until the select call returns.
+   ...
+*/
+#if defined(__linux__) || defined(MACOSX) || defined (_AIX)
 extern int NET_Timeout(int s, long timeout);
 extern int NET_Read(int s, void* buf, size_t len);
 extern int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
@@ -104,10 +114,6 @@ void ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
                                            const char* hostname,
                                            int gai_error);
 
-/* do we have address translation support */
-
-extern jboolean NET_addrtransAvailable();
-
 #define NET_WAIT_READ   0x01
 #define NET_WAIT_WRITE  0x02
 #define NET_WAIT_CONNECT        0x04
@@ -150,7 +156,6 @@ extern jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
  *  Utilities
  */
 #ifdef __linux__
-extern int kernelIsV22();
 extern int kernelIsV24();
 #endif
 
