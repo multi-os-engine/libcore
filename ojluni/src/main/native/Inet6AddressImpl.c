@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,6 @@ static jclass ni_ia4cls;
 static jclass ni_ia6cls;
 static jmethodID ni_ia4ctrID;
 static jmethodID ni_ia6ctrID;
-static jfieldID ni_ia6ipaddressID;
-static int initialized = 0;
 
 /*
  * Class:     java_net_Inet6AddressImpl
@@ -85,44 +83,42 @@ Inet6AddressImpl_getHostByAddr0(JNIEnv *env, jobject this,
     int len = 0;
     jbyte caddr[16];
 
-    if (NET_addrtransAvailable()) {
-        struct sockaddr_in him4;
-        struct sockaddr_in6 him6;
-        struct sockaddr *sa;
+    struct sockaddr_in him4;
+    struct sockaddr_in6 him6;
+    struct sockaddr *sa;
 
+    /*
+     * For IPv4 addresses construct a sockaddr_in structure.
+     */
+    if ((*env)->GetArrayLength(env, addrArray) == 4) {
+        jint addr;
+        (*env)->GetByteArrayRegion(env, addrArray, 0, 4, caddr);
+        addr = ((caddr[0]<<24) & 0xff000000);
+        addr |= ((caddr[1] <<16) & 0xff0000);
+        addr |= ((caddr[2] <<8) & 0xff00);
+        addr |= (caddr[3] & 0xff);
+        memset((void *) &him4, 0, sizeof(him4));
+        him4.sin_addr.s_addr = (uint32_t) htonl(addr);
+        him4.sin_family = AF_INET;
+        sa = (struct sockaddr *) &him4;
+        len = sizeof(him4);
+    } else {
         /*
-         * For IPv4 addresses construct a sockaddr_in structure.
+         * For IPv6 address construct a sockaddr_in6 structure.
          */
-        if ((*env)->GetArrayLength(env, addrArray) == 4) {
-            jint addr;
-            (*env)->GetByteArrayRegion(env, addrArray, 0, 4, caddr);
-            addr = ((caddr[0]<<24) & 0xff000000);
-            addr |= ((caddr[1] <<16) & 0xff0000);
-            addr |= ((caddr[2] <<8) & 0xff00);
-            addr |= (caddr[3] & 0xff);
-            memset((void *) &him4, 0, sizeof(him4));
-            him4.sin_addr.s_addr = (uint32_t) htonl(addr);
-            him4.sin_family = AF_INET;
-            sa = (struct sockaddr *) &him4;
-            len = sizeof(him4);
-        } else {
-            /*
-             * For IPv6 address construct a sockaddr_in6 structure.
-             */
-            (*env)->GetByteArrayRegion(env, addrArray, 0, 16, caddr);
-            memset((void *) &him6, 0, sizeof(him6));
-            memcpy((void *)&(him6.sin6_addr), caddr, sizeof(struct in6_addr) );
-            him6.sin6_family = AF_INET6;
-            sa = (struct sockaddr *) &him6 ;
-            len = sizeof(him6) ;
-        }
+        (*env)->GetByteArrayRegion(env, addrArray, 0, 16, caddr);
+        memset((void *) &him6, 0, sizeof(him6));
+        memcpy((void *)&(him6.sin6_addr), caddr, sizeof(struct in6_addr) );
+        him6.sin6_family = AF_INET6;
+        sa = (struct sockaddr *) &him6 ;
+        len = sizeof(him6) ;
+    }
 
-        error = (*getnameinfo_ptr)(sa, len, host, NI_MAXHOST, NULL, 0,
-                                   NI_NAMEREQD);
+    error = getnameinfo(sa, len, host, NI_MAXHOST, NULL, 0,
+                        NI_NAMEREQD);
 
-        if (!error) {
-            ret = (*env)->NewStringUTF(env, host);
-        }
+    if (!error) {
+        ret = (*env)->NewStringUTF(env, host);
     }
 #endif /* AF_INET6 */
 
