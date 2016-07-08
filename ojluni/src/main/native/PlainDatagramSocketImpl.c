@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,14 @@
 #ifndef SO_BSDCOMPAT
 #define SO_BSDCOMPAT  14
 #endif
+/**
+ * IP_MULTICAST_ALL has been supported since kernel version 2.6.31
+ * but we may be building on a machine that is older than that.
+ */
+#ifndef IP_MULTICAST_ALL
+#define IP_MULTICAST_ALL      49
 #endif
+#endif  //  __linux__
 
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e
@@ -261,6 +268,7 @@ PlainDatagramSocketImpl_connect0(JNIEnv *env, jobject this,
     }
 
     setDefaultScopeID(env, (struct sockaddr *)&rmtaddr);
+
     if (JVM_Connect(fd, (struct sockaddr *)&rmtaddr, len) == -1) {
         NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException",
                         "Connect failed");
@@ -311,6 +319,7 @@ PlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject this, jint family) {
         int localPort = 0;
         if (JVM_GetSockName(fd, (struct sockaddr *)&addr, &len) == -1)
             return;
+
         localPort = NET_GetPortFromSockaddr((struct sockaddr *)&addr);
         if (localPort == 0) {
             localPort = (*env)->GetIntField(env, this, pdsi_localPortID);
@@ -322,8 +331,10 @@ PlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject this, jint family) {
             {
                 ((struct sockaddr_in*)&addr)->sin_port = htons(localPort);
             }
+
             NET_Bind(fd, (struct sockaddr *)&addr, len);
         }
+
 #endif
 #else
     JVM_Connect(fd, 0, 0);
@@ -503,6 +514,8 @@ PlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
         } else if (ret == JVM_IO_ERR) {
             if (errno == EBADF) {
                  JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
+            } else if (errno == ENOMEM) {
+                 JNU_ThrowOutOfMemoryError(env, "NET_Timeout native heap allocation failed");
             } else {
                  NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Peek failed");
             }
@@ -603,15 +616,18 @@ PlainDatagramSocketImpl_peekData(JNIEnv *env, jobject this,
                             "Receive timed out");
             return -1;
         } else if (ret == JVM_IO_ERR) {
+            if (errno == ENOMEM) {
+                JNU_ThrowOutOfMemoryError(env, "NET_Timeout native heap allocation failed");
 #ifdef __linux__
-            if (errno == EBADF) {
+            } else if (errno == EBADF) {
                 JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
             } else {
                 NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Receive failed");
-            }
 #else
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
+            } else {
+                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
 #endif
+            }
             return -1;
         } else if (ret == JVM_IO_INTR) {
             JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
@@ -822,15 +838,18 @@ PlainDatagramSocketImpl_receive0(JNIEnv *env, jobject this,
                     JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
                                     "Receive timed out");
                 } else if (ret == JVM_IO_ERR) {
+                     if (errno == ENOMEM) {
+                        JNU_ThrowOutOfMemoryError(env, "NET_Timeout native heap allocation failed");
 #ifdef __linux__
-                    if (errno == EBADF) {
+                     } else if (errno == EBADF) {
                          JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
                      } else {
                          NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Receive failed");
-                     }
 #else
-                     JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
+                     } else {
+                         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
 #endif
+                     }
                 } else if (ret == JVM_IO_INTR) {
                     JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
                                     "operation interrupted");
@@ -975,6 +994,18 @@ PlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
 #endif /* __APPLE__ */
 
      setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char*) &t, sizeof(int));
+
+#if defined(__linux__)
+     arg = 0;
+     int level = (domain == AF_INET6) ? IPPROTO_IPV6 : IPPROTO_IP;
+     if ((setsockopt(fd, level, IP_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
+         (errno != ENOPROTOOPT)) {
+         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+                         strerror(errno));
+         close(fd);
+         return;
+     }
+#endif
 
 #if defined (__linux__) && defined (AF_INET6)
     /*
@@ -1275,10 +1306,8 @@ PlainDatagramSocketImpl_socketSetOption(JNIEnv *env,
                                                       jobject value) {
     int fd;
     int level, optname, optlen;
-    union {
-        int i;
-        char c;
-    } optval;
+    int optval;
+    optlen = sizeof(int);
 
     /*
      * Check that socket hasn't been closed
@@ -1299,7 +1328,7 @@ PlainDatagramSocketImpl_socketSetOption(JNIEnv *env,
     }
 
     /*
-     * Setting the multicast interface handled seperately
+     * Setting the multicast interface handled separately
      */
     if (opt == java_net_SocketOptions_IP_MULTICAST_IF ||
         opt == java_net_SocketOptions_IP_MULTICAST_IF2) {
@@ -1338,8 +1367,7 @@ PlainDatagramSocketImpl_socketSetOption(JNIEnv *env,
                 fid =  (*env)->GetFieldID(env, cls, "value", "I");
                 CHECK_NULL(fid);
 
-                optval.i = (*env)->GetIntField(env, value, fid);
-                optlen = sizeof(optval.i);
+                optval = (*env)->GetIntField(env, value, fid);
                 break;
             }
 
@@ -1358,8 +1386,7 @@ PlainDatagramSocketImpl_socketSetOption(JNIEnv *env,
                 on = (*env)->GetBooleanField(env, value, fid);
 
                 /* SO_REUSEADDR or SO_BROADCAST */
-                optval.i = (on ? 1 : 0);
-                optlen = sizeof(optval.i);
+                optval = (on ? 1 : 0);
 
                 break;
             }
