@@ -82,6 +82,7 @@ public class CipherInputStream extends FilterInputStream {
     /* the buffer holding data that have been processed by the cipher
        engine, but have not been read out */
     private byte[] obuffer;
+
     // the offset pointing to the next "new" byte
     private int ostart = 0;
     // the offset pointing to the last "new" byte
@@ -104,25 +105,23 @@ public class CipherInputStream extends FilterInputStream {
         if (readin == -1) {
             done = true;
             try {
-                obuffer = cipher.doFinal();
+                ofinish = cipher.doFinal(obuffer, 0);
             }
-            catch (IllegalBlockSizeException e) {obuffer = null;}
-            catch (BadPaddingException e) {obuffer = null;}
-            if (obuffer == null)
+            catch (IllegalBlockSizeException e) {ofinish = -1;}
+            catch (ShortBufferException e) {ofinish = -1;}
+            catch (BadPaddingException e) {ofinish = -1;}
+            if (ofinish == -1)
                 return -1;
             else {
                 ostart = 0;
-                ofinish = obuffer.length;
                 return ofinish;
             }
         }
         try {
-            obuffer = cipher.update(ibuffer, 0, readin);
-        } catch (IllegalStateException e) {obuffer = null;};
+            ofinish = cipher.update(ibuffer, 0, readin, obuffer, 0);
+        } catch (IllegalStateException e) {ofinish = 0;}
+        catch (ShortBufferException e) {ofinish = 0;}
         ostart = 0;
-        if (obuffer == null)
-            ofinish = 0;
-        else ofinish = obuffer.length;
         return ofinish;
     }
 
@@ -139,6 +138,7 @@ public class CipherInputStream extends FilterInputStream {
         super(is);
         input = is;
         cipher = c;
+        obuffer = new byte[c.getOutputSize(ibuffer.length)];
     }
 
     /**
@@ -153,6 +153,7 @@ public class CipherInputStream extends FilterInputStream {
         super(is);
         input = is;
         cipher = new NullCipher();
+        obuffer = new byte[cipher.getOutputSize(ibuffer.length)];
     }
 
     /**
