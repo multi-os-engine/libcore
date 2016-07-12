@@ -347,14 +347,86 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
                                       epoint.getPort());
         }
         if (server == null) {
+            // This is the general case
+            // server is not null only when the socket was created with a
+            // specified proxy in which case it does bypass the ProxySelector
+            ProxySelector sel = java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<ProxySelector>() {
+                        public ProxySelector run() {
+                            return ProxySelector.getDefault();
+                        }
+                    });
+            if (sel == null) {
+                /*
+                 * No default proxySelector --> direct connection
+                 */
+                super.connect(epoint, remainingMillis(deadlineMillis));
+                return;
+            }
+            URI uri;
+            // Use getHostString() to avoid reverse lookups
+            String host = epoint.getHostString();
+            // IPv6 litteral?
+            if (epoint.getAddress() instanceof Inet6Address &&
+                    (!host.startsWith("[")) && (host.indexOf(":") >= 0)) {
+                host = "[" + host + "]";
+            }
+            try {
+                uri = new URI("socket://" + ParseUtil.encodePath(host) + ":"+ epoint.getPort());
+            } catch (URISyntaxException e) {
+                // This shouldn't happen
+                assert false : e;
+                uri = null;
+            }
+            Proxy p = null;
+            IOException savedExc = null;
+            java.util.Iterator<Proxy> iProxy = null;
+            iProxy = sel.select(uri).iterator();
+            if (iProxy == null || !(iProxy.hasNext())) {
+                super.connect(epoint, remainingMillis(deadlineMillis));
+                return;
+            }
+            while (iProxy.hasNext()) {
+                p = iProxy.next();
+                if (p == null || p.type() != Proxy.Type.SOCKS) {
+                    super.connect(epoint, remainingMillis(deadlineMillis));
+                    return;
+                }
+
+                if (!(p.address() instanceof InetSocketAddress))
+                    throw new SocketException("Unknown address type for proxy: " + p);
+                // Use getHostString() to avoid reverse lookups
+                server = ((InetSocketAddress) p.address()).getHostString();
+                serverPort = ((InetSocketAddress) p.address()).getPort();
+                if (p instanceof SocksProxy) {
+                    if (((SocksProxy)p).protocolVersion() == 4) {
+                        useV4 = true;
+                    }
+                }
+
+                // Connects to the SOCKS server
+                try {
+                    privilegedConnect(server, serverPort, remainingMillis(deadlineMillis));
+                    // Worked, let's get outta here
+                    break;
+                } catch (IOException e) {
+                    // Ooops, let's notify the ProxySelector
+                    sel.connectFailed(uri,p.address(),e);
+                    server = null;
+                    serverPort = -1;
+                    savedExc = e;
+                    // Will continue the while loop and try the next proxy
+                }
+            }
+
             /*
-             * Android-changed: Removed code that tried to establish proxy connection if
-             * ProxySelector#getDefault() is not null.
-             * This was never the case in previous android releases, was causing
-             * issues and therefore was removed.
+             * If server is still null at this point, none of the proxy
+             * worked
              */
-            super.connect(epoint, remainingMillis(deadlineMillis));
-            return;
+            if (server == null) {
+                throw new SocketException("Can't connect to SOCKS proxy:"
+                        + savedExc.getMessage());
+            }
         } else {
             // Connects to the SOCKS server
             try {
