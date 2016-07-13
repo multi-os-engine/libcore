@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -541,5 +542,42 @@ public class SocketTest extends junit.framework.TestCase {
         try {
             new SocketThatFailOnClose(InetAddress.getLocalHost(), 1, true);
         } catch(IOException expected) {}
+    }
+
+    // b/30007735
+    public void testSocketTestAllAddresses() throws Exception {
+        // Socket Ctor should try all sockets.
+        // This test creates a server socket bound to 127.0.0.1 or ::1 only, and resolve a hostname
+        // that resolves to both addresses. We should be able to connect to the server socket in
+        // either setup.
+        try (ServerSocket ss = new ServerSocket(9999, 0, Inet4Address.LOOPBACK)) {
+            new Thread(() -> {
+                try {
+                    ss.accept();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+
+            try(Socket sock = new Socket("loopback46.unittest.grpc.io", 9999)) {
+                // This hostname that resolves to 127.0.0.1 and ::1
+                assertTrue(sock.isConnected());
+            }
+        }
+
+        try (ServerSocket ss = new ServerSocket(9999, 0, Inet6Address.LOOPBACK)) {
+            new Thread(() -> {
+                try {
+                    ss.accept();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+
+            try(Socket sock = new Socket("loopback46.unittest.grpc.io", 9999)) {
+                // This hostname that resolves to 127.0.0.1 and ::1
+                assertTrue(sock.isConnected());
+            }
+        }
     }
 }
