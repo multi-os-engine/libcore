@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Field;
 import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -165,12 +166,38 @@ public class DateFormatSymbolsTest extends junit.framework.TestCase {
     public void test_setZoneStrings_checks_dimensions() throws Exception {
         DateFormatSymbols dfs = DateFormatSymbols.getInstance();
         String[][] zoneStrings = dfs.getZoneStrings();
-        zoneStrings[0] = new String[] { "id_only "};
+        zoneStrings[0] = new String[] { "id_only " };
         try {
             dfs.setZoneStrings(zoneStrings);
             fail("No IllegalArgumentException when setting incorrect zoneStrings");
         } catch (IllegalArgumentException e) {
             // expected
+        }
+    }
+
+    public void test_zoneStrings_are_lazy() {
+        DateFormatSymbols dfs = DateFormatSymbols.getInstance();
+
+        assertFalse("Newly created DFS should have no zoneStrings", hasZoneStringsValue(dfs));
+        dfs.hashCode();
+        assertFalse("hashCode() should not need zoneStrings", hasZoneStringsValue(dfs));
+        DateFormatSymbols otherDfs = DateFormatSymbols.getInstance();
+        dfs.equals(otherDfs);
+        assertFalse("equals() should usually not need zoneStrings", hasZoneStringsValue(dfs));
+        otherDfs.getZoneStrings();
+        assertTrue("getZoneStrings() needs zoneStrings", hasZoneStringsValue(otherDfs));
+        dfs.equals(otherDfs);
+        assertTrue("equals() needs zoneStrings when other object has them",
+                hasZoneStringsValue(dfs));
+    }
+
+    private boolean hasZoneStringsValue(DateFormatSymbols dfs) {
+        try {
+            Field field = DateFormatSymbols.class.getDeclaredField("zoneStrings");
+            field.setAccessible(true);
+            return field.get(dfs) != null;
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
         }
     }
 }
