@@ -39,6 +39,10 @@
 
 package java.text;
 
+import android.icu.text.TimeZoneFormat;
+import android.icu.text.TimeZoneNames;
+import android.icu.util.Output;
+
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -52,7 +56,6 @@ import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import libcore.icu.LocaleData;
-import libcore.icu.TimeZoneNames;
 
 import sun.util.calendar.CalendarUtils;
 
@@ -531,6 +534,8 @@ public class SimpleDateFormat extends DateFormat {
      * Calendar.getDisplayNames.
      */
     transient boolean useDateFormatSymbols;
+
+    private transient TimeZoneFormat timeZoneFormat;
 
     /**
      * Constructs a <code>SimpleDateFormat</code> using the default pattern and
@@ -1241,13 +1246,27 @@ public class SimpleDateFormat extends DateFormat {
             if (current == null) {
                 TimeZone tz = calendar.getTimeZone();
                 boolean daylight = (calendar.get(Calendar.DST_OFFSET) != 0);
-                int tzstyle = count < 4 ? TimeZone.SHORT : TimeZone.LONG;
                 String zoneString;
                 if (formatData.isZoneStringsSet) {
-                    zoneString = TimeZoneNames.getDisplayName(
+                    // DateFormatSymbols.setZoneStrings() has be used, use those values instead of
+                    // ICU code.
+                    int tzstyle = count < 4 ? TimeZone.SHORT : TimeZone.LONG;
+                    zoneString = libcore.icu.TimeZoneNames.getDisplayName(
                             formatData.getZoneStringsWrapper(), tz.getID(), daylight, tzstyle);
                 } else {
-                    zoneString = tz.getDisplayName(daylight, tzstyle, formatData.locale);
+                    TimeZoneNames.NameType nameType;
+                    if (count < 4) {
+                        nameType = daylight
+                                ? TimeZoneNames.NameType.SHORT_DAYLIGHT
+                                : TimeZoneNames.NameType.SHORT_STANDARD;
+                    } else {
+                        nameType = daylight
+                                ? TimeZoneNames.NameType.LONG_DAYLIGHT
+                                : TimeZoneNames.NameType.LONG_STANDARD;
+                    }
+                    String canonicalID = android.icu.util.TimeZone.getCanonicalID(tz.getID());
+                    zoneString = getTimeZoneFormat().getTimeZoneNames()
+                            .getDisplayName(canonicalID, nameType, calendar.getTimeInMillis());
                 }
                 if (zoneString != null) {
                     buffer.append(zoneString);
@@ -1694,22 +1713,67 @@ public class SimpleDateFormat extends DateFormat {
         return -1;
     }
 
-    private boolean matchDSTString(String text, int start, int zoneIndex, int standardIndex,
-                                   String[][] zoneStrings) {
-        int index = standardIndex + 2;
-        String zoneName  = zoneStrings[zoneIndex][index];
-        if (text.regionMatches(true, start,
-                               zoneName, 0, zoneName.length())) {
-            return true;
-        }
-        return false;
-    }
-
     /**
      * find time zone 'text' matched zoneStrings and set to internal
      * calendar.
      */
     private int subParseZoneString(String text, int start, CalendarBuilder calb) {
+        if (formatData.isZoneStringsSet) {
+            // DateFormatSymbols.setZoneStrings() has be used, use those values instead of ICU code.
+            return subParseZoneStringFromSymbols(text, start, calb);
+        } else {
+            return subParseZoneStringFromICU(text, start, calb);
+        }
+    }
+
+    private static final TimeZoneFormat.Style[] TZ_FORMAT_STYLES = {
+            TimeZoneFormat.Style.SPECIFIC_LONG, TimeZoneFormat.Style.SPECIFIC_SHORT };
+
+    private TimeZoneFormat getTimeZoneFormat() {
+        if (timeZoneFormat == null) {
+            timeZoneFormat = TimeZoneFormat.getInstance(locale);
+        }
+        return timeZoneFormat;
+    }
+
+    private int subParseZoneStringFromICU(String text, int start, CalendarBuilder calb) {
+        TimeZone currentTimeZone = getTimeZone();
+        TimeZoneFormat tzFormat = getTimeZoneFormat();
+        ParsePosition position = new ParsePosition(start);
+
+        Output<TimeZoneFormat.TimeType> timeType = new Output<>();
+        android.icu.util.TimeZone timeZone = null;
+        for (int i = 0; i < TZ_FORMAT_STYLES.length; i++) {
+            position.index = start;
+            position.errorIndex = -1;
+            timeZone = tzFormat.parse(TZ_FORMAT_STYLES[i], text, position, timeType);
+            if (position.getErrorIndex() == -1) {
+                // found a parsable value, no need to check the other styles.
+                break;
+            }
+        }
+
+        if (position.getErrorIndex() != -1) {
+            // No style parsed correctly, return error.
+            return 0;
+        }
+
+        if (!currentTimeZone.getID().equals(timeZone.getID())) {
+            TimeZone newTimeZone = TimeZone.getTimeZone(timeZone.getID());
+            setTimeZone(newTimeZone);
+        }
+
+        // Same logic as in subParseZoneStringFromSymbols, see below for details.
+        boolean isDst = timeType.value == TimeZoneFormat.TimeType.DAYLIGHT;
+        int dstAmount = isDst ? timeZone.getDSTSavings() : 0;
+        if (!isDst ||  dstAmount != 0) {
+            calb.clear(Calendar.ZONE_OFFSET).set(Calendar.DST_OFFSET, dstAmount);
+        }
+
+        return position.getIndex();
+    }
+
+    private int subParseZoneStringFromSymbols(String text, int start, CalendarBuilder calb) {
         boolean useSameName = false; // true if standard and daylight time use the same abbreviation.
         TimeZone currentTimeZone = getTimeZone();
 
