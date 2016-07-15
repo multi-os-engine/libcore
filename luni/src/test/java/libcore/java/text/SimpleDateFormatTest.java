@@ -17,6 +17,7 @@
 package libcore.java.text;
 
 import java.text.DateFormat;
+import java.text.DateFormatSymbols;
 import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
@@ -447,5 +448,32 @@ public class SimpleDateFormatTest extends junit.framework.TestCase {
         df.setTimeZone(tz);
         df.parse("22 Jul 1977 12:23:45 HST");
         assertEquals(tz, df.getTimeZone());
+    }
+
+    public void testZoneStringsUsedForParsingWhenPresent() throws ParseException {
+        DateFormatSymbols symbols = DateFormatSymbols.getInstance(Locale.ENGLISH);
+        String[][] zoneStrings = symbols.getZoneStrings();
+        TimeZone tz = TimeZone.getTimeZone(zoneStrings[0][0]);
+        zoneStrings[0][1] = "CustomTimeZone";
+        symbols.setZoneStrings(zoneStrings);
+
+        SimpleDateFormat sdf = new SimpleDateFormat("dd MM yyyy HH:mm zzz", symbols);
+
+        Date gmtDate = sdf.parse("1 1 2000 12:00 GMT");
+        Date customDate = sdf.parse("1 1 2000 12:00 CustomTimeZone");
+        assertEquals(tz.getOffset(gmtDate.getTime()), customDate.getTime() - gmtDate.getTime());
+    }
+
+    public void testZoneStringsIgnoredForFormatting() throws ParseException {
+        DateFormatSymbols symbols = DateFormatSymbols.getInstance(Locale.ENGLISH);
+        String[][] zoneStrings = symbols.getZoneStrings();
+        TimeZone tz = TimeZone.getTimeZone(zoneStrings[0][0]);
+        String oldTzName = zoneStrings[0][1];
+        zoneStrings[0][1] = "CustomTimeZone";
+        symbols.setZoneStrings(zoneStrings);
+
+        SimpleDateFormat sdf = new SimpleDateFormat("zzzz", symbols);
+        sdf.setTimeZone(tz);
+        assertEquals(oldTzName, sdf.format(new Date(1376927400000L)));
     }
 }
