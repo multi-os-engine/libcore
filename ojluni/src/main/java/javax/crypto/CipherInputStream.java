@@ -101,28 +101,33 @@ public class CipherInputStream extends FilterInputStream {
     private int getMoreData() throws IOException {
         if (done) return -1;
         int readin = input.read(ibuffer);
+        // Android-changed: Instead of calling cipher.doFinal() and waiting for a new buffer to be
+        // created by the request, cipher.doFinal(byte[], int) is called to make use of already
+        // initiated array rather than creating a new object each time and letting GC of the last
+        // one.
+        int outputBufferLength;
         if (readin == -1) {
             done = true;
             try {
-                obuffer = cipher.doFinal();
+                outputBufferLength = cipher.doFinal(obuffer, 0);
             }
-            catch (IllegalBlockSizeException e) {obuffer = null;}
-            catch (BadPaddingException e) {obuffer = null;}
-            if (obuffer == null)
+            catch (IllegalBlockSizeException e) {outputBufferLength = 0;}
+            catch (ShortBufferException e) {outputBufferLength = 0;}
+            catch (BadPaddingException e) {outputBufferLength = 0;}
+            if (outputBufferLength == 0)
                 return -1;
             else {
                 ostart = 0;
-                ofinish = obuffer.length;
+                ofinish = outputBufferLength;
                 return ofinish;
             }
         }
         try {
-            obuffer = cipher.update(ibuffer, 0, readin);
-        } catch (IllegalStateException e) {obuffer = null;};
+            outputBufferLength = cipher.update(ibuffer, 0, readin, obuffer, 0);
+        } catch (IllegalStateException e) {outputBufferLength = 0;}
+        catch (ShortBufferException e) {outputBufferLength = 0;}
         ostart = 0;
-        if (obuffer == null)
-            ofinish = 0;
-        else ofinish = obuffer.length;
+        ofinish = outputBufferLength;
         return ofinish;
     }
 
@@ -139,6 +144,9 @@ public class CipherInputStream extends FilterInputStream {
         super(is);
         input = is;
         cipher = c;
+        // Android-changed: obuffer has been initialized to avoid creating a new byte array object
+        // and let the old one being collected by GC when getMoreDate() is called.
+        obuffer = new byte[c.getOutputSize(ibuffer.length)];
     }
 
     /**
@@ -153,6 +161,9 @@ public class CipherInputStream extends FilterInputStream {
         super(is);
         input = is;
         cipher = new NullCipher();
+        // Android-changed: obuffer has been initialized to avoid creating a new byte array object
+        // and let the old one being collected by GC when getMoreDate() is called.
+        obuffer = new byte[cipher.getOutputSize(ibuffer.length)];
     }
 
     /**
