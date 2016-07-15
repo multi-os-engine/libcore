@@ -1067,9 +1067,14 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
             if (ueh != null) {
                 ueh.uncaughtException(t, e);
             } else if (!(e instanceof ThreadDeath)) {
-                System.err.print("Exception in thread \""
-                                 + t.getName() + "\" ");
-                e.printStackTrace(System.err);
+                boolean handled = Thread.checkForPendingUncaughtException();
+                // On Android, as of 2016-07, the framework installs a guard that kills the
+                // process, which means that if we get here, handled should always be false.
+                // However, relying on that assumption here would be unnecessary coupling.
+                if (!handled) {
+                    System.err.print("Exception in thread \"" + t.getName() + "\" ");
+                    e.printStackTrace(System.err);
+                }
             }
         }
     }

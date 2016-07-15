@@ -41,7 +41,6 @@ import sun.nio.ch.Interruptible;
 import sun.reflect.CallerSensitive;
 import dalvik.system.VMStack;
 import libcore.util.EmptyArray;
-import sun.security.util.SecurityConstants;
 
 
 /**
@@ -1856,6 +1855,65 @@ class Thread implements Runnable {
     // null unless explicitly set
     private static volatile UncaughtExceptionHandler defaultUncaughtExceptionHandler;
 
+    // null unless explicitly set
+    private static volatile UncaughtExceptionGuard uncaughtExceptionGuard;
+
+    private static class UncaughtExceptionGuard {
+        private final UncaughtExceptionHandler delegate;
+        private Thread pendingThread;
+        private Throwable pendingThrowable;
+
+        UncaughtExceptionGuard(UncaughtExceptionHandler delegate) {
+            if (delegate == null) {
+                throw new NullPointerException();
+            }
+            this.delegate = delegate;
+            this.pendingThread = null;
+            this.pendingThrowable = null;
+        }
+
+        synchronized void setPendingUncaughtException(Thread t, Throwable e) {
+            this.pendingThread = t;
+            this.pendingThrowable = e;
+        }
+
+        /**
+         * @return whether a pending uncaught exception was dispatched to delegate.
+         */
+        boolean dispatchAndClearUncaughtException() {
+            Thread t;
+            Throwable e;
+            synchronized (this) {
+                t = this.pendingThread;
+                e = this.pendingThrowable;
+                this.pendingThread = null;
+                this.pendingThrowable = null;
+            }
+            boolean result = (t != null && e != null);
+            if (result) {
+                delegate.uncaughtException(t, e);
+            }
+            return result;
+        }
+    }
+
+    /**
+     * @hide
+     * @return whether an UncaughtExceptionGuard was invoked for a pending exception
+     */
+    static boolean checkForPendingUncaughtException() {
+        UncaughtExceptionGuard guard = uncaughtExceptionGuard;
+        return (guard != null) && guard.dispatchAndClearUncaughtException();
+    }
+
+    /**
+     * @hide
+     */
+    // TODO: Call this method instead of setDefaultUncaughtExceptionHandler() from RuntimeInit.
+    public static void setGuardUncaughtExceptionHandler(UncaughtExceptionHandler ueh) {
+        uncaughtExceptionGuard = new UncaughtExceptionGuard(ueh);
+    }
+
     /**
      * Set the default handler invoked when a thread abruptly terminates
      * due to an uncaught exception, and no other handler has been defined
@@ -1942,8 +2000,16 @@ class Thread implements Runnable {
      * Dispatch an uncaught exception to the handler. This method is
      * intended to be called only by the JVM.
      */
+    // TODO: art/runtime/thread.cc:1809 needs to be changed to actually call this method
     private void dispatchUncaughtException(Throwable e) {
+        UncaughtExceptionGuard guard = uncaughtExceptionGuard;
+        if (guard != null) {
+            guard.setPendingUncaughtException(this, e);
+        }
         getUncaughtExceptionHandler().uncaughtException(this, e);
+        if (guard != null) {
+            guard.dispatchAndClearUncaughtException();
+        }
     }
 
     /**
