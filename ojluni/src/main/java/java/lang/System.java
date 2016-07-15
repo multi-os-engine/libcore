@@ -1381,6 +1381,8 @@ public final class System {
      * @see        java.lang.Runtime#exit(int)
      */
     public static void exit(int status) {
+        Thread.checkForPendingUncaughtException("System.exit(" + status +
+                ") while handling an uncaught exception.");
         Runtime.getRuntime().exit(status);
     }
 

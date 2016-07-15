@@ -36,12 +36,12 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import sun.nio.ch.Interruptible;
 import sun.reflect.CallerSensitive;
 import dalvik.system.VMStack;
 import libcore.util.EmptyArray;
-import sun.security.util.SecurityConstants;
 
 
 /**
@@ -1856,6 +1856,25 @@ class Thread implements Runnable {
     // null unless explicitly set
     private static volatile UncaughtExceptionHandler defaultUncaughtExceptionHandler;
 
+    private static final AtomicReference<Throwable> pendingUncaughtException
+            = new AtomicReference<>(null);
+
+    /**
+     * Only to be called from libcore when {@link #getUncaughtExceptionHandler()}
+     * exits (i.e. return, throw, or a call to System.exit()) rather than the killing
+     * the process more thoroughly.
+     */
+    static void checkForPendingUncaughtException(String logMessage) {
+        Throwable e = pendingUncaughtException.getAndSet(null);
+        if (e != null) {
+            // TODO: Consider whether to gate this by e.g. a system property.
+            // It's possible that the app already logged, in which case we'd
+            // prefer not to duplicate that log on regular release devices.
+            // What are the options?
+            System.logE(logMessage, e);
+        }
+    }
+
     /**
      * Set the default handler invoked when a thread abruptly terminates
      * due to an uncaught exception, and no other handler has been defined
@@ -1942,8 +1961,18 @@ class Thread implements Runnable {
      * Dispatch an uncaught exception to the handler. This method is
      * intended to be called only by the JVM.
      */
+    // TODO: art/runtime/thread.cc:1809 needs to be changed to actually call this method
     private void dispatchUncaughtException(Throwable e) {
-        getUncaughtExceptionHandler().uncaughtException(this, e);
+        pendingUncaughtException.set(e);
+        try {
+            getUncaughtExceptionHandler().uncaughtException(this, e);
+        } catch (Throwable nested) {
+            // Include the nested Throwable's message and type but not its stackTrace
+            Throwable e2 = new RuntimeException("UncaughtExceptionHandler threw: " + nested, e);
+            pendingUncaughtException.compareAndSet(e, e2);
+        } finally {
+            checkForPendingUncaughtException("Process survived uncaught exception");
+        }
     }
 
     /**
