@@ -47,6 +47,7 @@ import java.lang.ref.SoftReference;
 import java.text.spi.DateFormatSymbolsProvider;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -728,11 +729,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      */
     @Override
     public int hashCode() {
-        int hashcode = 0;
-        String[][] zoneStrings = getZoneStringsWrapper();
-        for (int index = 0; index < zoneStrings[0].length; ++index)
-            hashcode ^= zoneStrings[0][index].hashCode();
-        return hashcode;
+        return Arrays.hashCode(months) ^ Arrays.hashCode(weekdays);
     }
 
     /**
@@ -743,7 +740,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         DateFormatSymbols that = (DateFormatSymbols) obj;
-        return (Arrays.equals(eras, that.eras)
+        if (!(Arrays.equals(eras, that.eras)
                 && Arrays.equals(months, that.months)
                 && Arrays.equals(shortMonths, that.shortMonths)
                 && Arrays.equals(tinyMonths, that.tinyMonths)
@@ -757,11 +754,18 @@ public class DateFormatSymbols implements Serializable, Cloneable {
                 && Arrays.equals(shortStandAloneWeekdays, that.shortStandAloneWeekdays)
                 && Arrays.equals(tinyStandAloneWeekdays, that.tinyStandAloneWeekdays)
                 && Arrays.equals(ampms, that.ampms)
-                && Arrays.deepEquals(getZoneStringsWrapper(), that.getZoneStringsWrapper())
                 && ((localPatternChars != null
                   && localPatternChars.equals(that.localPatternChars))
                  || (localPatternChars == null
-                  && that.localPatternChars == null)));
+                  && that.localPatternChars == null)))) {
+            return false;
+        }
+        if (zoneStrings == null && that.zoneStrings == null
+                && Objects.equals(locale, that.locale)) {
+            // Avoid populating zoneStrings just for the comparison.
+            return true;
+        }
+        return Arrays.deepEquals(getZoneStringsWrapper(), that.getZoneStringsWrapper());
     }
 
     // =======================privates===============================
@@ -868,6 +872,10 @@ public class DateFormatSymbols implements Serializable, Cloneable {
         } else {
             return getZoneStringsImpl(false);
         }
+    }
+
+    final boolean hasZoneStringsValue() {
+        return zoneStrings != null;
     }
 
     private final synchronized String[][] internalZoneStrings() {
