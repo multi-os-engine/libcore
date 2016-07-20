@@ -115,29 +115,35 @@ public class CipherInputStream extends FilterInputStream {
         if (readin == -1) {
             done = true;
             try {
-                obuffer = cipher.doFinal();
+                // Android-changed: Did use to create a new object each time doFinal() was called
+                // resulting in the old object being GCed. With doFinal(byte[], int) we can reuse
+                // the old object.
+                // doFinal resets the cipher and it is the final call that is made. If there isn't
+                // any more byte available, it returns 0. In case of any exception is raised, the
+                // cipher gets reset and therefore, it is equivalent to no bytes returned.
+                ofinish = cipher.doFinal(obuffer, 0);
             } catch (IllegalBlockSizeException | BadPaddingException e) {
-                obuffer = null;
+                ofinish = 0;
                 throw new IOException(e);
+            } catch (ShortBufferException e) {
+                ofinish = 0;
+                throw new IllegalStateException("ShortBufferException is not expected", e);
             }
-            if (obuffer == null)
-                return -1;
-            else {
-                ostart = 0;
-                ofinish = obuffer.length;
-                return ofinish;
-            }
+            ostart = 0;
+            return ofinish;
         }
+        // update returns number of bytes stored in obuffer. If there is any exception raised during
+        // the call, ofinish should be set to 0.
         try {
-            obuffer = cipher.update(ibuffer, 0, readin);
+            ofinish = cipher.update(ibuffer, 0, readin, obuffer, 0);
         } catch (IllegalStateException e) {
-            obuffer = null;
+            ofinish = 0;
             throw e;
+        } catch (ShortBufferException e) {
+            // Should not reset the value of ofinish as the cipher is still not invalidated.
+            throw new IllegalStateException("ShortBufferException is not expected", e);
         }
         ostart = 0;
-        if (obuffer == null)
-            ofinish = 0;
-        else ofinish = obuffer.length;
         return ofinish;
     }
 
@@ -154,6 +160,9 @@ public class CipherInputStream extends FilterInputStream {
         super(is);
         input = is;
         cipher = c;
+        // Android-changed: obuffer has been initialized to avoid creating a new byte array object
+        // and let the old one being collected by GC when getMoreData() is called.
+        obuffer = new byte[cipher.getOutputSize(ibuffer.length)];
     }
 
     /**
@@ -165,9 +174,7 @@ public class CipherInputStream extends FilterInputStream {
      * @param is the to-be-processed input stream
      */
     protected CipherInputStream(InputStream is) {
-        super(is);
-        input = is;
-        cipher = new NullCipher();
+        this(is, new NullCipher());
     }
 
     /**
