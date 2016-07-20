@@ -18,7 +18,10 @@ package libcore.java.net;
 
 import junit.framework.TestCase;
 
+import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 public class DatagramSocketTest extends TestCase {
@@ -54,5 +57,36 @@ public class DatagramSocketTest extends TestCase {
     assertNull(ds.getLocalAddress());
     assertEquals(-1, ds.getLocalPort());
     assertNull(ds.getLocalSocketAddress());
+  }
+
+  public void testSendWithoutConnection() throws IOException {
+    // According to RFC3849 the 2001:db8::/32 range is reserved for documentation. Let's use
+    // one of those addresses (2001:db8:dead:beef::f00) to make sure connect() fails.
+    final byte[] addr = new byte[] {
+      (byte) 0x20, (byte) 0x01,
+      (byte) 0x0d, (byte) 0xb8,
+      (byte) 0xde, (byte) 0xad,
+      (byte) 0xbe, (byte) 0xef,
+      (byte) 0x00, (byte) 0x00,
+      (byte) 0x00, (byte) 0x00,
+      (byte) 0x00, (byte) 0x00,
+      (byte) 0x0f, (byte) 0x00,
+    };
+    final int port = 7;
+    DatagramSocket s = new DatagramSocket();
+    s.connect(InetAddress.getByAddress(addr), port);
+
+    try {
+      byte[] data = new byte[100];
+      DatagramPacket p = new DatagramPacket(data, data.length);
+      s.send(p);
+      fail("Send succeeded unexpectedly");
+    } catch (NullPointerException unexpected) {
+      fail("Send did not handle pending connection exception");
+    } catch (SocketException expected) {
+       // This is not the exception you are looking for
+    } finally {
+      s.close();
+    }
   }
 }
