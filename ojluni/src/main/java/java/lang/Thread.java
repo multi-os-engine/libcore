@@ -1905,6 +1905,27 @@ class Thread implements Runnable {
         return defaultUncaughtExceptionHandler;
     }
 
+    // null unless explicitly set
+    private static volatile UncaughtExceptionHandler initialUncaughtExceptionHandler;
+
+    /**
+     * Sets an initial {@link UncaughtExceptionHandler} that will be called before
+     * any returned by {@link #getUncaughtExceptionHandler()}. To allow the standard
+     * handlers to run, this handler should never terminate this process. Any
+     * throwables thrown by the handler will be ignored by
+     * {@link #dispatchUncaughtException(Throwable)}.
+     *
+     * @hide only for use by the Android framework (RuntimeInit) b/29624607
+     */
+    public static void setInitialUncaughtExceptionHandler(UncaughtExceptionHandler eh) {
+        initialUncaughtExceptionHandler = eh;
+    }
+
+    /** @hide */
+    public static UncaughtExceptionHandler getInitialUncaughtExceptionHandler() {
+        return initialUncaughtExceptionHandler;
+    }
+
     /**
      * Returns the handler invoked when this thread abruptly terminates
      * due to an uncaught exception. If this thread has not had an
@@ -1942,7 +1963,17 @@ class Thread implements Runnable {
      * Dispatch an uncaught exception to the handler. This method is
      * intended to be called only by the JVM.
      */
+    // TODO: art/runtime/thread.cc:1809 needs to be changed to actually call this method
     private void dispatchUncaughtException(Throwable e) {
+        Thread.UncaughtExceptionHandler initialUeh =
+                Thread.getInitialUncaughtExceptionHandler();
+        if (initialUeh != null) {
+            try {
+                initialUeh.uncaughtException(this, e);
+            } catch (RuntimeException | Error ignored) {
+                // Throwables thrown by the initial handler are ignored
+            }
+        }
         getUncaughtExceptionHandler().uncaughtException(this, e);
     }
 
