@@ -630,13 +630,8 @@ public class SocketTest extends junit.framework.TestCase {
         SocketAddress addr1 = InetSocketAddress.createUnresolved("127.0.0.1", 80);
 
         Proxy proxy1 = new Proxy(Proxy.Type.HTTP, addr1);
-        // IllegalArgumentException test
-        try {
-            new Socket(proxy1);
-            fail("should throw IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
+        // Should not throw any exception
+        new Socket(proxy1);
 
         Proxy proxy2 = new Proxy(Proxy.Type.SOCKS, addr1);
         // should not throw any exception

@@ -254,6 +254,7 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/net/DefaultDatagramSocketImplFactory.java \
     ojluni/src/main/java/java/net/DefaultInterface.java \
     ojluni/src/main/java/java/net/FileNameMap.java \
+    ojluni/src/main/java/java/net/HttpConnectSocketImpl.java \
     ojluni/src/main/java/java/net/HttpCookie.java \
     ojluni/src/main/java/java/net/HttpRetryException.java \
     ojluni/src/main/java/java/net/HttpURLConnection.java \
