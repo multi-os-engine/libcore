@@ -174,10 +174,16 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/lang/Readable.java \
     ojluni/src/main/java/java/lang/package-info.java \
     ojluni/src/main/java/java/lang/reflect/AccessibleObject.java \
+    ojluni/src/main/java/java/lang/reflect/AnnotatedArrayType.java \
     ojluni/src/main/java/java/lang/reflect/AnnotatedElement.java \
+    ojluni/src/main/java/java/lang/reflect/AnnotatedParameterizedType.java \
+    ojluni/src/main/java/java/lang/reflect/AnnotatedType.java \
+    ojluni/src/main/java/java/lang/reflect/AnnotatedTypeVariable.java \
+    ojluni/src/main/java/java/lang/reflect/AnnotatedWildcardType.java \
     ojluni/src/main/java/java/lang/reflect/Array.java \
     ojluni/src/main/java/java/lang/reflect/Constructor.java \
     ojluni/src/main/java/java/lang/reflect/Field.java \
+    ojluni/src/main/java/java/lang/reflect/Executable.java \
     ojluni/src/main/java/java/lang/reflect/GenericArrayType.java \
     ojluni/src/main/java/java/lang/reflect/GenericDeclaration.java \
     ojluni/src/main/java/java/lang/reflect/GenericSignatureFormatError.java \
@@ -185,9 +191,11 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/lang/reflect/InvocationTargetException.java \
     ojluni/src/main/java/java/lang/ReflectiveOperationException.java \
     ojluni/src/main/java/java/lang/reflect/MalformedParameterizedTypeException.java \
+    ojluni/src/main/java/java/lang/reflect/MalformedParametersException.java \
     ojluni/src/main/java/java/lang/reflect/Member.java \
     ojluni/src/main/java/java/lang/reflect/Method.java \
     ojluni/src/main/java/java/lang/reflect/Modifier.java \
+    ojluni/src/main/java/java/lang/reflect/Parameter.java \
     ojluni/src/main/java/java/lang/reflect/ParameterizedType.java \
     ojluni/src/main/java/java/lang/reflect/Proxy.java \
     ojluni/src/main/java/java/lang/reflect/ReflectPermission.java \
@@ -195,6 +203,7 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/lang/reflect/TypeVariable.java \
     ojluni/src/main/java/java/lang/reflect/UndeclaredThrowableException.java \
     ojluni/src/main/java/java/lang/reflect/WildcardType.java \
+    ojluni/src/main/java/java/lang/reflect/WeakCache.java \
     ojluni/src/main/java/java/lang/reflect/package-info.java \
     ojluni/src/main/java/java/lang/ref/PhantomReference.java \
     ojluni/src/main/java/java/lang/ref/Reference.java \

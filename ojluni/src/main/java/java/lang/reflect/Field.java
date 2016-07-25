@@ -26,13 +26,14 @@
 
 package java.lang.reflect;
 
+import com.android.dex.Dex;
+import java.lang.annotation.Annotation;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import libcore.reflect.GenericSignatureParser;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
-import java.lang.annotation.Annotation;
-import java.util.Map;
-import com.android.dex.Dex;
-import libcore.reflect.GenericSignatureParser;
-import java.util.List;
 
 
 /**
@@ -229,12 +230,15 @@ class Field extends AccessibleObject implements Member {
      * {@code protected} or {@code private} first, and then other
      * modifiers in the following order: {@code static}, {@code final},
      * {@code transient}, {@code volatile}.
+     *
+     * @return a string describing this {@code Field}
+     * @jls 8.3.1 Field Modifiers
      */
     public String toString() {
         int mod = getModifiers();
         return (((mod == 0) ? "" : (Modifier.toString(mod) + " "))
-            + getTypeName(getType()) + " "
-            + getTypeName(getDeclaringClass()) + "."
+            + getType().getTypeName() + " "
+            + getDeclaringClass().getTypeName() + "."
             + getName());
     }
 
@@ -256,14 +260,14 @@ class Field extends AccessibleObject implements Member {
      * its generic type
      *
      * @since 1.5
+     * @jls 8.3.1 Field Modifiers
      */
     public String toGenericString() {
         int mod = getModifiers();
         Type fieldType = getGenericType();
         return (((mod == 0) ? "" : (Modifier.toString(mod) + " "))
-            +  ((fieldType instanceof Class) ?
-                getTypeName((Class)fieldType): fieldType.toString())+ " "
-            + getTypeName(getDeclaringClass()) + "."
+            + fieldType.getTypeName() + " "
+            + getDeclaringClass().getTypeName() + "."
             + getName());
     }
 
@@ -814,40 +818,29 @@ class Field extends AccessibleObject implements Member {
     public native void setDouble(Object object, double value)
             throws IllegalAccessException, IllegalArgumentException;
 
-    /*
-     * Utility routine to paper over array type names
-     */
-    static String getTypeName(Class<?> type) {
-        if (type.isArray()) {
-            try {
-                Class<?> cl = type;
-                int dimensions = 0;
-                while (cl.isArray()) {
-                    dimensions++;
-                    cl = cl.getComponentType();
-                }
-                StringBuffer sb = new StringBuffer();
-                sb.append(cl.getName());
-                for (int i = 0; i < dimensions; i++) {
-                    sb.append("[]");
-                }
-                return sb.toString();
-            } catch (Throwable e) { /*FALLTHRU*/ }
-        }
-        return type.getName();
-    }
-
     /**
      * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
     @Override public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-        if (annotationType == null) {
-            throw new NullPointerException("annotationType == null");
-        }
+        Objects.requireNonNull(annotationType);
         return getAnnotationNative(annotationType);
     }
     private native <A extends Annotation> A getAnnotationNative(Class<A> annotationType);
+
+    /**
+     * {@inheritDoc}
+     * @throws NullPointerException {@inheritDoc}
+     * @since 1.8
+     */
+    @Override
+    public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
+        Objects.requireNonNull(annotationClass);
+        //return AnnotationSupport.getDirectlyAndIndirectlyPresent(declaredAnnotations(), annotationClass);
+        // Plug type-annotations
+        return null;
+    }
+
 
     @Override public boolean isAnnotationPresent(Class<? extends Annotation> annotationType) {
         if (annotationType == null) {
@@ -858,9 +851,23 @@ class Field extends AccessibleObject implements Member {
     private native boolean isAnnotationPresentNative(Class<? extends Annotation> annotationType);
 
     /**
-     * @since 1.5
+     * {@inheritDoc}
      */
     @Override public native Annotation[] getDeclaredAnnotations();
+
+    /**
+     * Returns an AnnotatedType object that represents the use of a type to specify
+     * the declared type of the field represented by this Field.
+     * @return an object representing the declared type of the field
+     * represented by this Field
+     *
+     * @since 1.8
+     */
+    public AnnotatedType getAnnotatedType() {
+        // To be added
+        return null;
+    }
+
 
     /**
      * Returns the index of this field's ID in its dex file.

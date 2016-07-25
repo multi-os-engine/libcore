@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,24 +26,25 @@
 package java.lang.reflect;
 
 /**
- * A common interface for all entities that declare type variables.
+ * {@code AnnotatedWildcardType} represents the potentially annotated use of a
+ * wildcard type argument, whose upper or lower bounds may themselves represent
+ * annotated uses of types.
  *
- * @since 1.5
+ * @since 1.8
  */
-public interface GenericDeclaration extends AnnotatedElement {
+public interface AnnotatedWildcardType extends AnnotatedType {
+
     /**
-     * Returns an array of {@code TypeVariable} objects that
-     * represent the type variables declared by the generic
-     * declaration represented by this {@code GenericDeclaration}
-     * object, in declaration order.  Returns an array of length 0 if
-     * the underlying generic declaration declares no type variables.
+     * Returns the potentially annotated lower bounds of this wildcard type.
      *
-     * @return an array of {@code TypeVariable} objects that represent
-     *     the type variables declared by this generic declaration
-     * @throws GenericSignatureFormatError if the generic
-     *     signature of this generic declaration does not conform to
-     *     the format specified in
-     *     <cite>The Java&trade; Virtual Machine Specification</cite>
+     * @return the potentially annotated lower bounds of this wildcard type
      */
-    public TypeVariable<?>[] getTypeParameters();
+    AnnotatedType[] getAnnotatedLowerBounds();
+
+    /**
+     * Returns the potentially annotated upper bounds of this wildcard type.
+     *
+     * @return the potentially annotated upper bounds of this wildcard type
+     */
+    AnnotatedType[] getAnnotatedUpperBounds();
 }
