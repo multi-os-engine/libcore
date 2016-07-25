@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2014 The Android Open Source Project
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,7 @@ package java.lang.reflect;
  * @author Nakul Saraiya
  * @author Kenneth Russell
  */
-public
-class Modifier {
+public class Modifier {
 
     /**
      * Return {@code true} if the integer argument includes the
@@ -227,7 +226,7 @@ class Modifier {
      * represented by {@code mod}
      */
     public static String toString(int mod) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         int len;
 
         if ((mod & PUBLIC) != 0)        sb.append("public ");
@@ -337,10 +336,15 @@ class Modifier {
      * @hide
      */
     public static final int SYNTHETIC = 0x00001000;
-    static final int ANNOTATION= 0x00002000;
+    static final int ANNOTATION = 0x00002000;
     static final int ENUM      = 0x00004000;
+    static final int MANDATED  = 0x00008000;
     static boolean isSynthetic(int mod) {
       return (mod & SYNTHETIC) != 0;
+    }
+
+    static boolean isMandated(int mod) {
+      return (mod & MANDATED) != 0;
     }
 
     /**
@@ -360,7 +364,8 @@ class Modifier {
     public static final int DEFAULT = 0x00400000;
 
     /**
-     * See JLSv3 section 8.1.1.
+     * The Java source modifiers that can be applied to a class.
+     * @jls 8.1.1 Class Modifiers
      */
     private static final int CLASS_MODIFIERS =
         Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
@@ -368,7 +373,8 @@ class Modifier {
         Modifier.STRICT;
 
     /**
-     * See JLSv3 section 9.1.1.
+     * The Java source modifiers that can be applied to an interface.
+     * @jls 9.1.1 Interface Modifiers
      */
     private static final int INTERFACE_MODIFIERS =
         Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
@@ -376,13 +382,15 @@ class Modifier {
 
 
     /**
-     * See JLSv3 section 8.8.3.
+     * The Java source modifiers that can be applied to a constructor.
+     * @jls 8.8.3 Constructor Modifiers
      */
     private static final int CONSTRUCTOR_MODIFIERS =
         Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE;
 
     /**
-     * See JLSv3 section 8.4.3.
+     * The Java source modifiers that can be applied to a method.
+     * @jls8.4.3  Method Modifiers
      */
     private static final int METHOD_MODIFIERS =
         Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
@@ -390,12 +398,26 @@ class Modifier {
         Modifier.SYNCHRONIZED   | Modifier.NATIVE       | Modifier.STRICT;
 
     /**
-     * See JLSv3 section 8.3.1.
+     * The Java source modifiers that can be applied to a field.
+     * @jls 8.3.1  Field Modifiers
      */
     private static final int FIELD_MODIFIERS =
         Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
         Modifier.STATIC         | Modifier.FINAL        | Modifier.TRANSIENT |
         Modifier.VOLATILE;
+
+    /**
+     * The Java source modifiers that can be applied to a method or constructor parameter.
+     * @jls 8.4.1 Formal Parameters
+     */
+    private static final int PARAMETER_MODIFIERS =
+        Modifier.FINAL;
+
+    /**
+     *
+     */
+    static final int ACCESS_MODIFIERS =
+        Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE;
 
     /**
      * Return an {@code int} value OR-ing together the source language
@@ -414,7 +436,7 @@ class Modifier {
      * Return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to an interface.
      * @return an {@code int} value OR-ing together the source language
-     * modifiers that can be applied to an inteface.
+     * modifiers that can be applied to an interface.
      *
      * @jls 9.1.1 Interface Modifiers
      * @since 1.7
@@ -449,7 +471,6 @@ class Modifier {
         return METHOD_MODIFIERS;
     }
 
-
     /**
      * Return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a field.
@@ -461,5 +482,18 @@ class Modifier {
      */
     public static int fieldModifiers() {
         return FIELD_MODIFIERS;
+    }
+
+    /**
+     * Return an {@code int} value OR-ing together the source language
+     * modifiers that can be applied to a parameter.
+     * @return an {@code int} value OR-ing together the source language
+     * modifiers that can be applied to a parameter.
+     *
+     * @jls 8.4.1 Formal Parameters
+     * @since 1.8
+     */
+    public static int parameterModifiers() {
+        return PARAMETER_MODIFIERS;
     }
 }

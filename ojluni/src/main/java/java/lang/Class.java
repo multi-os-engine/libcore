@@ -1178,6 +1178,33 @@ public final
         return simpleName;
     }
 
+
+    /**
+     * Return an informative string for the name of this type.
+     *
+     * @return an informative string for the name of this type
+     * @since 1.8
+     */
+    public String getTypeName() {
+        if (isArray()) {
+            try {
+                Class<?> cl = this;
+                int dimensions = 0;
+                while (cl.isArray()) {
+                    dimensions++;
+                    cl = cl.getComponentType();
+                }
+                StringBuilder sb = new StringBuilder();
+                sb.append(cl.getName());
+                for (int i = 0; i < dimensions; i++) {
+                    sb.append("[]");
+                }
+                return sb.toString();
+            } catch (Throwable e) { /*FALLTHRU*/ }
+        }
+        return getName();
+    }
+
     /**
      * Returns the canonical name of the underlying class as
      * defined by the Java Language Specification.  Returns null if
@@ -2439,7 +2466,7 @@ public final
     @Override
     public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
       // Find any associated annotations [directly or repeatably (indirectly) present on this].
-      T[] annotations = AnnotatedElement.super.getAnnotationsByType(annotationClass);
+      T[] annotations = GenericDeclaration.super.getAnnotationsByType(annotationClass);
 
       if (annotations.length != 0) {
         return annotations;

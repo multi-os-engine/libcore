@@ -16,7 +16,9 @@
 
 package libcore.reflect;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
@@ -134,4 +136,29 @@ public final class TypeVariableImpl<D extends GenericDeclaration> implements Typ
     public String toString() {
         return name;
     }
+
+    @Override
+    public AnnotatedType[] getAnnotatedBounds() {
+        // TODO: type annotations
+        throw new UnsupportedOperationException("type annotations");
+    }
+
+    @Override
+    public Annotation[] getDeclaredAnnotations() {
+        // TODO: type annotations
+        throw new UnsupportedOperationException("type annotations");
+    }
+
+    @Override
+    public Annotation[] getAnnotations() {
+        // TODO: type annotations
+        throw new UnsupportedOperationException("type annotations");
+    }
+
+    @Override
+    public<T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+        // TODO: type annotations
+        throw new UnsupportedOperationException("type annotations");
+    }
+
 }

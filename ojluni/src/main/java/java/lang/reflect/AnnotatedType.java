@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,24 +26,19 @@
 package java.lang.reflect;
 
 /**
- * A common interface for all entities that declare type variables.
+ * {@code AnnotatedType} represents the potentially annotated use of a type in
+ * the program currently running in this VM. The use may be of any type in the
+ * Java programming language, including an array type, a parameterized type, a
+ * type variable, or a wildcard type.
  *
- * @since 1.5
+ * @since 1.8
  */
-public interface GenericDeclaration extends AnnotatedElement {
+public interface AnnotatedType extends AnnotatedElement {
+
     /**
-     * Returns an array of {@code TypeVariable} objects that
-     * represent the type variables declared by the generic
-     * declaration represented by this {@code GenericDeclaration}
-     * object, in declaration order.  Returns an array of length 0 if
-     * the underlying generic declaration declares no type variables.
+     * Returns the underlying type that this annotated type represents.
      *
-     * @return an array of {@code TypeVariable} objects that represent
-     *     the type variables declared by this generic declaration
-     * @throws GenericSignatureFormatError if the generic
-     *     signature of this generic declaration does not conform to
-     *     the format specified in
-     *     <cite>The Java&trade; Virtual Machine Specification</cite>
+     * @return the type this annotated type represents
      */
-    public TypeVariable<?>[] getTypeParameters();
+    public Type getType();
 }

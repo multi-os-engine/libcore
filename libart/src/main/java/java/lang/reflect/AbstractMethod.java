@@ -171,6 +171,12 @@ public abstract class AbstractMethod extends AccessibleObject {
         return parametersArray;
     }
 
+    int getParameterCount() {
+        Dex dex = declaringClassOfOverriddenMethod.getDex();
+        short[] types = dex.parameterTypeIndicesFromMethodIndex(dexMethodIndex);
+        return types.length;
+    }
+
     /**
      * Returns true if {@code other} has the same declaring class, name,
      * parameters and return type as this method.
