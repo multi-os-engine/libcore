@@ -1150,6 +1150,10 @@ openjdk_java_files := \
     ojluni/src/main/java/sun/misc/FDBigInteger.java \
     ojluni/src/main/java/sun/misc/FloatingDecimal.java \
     ojluni/src/main/java/java/lang/invoke/LambdaConversionException.java \
+    ojluni/src/main/java/java/lang/invoke/MethodHandleStatics.java \
+    ojluni/src/main/java/java/lang/invoke/MethodType.java \
+    ojluni/src/main/java/java/lang/invoke/MethodTypeForm.java \
+    ojluni/src/main/java/java/lang/invoke/Stable.java \
     ojluni/src/main/java/java/lang/invoke/WrongMethodTypeException.java \
     ojluni/src/main/java/java/text/spi/BreakIteratorProvider.java \
     ojluni/src/main/java/java/text/spi/CollatorProvider.java \
@@ -1165,6 +1169,9 @@ openjdk_java_files := \
     ojluni/src/main/java/jdk/net/NetworkPermission.java \
     ojluni/src/main/java/jdk/net/SocketFlow.java \
     ojluni/src/main/java/jdk/net/Sockets.java \
+    ojluni/src/main/java/sun/invoke/empty/Empty.java \
+    ojluni/src/main/java/sun/invoke/util/BytecodeDescriptor.java \
+    ojluni/src/main/java/sun/invoke/util/Wrapper.java \
     ojluni/src/main/java/sun/misc/ASCIICaseInsensitiveComparator.java \
     ojluni/src/main/java/sun/misc/BASE64Decoder.java \
     ojluni/src/main/java/sun/misc/BASE64Encoder.java \
@@ -1613,5 +1620,4 @@ openjdk_lambda_stub_files := \
     ojluni/src/lambda/java/java/lang/invoke/MethodHandle.java \
     ojluni/src/lambda/java/java/lang/invoke/MethodHandleInfo.java \
     ojluni/src/lambda/java/java/lang/invoke/MethodHandles.java \
-    ojluni/src/lambda/java/java/lang/invoke/MethodType.java \
     ojluni/src/lambda/java/java/lang/invoke/SerializedLambda.java \
