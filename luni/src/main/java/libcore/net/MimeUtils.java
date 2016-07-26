@@ -427,6 +427,7 @@ public final class MimeUtils {
         if (extension == null || extension.isEmpty()) {
             return null;
         }
+        extension = extension.toLowerCase();
         return extensionToMimeTypeMap.get(extension);
     }
 
@@ -439,6 +440,7 @@ public final class MimeUtils {
         if (extension == null || extension.isEmpty()) {
             return false;
         }
+        extension = extension.toLowerCase();
         return extensionToMimeTypeMap.containsKey(extension);
     }
 
