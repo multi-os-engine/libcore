@@ -17,6 +17,7 @@
 package libcore.net;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -427,6 +428,7 @@ public final class MimeUtils {
         if (extension == null || extension.isEmpty()) {
             return null;
         }
+        extension = extension.toLowerCase(Locale.US);
         return extensionToMimeTypeMap.get(extension);
     }
 
@@ -439,6 +441,7 @@ public final class MimeUtils {
         if (extension == null || extension.isEmpty()) {
             return false;
         }
+        extension = extension.toLowerCase(Locale.US);
         return extensionToMimeTypeMap.containsKey(extension);
     }
 
