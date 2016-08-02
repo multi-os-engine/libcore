@@ -530,12 +530,14 @@ public final class String
      * Returns the length of this string.
      * The length is equal to the number of <a href="Character.html#unicode">Unicode
      * code units</a> in the string.
+     * For the compression purposes (save the characters as 8-bit if all characters
+     * are ASCII), the first bit of "count" used as the compression flag.
      *
      * @return  the length of the sequence of characters represented by this
      *          object.
      */
     public int length() {
-        return count;
+        return (count & Integer.MAX_VALUE);
     }
 
     /**
