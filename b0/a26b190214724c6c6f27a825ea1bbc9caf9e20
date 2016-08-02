@@ -1,0 +1,10 @@
+Presubmit-Verified+1: Treehugger Robot <treehugger-gerrit@google.com>
+Code-Review+1: Unsuk Jung <unsuk@google.com>
+Code-Review+1: Narayan Kamath <narayan@google.com>
+Verified+1: Junichi Uekawa <uekawa@google.com>
+Code-Review+2: Daniel Xie <dxie@google.com>
+Submitted-by: Daniel Xie <dxie@google.com>
+Submitted-at: Tue, 02 Aug 2016 00:55:22 +0000
+Reviewed-on: https://android-review.googlesource.com/247600
+Project: platform/libcore
+Branch: refs/heads/marshmallow-cts-dev
