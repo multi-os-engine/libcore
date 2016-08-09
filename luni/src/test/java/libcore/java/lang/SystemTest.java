@@ -183,7 +183,11 @@ public class SystemTest extends TestCase {
             System.setProperty("user.home", "/user/home");
             assertEquals("/user/home", System.getProperty("user.home"));
         } finally {
-            System.setProperty("user.home", oldUserHome);
+            if (oldUserHome == null) {
+                System.clearProperty("user.home");
+            } else {
+                System.setProperty("user.home", oldUserHome);
+            }
         }
     }
 
