@@ -2172,6 +2172,32 @@ public final
         return cl.getResource(name);
     }
 
+    // MOE ADDED -- BEGIN
+    // This was taken from:
+    // http://www.java2s.com/Code/Java/Reflection/isPrimitivetypegetPrimitiveClassgetTypeDefaultValue.htm
+    public static final Class<?> getPrimitiveClass(String typeName) {
+        if (typeName.equals("byte"))
+            return byte.class;
+        if (typeName.equals("short"))
+            return short.class;
+        if (typeName.equals("int"))
+            return int.class;
+        if (typeName.equals("long"))
+            return long.class;
+        if (typeName.equals("char"))
+            return char.class;
+        if (typeName.equals("float"))
+            return float.class;
+        if (typeName.equals("double"))
+            return double.class;
+        if (typeName.equals("boolean"))
+            return boolean.class;
+        if (typeName.equals("void"))
+            return void.class;
+        throw new IllegalArgumentException("Not primitive type : " + typeName);
+    }
+    // MOE ADDED -- END
+
     /**
      * Returns the {@code ProtectionDomain} of this class.  If there is a
      * security manager installed, this method first calls the security

@@ -36,8 +36,10 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <net/if.h>
+#ifndef MOE
 #include <net/if_arp.h>
 #include <linux/if_packet.h>
+#endif
 
 #include <sys/ioctl.h>
 //#include <bits/ioctls.h>
@@ -49,6 +51,7 @@
 #include "jni_util.h"
 #include "net_util.h"
 #include "JNIHelp.h"
+
 
 #define NATIVE_METHOD(className, functionName, signature) \
 { #functionName, signature, (void*)(className ## _ ## functionName) }
@@ -587,7 +590,10 @@ static netif *enumInterfaces(JNIEnv *env) {
   for (ifa = origifa; ifa != NULL; ifa = ifa->ifa_next) {
     if (ifa->ifa_addr != NULL) {
       switch (ifa->ifa_addr->sa_family) {
+#ifndef MOE
+        // MOE TODO: Add support for this.
         case AF_PACKET:
+#endif
         case AF_INET:
         case AF_INET6:
           ifs = addif(env, sock, ifa, ifs);
@@ -683,10 +689,13 @@ netif *addif(JNIEnv *env, int sock, struct ifaddrs *ifa, netif *ifs)
     case AF_INET6:
       addr_size = sizeof(struct sockaddr_in6);
       break;
+#ifndef MOE
+    // MOE TODO: Add support for this.
     case AF_PACKET:
       // Don't add an address entry, will extract data to netif struct
       addr_size = 0;
       break;
+#endif
     default:
       return NULL;
   }
@@ -782,6 +791,8 @@ netif *addif(JNIEnv *env, int sock, struct ifaddrs *ifa, netif *ifs)
   /*
    * Insert the mac address on the interface
    */
+#ifndef MOE
+  // MOE TODO: Add support for this.
   if (ifa->ifa_addr->sa_family == AF_PACKET) {
     struct sockaddr_ll *s = (struct sockaddr_ll*)ifa->ifa_addr;
 
@@ -802,6 +813,7 @@ netif *addif(JNIEnv *env, int sock, struct ifaddrs *ifa, netif *ifs)
       }
     }
   }
+#endif
 
   /*
    * Finally insert the address on the interface
@@ -886,6 +898,9 @@ static int  openSocket(JNIEnv *env, int proto){
 /** Linux **/
 
 static int getIndex(int sock, const char *name){
+// MOE TODO: the second branch was copied from OpenJDK,
+// check whether this is valid.
+#ifndef MOE
   /*
    * Try to get the interface index
    * (Not supported on Solaris 2.6 or 7)
@@ -898,6 +913,10 @@ static int getIndex(int sock, const char *name){
   }
 
   return if2.ifr_ifindex;
+#else
+  int index = if_nametoindex(name);
+  return (index == 0) ? -1 : index;
+#endif
 }
 
 

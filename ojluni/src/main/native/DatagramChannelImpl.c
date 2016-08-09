@@ -244,7 +244,11 @@ Java_sun_nio_ch_DatagramChannelImpl_send0(JNIEnv *env, jobject this,
       return IOS_THROWN;
     }
 
+#ifndef MOE_WINDOWS
     n = sendto(fd, buf, len, 0, (struct sockaddr *)&sa, sa_len);
+#else
+    n = sendto(fd, (const char*)buf, len, 0, (struct sockaddr *)&sa, sa_len);
+#endif
     if (n < 0) {
         if (errno == EAGAIN) {
             return IOS_UNAVAILABLE;

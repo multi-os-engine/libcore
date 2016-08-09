@@ -26,9 +26,16 @@
 #include "ScopedJavaUnicodeString.h"
 #include "ScopedLocalRef.h"
 #include "ScopedUtfChars.h"
-#include "unicode/calendar.h"
-#include "unicode/timezone.h"
-#include "unicode/tznames.h"
+
+#ifndef USE_APPLE_CF
+
+    #include "unicode/calendar.h"
+    #include "unicode/timezone.h"
+    #include "unicode/tznames.h"
+#else
+    #include "cf_timezone_names.h"
+    #include "cf_calendar.h"
+#endif
 
 static bool isUtc(const icu::UnicodeString& id) {
   static const icu::UnicodeString kEtcUct("Etc/UCT", 7, US_INV);
@@ -52,7 +59,11 @@ static bool setStringArrayElement(JNIEnv* env, jobjectArray array, int i, const 
   // TODO: investigate whether it's worth doing that work once in the Java wrapper instead of on-demand.
   static const icu::UnicodeString kGmt("GMT", 3, US_INV);
   if (!s.isBogus() && !s.startsWith(kGmt)) {
+#ifndef MOE_WINDOWS
     ScopedLocalRef<jstring> javaString(env, env->NewString(s.getBuffer(), s.length()));
+#else
+    ScopedLocalRef<jstring> javaString(env, env->NewString(CAST_TO_CONST_JCHAR(s.getBuffer()), s.length()));
+#endif
     if (javaString.get() == NULL) {
       return false;
     }
@@ -61,7 +72,7 @@ static bool setStringArrayElement(JNIEnv* env, jobjectArray array, int i, const 
   return true;
 }
 
-static void TimeZoneNames_fillZoneStrings(JNIEnv* env, jclass, jstring javaLocaleName, jobjectArray result) {
+static JNICALL void TimeZoneNames_fillZoneStrings(JNIEnv* env, jclass, jstring javaLocaleName, jobjectArray result) {
   ScopedIcuLocale icuLocale(env, javaLocaleName);
   if (!icuLocale.valid()) {
     return;
@@ -117,7 +128,7 @@ static void TimeZoneNames_fillZoneStrings(JNIEnv* env, jclass, jstring javaLocal
   }
 }
 
-static jstring TimeZoneNames_getExemplarLocation(JNIEnv* env, jclass, jstring javaLocaleName, jstring javaTz) {
+static JNICALL jstring TimeZoneNames_getExemplarLocation(JNIEnv* env, jclass, jstring javaLocaleName, jstring javaTz) {
   ScopedIcuLocale icuLocale(env, javaLocaleName);
   if (!icuLocale.valid()) {
     return NULL;
@@ -137,7 +148,11 @@ static jstring TimeZoneNames_getExemplarLocation(JNIEnv* env, jclass, jstring ja
   icu::UnicodeString s;
   const UDate now(icu::Calendar::getNow());
   names->getDisplayName(tz.unicodeString(), UTZNM_EXEMPLAR_LOCATION, now, s);
+#ifndef MOE_WINDOWS
   return env->NewString(s.getBuffer(), s.length());
+#else
+  return env->NewString(CAST_TO_CONST_JCHAR(s.getBuffer()), s.length());
+#endif
 }
 
 static JNINativeMethod gMethods[] = {

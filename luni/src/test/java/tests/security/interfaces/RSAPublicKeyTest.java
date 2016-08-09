@@ -29,11 +29,14 @@ public class RSAPublicKeyTest extends TestCase {
      * #getPublicExponent()
      */
     public void test_getPublicExponent() throws Exception {
+        /* [XRT] crash
         KeyFactory gen = KeyFactory.getInstance("RSA");
         final BigInteger n = BigInteger.valueOf(3233);
         final BigInteger e = BigInteger.valueOf(17);
         RSAPublicKey key = (RSAPublicKey) gen.generatePublic(new RSAPublicKeySpec(
                 n, e));
         assertEquals("invalid public exponent", e, key.getPublicExponent());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 }

@@ -701,12 +701,15 @@ public final class OldFileChannelTest extends TestCase {
     }
 
     public void test_writeLByteBufferJ_Postion_As_Long() throws Exception {
+        /* [XRT] crash
         ByteBuffer writeBuffer = ByteBuffer.wrap(TEST_BYTES);
         try {
             writeOnlyFileChannel.write(writeBuffer, Long.MAX_VALUE);
         } catch (IOException e) {
             // expected
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_writeLByteBufferJ_IllegalArgument() throws Exception {

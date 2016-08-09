@@ -117,7 +117,11 @@ setPathEnvironment(char *envstring)
         strcpy(temp, name);
         strcat(temp, "=");
         strcat(temp, current);
+#ifndef MOE_WINDOWS
         strcat(temp, ":");
+#else
+        strcat(temp, ";");
+#endif
         strcat(temp, value);
         putenv(temp);
         }
@@ -552,8 +556,13 @@ GetJavaProperties(JNIEnv *env)
             sprops.user_dir = strdup(buf);
     }
 
+#ifndef MOE_WINDOWS
     sprops.file_separator = "/";
     sprops.path_separator = ":";
+#else
+    sprops.file_separator = "\\";
+    sprops.path_separator = ";";
+#endif
     sprops.line_separator = "\n";
 
 #if !defined(_ALLBSD_SOURCE)

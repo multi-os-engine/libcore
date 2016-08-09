@@ -1740,6 +1740,7 @@ public class SignatureTest extends TestCase {
     }
 
     public void testVerify_SHA1withRSA_Key_Success() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec keySpec = new RSAPublicKeySpec(RSA_2048_modulus, RSA_2048_publicExponent);
         PublicKey pubKey = kf.generatePublic(keySpec);
@@ -1750,9 +1751,12 @@ public class SignatureTest extends TestCase {
 
         assertTrue("Signature must match expected signature",
                 sig.verify(SHA1withRSA_Vector1Signature));
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testVerify_SHA256withRSA_Key_Success() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec keySpec = new RSAPublicKeySpec(RSA_2048_modulus, RSA_2048_publicExponent);
         PublicKey pubKey = kf.generatePublic(keySpec);
@@ -1763,9 +1767,12 @@ public class SignatureTest extends TestCase {
 
         assertTrue("Signature must match expected signature",
                 sig.verify(SHA256withRSA_Vector2Signature));
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testVerify_SHA384withRSA_Key_Success() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec keySpec = new RSAPublicKeySpec(RSA_2048_modulus, RSA_2048_publicExponent);
         PublicKey pubKey = kf.generatePublic(keySpec);
@@ -1776,9 +1783,12 @@ public class SignatureTest extends TestCase {
 
         assertTrue("Signature must match expected signature",
                 sig.verify(SHA384withRSA_Vector2Signature));
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testVerify_SHA512withRSA_Key_Success() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec keySpec = new RSAPublicKeySpec(RSA_2048_modulus, RSA_2048_publicExponent);
         PublicKey pubKey = kf.generatePublic(keySpec);
@@ -1789,9 +1799,12 @@ public class SignatureTest extends TestCase {
 
         assertTrue("Signature must match expected signature",
                 sig.verify(SHA512withRSA_Vector2Signature));
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testVerify_MD5withRSA_Key_Success() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec keySpec = new RSAPublicKeySpec(RSA_2048_modulus, RSA_2048_publicExponent);
         PublicKey pubKey = kf.generatePublic(keySpec);
@@ -1802,6 +1815,8 @@ public class SignatureTest extends TestCase {
 
         assertTrue("Signature must match expected signature",
                 sig.verify(MD5withRSA_Vector2Signature));
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testVerify_SHA1withRSAPSS_Key_Success() throws Exception {
@@ -2020,6 +2035,7 @@ public class SignatureTest extends TestCase {
     }
 
     public void testVerify_SHA1withRSA_Key_InitSignThenInitVerify_Success() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec pubKeySpec = new RSAPublicKeySpec(RSA_2048_modulus,
                 RSA_2048_publicExponent);
@@ -2041,9 +2057,12 @@ public class SignatureTest extends TestCase {
 
         assertTrue("Signature must match expected signature",
                 sig.verify(SHA1withRSA_Vector1Signature));
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testVerify_SHA1withRSA_Key_TwoMessages_Success() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec keySpec = new RSAPublicKeySpec(RSA_2048_modulus, RSA_2048_publicExponent);
         PublicKey pubKey = kf.generatePublic(keySpec);
@@ -2058,9 +2077,12 @@ public class SignatureTest extends TestCase {
         sig.update(Vector2Data);
         assertTrue("Second signature must match expected signature",
                 sig.verify(SHA1withRSA_Vector2Signature));
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testVerify_SHA1withRSA_Key_WrongExpectedSignature_Failure() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec keySpec = new RSAPublicKeySpec(RSA_2048_modulus, RSA_2048_publicExponent);
         PublicKey pubKey = kf.generatePublic(keySpec);
@@ -2070,9 +2092,12 @@ public class SignatureTest extends TestCase {
         sig.update(Vector1Data);
 
         assertFalse("Signature should fail to verify", sig.verify(SHA1withRSA_Vector2Signature));
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testSign_SHA1withRSA_CrtKeyWithPublicExponent_Success() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateCrtKeySpec keySpec = new RSAPrivateCrtKeySpec(RSA_2048_modulus,
                 RSA_2048_publicExponent, RSA_2048_privateExponent, null, null, null, null, null);
@@ -2105,6 +2130,8 @@ public class SignatureTest extends TestCase {
         sig.initVerify(pubKey);
         sig.update(Vector1Data);
         assertTrue("Signature must verify correctly", sig.verify(signature));
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testSign_SHA1withRSA_CrtKey_NoPrivateExponent_Failure() throws Exception {
@@ -2179,6 +2206,7 @@ public class SignatureTest extends TestCase {
     }
 
     public void testSign_SHA1withRSA_Key_Success() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2199,9 +2227,12 @@ public class SignatureTest extends TestCase {
         sig.initVerify(pubKey);
         sig.update(Vector1Data);
         assertTrue("Signature must verify correctly", sig.verify(signature));
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testSign_SHA224withRSA_Key_Success() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2223,9 +2254,12 @@ public class SignatureTest extends TestCase {
         sig.initVerify(pubKey);
         sig.update(Vector2Data);
         assertTrue("Signature must verify correctly", sig.verify(signature));
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testSign_SHA256withRSA_Key_Success() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2247,9 +2281,12 @@ public class SignatureTest extends TestCase {
         sig.initVerify(pubKey);
         sig.update(Vector2Data);
         assertTrue("Signature must verify correctly", sig.verify(signature));
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testSign_SHA384withRSA_Key_Success() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2270,9 +2307,12 @@ public class SignatureTest extends TestCase {
         sig.initVerify(pubKey);
         sig.update(Vector2Data);
         assertTrue("Signature must verify correctly", sig.verify(signature));
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testSign_SHA512withRSA_Key_Success() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2293,9 +2333,12 @@ public class SignatureTest extends TestCase {
         sig.initVerify(pubKey);
         sig.update(Vector2Data);
         assertTrue("Signature must verify correctly", sig.verify(signature));
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testSign_MD5withRSA_Key_Success() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2316,6 +2359,8 @@ public class SignatureTest extends TestCase {
         sig.initVerify(pubKey);
         sig.update(Vector2Data);
         assertTrue("Signature must verify correctly", sig.verify(signature));
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testSign_SHA1withRSAPSS_Key_Success() throws Exception {
@@ -2699,6 +2744,7 @@ public class SignatureTest extends TestCase {
     }
 
     public void testSign_NONEwithRSA_Key_Success() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2719,9 +2765,12 @@ public class SignatureTest extends TestCase {
         sig.initVerify(pubKey);
         sig.update(Vector1Data);
         assertTrue("Signature must verify correctly", sig.verify(signature));
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testVerify_NONEwithRSA_Key_WrongSignature_Failure() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
 
         RSAPublicKeySpec pubKeySpec = new RSAPublicKeySpec(RSA_2048_modulus,
@@ -2732,9 +2781,12 @@ public class SignatureTest extends TestCase {
         sig.initVerify(pubKey);
         sig.update(Vector1Data);
         assertFalse("Invalid signature must not verify", sig.verify("Invalid".getBytes()));
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testSign_NONEwithRSA_Key_DataTooLarge_Failure() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2753,9 +2805,12 @@ public class SignatureTest extends TestCase {
             fail("Should throw exception when data is too large");
         } catch (SignatureException expected) {
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testSign_NONEwithRSA_Key_DataTooLarge_SingleByte_Failure() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2775,9 +2830,12 @@ public class SignatureTest extends TestCase {
             fail("Should throw exception when data is too large");
         } catch (SignatureException expected) {
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testVerify_NONEwithRSA_Key_DataTooLarge_Failure() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
 
         RSAPublicKeySpec pubKeySpec = new RSAPublicKeySpec(RSA_2048_modulus,
@@ -2797,9 +2855,12 @@ public class SignatureTest extends TestCase {
 
         assertFalse("Should not verify when signature is too large",
                 sig.verify(NONEwithRSA_Vector1Signature));
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testVerify_NONEwithRSA_Key_DataTooLarge_SingleByte_Failure() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
 
         RSAPublicKeySpec pubKeySpec = new RSAPublicKeySpec(RSA_2048_modulus,
@@ -2817,9 +2878,12 @@ public class SignatureTest extends TestCase {
 
         assertFalse("Should not verify when signature is too large",
                 sig.verify(NONEwithRSA_Vector1Signature));
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testVerify_NONEwithRSA_Key_SignatureTooSmall_Failure() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
 
         RSAPublicKeySpec pubKeySpec = new RSAPublicKeySpec(RSA_2048_modulus,
@@ -2831,9 +2895,12 @@ public class SignatureTest extends TestCase {
         sig.update(Vector1Data);
 
         assertFalse("Invalid signature should not verify", sig.verify("Invalid sig".getBytes()));
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testVerify_NONEwithRSA_Key_SignatureTooLarge_Failure() throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
 
         RSAPublicKeySpec pubKeySpec = new RSAPublicKeySpec(RSA_2048_modulus,
@@ -2855,6 +2922,8 @@ public class SignatureTest extends TestCase {
             fail("Should throw exception when signature is too large");
         } catch (SignatureException expected) {
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /*

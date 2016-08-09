@@ -15,6 +15,8 @@
  */
 package tests.java.sql;
 
+package tests.java.sql;
+
 import java.sql.Date;
 
 import junit.framework.TestCase;

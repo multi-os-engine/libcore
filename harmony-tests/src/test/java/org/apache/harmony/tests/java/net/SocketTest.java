@@ -150,7 +150,7 @@ public class SocketTest extends junit.framework.TestCase {
      * java.net.Socket#bind(java.net.SocketAddress)
      */
     public void test_bindLjava_net_SocketAddress() throws IOException {
-
+        /* [XRT] crash
         @SuppressWarnings("serial")
         class UnsupportedSocketAddress extends SocketAddress {
             public UnsupportedSocketAddress() {
@@ -234,12 +234,15 @@ public class SocketTest extends junit.framework.TestCase {
             // Expected
         }
         theSocket.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#bind(java.net.SocketAddress)
      */
     public void test_bindLjava_net_SocketAddress_Proxy() throws IOException {
+        /* [XRT] crash
         // The Proxy will not impact on the bind operation. It can be assigned
         // with any address.
         Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(
@@ -253,9 +256,12 @@ public class SocketTest extends junit.framework.TestCase {
         assertTrue(0 != socket.getLocalPort());
 
         socket.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_close() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server.getLocalPort());
 
@@ -269,18 +275,24 @@ public class SocketTest extends junit.framework.TestCase {
         }
 
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_connect_unknownhost() throws Exception {
+         /* [XRT] crash
         Socket socket = new Socket();
         try {
             socket.connect(new InetSocketAddress("1.2.3.4hello", 12345));
             fail();
         } catch (UnknownHostException expected) {
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_connect_unresolved() throws IOException {
+        /* [XRT] crash
         Socket socket = new Socket();
         InetSocketAddress unresolved = InetSocketAddress.createUnresolved("www.apache.org", 80);
         try {
@@ -293,10 +305,12 @@ public class SocketTest extends junit.framework.TestCase {
             fail();
         } catch (UnknownHostException expected) {
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_connectLjava_net_SocketAddress() throws Exception {
-
+        /* [XRT] crash
         @SuppressWarnings("serial")
         class UnsupportedSocketAddress extends SocketAddress {
             public UnsupportedSocketAddress() {
@@ -372,6 +386,8 @@ public class SocketTest extends junit.framework.TestCase {
         }
         client.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -379,15 +395,18 @@ public class SocketTest extends junit.framework.TestCase {
      */
     public void test_connectLjava_net_SocketAddress_AnyAddress()
             throws Exception {
+        /* [XRT] crash
         connectTestImpl(ServerThread.FIRST_TIME);
         connectTestImpl(ServerThread.SECOND_TIME);
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#connect(java.net.SocketAddress, int)
      */
     public void test_connectLjava_net_SocketAddressI() throws Exception {
-
+        /* [XRT] crash
         @SuppressWarnings("serial")
         class UnsupportedSocketAddress extends SocketAddress {
             public UnsupportedSocketAddress() {
@@ -488,12 +507,15 @@ public class SocketTest extends junit.framework.TestCase {
         }
         client.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#Socket()
      */
     public void test_Constructor() {
+        /* [XRT] crash
         // create the socket and then validate some basic state
         Socket s = new Socket();
         assertFalse("new socket should not be connected", s.isConnected());
@@ -503,12 +525,15 @@ public class SocketTest extends junit.framework.TestCase {
                 .isInputShutdown());
         assertFalse("new socket should not be in OutputShutdown", s
                 .isOutputShutdown());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#Socket(java.lang.String, int)
      */
     public void test_ConstructorLjava_lang_StringI() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server
                 .getLocalPort());
@@ -521,6 +546,8 @@ public class SocketTest extends junit.framework.TestCase {
         Socket s = new Socket("0.0.0.0", ss.getLocalPort());
         ss.close();
         s.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -529,7 +556,7 @@ public class SocketTest extends junit.framework.TestCase {
      */
     public void test_ConstructorLjava_lang_StringILjava_net_InetAddressI()
             throws IOException {
-
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         int serverPort = server.getLocalPort();
         Socket client = new Socket(InetAddress.getLocalHost().getHostName(),
@@ -562,10 +589,13 @@ public class SocketTest extends junit.framework.TestCase {
 
         theSocket.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     @SuppressWarnings("deprecation")
     public void test_ConstructorLjava_lang_StringIZ() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         int serverPort = server.getLocalPort();
         Socket client = new Socket(InetAddress.getLocalHost().getHostAddress(),
@@ -578,12 +608,15 @@ public class SocketTest extends junit.framework.TestCase {
                 serverPort, false);
         client.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#Socket(java.net.InetAddress, int)
      */
     public void test_ConstructorLjava_net_InetAddressI() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server
                 .getLocalPort());
@@ -593,6 +626,8 @@ public class SocketTest extends junit.framework.TestCase {
 
         client.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -601,10 +636,13 @@ public class SocketTest extends junit.framework.TestCase {
      */
     public void test_ConstructorLjava_net_InetAddressILjava_net_InetAddressI()
             throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server
                 .getLocalPort(), InetAddress.getLocalHost(), 0);
         assertNotSame("Failed to create socket", 0, client.getLocalPort());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -612,6 +650,7 @@ public class SocketTest extends junit.framework.TestCase {
      */
     @SuppressWarnings("deprecation")
     public void test_ConstructorLjava_net_InetAddressIZ() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         int serverPort = server.getLocalPort();
 
@@ -620,13 +659,15 @@ public class SocketTest extends junit.framework.TestCase {
 
         client = new Socket(InetAddress.getLocalHost(), serverPort, false);
         client.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#Socket(Proxy)
      */
     public void test_ConstructorLjava_net_Proxy_Exception() {
-
+        /* [XRT] crash
         SocketAddress addr1 = InetSocketAddress.createUnresolved("127.0.0.1", 80);
 
         Proxy proxy1 = new Proxy(Proxy.Type.HTTP, addr1);
@@ -642,19 +683,25 @@ public class SocketTest extends junit.framework.TestCase {
         // should not throw any exception
         new Socket(proxy2);
         new Socket(Proxy.NO_PROXY);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#getChannel()
      */
     public void test_getChannel() {
+        /* [XRT] crash
         assertNull(new Socket().getChannel());
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#getInetAddress()
      */
     public void test_getInetAddress() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server
                 .getLocalPort());
@@ -664,12 +711,15 @@ public class SocketTest extends junit.framework.TestCase {
 
         client.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#getInputStream()
      */
     public void test_getInputStream() throws IOException {
+        /* [XRT] crash
         // Simple fetch test
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server
@@ -679,6 +729,8 @@ public class SocketTest extends junit.framework.TestCase {
         is.close();
         client.close();
         server.close();
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private boolean isUnix() {
@@ -694,6 +746,7 @@ public class SocketTest extends junit.framework.TestCase {
     }
 
     public void test_getKeepAlive() throws Exception {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server.getLocalPort(), null, 0);
 
@@ -702,9 +755,12 @@ public class SocketTest extends junit.framework.TestCase {
 
         client.setKeepAlive(false);
         assertFalse("getKeepAlive true when it should be False", client.getKeepAlive());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getLocalAddress() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server.getLocalPort());
 
@@ -717,12 +773,15 @@ public class SocketTest extends junit.framework.TestCase {
 
         client.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#getLocalPort()
      */
     public void test_getLocalPort() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server
                 .getLocalPort());
@@ -731,9 +790,12 @@ public class SocketTest extends junit.framework.TestCase {
 
         client.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getLocalSocketAddress() throws IOException {
+        /* [XRT] crash
         // set up server connect and then validate that we get the right
         // response for the local address
         ServerSocket server = new ServerSocket(0);
@@ -773,9 +835,12 @@ public class SocketTest extends junit.framework.TestCase {
         client.bind(new InetSocketAddress(InetAddress.getByName("0.0.0.0"), 0));
         assertTrue(client.getLocalAddress().isAnyLocalAddress());
         client.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getOOBInline() throws Exception {
+        /* [XRT] crash
         Socket theSocket = new Socket();
 
         theSocket.setOOBInline(true);
@@ -786,6 +851,8 @@ public class SocketTest extends junit.framework.TestCase {
 
         theSocket.setOOBInline(false);
         assertFalse("expected OOBIline to be false", theSocket.getOOBInline());
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -793,6 +860,7 @@ public class SocketTest extends junit.framework.TestCase {
      */
     @SuppressWarnings("deprecation")
     public void test_getOutputStream() throws IOException {
+        /* [XRT] crash
         // Simple fetch test
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server
@@ -880,9 +948,12 @@ public class SocketTest extends junit.framework.TestCase {
         } catch (SocketException e) {
             // expected
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getPort() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         int serverPort = server.getLocalPort();
         Socket client = new Socket(InetAddress.getLocalHost(), serverPort);
@@ -891,9 +962,12 @@ public class SocketTest extends junit.framework.TestCase {
 
         client.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getReceiveBufferSize() throws Exception {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server.getLocalPort());
         client.setReceiveBufferSize(130);
@@ -902,12 +976,15 @@ public class SocketTest extends junit.framework.TestCase {
 
         client.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#getRemoteSocketAddress()
      */
     public void test_getRemoteSocketAddress() throws IOException {
+        /* [XRT] crash
         // set up server connect and then validate that we get the right
         // response for the remote address
         ServerSocket server = new ServerSocket(0);
@@ -935,26 +1012,35 @@ public class SocketTest extends junit.framework.TestCase {
         theSocket.close();
 
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getReuseAddress() throws Exception {
+        /* [XRT] crash
         Socket theSocket = new Socket();
         theSocket.setReuseAddress(true);
         assertTrue("getReuseAddress false when it should be true", theSocket.getReuseAddress());
         theSocket.setReuseAddress(false);
         assertFalse("getReuseAddress true when it should be False", theSocket.getReuseAddress());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getSendBufferSize() throws Exception {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server.getLocalPort());
         client.setSendBufferSize(134);
         assertTrue("Incorrect buffer size", client.getSendBufferSize() >= 134);
         client.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getSoLinger() throws Exception {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server.getLocalPort());
         client.setSoLinger(true, 200);
@@ -962,9 +1048,12 @@ public class SocketTest extends junit.framework.TestCase {
         client.setSoLinger(false, 0);
         client.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getSoTimeout() throws Exception {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server.getLocalPort());
         final int timeoutSet = 100;
@@ -974,9 +1063,12 @@ public class SocketTest extends junit.framework.TestCase {
         assertTrue("Returned incorrect sotimeout", Math.abs(timeoutSet - actualTimeout) <= 10);
         client.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getTcpNoDelay() throws Exception {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server.getLocalPort());
 
@@ -986,23 +1078,29 @@ public class SocketTest extends junit.framework.TestCase {
 
         client.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getTrafficClass() throws Exception {
+        /* [XRT] crash
         /*
          * We cannot actually check that the values are set as if a platform
          * does not support the option then it may come back unset even
          * though we set it so just get the value to make sure we can get it
          */
-        int trafficClass = new Socket().getTrafficClass();
+        /*int trafficClass = new Socket().getTrafficClass();
         assertTrue(0 <= trafficClass);
         assertTrue(trafficClass <= 255);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#isBound()
      */
     public void test_isBound() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server
                 .getLocalPort());
@@ -1042,12 +1140,15 @@ public class SocketTest extends junit.framework.TestCase {
         client.close();
         assertTrue("Socket indicated not bound when it should be (3b)", client
                 .isBound());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#isClosed()
      */
     public void test_isClosed() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server
                 .getLocalPort());
@@ -1073,12 +1174,15 @@ public class SocketTest extends junit.framework.TestCase {
         server.close();
         assertTrue("Server Socket should indicate it is closed:", server
                 .isClosed());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#isConnected()
      */
     public void test_isConnected() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server
                 .getLocalPort());
@@ -1108,12 +1212,15 @@ public class SocketTest extends junit.framework.TestCase {
         client.close();
         worker.close();
         server.close();
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#isInputShutdown()
      */
     public void test_isInputShutdown() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server
                 .getLocalPort());
@@ -1145,12 +1252,15 @@ public class SocketTest extends junit.framework.TestCase {
 
         theInput.close();
         theOutput.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#isOutputShutdown()
      */
     public void test_isOutputShutdown() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server
                 .getLocalPort());
@@ -1182,17 +1292,20 @@ public class SocketTest extends junit.framework.TestCase {
 
         theInput.close();
         theOutput.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#sendUrgentData(int)
      */
     public void test_sendUrgentDataI() throws Exception {
+        /* [XRT] crash
         /*
          * Some platforms may not support urgent data in this case we will not
          * run these tests. For now run on all platforms until we find those
          * that do not support urgent data
-         */
+         /
         String platform = System.getProperty("os.name");
         if (platform.equals("Dummy")) {
             return;
@@ -1201,7 +1314,7 @@ public class SocketTest extends junit.framework.TestCase {
         /*
          * Test 1: Validate that when OOBInline is false that any urgent data is
          * silently ignored
-         */
+         /
         InetAddress localHost = InetAddress.getLocalHost();
         ServerSocket server = new ServerSocket(0, 5, localHost);
         SocketAddress serverAddress = new InetSocketAddress(localHost, server
@@ -1257,7 +1370,7 @@ public class SocketTest extends junit.framework.TestCase {
          * Test 2: Now validate that urgent data is received as expected. Expect
          * that it should be between the two writes.
          */
-        server = new ServerSocket(0, 5, localHost);
+        /*server = new ServerSocket(0, 5, localHost);
         serverAddress = new InetSocketAddress(localHost, server.getLocalPort());
 
         client = new Socket();
@@ -1313,7 +1426,7 @@ public class SocketTest extends junit.framework.TestCase {
         /*
          * Test 3: Now validate that urgent data is received as expected. Expect
          * that it should be between the two writes.
-         */
+         /
         server = new ServerSocket(0, 5, localHost);
         serverAddress = new InetSocketAddress(localHost, server.getLocalPort());
 
@@ -1372,7 +1485,7 @@ public class SocketTest extends junit.framework.TestCase {
 
         /*
          * Test 4: Now test the case where there is only urgent data.
-         */
+         /
         server = new ServerSocket(0, 5, localHost);
         serverAddress = new InetSocketAddress(localHost, server.getLocalPort());
 
@@ -1398,13 +1511,15 @@ public class SocketTest extends junit.framework.TestCase {
 
         assertEquals("Sole urgent data was not received",
                 (int) (urgentByte & 0xff), byteRead);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.Socket#setKeepAlive(boolean)
      */
     public void test_setKeepAliveZ() throws IOException {
-
+        /* [XRT] crash
         class TestSocket extends Socket {
             public TestSocket(SocketImpl impl) throws SocketException {
                 super(impl);
@@ -1423,20 +1538,29 @@ public class SocketTest extends junit.framework.TestCase {
 
         // Regression test for HARMONY-1136
         new TestSocket(null).setKeepAlive(true);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_setOOBInlineZ() throws Exception {
+        /* [XRT] crash
         Socket theSocket = new Socket();
         theSocket.setOOBInline(true);
         assertTrue("expected OOBIline to be true", theSocket.getOOBInline());
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_setPerformancePreference_Int_Int_Int() throws IOException {
+        /* [XRT] crash
         Socket theSocket = new Socket();
         theSocket.setPerformancePreferences(1, 1, 1);
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_setReceiveBufferSizeI() throws Exception {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server.getLocalPort());
 
@@ -1445,9 +1569,12 @@ public class SocketTest extends junit.framework.TestCase {
 
         client.close();
         server.close();
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_setReuseAddressZ() throws Exception {
+        /* [XRT] crash
         Socket theSocket = new Socket();
         theSocket.setReuseAddress(false);
         // Bind to any available port on the given address
@@ -1461,20 +1588,26 @@ public class SocketTest extends junit.framework.TestCase {
          * Try to invoke a bind while the port is busy (TIME_WAIT). Note
          * that we may not succeed, which will cause the test to pass
          * without testing the reuseaddr behavior.
-         */
+         /
         theSocket.close();
         theSocket2.bind(localAddress1);
 
         theSocket2.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_setSendBufferSizeI() throws Exception {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server.getLocalPort());
         client.setSendBufferSize(134);
         assertTrue("Incorrect buffer size", client.getSendBufferSize() >= 134);
         client.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
+
     }
 
     public void test_setSocketImplFactoryLjava_net_SocketImplFactory() {
@@ -1483,6 +1616,7 @@ public class SocketTest extends junit.framework.TestCase {
     }
 
     public void test_setSoLingerZI() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server.getLocalPort());
         client.setSoLinger(true, 500);
@@ -1490,9 +1624,13 @@ public class SocketTest extends junit.framework.TestCase {
         client.setSoLinger(false, 0);
         client.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
+
     }
 
     public void test_setSoTimeoutI() throws Exception {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server.getLocalPort());
         final int timeoutSet = 100;
@@ -1502,9 +1640,13 @@ public class SocketTest extends junit.framework.TestCase {
         assertTrue("Set incorrect sotimeout", Math.abs(timeoutSet - actualTimeout) <= 10);
         client.close();
         server.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
+
     }
 
     public void test_setTcpNoDelayZ() throws Exception {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server.getLocalPort());
 
@@ -1514,9 +1656,13 @@ public class SocketTest extends junit.framework.TestCase {
 
         client.close();
         server.close();
+        */
+        fail("[CRASH] Turn off testcase due to crash");
+
     }
 
     public void test_setTrafficClassI() throws Exception {
+        /* [XRT] crash
         int IPTOS_LOWCOST = 0x2;
         int IPTOS_RELIABILTY = 0x4;
         int IPTOS_THROUGHPUT = 0x8;
@@ -1542,10 +1688,14 @@ public class SocketTest extends junit.framework.TestCase {
         theSocket.setTrafficClass(IPTOS_RELIABILTY);
         theSocket.setTrafficClass(IPTOS_THROUGHPUT);
         theSocket.setTrafficClass(IPTOS_LOWDELAY);
+        */
+        fail("[CRASH] Turn off testcase due to crash");
+
     }
 
     @SuppressWarnings("deprecation")
     public void test_shutdownInput() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         int port = server.getLocalPort();
         Socket client = new Socket(InetAddress.getLocalHost(), port);
@@ -1582,6 +1732,8 @@ public class SocketTest extends junit.framework.TestCase {
             // Expected
         }
         s.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -1589,6 +1741,7 @@ public class SocketTest extends junit.framework.TestCase {
      */
     @SuppressWarnings("deprecation")
     public void test_shutdownOutput() throws IOException {
+        /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         int port = server.getLocalPort();
         Socket client = new Socket(InetAddress.getLocalHost(), port);
@@ -1622,11 +1775,15 @@ public class SocketTest extends junit.framework.TestCase {
             fail("should throw SocketException");
         } catch (SocketException se) {
             // Expected
+            s.close();
         }
         s.close();
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_toString() throws IOException {
+         /* [XRT] crash
         ServerSocket server = new ServerSocket(0);
         Socket client = new Socket(InetAddress.getLocalHost(), server.getLocalPort());
         // RI has "addr" and "localport" instead of "address" and "localPort".
@@ -1636,5 +1793,7 @@ public class SocketTest extends junit.framework.TestCase {
         assertEquals(expected, client.toString());
         client.close();
         server.close();
+          */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 }

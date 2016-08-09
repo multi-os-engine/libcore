@@ -16,12 +16,14 @@
 
 package libcore.util;
 
+import java.io.File;
 import android.system.ErrnoException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.TimeZone;
 import libcore.io.BufferIterator;
 import libcore.io.MemoryMappedFile;
 
@@ -34,11 +36,46 @@ import libcore.io.MemoryMappedFile;
  * @hide - used to implement TimeZone
  */
 public final class ZoneInfoDB {
-  private static final TzData DATA =
+  /*private static final TzData DATA =
       new TzData(System.getenv("ANDROID_DATA") + "/misc/zoneinfo/current/tzdata",
           System.getenv("ANDROID_ROOT") + "/usr/share/zoneinfo/tzdata");
 
-  public static class TzData {
+  public static class TzData {*/
+    
+    // [XRT] Begin
+    private static final TzData DATA;
+    static {
+        if (hasAndroidData()) {
+            DATA =
+            new TzDataDefault(System.getenv("ANDROID_DATA") + "/misc/zoneinfo/tzdata",
+                              System.getenv("ANDROID_ROOT") + "/usr/share/zoneinfo/tzdata");
+        } else {
+            DATA = new TzDataCustom();
+        }
+    }
+    
+    private static boolean hasAndroidData() {
+        String zoneFileName = (System.getenv("ANDROID_ROOT") == null
+                               ? ""
+                               : System.getenv("ANDROID_ROOT")) + "/usr/share/zoneinfo/zoneinfo.dat";
+        File f = new File(zoneFileName);
+        return f.exists() && f.isFile();
+    }
+    
+    public static abstract class TzData {
+        public abstract String[] getAvailableIDs();
+        public abstract String[] getAvailableIDs(int rawOffset);
+        public abstract String getZoneTab();
+        public abstract TimeZone makeTimeZone(String id) throws IOException;
+        public String getDefaultID() { return null; }
+        public abstract String getVersion();
+    }
+    
+    // [XRT] End
+    
+    // [XRT] public static class TzData {
+    public static class TzDataDefault extends TzData {
+
     /**
      * Rather than open, read, and close the big data file each time we look up a time zone,
      * we map the big data file during startup, and then just use the MemoryMappedFile.
@@ -80,7 +117,8 @@ public final class ZoneInfoDB {
       }
     };
 
-    public TzData(String... paths) {
+    // [XRT] public TzData(String... paths) {
+    public TzDataDefault(String... paths) {
       for (String path : paths) {
         if (loadData(path)) {
           return;

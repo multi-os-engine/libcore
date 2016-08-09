@@ -105,6 +105,7 @@ public class KeyFactory2Test extends junit.framework.TestCase {
     }
 
     public void test_generatePrivateLjava_security_spec_KeySpec() throws Exception {
+        /* [XRT] crash
         // Test for method java.security.PrivateKey
         // java.security.KeyFactory.generatePrivate(java.security.spec.KeySpec)
         for (int i = 0; i < keyfactAlgs.length; i++) {
@@ -130,9 +131,12 @@ public class KeyFactory2Test extends junit.framework.TestCase {
                     Arrays.toString(keys.getPrivate().getEncoded()),
                     Arrays.toString(privateKey.getEncoded()));
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_generatePublicLjava_security_spec_KeySpec() throws Exception {
+        /* [XRT] crash
         // Test for method java.security.PublicKey
         // java.security.KeyFactory.generatePublic(java.security.spec.KeySpec)
         for (int i = 0; i < keyfactAlgs.length; i++) {
@@ -158,6 +162,8 @@ public class KeyFactory2Test extends junit.framework.TestCase {
                             Arrays.toString(keys.getPublic().getEncoded()),
                             Arrays.toString(publicKey.getEncoded()));
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getAlgorithm() throws Exception {
@@ -223,6 +229,7 @@ public class KeyFactory2Test extends junit.framework.TestCase {
     }
 
     public void test_getKeySpecLjava_security_KeyLjava_lang_Class() throws Exception {
+        /* [XRT] crash
         // Test for method java.security.spec.KeySpec
         // java.security.KeyFactory.getKeySpec(java.security.Key,
         // java.lang.Class)
@@ -268,6 +275,8 @@ public class KeyFactory2Test extends junit.framework.TestCase {
                     encodedSpec.getClass()
                             .equals(PKCS8EncodedKeySpec.class));
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getProvider() throws Exception {

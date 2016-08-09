@@ -306,7 +306,8 @@ public class OldOutputStreamWriterTest extends TestCase {
         ByteArrayInputStream bytesIn = new ByteArrayInputStream(bytesOut.toByteArray());
         InputStreamReader charsIn = new InputStreamReader(bytesIn, charset);
         for (int i = 0; i < maxChar; i++) {
-            assertEquals(i, charsIn.read());
+            int nRead = charsIn.read();
+            assertEquals("" + Integer.valueOf(i).toString() + " != " + Integer.valueOf(nRead).toString() ,i, nRead);
         }
         assertEquals(-1, charsIn.read());
 

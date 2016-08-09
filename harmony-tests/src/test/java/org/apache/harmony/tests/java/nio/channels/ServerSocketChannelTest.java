@@ -368,6 +368,7 @@ public class ServerSocketChannelTest extends TestCase {
     }
 
     public void testAccept_Block_NoConnect() throws IOException {
+        /* [XRT] crash
         assertTrue(this.serverChannel.isBlocking());
         serverChannel.socket().bind(null);
         // blocking mode , will block and wait for ever...
@@ -389,6 +390,8 @@ public class ServerSocketChannelTest extends TestCase {
         } catch (AsynchronousCloseException e) {
             // OK.
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testAccept_NonBlock_NoConnect() throws IOException {
@@ -501,6 +504,7 @@ public class ServerSocketChannelTest extends TestCase {
      */
     public void test_read_LByteBuffer_Blocking_ReadWriteRealLargeData()
             throws IOException, InterruptedException {
+        /* [XRT] crash
         serverChannel.socket().bind(null);
         ByteBuffer buf = ByteBuffer.allocate(CAPACITY_64KB);
         for (int i = 0; i < CAPACITY_64KB; i++) {
@@ -518,6 +522,8 @@ public class ServerSocketChannelTest extends TestCase {
         if (writeThread.exception != null) {
             throw writeThread.exception;
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     class WriteChannelThread extends Thread {
@@ -545,6 +551,7 @@ public class ServerSocketChannelTest extends TestCase {
      */
     public void test_read_LByteBuffer_NonBlocking_ReadWriteRealLargeData()
             throws Exception {
+        /* [XRT] crash
         serverChannel.configureBlocking(false);
         serverChannel.socket().bind(null);
         ByteBuffer buf = ByteBuffer.allocate(CAPACITY_64KB);
@@ -563,6 +570,8 @@ public class ServerSocketChannelTest extends TestCase {
         if (writeThread.exception != null) {
             throw writeThread.exception;
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -570,6 +579,7 @@ public class ServerSocketChannelTest extends TestCase {
      */
     public void test_write_LByteBuffer_NonBlocking_ReadWriteRealLargeData()
             throws Exception {
+        /* [XRT] crash
         serverChannel.configureBlocking(false);
         serverChannel.socket().bind(null);
         byte[] writeContent = new byte[CAPACITY_64KB];
@@ -586,6 +596,8 @@ public class ServerSocketChannelTest extends TestCase {
         if (writeThread.exception != null) {
             throw writeThread.exception;
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     class WriteSocketThread extends Thread {
@@ -784,6 +796,7 @@ public class ServerSocketChannelTest extends TestCase {
      * Regression test for HARMONY-6375
      */
     public void test_accept_configureBlocking() throws Exception {
+        /* [XRT] crash
         InetSocketAddress localAddr = new InetSocketAddress("localhost", 0);
         serverChannel.socket().bind(localAddr);
 
@@ -807,5 +820,8 @@ public class ServerSocketChannelTest extends TestCase {
         } catch (AsynchronousCloseException expected) {
         }
         serverChannel.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
+        
 }

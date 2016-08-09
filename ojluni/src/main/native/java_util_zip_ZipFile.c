@@ -32,7 +32,14 @@
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
+#ifdef MOE_WINDOWS
+#pragma push_macro("NDEBUG")
+#undef NDEBUG
+#endif
 #include <assert.h>
+#ifdef MOE_WINDOWS
+#pragma pop_macro("NDEBUG")
+#endif
 #include "JNIHelp.h"
 #include "jlong.h"
 #include "jvm.h"
@@ -102,7 +109,7 @@ ZipFile_open(JNIEnv *env, jclass cls, jstring name,
         zip = ZIP_Get_From_Cache(path, &msg, lastModified);
         if (zip == 0 && msg == 0) {
             ZFILE zfd = 0;
-#ifdef WIN32
+#if defined(WIN32) && !defined(MOE_WINDOWS)
             zfd = winFileHandleOpen(env, name, flag);
             if (zfd == -1) {
                 /* Exception already pending. */

@@ -28,6 +28,7 @@ public class ScannerParseLargeFileBenchmarkTest extends TestCase {
      * large file.
      */
     public void testParseLargeFile() throws Exception {
+        /* [XRT] hang
         FakeLargeFile reader = new FakeLargeFile();
         String delimiter = "\r?\n";
         Scanner scanner = new Scanner(reader).useDelimiter(delimiter);
@@ -37,6 +38,8 @@ public class ScannerParseLargeFileBenchmarkTest extends TestCase {
         }
         scanner.close();
         reader.close();
+         */
+        fail("[HANG] Turn off testcase due to long time running (more 20 min)");
     }
 
     private static class FakeLargeFile extends Reader {

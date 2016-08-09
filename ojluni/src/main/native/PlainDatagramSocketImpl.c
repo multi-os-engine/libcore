@@ -45,6 +45,11 @@
 #endif
 #endif
 
+#ifdef MOE_WINDOWS
+#include "jni.h"
+#include "net_util_md.h"
+#endif
+
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e
 #endif
@@ -1919,6 +1924,11 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
             jint idx = (*env)->GetIntField(env, niObj, ni_indexID);
             mname6.ipv6mr_interface = idx;
         }
+
+#ifdef MOE
+#define IPV6_ADD_MEMBERSHIP IPV6_JOIN_GROUP
+#define IPV6_DROP_MEMBERSHIP IPV6_LEAVE_GROUP
+#endif
 
 #define ADD_MEMBERSHIP          IPV6_ADD_MEMBERSHIP
 #define DRP_MEMBERSHIP          IPV6_DROP_MEMBERSHIP

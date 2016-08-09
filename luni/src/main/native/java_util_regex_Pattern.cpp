@@ -67,21 +67,21 @@ static void throwPatternSyntaxException(JNIEnv* env, UErrorCode status, jstring 
     env->Throw(reinterpret_cast<jthrowable>(exception));
 }
 
-static void Pattern_free(void* addr) {
+static JNICALL void Pattern_free(void* addr) {
     delete reinterpret_cast<icu::RegexPattern*>(addr);
 }
 
-static jlong Pattern_getNativeFinalizer(JNIEnv*, jclass) {
+static JNICALL jlong Pattern_getNativeFinalizer(JNIEnv*, jclass) {
     return reinterpret_cast<jlong>(&Pattern_free);
 }
 
 // Return a guess of the amount of native memory to be deallocated by a typical call to
 // Pattern_free().
-static jint Pattern_nativeSize(JNIEnv*, jclass) {
+static JNICALL jint Pattern_nativeSize(JNIEnv*, jclass) {
     return 500;  // Very rough guess based on a quick look at the implementation.
 }
 
-static jlong Pattern_compileImpl(JNIEnv* env, jclass, jstring javaRegex, jint flags) {
+static JNICALL jlong Pattern_compileImpl(JNIEnv* env, jclass, jstring javaRegex, jint flags) {
     flags |= UREGEX_ERROR_ON_UNKNOWN_ESCAPES;
 
     UErrorCode status = U_ZERO_ERROR;

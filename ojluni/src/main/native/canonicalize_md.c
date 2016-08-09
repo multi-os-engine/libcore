@@ -33,7 +33,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <limits.h>
-#if !defined(_ALLBSD_SOURCE)
+#if !defined(_ALLBSD_SOURCE) && !defined(MOE_WINDOWS)
 #include <alloca.h>
 #endif
 
@@ -53,14 +53,26 @@ collapsible(char *names)
 
     while (*p) {
         if ((p[0] == '.') && ((p[1] == '\0')
+#ifndef MOE_WINDOWS
                               || (p[1] == '/')
+#else
+                              || (p[1] == '\\')
+#endif
                               || ((p[1] == '.') && ((p[2] == '\0')
+#ifndef MOE_WINDOWS
                                                     || (p[2] == '/'))))) {
+#else
+                                                    || (p[2] == '\\'))))) {
+#endif
             dots = 1;
         }
         n++;
         while (*p) {
+#ifndef MOE_WINDOWS
             if (*p == '/') {
+#else
+            if (*p == '\\') {
+#endif
                 p++;
                 break;
             }
@@ -83,7 +95,11 @@ splitNames(char *names, char **ix)
     while (*p) {
         ix[i++] = p++;
         while (*p) {
+#ifndef MOE_WINDOWS
             if (*p == '/') {
+#else
+            if (*p == '\\') {
+#endif
                 *p++ = '\0';
                 break;
             }
@@ -105,7 +121,11 @@ joinNames(char *names, int nc, char **ix)
     for (i = 0, p = names; i < nc; i++) {
         if (!ix[i]) continue;
         if (i > 0) {
+#ifndef MOE_WINDOWS
             p[-1] = '/';
+#else
+            p[-1] = '\\';
+#endif
         }
         if (p == ix[i]) {
             p += strlen(p) + 1;
@@ -127,7 +147,11 @@ joinNames(char *names, int nc, char **ix)
 static void
 collapse(char *path)
 {
+#ifndef MOE_WINDOWS
     char *names = (path[0] == '/') ? path + 1 : path; /* Preserve first '/' */
+#else
+    char *names = (isalpha(path[0]) && path[1] == ':') ? path + 3 : path; /* Preserve starting "[a-zA-Z]:\" */
+#endif
     int nc;
     char **ix;
     int i, j;
@@ -180,6 +204,97 @@ collapse(char *path)
     joinNames(names, nc, ix);
 }
 
+#ifdef MOE_WINDOWS
+// Taken from jdk7/src/windows/native/java/io/canonicalize_md.c
+int
+lastErrorReportable()
+{
+    DWORD errval = GetLastError();
+    if ((errval == ERROR_FILE_NOT_FOUND)
+        || (errval == ERROR_DIRECTORY)
+        || (errval == ERROR_PATH_NOT_FOUND)
+        || (errval == ERROR_BAD_NETPATH)
+        || (errval == ERROR_BAD_NET_NAME)
+        || (errval == ERROR_ACCESS_DENIED)
+        || (errval == ERROR_NETWORK_UNREACHABLE)
+        || (errval == ERROR_NETWORK_ACCESS_DENIED)) {
+        return 0;
+    }
+
+#ifdef DEBUG_PATH
+    jio_fprintf(stderr, "canonicalize: errval %d\n", errval);
+#endif
+    return 1;
+}
+
+static char *
+cp(char *dst, char *dend, char first, char *src, char *send)
+{
+    char *p = src, *q = dst;
+    if (first != '\0') {
+        if (q < dend) {
+            *q++ = first;
+        }
+        else {
+            errno = ENAMETOOLONG;
+            return NULL;
+        }
+    }
+    if (send - p > dend - q) {
+        errno = ENAMETOOLONG;
+        return NULL;
+    }
+    while (p < send) {
+        *q++ = *p++;
+    }
+    return q;
+}
+
+int
+canonicalizeWithPrefix(char* canonicalPrefix, char* pathWithCanonicalPrefix, char *result, int size)
+{
+    WIN32_FIND_DATA fd;
+    HANDLE h;
+    char *src, *dst, *dend;
+
+    src = pathWithCanonicalPrefix;
+    dst = result;        /* Place results here */
+    dend = dst + size;   /* Don't go to or past here */
+
+    h = FindFirstFile(pathWithCanonicalPrefix, &fd);    /* Look up file */
+    if (h != INVALID_HANDLE_VALUE) {
+        /* Lookup succeeded; concatenate true name to prefix */
+        FindClose(h);
+        if (!(dst = cp(dst, dend, '\0',
+            canonicalPrefix,
+            canonicalPrefix + strlen(canonicalPrefix)))) {
+            return -1;
+        }
+        if (!(dst = cp(dst, dend, '\\',
+            fd.cFileName,
+            fd.cFileName + strlen(fd.cFileName)))) {
+            return -1;
+        }
+    }
+    else {
+        if (!lastErrorReportable()) {
+            if (!(dst = cp(dst, dend, '\0', src, src + strlen(src)))) {
+                return -1;
+            }
+        }
+        else {
+            return -1;
+        }
+    }
+
+    if (dst >= dend) {
+        errno = ENAMETOOLONG;
+        return -1;
+    }
+    *dst = '\0';
+    return 0;
+}
+#endif
 
 /* Convert a pathname to canonical form.  The input path is assumed to contain
    no duplicate slashes.  On Solaris we can use realpath() to do most of the
@@ -221,13 +336,21 @@ canonicalize(char *original, char *resolved, int len)
         for (p = end; p > path;) {
 
             /* Skip last element */
+#ifndef MOE_WINDOWS
             while ((--p > path) && (*p != '/'));
+#else
+            while ((--p > path) && (*p != '\\'));
+#endif
             if (p == path) break;
 
             /* Try realpath() on this subpath */
             *p = '\0';
             r = realpath(path, resolved);
+#ifndef MOE_WINDOWS
             *p = (p == end) ? '\0' : '/';
+#else
+            *p = (p == end) ? '\0' : '\\';
+#endif
 
             if (r != NULL) {
                 /* The subpath has a canonical path */
@@ -258,7 +381,11 @@ canonicalize(char *original, char *resolved, int len)
                 errno = ENAMETOOLONG;
                 return -1;
             }
+#ifndef MOE_WINDOWS
             if ((rn > 0) && (r[rn - 1] == '/') && (*p == '/')) {
+#else
+            if ((rn > 0) && (r[rn - 1] == '\\') && (*p == '\\')) {
+#endif
                 /* Avoid duplicate slashes */
                 p++;
             }

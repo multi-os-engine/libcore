@@ -36,7 +36,14 @@
 #include <limits.h>
 #include <time.h>
 #include <ctype.h>
+#ifdef MOE_WINDOWS
+#pragma push_macro("NDEBUG")
+#undef NDEBUG
+#endif
 #include <assert.h>
+#ifdef MOE_WINDOWS
+#pragma pop_macro("NDEBUG")
+#endif
 
 #include "jni.h"
 #include "jni_util.h"

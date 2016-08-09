@@ -22,7 +22,9 @@
 #include "ScopedLocalRef.h"
 
 #include <arpa/inet.h>
+#ifndef MOE_WINDOWS
 #include <fcntl.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -179,6 +181,7 @@ bool inetAddressToSockaddr(JNIEnv* env, jobject inetAddress, int port, sockaddr_
     return inetAddressToSockaddr(env, inetAddress, port, ss, sa_len, true);
 }
 
+#ifndef MOE_WINDOWS
 bool setBlocking(int fd, bool blocking) {
     int flags = fcntl(fd, F_GETFL);
     if (flags == -1) {
@@ -194,3 +197,4 @@ bool setBlocking(int fd, bool blocking) {
     int rc = fcntl(fd, F_SETFL, flags);
     return (rc != -1);
 }
+#endif

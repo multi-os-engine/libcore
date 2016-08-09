@@ -40,8 +40,10 @@
 #include "jvm.h"
 #include "jni_util.h"
 #include "net_util.h"
+#ifndef MOE
 #ifndef IPV6_DEFS_H
 #include <netinet/icmp6.h>
+#endif
 #endif
 
 #include "java_net_Inet4AddressImpl.h"
@@ -140,6 +142,7 @@ Inet6AddressImpl_getHostByAddr0(JNIEnv *env, jobject this,
 }
 
 #ifdef AF_INET6
+#ifndef MOE
 static jboolean
 ping6(JNIEnv *env, jint fd, struct sockaddr_in6* him, jint timeout,
       struct sockaddr_in6* netif, jint ttl) {
@@ -250,6 +253,7 @@ ping6(JNIEnv *env, jint fd, struct sockaddr_in6* him, jint timeout,
     close(fd);
     return JNI_FALSE;
 }
+#endif
 #endif /* AF_INET6 */
 
 /*
@@ -324,12 +328,14 @@ Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
      * or the echo servioe has been disabled.
      */
 
+#ifndef MOE
     fd = JVM_Socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
 
     if (fd != -1) { /* Good to go, let's do a ping */
         tagSocket(env, fd);
         return ping6(env, fd, &him6, timeout, netif, ttl);
     }
+#endif
 
     /* No good, let's fall back on TCP */
     fd = JVM_Socket(AF_INET6, SOCK_STREAM, 0);

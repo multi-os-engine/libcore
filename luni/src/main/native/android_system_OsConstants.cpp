@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011 The Android Open Source Project
+ * Copyright (c) 2014-2016, Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,27 +29,45 @@
 #include <poll.h>
 #include <signal.h>
 #include <stdlib.h>
+#ifndef MOE_WINDOWS
 #include <sys/ioctl.h>
+#endif
 #include <sys/mman.h>
+#ifndef MOE
 #include <sys/prctl.h>
+#endif
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
+#ifndef MOE_WINDOWS
 #include <sys/wait.h>
 #include <sys/xattr.h>
+#endif
 #include <unistd.h>
 
+#ifndef MOE
 #include <net/if_arp.h>
 #include <linux/if_ether.h>
+#endif
 
 // After the others because these are not necessarily self-contained in glibc.
+#ifndef MOE
 #include <linux/if_addr.h>
 #include <linux/rtnetlink.h>
+#endif
 
+#ifndef MOE_WINDOWS
 #include <net/if.h> // After <sys/socket.h> to work around a Mac header file bug.
+#endif
 
 #if defined(__BIONIC__)
 #include <linux/capability.h>
+#endif
+
+#ifdef MOE
+#define F_GETLK64 F_GETLK
+#define F_SETLK64 F_SETLK
+#define F_SETLKW64 F_SETLKW
 #endif
 
 static void initConstant(JNIEnv* env, jclass c, const char* fieldName, int value) {
@@ -56,11 +75,13 @@ static void initConstant(JNIEnv* env, jclass c, const char* fieldName, int value
     env->SetStaticIntField(c, field, value);
 }
 
-static void OsConstants_initConstants(JNIEnv* env, jclass c) {
+static JNICALL void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "AF_INET", AF_INET);
     initConstant(env, c, "AF_INET6", AF_INET6);
+#ifndef MOE
     initConstant(env, c, "AF_PACKET", AF_PACKET);
     initConstant(env, c, "AF_NETLINK", AF_NETLINK);
+#endif
     initConstant(env, c, "AF_UNIX", AF_UNIX);
     initConstant(env, c, "AF_UNSPEC", AF_UNSPEC);
     initConstant(env, c, "AI_ADDRCONFIG", AI_ADDRCONFIG);
@@ -72,8 +93,10 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
 #endif
     initConstant(env, c, "AI_PASSIVE", AI_PASSIVE);
     initConstant(env, c, "AI_V4MAPPED", AI_V4MAPPED);
+#ifndef MOE
     initConstant(env, c, "ARPHRD_ETHER", ARPHRD_ETHER);
     initConstant(env, c, "ARPHRD_LOOPBACK", ARPHRD_LOOPBACK);
+#endif
 #if defined(CAP_LAST_CAP)
     initConstant(env, c, "CAP_AUDIT_CONTROL", CAP_AUDIT_CONTROL);
     initConstant(env, c, "CAP_AUDIT_WRITE", CAP_AUDIT_WRITE);
@@ -177,7 +200,9 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "ENOLINK", ENOLINK);
     initConstant(env, c, "ENOMEM", ENOMEM);
     initConstant(env, c, "ENOMSG", ENOMSG);
+#ifndef MOE
     initConstant(env, c, "ENONET", ENONET);
+#endif
     initConstant(env, c, "ENOPROTOOPT", ENOPROTOOPT);
     initConstant(env, c, "ENOSPC", ENOSPC);
     initConstant(env, c, "ENOSR", ENOSR);
@@ -202,22 +227,27 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "ESPIPE", ESPIPE);
     initConstant(env, c, "ESRCH", ESRCH);
     initConstant(env, c, "ESTALE", ESTALE);
+#ifndef MOE
     initConstant(env, c, "ETH_P_ALL", ETH_P_ALL);
     initConstant(env, c, "ETH_P_ARP", ETH_P_ARP);
     initConstant(env, c, "ETH_P_IP", ETH_P_IP);
     initConstant(env, c, "ETH_P_IPV6", ETH_P_IPV6);
+#endif
     initConstant(env, c, "ETIME", ETIME);
     initConstant(env, c, "ETIMEDOUT", ETIMEDOUT);
     initConstant(env, c, "ETXTBSY", ETXTBSY);
     initConstant(env, c, "EUSERS", EUSERS);
-#if EWOULDBLOCK != EAGAIN
+#if EWOULDBLOCK != EAGAIN && !defined(MOE_WINDOWS)
 #error EWOULDBLOCK != EAGAIN
 #endif
     initConstant(env, c, "EXDEV", EXDEV);
     initConstant(env, c, "EXIT_FAILURE", EXIT_FAILURE);
     initConstant(env, c, "EXIT_SUCCESS", EXIT_SUCCESS);
+#ifndef MOE_WINDOWS
     initConstant(env, c, "FD_CLOEXEC", FD_CLOEXEC);
+#endif
     initConstant(env, c, "FIONREAD", FIONREAD);
+#ifndef MOE_WINDOWS
     initConstant(env, c, "F_DUPFD", F_DUPFD);
     initConstant(env, c, "F_DUPFD_CLOEXEC", F_DUPFD_CLOEXEC);
     initConstant(env, c, "F_GETFD", F_GETFD);
@@ -227,7 +257,9 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "F_GETLK64", F_GETLK64);
 #endif
     initConstant(env, c, "F_GETOWN", F_GETOWN);
+#endif
     initConstant(env, c, "F_OK", F_OK);
+#ifndef MOE_WINDOWS
     initConstant(env, c, "F_RDLCK", F_RDLCK);
     initConstant(env, c, "F_SETFD", F_SETFD);
     initConstant(env, c, "F_SETFL", F_SETFL);
@@ -242,6 +274,7 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "F_SETOWN", F_SETOWN);
     initConstant(env, c, "F_UNLCK", F_UNLCK);
     initConstant(env, c, "F_WRLCK", F_WRLCK);
+#endif
 #if defined(IFA_F_DADFAILED)
     initConstant(env, c, "IFA_F_DADFAILED", IFA_F_DADFAILED);
 #endif
@@ -269,12 +302,16 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
 #if defined(IFA_F_TENTATIVE)
     initConstant(env, c, "IFA_F_TENTATIVE", IFA_F_TENTATIVE);
 #endif
+#ifndef MOE_WINDOWS
     initConstant(env, c, "IFF_ALLMULTI", IFF_ALLMULTI);
+#endif
 #if defined(IFF_AUTOMEDIA)
     initConstant(env, c, "IFF_AUTOMEDIA", IFF_AUTOMEDIA);
 #endif
     initConstant(env, c, "IFF_BROADCAST", IFF_BROADCAST);
+#ifndef MOE_WINDOWS
     initConstant(env, c, "IFF_DEBUG", IFF_DEBUG);
+#endif
 #if defined(IFF_DYNAMIC)
     initConstant(env, c, "IFF_DYNAMIC", IFF_DYNAMIC);
 #endif
@@ -283,14 +320,18 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "IFF_MASTER", IFF_MASTER);
 #endif
     initConstant(env, c, "IFF_MULTICAST", IFF_MULTICAST);
+#ifndef MOE_WINDOWS
     initConstant(env, c, "IFF_NOARP", IFF_NOARP);
     initConstant(env, c, "IFF_NOTRAILERS", IFF_NOTRAILERS);
     initConstant(env, c, "IFF_POINTOPOINT", IFF_POINTOPOINT);
+#endif
 #if defined(IFF_PORTSEL)
     initConstant(env, c, "IFF_PORTSEL", IFF_PORTSEL);
 #endif
+#ifndef MOE_WINDOWS
     initConstant(env, c, "IFF_PROMISC", IFF_PROMISC);
     initConstant(env, c, "IFF_RUNNING", IFF_RUNNING);
+#endif
 #if defined(IFF_SLAVE)
     initConstant(env, c, "IFF_SLAVE", IFF_SLAVE);
 #endif
@@ -332,11 +373,15 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "IP_MULTICAST_IF", IP_MULTICAST_IF);
     initConstant(env, c, "IP_MULTICAST_LOOP", IP_MULTICAST_LOOP);
     initConstant(env, c, "IP_MULTICAST_TTL", IP_MULTICAST_TTL);
+#ifndef MOE
     initConstant(env, c, "IP_RECVTOS", IP_RECVTOS);
+#endif
     initConstant(env, c, "IP_TOS", IP_TOS);
     initConstant(env, c, "IP_TTL", IP_TTL);
     initConstant(env, c, "MAP_FIXED", MAP_FIXED);
+#ifndef MOE
     initConstant(env, c, "MAP_POPULATE", MAP_POPULATE);
+#endif
     initConstant(env, c, "MAP_PRIVATE", MAP_PRIVATE);
     initConstant(env, c, "MAP_SHARED", MAP_SHARED);
 #if defined(MCAST_JOIN_GROUP)
@@ -357,8 +402,10 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
 #if defined(MCAST_UNBLOCK_SOURCE)
     initConstant(env, c, "MCAST_UNBLOCK_SOURCE", MCAST_UNBLOCK_SOURCE);
 #endif
+#ifndef MOE_WINDOWS
     initConstant(env, c, "MCL_CURRENT", MCL_CURRENT);
     initConstant(env, c, "MCL_FUTURE", MCL_FUTURE);
+#endif
     initConstant(env, c, "MSG_CTRUNC", MSG_CTRUNC);
     initConstant(env, c, "MSG_DONTROUTE", MSG_DONTROUTE);
     initConstant(env, c, "MSG_EOR", MSG_EOR);
@@ -366,10 +413,14 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "MSG_PEEK", MSG_PEEK);
     initConstant(env, c, "MSG_TRUNC", MSG_TRUNC);
     initConstant(env, c, "MSG_WAITALL", MSG_WAITALL);
+#ifndef MOE_WINDOWS
     initConstant(env, c, "MS_ASYNC", MS_ASYNC);
     initConstant(env, c, "MS_INVALIDATE", MS_INVALIDATE);
     initConstant(env, c, "MS_SYNC", MS_SYNC);
+#endif
+#ifndef MOE
     initConstant(env, c, "NETLINK_ROUTE", NETLINK_ROUTE);
+#endif
     initConstant(env, c, "NI_DGRAM", NI_DGRAM);
     initConstant(env, c, "NI_NAMEREQD", NI_NAMEREQD);
     initConstant(env, c, "NI_NOFQDN", NI_NOFQDN);
@@ -380,13 +431,19 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "O_CLOEXEC", O_CLOEXEC);
     initConstant(env, c, "O_CREAT", O_CREAT);
     initConstant(env, c, "O_EXCL", O_EXCL);
+#ifndef MOE_WINDOWS
     initConstant(env, c, "O_NOCTTY", O_NOCTTY);
+#endif
     initConstant(env, c, "O_NOFOLLOW", O_NOFOLLOW);
+#ifndef MOE_WINDOWS
     initConstant(env, c, "O_NONBLOCK", O_NONBLOCK);
+#endif
     initConstant(env, c, "O_RDONLY", O_RDONLY);
     initConstant(env, c, "O_RDWR", O_RDWR);
+#ifndef MOE_WINDOWS
     initConstant(env, c, "O_SYNC", O_SYNC);
     initConstant(env, c, "O_DSYNC", O_DSYNC);
+#endif
     initConstant(env, c, "O_TRUNC", O_TRUNC);
     initConstant(env, c, "O_WRONLY", O_WRONLY);
     initConstant(env, c, "POLLERR", POLLERR);
@@ -417,6 +474,7 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
 // members. The best we can do (barring UAPI / kernel version checks) is
 // to hope they exist on all host linuxes we're building on. These
 // constants have been around since 2.6.35 at least, so we should be ok.
+#ifndef MOE
     initConstant(env, c, "RT_SCOPE_HOST", RT_SCOPE_HOST);
     initConstant(env, c, "RT_SCOPE_LINK", RT_SCOPE_LINK);
     initConstant(env, c, "RT_SCOPE_NOWHERE", RT_SCOPE_NOWHERE);
@@ -435,12 +493,14 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "RTMGRP_NEIGH", RTMGRP_NEIGH);
     initConstant(env, c, "RTMGRP_NOTIFY", RTMGRP_NOTIFY);
     initConstant(env, c, "RTMGRP_TC", RTMGRP_TC);
+#endif
     initConstant(env, c, "SEEK_CUR", SEEK_CUR);
     initConstant(env, c, "SEEK_END", SEEK_END);
     initConstant(env, c, "SEEK_SET", SEEK_SET);
     initConstant(env, c, "SHUT_RD", SHUT_RD);
     initConstant(env, c, "SHUT_RDWR", SHUT_RDWR);
     initConstant(env, c, "SHUT_WR", SHUT_WR);
+#ifndef MOE_WINDOWS
     initConstant(env, c, "SIGABRT", SIGABRT);
     initConstant(env, c, "SIGALRM", SIGALRM);
     initConstant(env, c, "SIGBUS", SIGBUS);
@@ -482,6 +542,7 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "SIGWINCH", SIGWINCH);
     initConstant(env, c, "SIGXCPU", SIGXCPU);
     initConstant(env, c, "SIGXFSZ", SIGXFSZ);
+#endif
     initConstant(env, c, "SIOCGIFADDR", SIOCGIFADDR);
     initConstant(env, c, "SIOCGIFBRDADDR", SIOCGIFBRDADDR);
     initConstant(env, c, "SIOCGIFDSTADDR", SIOCGIFDSTADDR);
@@ -518,6 +579,7 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "STDERR_FILENO", STDERR_FILENO);
     initConstant(env, c, "STDIN_FILENO", STDIN_FILENO);
     initConstant(env, c, "STDOUT_FILENO", STDOUT_FILENO);
+#ifndef MOE
     initConstant(env, c, "ST_MANDLOCK", ST_MANDLOCK);
     initConstant(env, c, "ST_NOATIME", ST_NOATIME);
     initConstant(env, c, "ST_NODEV", ST_NODEV);
@@ -527,6 +589,7 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "ST_RDONLY", ST_RDONLY);
     initConstant(env, c, "ST_RELATIME", ST_RELATIME);
     initConstant(env, c, "ST_SYNCHRONOUS", ST_SYNCHRONOUS);
+#endif
     initConstant(env, c, "S_IFBLK", S_IFBLK);
     initConstant(env, c, "S_IFCHR", S_IFCHR);
     initConstant(env, c, "S_IFDIR", S_IFDIR);
@@ -554,15 +617,19 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "TIOCOUTQ", TIOCOUTQ);
     // UNIX_PATH_MAX is mentioned in some versions of unix(7), but not actually declared.
     initConstant(env, c, "UNIX_PATH_MAX", sizeof(sockaddr_un::sun_path));
+#ifndef MOE_WINDOWS
     initConstant(env, c, "WCONTINUED", WCONTINUED);
     initConstant(env, c, "WEXITED", WEXITED);
     initConstant(env, c, "WNOHANG", WNOHANG);
     initConstant(env, c, "WNOWAIT", WNOWAIT);
     initConstant(env, c, "WSTOPPED", WSTOPPED);
     initConstant(env, c, "WUNTRACED", WUNTRACED);
+#endif
     initConstant(env, c, "W_OK", W_OK);
+#ifndef MOE_WINDOWS
     initConstant(env, c, "XATTR_CREATE", XATTR_CREATE);
     initConstant(env, c, "XATTR_REPLACE", XATTR_REPLACE);
+#endif
     initConstant(env, c, "X_OK", X_OK);
     initConstant(env, c, "_SC_2_CHAR_TERM", _SC_2_CHAR_TERM);
     initConstant(env, c, "_SC_2_C_BIND", _SC_2_C_BIND);

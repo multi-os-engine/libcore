@@ -157,6 +157,7 @@ public class FileChannelTest extends junit.framework.TestCase {
     }
 
     public void test_truncate_greaterThanSizeWithoutPositionChange() throws Exception {
+         /* [XRT] crash
         byte[] initialBytes = "123456789A".getBytes("US-ASCII");
         int initialFileSize = initialBytes.length; // 10
         FileChannel fc = createFileContainingBytes(initialBytes);
@@ -174,6 +175,8 @@ public class FileChannelTest extends junit.framework.TestCase {
         assertEquals(initialPosition, fc.position());
 
         fc.close();
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_truncate_lessThanSizeWithPositionChange() throws Exception {

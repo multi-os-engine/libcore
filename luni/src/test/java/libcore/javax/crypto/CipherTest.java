@@ -1182,6 +1182,7 @@ public final class CipherTest extends TestCase {
     }
 
     public void test_getInstance() throws Exception {
+        /* [XRT] crash
         final ByteArrayOutputStream errBuffer = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(errBuffer);
 
@@ -1204,7 +1205,7 @@ public final class CipherTest extends TestCase {
                  * but we need to make sure we see the bare algorithm from some
                  * provider. We will test each mode specifically when we get the
                  * base cipher.
-                 */
+                 /
                 final int firstSlash = algorithm.indexOf('/');
                 if (firstSlash == -1) {
                     seenBaseCipherNames.add(algorithm);
@@ -1255,6 +1256,8 @@ public final class CipherTest extends TestCase {
         if (errBuffer.size() > 0) {
             throw new Exception("Errors encountered:\n\n" + errBuffer.toString() + "\n\n");
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void test_Cipher_Algorithm(Provider provider, String algorithm) throws Exception {
@@ -1600,6 +1603,7 @@ public final class CipherTest extends TestCase {
     }
 
     private void testInputPKCS1Padding(String provider) throws Exception {
+        /* [XRT] crash
         testInputPKCS1Padding(provider, PKCS1_BLOCK_TYPE_01_PADDED_PLAIN_TEXT, getEncryptKey("RSA"), getDecryptKey("RSA"));
         try {
             testInputPKCS1Padding(provider, PKCS1_BLOCK_TYPE_02_PADDED_PLAIN_TEXT, getEncryptKey("RSA"), getDecryptKey("RSA"));
@@ -1612,9 +1616,12 @@ public final class CipherTest extends TestCase {
         } catch (BadPaddingException expected) {
         }
         testInputPKCS1Padding(provider, PKCS1_BLOCK_TYPE_02_PADDED_PLAIN_TEXT, getDecryptKey("RSA"), getEncryptKey("RSA"));
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testInputPKCS1Padding(String provider, byte[] prePaddedPlainText, Key encryptKey, Key decryptKey) throws Exception {
+        /* [XRT] crash
         Cipher encryptCipher = Cipher.getInstance("RSA/ECB/NoPadding", provider);
         encryptCipher.init(Cipher.ENCRYPT_MODE, encryptKey);
         byte[] cipherText = encryptCipher.doFinal(prePaddedPlainText);
@@ -1634,20 +1641,29 @@ public final class CipherTest extends TestCase {
         byte[] plainText2 = decryptCipher.doFinal(cipherText);
         assertEquals(Arrays.toString(plainText),
                      Arrays.toString(plainText2));
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testOutputPKCS1Padding() throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testOutputPKCS1Padding(provider);
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testOutputPKCS1Padding(String provider) throws Exception {
+       /* [XRT] crash
        testOutputPKCS1Padding(provider, (byte) 1, getEncryptKey("RSA"), getDecryptKey("RSA"));
        testOutputPKCS1Padding(provider, (byte) 2, getDecryptKey("RSA"), getEncryptKey("RSA"));
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testOutputPKCS1Padding(String provider, byte expectedBlockType, Key encryptKey, Key decryptKey) throws Exception {
+        /* [XRT] crash
         Cipher encryptCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding", provider);
         encryptCipher.init(Cipher.ENCRYPT_MODE, encryptKey);
         byte[] cipherText = encryptCipher.doFinal(ORIGINAL_PLAIN_TEXT);
@@ -1655,6 +1671,8 @@ public final class CipherTest extends TestCase {
         decryptCipher.init(Cipher.DECRYPT_MODE, decryptKey);
         byte[] plainText = decryptCipher.doFinal(cipherText);
         assertPadding(provider, expectedBlockType, ORIGINAL_PLAIN_TEXT, plainText);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void assertPadding(String provider, byte expectedBlockType, byte[] expectedData, byte[] actualDataWithPadding) {
@@ -2119,12 +2137,16 @@ public final class CipherTest extends TestCase {
     };
 
     public void testRSA_ECB_NoPadding_Private_OnlyDoFinal_Success() throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_Private_OnlyDoFinal_Success(provider);
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_Private_OnlyDoFinal_Success(String provider) throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2137,7 +2159,7 @@ public final class CipherTest extends TestCase {
          * You're actually decrypting with private keys, but there is no
          * distinction made here. It's all keyed off of what kind of key you're
          * using. ENCRYPT_MODE and DECRYPT_MODE are the same.
-         */
+         /
         c.init(Cipher.ENCRYPT_MODE, privKey);
         byte[] encrypted = c.doFinal(RSA_2048_Vector1);
         assertTrue("Encrypted should match expected",
@@ -2147,15 +2169,21 @@ public final class CipherTest extends TestCase {
         encrypted = c.doFinal(RSA_2048_Vector1);
         assertTrue("Encrypted should match expected",
                 Arrays.equals(RSA_Vector1_Encrypt_Private, encrypted));
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testRSA_ECB_NoPadding_Private_UpdateThenEmptyDoFinal_Success() throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_Private_UpdateThenEmptyDoFinal_Success(provider);
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_Private_UpdateThenEmptyDoFinal_Success(String provider) throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2168,7 +2196,7 @@ public final class CipherTest extends TestCase {
          * You're actually decrypting with private keys, but there is no
          * distinction made here. It's all keyed off of what kind of key you're
          * using. ENCRYPT_MODE and DECRYPT_MODE are the same.
-         */
+         /
         c.init(Cipher.ENCRYPT_MODE, privKey);
         c.update(RSA_2048_Vector1);
         byte[] encrypted = c.doFinal();
@@ -2180,17 +2208,23 @@ public final class CipherTest extends TestCase {
         encrypted = c.doFinal();
         assertTrue("Encrypted should match expected",
                 Arrays.equals(RSA_Vector1_Encrypt_Private, encrypted));
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testRSA_ECB_NoPadding_Private_SingleByteUpdateThenEmptyDoFinal_Success()
             throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_Private_SingleByteUpdateThenEmptyDoFinal_Success(provider);
         }
+                */
+                fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_Private_SingleByteUpdateThenEmptyDoFinal_Success(String provider)
             throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2203,7 +2237,7 @@ public final class CipherTest extends TestCase {
          * You're actually decrypting with private keys, but there is no
          * distinction made here. It's all keyed off of what kind of key you're
          * using. ENCRYPT_MODE and DECRYPT_MODE are the same.
-         */
+         /
         c.init(Cipher.ENCRYPT_MODE, privKey);
         int i;
         for (i = 0; i < RSA_2048_Vector1.length / 2; i++) {
@@ -2220,15 +2254,21 @@ public final class CipherTest extends TestCase {
         encrypted = c.doFinal(RSA_2048_Vector1, i, RSA_2048_Vector1.length - i);
         assertTrue("Encrypted should match expected",
                 Arrays.equals(RSA_Vector1_Encrypt_Private, encrypted));
+                */
+                fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testRSA_ECB_NoPadding_Private_OnlyDoFinalWithOffset_Success() throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_Private_OnlyDoFinalWithOffset_Success(provider);
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_Private_OnlyDoFinalWithOffset_Success(String provider) throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2240,7 +2280,7 @@ public final class CipherTest extends TestCase {
          * You're actually decrypting with private keys, but there is no
          * distinction made here. It's all keyed off of what kind of key you're
          * using. ENCRYPT_MODE and DECRYPT_MODE are the same.
-         */
+         /
         c.init(Cipher.ENCRYPT_MODE, privKey);
         byte[] encrypted = new byte[RSA_Vector1_Encrypt_Private.length];
         final int encryptLen = c
@@ -2257,15 +2297,21 @@ public final class CipherTest extends TestCase {
                 decryptLen);
         assertTrue("Encrypted should match expected",
                 Arrays.equals(RSA_Vector1_Encrypt_Private, encrypted));
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testRSA_ECB_NoPadding_Public_OnlyDoFinal_Success() throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_Public_OnlyDoFinal_Success(provider);
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_Public_OnlyDoFinal_Success(String provider) throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec keySpec = new RSAPublicKeySpec(RSA_2048_modulus, RSA_2048_publicExponent);
 
@@ -2277,7 +2323,7 @@ public final class CipherTest extends TestCase {
          * You're actually encrypting with public keys, but there is no
          * distinction made here. It's all keyed off of what kind of key you're
          * using. ENCRYPT_MODE and DECRYPT_MODE are the same.
-         */
+         /
         c.init(Cipher.ENCRYPT_MODE, privKey);
         byte[] encrypted = c.doFinal(RSA_Vector1_Encrypt_Private);
         assertEncryptedEqualsNoPadding(provider, Cipher.ENCRYPT_MODE, RSA_2048_Vector1, encrypted);
@@ -2285,15 +2331,21 @@ public final class CipherTest extends TestCase {
         c.init(Cipher.DECRYPT_MODE, privKey);
         encrypted = c.doFinal(RSA_Vector1_Encrypt_Private);
         assertEncryptedEqualsNoPadding(provider, Cipher.DECRYPT_MODE, RSA_2048_Vector1, encrypted);
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testRSA_ECB_NoPadding_Public_OnlyDoFinalWithOffset_Success() throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_Public_OnlyDoFinalWithOffset_Success(provider);
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_Public_OnlyDoFinalWithOffset_Success(String provider) throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec keySpec = new RSAPublicKeySpec(RSA_2048_modulus, RSA_2048_publicExponent);
 
@@ -2305,7 +2357,7 @@ public final class CipherTest extends TestCase {
          * You're actually encrypting with public keys, but there is no
          * distinction made here. It's all keyed off of what kind of key you're
          * using. ENCRYPT_MODE and DECRYPT_MODE are the same.
-         */
+         /
         c.init(Cipher.ENCRYPT_MODE, pubKey);
         byte[] encrypted = new byte[RSA_2048_Vector1.length];
         final int encryptLen = c.doFinal(RSA_Vector1_Encrypt_Private, 0,
@@ -2323,15 +2375,21 @@ public final class CipherTest extends TestCase {
         }
         assertEquals("Encrypted size should match expected", RSA_2048_Vector1.length, decryptLen);
         assertEncryptedEqualsNoPadding(provider, Cipher.DECRYPT_MODE, RSA_2048_Vector1, encrypted);
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testRSA_ECB_NoPadding_Public_UpdateThenEmptyDoFinal_Success() throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_Public_UpdateThenEmptyDoFinal_Success(provider);
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_Public_UpdateThenEmptyDoFinal_Success(String provider) throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec keySpec = new RSAPublicKeySpec(RSA_2048_modulus, RSA_2048_publicExponent);
 
@@ -2343,7 +2401,7 @@ public final class CipherTest extends TestCase {
          * You're actually encrypting with public keys, but there is no
          * distinction made here. It's all keyed off of what kind of key you're
          * using. ENCRYPT_MODE and DECRYPT_MODE are the same.
-         */
+         /
         c.init(Cipher.ENCRYPT_MODE, privKey);
         c.update(RSA_Vector1_Encrypt_Private);
         byte[] encrypted = c.doFinal();
@@ -2353,17 +2411,23 @@ public final class CipherTest extends TestCase {
         c.update(RSA_Vector1_Encrypt_Private);
         encrypted = c.doFinal();
         assertEncryptedEqualsNoPadding(provider, Cipher.DECRYPT_MODE, RSA_2048_Vector1, encrypted);
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testRSA_ECB_NoPadding_Public_SingleByteUpdateThenEmptyDoFinal_Success()
             throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_Public_SingleByteUpdateThenEmptyDoFinal_Success(provider);
         }
+                */
+                fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_Public_SingleByteUpdateThenEmptyDoFinal_Success(String provider)
             throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec keySpec = new RSAPublicKeySpec(RSA_2048_modulus, RSA_2048_publicExponent);
 
@@ -2375,7 +2439,7 @@ public final class CipherTest extends TestCase {
          * You're actually encrypting with public keys, but there is no
          * distinction made here. It's all keyed off of what kind of key you're
          * using. ENCRYPT_MODE and DECRYPT_MODE are the same.
-         */
+         /
         c.init(Cipher.ENCRYPT_MODE, privKey);
         int i;
         for (i = 0; i < RSA_Vector1_Encrypt_Private.length / 2; i++) {
@@ -2390,15 +2454,21 @@ public final class CipherTest extends TestCase {
         }
         encrypted = c.doFinal(RSA_Vector1_Encrypt_Private, i, RSA_2048_Vector1.length - i);
         assertEncryptedEqualsNoPadding(provider, Cipher.DECRYPT_MODE, RSA_2048_Vector1, encrypted);
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testRSA_ECB_NoPadding_Public_TooSmall_Success() throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_Public_TooSmall_Success(provider);
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_Public_TooSmall_Success(String provider) throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec keySpec = new RSAPublicKeySpec(RSA_2048_modulus, RSA_2048_publicExponent);
 
@@ -2410,7 +2480,7 @@ public final class CipherTest extends TestCase {
          * You're actually encrypting with public keys, but there is no
          * distinction made here. It's all keyed off of what kind of key you're
          * using. ENCRYPT_MODE and DECRYPT_MODE are the same.
-         */
+         /
         c.init(Cipher.ENCRYPT_MODE, privKey);
         byte[] encrypted = c.doFinal(TooShort_Vector);
         assertTrue("Encrypted should match expected",
@@ -2420,15 +2490,21 @@ public final class CipherTest extends TestCase {
         encrypted = c.doFinal(TooShort_Vector);
         assertTrue("Encrypted should match expected",
                 Arrays.equals(RSA_Vector1_ZeroPadded_Encrypted, encrypted));
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testRSA_ECB_NoPadding_Private_TooSmall_Success() throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_Private_TooSmall_Success(provider);
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_Private_TooSmall_Success(String provider) throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2441,7 +2517,7 @@ public final class CipherTest extends TestCase {
          * You're actually encrypting with public keys, but there is no
          * distinction made here. It's all keyed off of what kind of key you're
          * using. ENCRYPT_MODE and DECRYPT_MODE are the same.
-         */
+         /
         c.init(Cipher.ENCRYPT_MODE, privKey);
         byte[] encrypted = c.doFinal(RSA_Vector1_ZeroPadded_Encrypted);
         assertEncryptedEqualsNoPadding(provider, Cipher.ENCRYPT_MODE,
@@ -2451,6 +2527,8 @@ public final class CipherTest extends TestCase {
         encrypted = c.doFinal(RSA_Vector1_ZeroPadded_Encrypted);
         assertEncryptedEqualsNoPadding(provider, Cipher.DECRYPT_MODE,
                                        TooShort_Vector_Zero_Padded, encrypted);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private static void assertEncryptedEqualsNoPadding(String provider, int mode,
@@ -2472,13 +2550,17 @@ public final class CipherTest extends TestCase {
 
     public void testRSA_ECB_NoPadding_Private_CombinedUpdateAndDoFinal_TooBig_Failure()
             throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_Private_CombinedUpdateAndDoFinal_TooBig_Failure(provider);
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_Private_CombinedUpdateAndDoFinal_TooBig_Failure(String provider)
             throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2491,7 +2573,7 @@ public final class CipherTest extends TestCase {
          * You're actually encrypting with public keys, but there is no
          * distinction made here. It's all keyed off of what kind of key you're
          * using. ENCRYPT_MODE and DECRYPT_MODE are the same.
-         */
+         /
         c.init(Cipher.ENCRYPT_MODE, privKey);
         c.update(RSA_Vector1_ZeroPadded_Encrypted);
 
@@ -2503,17 +2585,23 @@ public final class CipherTest extends TestCase {
         } catch (ArrayIndexOutOfBoundsException success) {
             assertEquals("BC", provider);
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testRSA_ECB_NoPadding_Private_UpdateInAndOutPlusDoFinal_TooBig_Failure()
             throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_Private_UpdateInAndOutPlusDoFinal_TooBig_Failure(provider);
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_Private_UpdateInAndOutPlusDoFinal_TooBig_Failure(String provider)
             throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2526,7 +2614,7 @@ public final class CipherTest extends TestCase {
          * You're actually encrypting with public keys, but there is no
          * distinction made here. It's all keyed off of what kind of key you're
          * using. ENCRYPT_MODE and DECRYPT_MODE are the same.
-         */
+         /
         c.init(Cipher.ENCRYPT_MODE, privKey);
 
         byte[] output = new byte[RSA_2048_Vector1.length];
@@ -2541,15 +2629,21 @@ public final class CipherTest extends TestCase {
         } catch (ArrayIndexOutOfBoundsException success) {
             assertEquals("BC", provider);
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testRSA_ECB_NoPadding_Private_OnlyDoFinal_TooBig_Failure() throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_Private_OnlyDoFinal_TooBig_Failure(provider);
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_Private_OnlyDoFinal_TooBig_Failure(String provider) throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(RSA_2048_modulus,
                 RSA_2048_privateExponent);
@@ -2562,7 +2656,7 @@ public final class CipherTest extends TestCase {
          * You're actually encrypting with public keys, but there is no
          * distinction made here. It's all keyed off of what kind of key you're
          * using. ENCRYPT_MODE and DECRYPT_MODE are the same.
-         */
+         /
         c.init(Cipher.ENCRYPT_MODE, privKey);
 
         byte[] tooBig_Vector = new byte[RSA_Vector1_ZeroPadded_Encrypted.length * 2];
@@ -2579,15 +2673,21 @@ public final class CipherTest extends TestCase {
         } catch (ArrayIndexOutOfBoundsException success) {
             assertEquals("BC", provider);
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testRSA_ECB_NoPadding_GetBlockSize_Success() throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_GetBlockSize_Success(provider);
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_GetBlockSize_Success(String provider) throws Exception {
+        /* [XRT] crash
         Cipher c = Cipher.getInstance("RSA/ECB/NoPadding", provider);
         if (StandardNames.IS_RI) {
             assertEquals(0, c.getBlockSize());
@@ -2605,30 +2705,42 @@ public final class CipherTest extends TestCase {
         final PublicKey pubKey = kf.generatePublic(pubKeySpec);
         c.init(Cipher.ENCRYPT_MODE, pubKey);
         assertEquals(getExpectedBlockSize("RSA", Cipher.ENCRYPT_MODE, provider), c.getBlockSize());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testRSA_ECB_NoPadding_GetOutputSize_NoInit_Failure() throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_GetOutputSize_NoInit_Failure(provider);
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_GetOutputSize_NoInit_Failure(String provider) throws Exception {
+        /* [XRT] crash
         Cipher c = Cipher.getInstance("RSA/ECB/NoPadding", provider);
         try {
             c.getOutputSize(RSA_2048_Vector1.length);
             fail("Should throw IllegalStateException if getOutputSize is called before init");
         } catch (IllegalStateException success) {
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testRSA_ECB_NoPadding_GetOutputSize_Success() throws Exception {
-        for (String provider : RSA_PROVIDERS) {
+        /* [XRT] crash
+         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_GetOutputSize_Success(provider);
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_GetOutputSize_Success(String provider) throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec pubKeySpec = new RSAPublicKeySpec(RSA_2048_modulus,
                 RSA_2048_publicExponent);
@@ -2641,15 +2753,21 @@ public final class CipherTest extends TestCase {
         assertEquals(modulusInBytes, c.getOutputSize(RSA_2048_Vector1.length));
         assertEquals(modulusInBytes, c.getOutputSize(RSA_2048_Vector1.length * 2));
         assertEquals(modulusInBytes, c.getOutputSize(0));
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testRSA_ECB_NoPadding_GetIV_Success() throws Exception {
-        for (String provider : RSA_PROVIDERS) {
+        /* [XRT] crash
+         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_GetIV_Success(provider);
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_GetIV_Success(String provider) throws Exception {
+       /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec pubKeySpec = new RSAPublicKeySpec(RSA_2048_modulus,
                 RSA_2048_publicExponent);
@@ -2661,15 +2779,21 @@ public final class CipherTest extends TestCase {
         c.init(Cipher.ENCRYPT_MODE, pubKey);
 
         assertNull("ECB mode has no IV and should be null", c.getIV());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testRSA_ECB_NoPadding_GetParameters_NoneProvided_Success() throws Exception {
+        /* [XRT] crash
         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_GetParameters_NoneProvided_Success(provider);
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testRSA_ECB_NoPadding_GetParameters_NoneProvided_Success(String provider) throws Exception {
+        /* [XRT] crash
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec pubKeySpec = new RSAPublicKeySpec(RSA_2048_modulus,
                 RSA_2048_publicExponent);
@@ -2677,6 +2801,8 @@ public final class CipherTest extends TestCase {
 
         Cipher c = Cipher.getInstance("RSA/ECB/NoPadding", provider);
         assertNull("Parameters should be null", c.getParameters());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /*

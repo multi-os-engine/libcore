@@ -29,25 +29,25 @@ public class ZoneInfoDBTest extends junit.framework.TestCase {
 
   // An empty override file should fall back to the default file.
   public void testEmptyOverrideFile() throws Exception {
-    ZoneInfoDB.TzData data = new ZoneInfoDB.TzData(TZDATA_IN_ROOT);
-    ZoneInfoDB.TzData dataWithEmptyOverride =
-        new ZoneInfoDB.TzData(makeEmptyFile(), TZDATA_IN_ROOT);
+    ZoneInfoDB.TzDataDefault data = new ZoneInfoDB.TzDataDefault(TZDATA_IN_ROOT);
+    ZoneInfoDB.TzDataDefault dataWithEmptyOverride =
+        new ZoneInfoDB.TzDataDefault(makeEmptyFile(), TZDATA_IN_ROOT);
     assertEquals(data.getVersion(), dataWithEmptyOverride.getVersion());
     assertEquals(data.getAvailableIDs().length, dataWithEmptyOverride.getAvailableIDs().length);
   }
 
   // A corrupt override file should fall back to the default file.
   public void testCorruptOverrideFile() throws Exception {
-    ZoneInfoDB.TzData data = new ZoneInfoDB.TzData(TZDATA_IN_ROOT);
-    ZoneInfoDB.TzData dataWithCorruptOverride =
-        new ZoneInfoDB.TzData(makeCorruptFile(), TZDATA_IN_ROOT);
+    ZoneInfoDB.TzDataDefault data = new ZoneInfoDB.TzDataDefault(TZDATA_IN_ROOT);
+    ZoneInfoDB.TzDataDefault dataWithCorruptOverride =
+        new ZoneInfoDB.TzDataDefault(makeCorruptFile(), TZDATA_IN_ROOT);
     assertEquals(data.getVersion(), dataWithCorruptOverride.getVersion());
     assertEquals(data.getAvailableIDs().length, dataWithCorruptOverride.getAvailableIDs().length);
   }
 
   // Given no tzdata files we can use, we should fall back to built-in "GMT".
   public void testNoGoodFile() throws Exception {
-    ZoneInfoDB.TzData data = new ZoneInfoDB.TzData(makeEmptyFile());
+    ZoneInfoDB.TzDataDefault data = new ZoneInfoDB.TzDataDefault(makeEmptyFile());
     assertEquals("missing", data.getVersion());
     assertEquals(1, data.getAvailableIDs().length);
     assertEquals("GMT", data.getAvailableIDs()[0]);
@@ -66,10 +66,10 @@ public class ZoneInfoDBTest extends junit.framework.TestCase {
     content[10] = 'z';
     in.close();
 
-    ZoneInfoDB.TzData data = new ZoneInfoDB.TzData(TZDATA_IN_ROOT);
+    ZoneInfoDB.TzDataDefault data = new ZoneInfoDB.TzDataDefault(TZDATA_IN_ROOT);
     String goodFile = makeTemporaryFile(content);
     try {
-      ZoneInfoDB.TzData dataWithOverride = new ZoneInfoDB.TzData(goodFile, TZDATA_IN_ROOT);
+      ZoneInfoDB.TzDataDefault dataWithOverride = new ZoneInfoDB.TzDataDefault(goodFile, TZDATA_IN_ROOT);
       assertEquals("9999z", dataWithOverride.getVersion());
       assertEquals(data.getAvailableIDs().length, dataWithOverride.getAvailableIDs().length);
     } finally {
@@ -79,7 +79,7 @@ public class ZoneInfoDBTest extends junit.framework.TestCase {
 
   // Confirms any caching that exists correctly handles TimeZone mutability.
   public void testMakeTimeZone_timeZoneMutability() throws Exception {
-    ZoneInfoDB.TzData data = new ZoneInfoDB.TzData(TZDATA_IN_ROOT);
+    ZoneInfoDB.TzDataDefault data = new ZoneInfoDB.TzDataDefault(TZDATA_IN_ROOT);
     String tzId = "Europe/London";
     ZoneInfo first = data.makeTimeZone(tzId);
     ZoneInfo second = data.makeTimeZone(tzId);
@@ -96,13 +96,13 @@ public class ZoneInfoDBTest extends junit.framework.TestCase {
   }
 
   public void testMakeTimeZone_notFound() throws Exception {
-    ZoneInfoDB.TzData data = new ZoneInfoDB.TzData(TZDATA_IN_ROOT);
+    ZoneInfoDB.TzDataDefault data = new ZoneInfoDB.TzDataDefault(TZDATA_IN_ROOT);
     assertNull(data.makeTimeZone("THIS_TZ_DOES_NOT_EXIST"));
     assertFalse(data.hasTimeZone("THIS_TZ_DOES_NOT_EXIST"));
   }
 
   public void testMakeTimeZone_found() throws Exception {
-    ZoneInfoDB.TzData data = new ZoneInfoDB.TzData(TZDATA_IN_ROOT);
+    ZoneInfoDB.TzDataDefault data = new ZoneInfoDB.TzDataDefault(TZDATA_IN_ROOT);
     assertNotNull(data.makeTimeZone("Europe/London"));
     assertTrue(data.hasTimeZone("Europe/London"));
   }

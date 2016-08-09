@@ -19,7 +19,7 @@
 #include "JNIHelp.h"
 #include "JniConstants.h"
 
-static jobject Unsafe_allocateInstance(JNIEnv* env, jclass, jclass c) {
+static JNICALL jobject Unsafe_allocateInstance(JNIEnv* env, jclass, jclass c) {
   return env->AllocObject(c);
 }
 

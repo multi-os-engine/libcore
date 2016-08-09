@@ -87,21 +87,34 @@ public final class InterruptedStreamTest extends TestCase {
     }
 
     public void testInterruptReadablePipeChannel() throws Exception {
+        /* [XRT] crash
         testInterruptReadableChannel(Pipe.open().source());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testInterruptWritablePipeChannel() throws Exception {
+        /* [XRT] crash
         testInterruptWritableChannel(Pipe.open().sink());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
+
     }
 
     public void testInterruptReadableSocketChannel() throws Exception {
+        /* [XRT] crash
         sockets = newSocketChannelPair();
         testInterruptReadableChannel(sockets[0].getChannel());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testInterruptWritableSocketChannel() throws Exception {
+        /* [XRT] crash
         sockets = newSocketChannelPair();
         testInterruptWritableChannel(sockets[0].getChannel());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**

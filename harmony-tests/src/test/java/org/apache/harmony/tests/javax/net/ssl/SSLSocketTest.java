@@ -381,6 +381,7 @@ public class SSLSocketTest extends TestCase {
      * javax.net.ssl.SSLSocket#setUseClientMode(boolean mode)
      */
     public void test_UseClientMode() throws IOException {
+        /* [XRT] crash
         SSLSocket ssl = getSSLSocket();
         assertTrue(ssl.getUseClientMode());
         ssl.setUseClientMode(false);
@@ -399,6 +400,9 @@ public class SSLSocketTest extends TestCase {
         } catch (IllegalArgumentException expected) {
         }
         ssl.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
+
     }
 
     /**

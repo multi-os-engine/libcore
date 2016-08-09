@@ -29,7 +29,11 @@ class ScopedJavaUnicodeString {
     if (s == NULL) {
       jniThrowNullPointerException(mEnv, NULL);
     } else {
+#ifndef MOE_WINDOWS
       mChars = env->GetStringChars(mString, NULL);
+#else
+      mChars = CAST_TO_CONST_UCHAR(env->GetStringChars(mString, NULL));
+#endif
       const int32_t charCount = env->GetStringLength(mString);
       mUnicodeString.setTo(false, mChars, charCount);
     }
@@ -37,7 +41,11 @@ class ScopedJavaUnicodeString {
 
   ~ScopedJavaUnicodeString() {
     if (mString != NULL) {
+#ifndef MOE_WINDOWS
       mEnv->ReleaseStringChars(mString, mChars);
+#else
+      mEnv->ReleaseStringChars(mString, CAST_TO_CONST_JCHAR(mChars));
+#endif
     }
   }
 

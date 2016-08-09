@@ -32,15 +32,28 @@
 #include "nio_util.h"
 #include "JNIHelp.h"
 
+// MOE: The methods of the Windows version of NativeThread Java class
+// don't do anything and instead of using a different Java source for
+// Windows we simply achieve the same behaviour by modifying the native
+// implementations here.
+
 #define NATIVE_METHOD(className, functionName, signature) \
 { #functionName, signature, (void*)(className ## _ ## functionName) }
 
+#ifndef MOE_WINDOWS
 
 #include <pthread.h>
 #include <sys/signal.h>
+#ifdef MOE
+#include <signal.h>
+#endif
 
 /* Also defined in src/solaris/native/java/net/linux_close.c */
+#ifndef MOE
 #define INTERRUPT_SIGNAL (__SIGRTMAX - 2)
+#else
+#define INTERRUPT_SIGNAL SIGUSR1
+#endif
 
 static void
 nullHandler(int sig)
@@ -79,6 +92,25 @@ NativeThread_signal(JNIEnv *env, jclass cl, jlong thread)
     if (pthread_kill((pthread_t)thread, INTERRUPT_SIGNAL))
         JNU_ThrowIOExceptionWithLastError(env, "Thread signal failed");
 }
+#else
+JNIEXPORT void JNICALL
+NativeThread_init(JNIEnv *env, jclass cl)
+{
+    return;
+}
+
+JNIEXPORT jlong JNICALL
+NativeThread_current(JNIEnv *env, jclass cl)
+{
+    return 0;
+}
+
+JNIEXPORT void JNICALL
+NativeThread_signal(JNIEnv *env, jclass cl, jlong thread)
+{
+    return;
+}
+#endif
 
 static JNINativeMethod gMethods[] = {
   NATIVE_METHOD(NativeThread, current, "()J"),

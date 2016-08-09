@@ -50,7 +50,11 @@ public:
             return;
         }
 
+#ifndef MOE_WINDOWS
         mUText = utext_openUChars(NULL, mChars, env->GetStringLength(mJavaInput), &mStatus);
+#else
+        mUText = utext_openUChars(NULL, CAST_TO_CONST_UCHAR(mChars), env->GetStringLength(mJavaInput), &mStatus);
+#endif
         if (mUText == NULL) {
             return;
         }
@@ -116,21 +120,21 @@ private:
     void operator=(const MatcherAccessor&);
 };
 
-static void Matcher_free(void* address) {
+static JNICALL void Matcher_free(void* address) {
     delete reinterpret_cast<icu::RegexMatcher*>(address);
 }
 
-static jlong Matcher_getNativeFinalizer(JNIEnv*, jclass) {
+static JNICALL jlong Matcher_getNativeFinalizer(JNIEnv*, jclass) {
     return reinterpret_cast<jlong>(&Matcher_free);
 }
 
 // Return a guess of the amount of native memory to be deallocated by a typical call to
 // Matcher_free().
-static jint Matcher_nativeSize(JNIEnv*, jclass) {
+static JNICALL jint Matcher_nativeSize(JNIEnv*, jclass) {
     return 200;  // Very rough guess based on a quick look at the implementation.
 }
 
-static jint Matcher_findImpl(JNIEnv* env, jclass, jlong addr, jstring javaText, jint startIndex, jintArray offsets) {
+static JNICALL jint Matcher_findImpl(JNIEnv* env, jclass, jlong addr, jstring javaText, jint startIndex, jintArray offsets) {
     MatcherAccessor matcher(env, addr, javaText, false);
     UBool result = matcher->find(startIndex, matcher.status());
     if (result) {
@@ -139,7 +143,7 @@ static jint Matcher_findImpl(JNIEnv* env, jclass, jlong addr, jstring javaText, 
     return result;
 }
 
-static jint Matcher_findNextImpl(JNIEnv* env, jclass, jlong addr, jstring javaText, jintArray offsets) {
+static JNICALL jint Matcher_findNextImpl(JNIEnv* env, jclass, jlong addr, jstring javaText, jintArray offsets) {
     MatcherAccessor matcher(env, addr, javaText, false);
     if (matcher.status() != U_ZERO_ERROR) {
         return -1;
@@ -151,17 +155,17 @@ static jint Matcher_findNextImpl(JNIEnv* env, jclass, jlong addr, jstring javaTe
     return result;
 }
 
-static jint Matcher_groupCountImpl(JNIEnv* env, jclass, jlong addr) {
+static JNICALL jint Matcher_groupCountImpl(JNIEnv* env, jclass, jlong addr) {
     MatcherAccessor matcher(env, addr);
     return matcher->groupCount();
 }
 
-static jint Matcher_hitEndImpl(JNIEnv* env, jclass, jlong addr) {
+static JNICALL jint Matcher_hitEndImpl(JNIEnv* env, jclass, jlong addr) {
     MatcherAccessor matcher(env, addr);
     return matcher->hitEnd();
 }
 
-static jint Matcher_lookingAtImpl(JNIEnv* env, jclass, jlong addr, jstring javaText, jintArray offsets) {
+static JNICALL jint Matcher_lookingAtImpl(JNIEnv* env, jclass, jlong addr, jstring javaText, jintArray offsets) {
     MatcherAccessor matcher(env, addr, javaText, false);
     UBool result = matcher->lookingAt(matcher.status());
     if (result) {
@@ -170,7 +174,7 @@ static jint Matcher_lookingAtImpl(JNIEnv* env, jclass, jlong addr, jstring javaT
     return result;
 }
 
-static jint Matcher_matchesImpl(JNIEnv* env, jclass, jlong addr, jstring javaText, jintArray offsets) {
+static JNICALL jint Matcher_matchesImpl(JNIEnv* env, jclass, jlong addr, jstring javaText, jintArray offsets) {
     MatcherAccessor matcher(env, addr, javaText, false);
     UBool result = matcher->matches(matcher.status());
     if (result) {
@@ -179,7 +183,7 @@ static jint Matcher_matchesImpl(JNIEnv* env, jclass, jlong addr, jstring javaTex
     return result;
 }
 
-static jlong Matcher_openImpl(JNIEnv* env, jclass, jlong patternAddr) {
+static JNICALL jlong Matcher_openImpl(JNIEnv* env, jclass, jlong patternAddr) {
     icu::RegexPattern* pattern = reinterpret_cast<icu::RegexPattern*>(static_cast<uintptr_t>(patternAddr));
     UErrorCode status = U_ZERO_ERROR;
     icu::RegexMatcher* result = pattern->matcher(status);
@@ -187,22 +191,22 @@ static jlong Matcher_openImpl(JNIEnv* env, jclass, jlong patternAddr) {
     return reinterpret_cast<uintptr_t>(result);
 }
 
-static jint Matcher_requireEndImpl(JNIEnv* env, jclass, jlong addr) {
+static JNICALL jint Matcher_requireEndImpl(JNIEnv* env, jclass, jlong addr) {
     MatcherAccessor matcher(env, addr);
     return matcher->requireEnd();
 }
 
-static void Matcher_setInputImpl(JNIEnv* env, jclass, jlong addr, jstring javaText, jint start, jint end) {
+static JNICALL void Matcher_setInputImpl(JNIEnv* env, jclass, jlong addr, jstring javaText, jint start, jint end) {
     MatcherAccessor matcher(env, addr, javaText, true);
     matcher->region(start, end, matcher.status());
 }
 
-static void Matcher_useAnchoringBoundsImpl(JNIEnv* env, jclass, jlong addr, jboolean value) {
+static JNICALL void Matcher_useAnchoringBoundsImpl(JNIEnv* env, jclass, jlong addr, jboolean value) {
     MatcherAccessor matcher(env, addr);
     matcher->useAnchoringBounds(value);
 }
 
-static void Matcher_useTransparentBoundsImpl(JNIEnv* env, jclass, jlong addr, jboolean value) {
+static JNICALL void Matcher_useTransparentBoundsImpl(JNIEnv* env, jclass, jlong addr, jboolean value) {
     MatcherAccessor matcher(env, addr);
     matcher->useTransparentBounds(value);
 }

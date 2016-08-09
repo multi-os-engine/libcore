@@ -1614,6 +1614,7 @@ public class SSLSocketTest extends TestCase {
     }
 
     public void test_SSLSocket_ClientHello_record_size() throws Exception {
+        /* [XRT] crash
         // This test checks the size of ClientHello of the default SSLSocket. TLS/SSL handshakes
         // with older/unpatched F5/BIG-IP appliances are known to stall and time out when
         // the fragment containing ClientHello is between 256 and 511 (inclusive) bytes long.
@@ -1660,9 +1661,12 @@ public class SSLSocketTest extends TestCase {
             fail("Fragment containing ClientHello is of dangerous length: "
                     + fragmentLength + " bytes");
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_SSLSocket_ClientHello_cipherSuites() throws Exception {
+        /* [XRT] crash
         ForEachRunner.runNamed(new ForEachRunner.Callback<SSLSocketFactory>() {
             @Override
             public void run(SSLSocketFactory sslSocketFactory) throws Exception {
@@ -1691,9 +1695,12 @@ public class SSLSocketTest extends TestCase {
                 StandardNames.assertDefaultCipherSuites(cipherSuites);
             }
         }, getSSLSocketFactoriesToTest());
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_SSLSocket_ClientHello_clientProtocolVersion() throws Exception {
+        /* [XRT] crash
         ForEachRunner.runNamed(new ForEachRunner.Callback<SSLSocketFactory>() {
             @Override
             public void run(SSLSocketFactory sslSocketFactory) throws Exception {
@@ -1701,9 +1708,12 @@ public class SSLSocketTest extends TestCase {
                 assertEquals(TlsProtocolVersion.TLSv1_2, clientHello.clientVersion);
             }
         }, getSSLSocketFactoriesToTest());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_SSLSocket_ClientHello_compressionMethods() throws Exception {
+        /* [XRT] crash
         ForEachRunner.runNamed(new ForEachRunner.Callback<SSLSocketFactory>() {
             @Override
             public void run(SSLSocketFactory sslSocketFactory) throws Exception {
@@ -1711,9 +1721,12 @@ public class SSLSocketTest extends TestCase {
                 assertEquals(Arrays.asList(CompressionMethod.NULL), clientHello.compressionMethods);
             }
         }, getSSLSocketFactoriesToTest());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_SSLSocket_ClientHello_SNI() throws Exception {
+        /* [XRT] crash
         ForEachRunner.runNamed(new ForEachRunner.Callback<SSLSocketFactory>() {
             @Override
             public void run(SSLSocketFactory sslSocketFactory) throws Exception {
@@ -1724,6 +1737,8 @@ public class SSLSocketTest extends TestCase {
                 assertEquals(Arrays.asList("localhost.localdomain"), sniExtension.hostnames);
             }
         }, getSSLSocketFactoriesToTest());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private List<Pair<String, SSLSocketFactory>> getSSLSocketFactoriesToTest()

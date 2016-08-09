@@ -407,6 +407,7 @@ public class SocketChannelTest extends TestCase {
 
     public void testSocket_NonBlock_ActionsAfterConnectBeforeFinish()
             throws IOException {
+         ///* [XRT] crash
         assertFalse(this.channel1.isConnected());// not connected
         this.channel1.configureBlocking(false);
         boolean connected = channel1.connect(localAddr1);
@@ -420,6 +421,8 @@ public class SocketChannelTest extends TestCase {
             // same
             assertSame(s1, s2);
         }
+        //*/
+        //fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testSocket_NonBlock_ActionsAfterConnectAfterFinish()
@@ -774,7 +777,6 @@ public class SocketChannelTest extends TestCase {
 
         this.channel1.close();
         statusChannelClosed();
-
     }
 
     /**
@@ -902,7 +904,6 @@ public class SocketChannelTest extends TestCase {
         tryFinish();
         this.channel1.close();
         statusChannelClosed();
-
     }
 
     /**
@@ -1185,7 +1186,6 @@ public class SocketChannelTest extends TestCase {
 
         this.channel1.close();
         statusChannelClosed();
-
     }
 
     /**
@@ -2900,7 +2900,6 @@ public class SocketChannelTest extends TestCase {
             sc.close();
             sock.close();
         }
-
     }
 
     /**

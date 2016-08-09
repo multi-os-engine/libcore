@@ -43,11 +43,14 @@ public class DecimalFormatTest extends TestCase {
 
     // https://code.google.com/p/android/issues/detail?id=59600
     public void test_setNan_emptyString() throws Exception {
+        /* [XRT] crash
         DecimalFormatSymbols dfs = new DecimalFormatSymbols();
         dfs.setNaN("");
         DecimalFormat df = new DecimalFormat();
         df.setDecimalFormatSymbols(dfs);
         df.format(Double.NaN);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testAttributedCharacterIterator() throws Exception {

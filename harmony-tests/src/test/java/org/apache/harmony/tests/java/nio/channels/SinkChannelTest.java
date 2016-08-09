@@ -68,6 +68,7 @@ public class SinkChannelTest extends TestCase {
 	 * @tests java.nio.channels.Pipe.SinkChannel#write(ByteBuffer)
 	 */
 	public void test_write_LByteBuffer() throws IOException {
+        /* [XRT] crash
 		ByteBuffer[] bufArray = { buffer, positionedBuffer };
 		boolean[] sinkBlockingMode = { true, true, false, false };
 		boolean[] sourceBlockingMode = { true, false, true, false };
@@ -97,6 +98,8 @@ public class SinkChannelTest extends TestCase {
 				buf.reset();
 			}
 		}
+        */
+        fail("[CRASH] Turn off testcase due to crash");
 	}
 
 	/**
@@ -104,6 +107,7 @@ public class SinkChannelTest extends TestCase {
 	 */
 	public void test_write_LByteBuffer_mutliThread() throws IOException,
 	        InterruptedException {
+        /* [XRT] crash
         final int THREAD_NUM = 20;
         final byte[] strbytes = "bytes".getBytes(ISO8859_1);
         Thread[] thread = new Thread[THREAD_NUM];
@@ -141,13 +145,16 @@ public class SinkChannelTest extends TestCase {
         }
         String readString = buf.toString();
         assertEquals(readString, new String(readBuf.array(), ISO8859_1));
+        */
+        fail("[CRASH] Turn off testcase due to crash");
 	}
 
 	/**
 	 * @tests java.nio.channels.Pipe.SinkChannel#write(ByteBuffer)
 	 */
 	public void test_write_LByteBuffer_Exception() throws IOException {
-		// write null ByteBuffer
+		 /* [XRT] crash
+        // write null ByteBuffer
 		ByteBuffer nullBuf = null;
 		try {
 			sink.write(nullBuf);
@@ -155,31 +162,40 @@ public class SinkChannelTest extends TestCase {
 		} catch (NullPointerException e) {
 			// expected
 		}
+        */
+        fail("[CRASH] Turn off testcase due to crash");
 	}
 
     public void test_write_LByteBuffer_SourceClosed() throws IOException {
+         /* [XRT] crash
         source.close();
         try {
             int written = sink.write(buffer);
             fail();
         } catch (IOException expected) {
         }
+          */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_write_LByteBuffer_SinkClosed() throws IOException {
+        /* [XRT] crash
         sink.close();
         try {
             sink.write(buffer);
             fail("should throw ClosedChannelException");
         } catch (ClosedChannelException expected) {
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
 	/**
 	 * @tests java.nio.channels.Pipe.SinkChannel#write(ByteBuffer[])
 	 */
 	public void test_write_$LByteBuffer() throws IOException {
-		ByteBuffer[] bufArray = { buffer, positionedBuffer };
+		/* [XRT] crash
+        ByteBuffer[] bufArray = { buffer, positionedBuffer };
 		boolean[] sinkBlockingMode = { true, true, false, false };
 		boolean[] sourceBlockingMode = { true, false, true, false };
 		for (int i = 0; i < sinkBlockingMode.length; ++i) {
@@ -205,14 +221,16 @@ public class SinkChannelTest extends TestCase {
 			}
 			assertEquals(BUFFER_SIZE, buffer.position());
 			assertEquals(10, positionedBuffer.position());
-		}
+		}*/
+        fail("[CRASH] Turn off testcase due to crash");
 	}
 
 	/**
 	 * @tests java.nio.channels.Pipe.SinkChannel#write(ByteBuffer[])
 	 */
 	public void test_write_$LByteBuffer_Exception() throws IOException {
-		// write null ByteBuffer[]
+		/* [XRT] crash
+        // write null ByteBuffer[]
 		ByteBuffer[] nullBufArrayRef = null;
 		try {
 			sink.write(nullBufArrayRef);
@@ -230,9 +248,12 @@ public class SinkChannelTest extends TestCase {
 		} catch (NullPointerException e) {
 			// expected
 		}
+        */
+        fail("[CRASH] Turn off testcase due to crash");
 	}
 
     public void test_write_$LByteBuffer_SourceClosed() throws IOException {
+        /* [XRT] crash
         ByteBuffer[] bufArray = { buffer };
         source.close();
         try {
@@ -240,13 +261,16 @@ public class SinkChannelTest extends TestCase {
             fail();
         } catch (IOException expected) {
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
 	/**
 	 * @tests java.nio.channels.Pipe.SinkChannel#write(ByteBuffer[])
 	 */
 	public void test_write_$LByteBuffer_SinkClosed() throws IOException {
-		ByteBuffer[] bufArray = { buffer };
+		/* [XRT] crash
+        ByteBuffer[] bufArray = { buffer };
 		sink.close();
 		try {
 			sink.write(bufArray);
@@ -272,13 +296,16 @@ public class SinkChannelTest extends TestCase {
 		} catch (ClosedChannelException e) {
 			// expected
 		}
+        */
+        fail("[CRASH] Turn off testcase due to crash");
 	}
 
 	/**
 	 * @tests java.nio.channels.Pipe.SinkChannel#write(ByteBuffer[], int, int)
 	 */
 	public void test_write_$LByteBufferII() throws IOException {
-		ByteBuffer[] bufArray = { buffer, positionedBuffer };
+		/* [XRT] crash
+        ByteBuffer[] bufArray = { buffer, positionedBuffer };
 		boolean[] sinkBlockingMode = { true, true, false, false };
 		boolean[] sourceBlockingMode = { true, false, true, false };
 		for (int i = 0; i < sinkBlockingMode.length; ++i) {
@@ -301,9 +328,12 @@ public class SinkChannelTest extends TestCase {
 			assertEquals("bytes", new String(readBuf.array(), ISO8859_1));
 			assertEquals(10, positionedBuffer.position());
 		}
+        */
+        fail("[CRASH] Turn off testcase due to crash");
 	}
 
     public void test_write_$LByteBufferII_Exception() throws IOException {
+        /* [XRT] crash
         try {
             sink.write(null, 0, 1);
             fail();
@@ -368,9 +398,12 @@ public class SinkChannelTest extends TestCase {
         } catch (NullPointerException e) {
             // expected
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_write_$LByteBufferII_SourceClosed() throws IOException {
+        /* [XRT] crash
         ByteBuffer[] bufArray = { buffer };
         source.close();
 
@@ -379,9 +412,12 @@ public class SinkChannelTest extends TestCase {
             fail();
         } catch (IOException expected) {
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_write_$LByteBufferII_SinkClosed() throws IOException {
+        /* [XRT] crash
         ByteBuffer[] bufArray = { buffer };
         sink.close();
         try {
@@ -454,16 +490,22 @@ public class SinkChannelTest extends TestCase {
         } catch (ClosedChannelException e) {
             // expected
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_close() throws IOException {
+        /* [XRT] crash
         sink.close();
         assertFalse(sink.isOpen());
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_socketChannel_read_close() throws Exception {
+        /* [XRT] crash
         ServerSocketChannel ssc = ServerSocketChannel.open();
-        ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0 /* any free port */));
+        ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0 /* any free port * /));
         int localPort = ssc.socket().getLocalPort();
         SocketChannel sc = SocketChannel.open();
         ByteBuffer buf = null;
@@ -484,11 +526,14 @@ public class SinkChannelTest extends TestCase {
             // expected
         }
         sock.close();
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_socketChannel_read_write() throws Exception {
+        /* [XRT] crash
         ServerSocketChannel ssc = ServerSocketChannel.open();
-        ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0 /* any free port */));
+        ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0 /* any free port * /));
         int localPort = ssc.socket().getLocalPort();
         SocketChannel sc = SocketChannel.open();
         sc.connect(new InetSocketAddress(InetAddress.getLocalHost(), localPort));
@@ -503,5 +548,7 @@ public class SinkChannelTest extends TestCase {
         sc.close();
         ByteBuffer target = ByteBuffer.allocate(10);
         assertEquals(-1, sock.read(target));
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 }

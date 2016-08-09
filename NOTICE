@@ -1,6 +1,15 @@
    =========================================================================
    ==  NOTICE file corresponding to the section 4 d of                    ==
    ==  the Apache License, Version 2.0,                                   ==
+   ==  in this case for the MOE-specific code.                            ==
+   =========================================================================
+
+Multi-OS Engine code
+Copyright (C) 2014-2016 Intel Corporation
+
+   =========================================================================
+   ==  NOTICE file corresponding to the section 4 d of                    ==
+   ==  the Apache License, Version 2.0,                                   ==
    ==  in this case for the Android-specific code.                        ==
    =========================================================================
 

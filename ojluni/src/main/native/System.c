@@ -30,6 +30,9 @@
 #include "jvm.h"
 #include "io_util.h"
 
+#if defined(MOE) && !defined(MOE_WINDOWS)
+#import <mach/mach_time.h>
+#endif
 
 #include "openssl/opensslv.h"
 #include "zlib.h"
@@ -167,7 +170,7 @@ System_mapLibraryName(JNIEnv *env, jclass ign, jstring libname)
     return (*env)->NewString(env, chars, len);
 }
 
-static jobjectArray System_specialProperties(JNIEnv* env, jclass ignored) {
+static JNICALL jobjectArray System_specialProperties(JNIEnv* env, jclass ignored) {
     jclass stringClass = (*env)->FindClass(env, "java/lang/String");
     jobjectArray result = (*env)->NewObjectArray(env, 4, stringClass, NULL);
 
@@ -227,7 +230,7 @@ static jobjectArray System_specialProperties(JNIEnv* env, jclass ignored) {
     return result;
 }
 
-static void System_log(JNIEnv* env, jclass ignored, jchar type, jstring javaMessage, jthrowable exception) {
+static JNICALL void System_log(JNIEnv* env, jclass ignored, jchar type, jstring javaMessage, jthrowable exception) {
     int priority;
     switch (type) {
     case 'D': case 'd': priority = ANDROID_LOG_DEBUG;   break;
@@ -253,13 +256,30 @@ static void System_log(JNIEnv* env, jclass ignored, jchar type, jstring javaMess
     }
 }
 
-static jlong System_nanoTime(JNIEnv* env, jclass unused) {
+#ifdef MOE_WINDOWS
+static double timeFreq;
+#elif defined(MOE)
+static mach_timebase_info_data_t timeInfo;
+#endif
+
+static JNICALL jlong System_nanoTime(JNIEnv* env, jclass unused) {
+#ifndef MOE
   struct timespec now;
   clock_gettime(CLOCK_MONOTONIC, &now);
   return now.tv_sec * 1000000000LL + now.tv_nsec;
+#elif defined(MOE_WINDOWS)
+  LARGE_INTEGER li;
+  QueryPerformanceCounter(&li);
+  return li.QuadPart / timeFreq;
+#else
+  uint64_t t = mach_absolute_time();
+  t *= timeInfo.numer;
+  t /= timeInfo.denom;
+  return t;
+#endif
 }
 
-static jlong System_currentTimeMillis(JNIEnv* env, jclass unused) {
+static JNICALL jlong System_currentTimeMillis(JNIEnv* env, jclass unused) {
   return JVM_CurrentTimeMillis(NULL, NULL);
 }
 
@@ -275,5 +295,12 @@ static JNINativeMethod gMethods[] = {
 };
 
 void register_java_lang_System(JNIEnv* env) {
+#ifdef MOE_WINDOWS
+  LARGE_INTEGER li;
+  QueryPerformanceFrequency(&li);
+  timeFreq = (double)li.QuadPart / 1000000000;
+#elif defined(MOE)
+  mach_timebase_info(&timeInfo);
+#endif
   jniRegisterNativeMethods(env, "java/lang/System", gMethods, NELEM(gMethods));
 }

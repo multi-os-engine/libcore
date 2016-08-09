@@ -46,7 +46,10 @@ public class SocketTimeoutExceptionTest extends junit.framework.TestCase {
      * serialization/deserialization.
      */
     public void testSerializationSelf() throws Exception {
+         /* [XRT] crash
         SerializationTest.verifySelf(new SocketTimeoutException());
+          */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (c) 2014-2016, Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,35 +18,70 @@
 #ifndef PORTABILITY_H_included
 #define PORTABILITY_H_included
 
-#include <byteswap.h>
-#include <sys/sendfile.h>
+#if defined(MOE)
+
+#ifndef MOE_WINDOWS
+// Mac OS.
+#include <AvailabilityMacros.h> // For MAC_OS_X_VERSION_MAX_ALLOWED
+
+#include <libkern/OSByteOrder.h>
+#define bswap_16 OSSwapInt16
+#define bswap_32 OSSwapInt32
+#define bswap_64 OSSwapInt64
+
+#include <unistd.h>
+
+#endif
+
+// Mac OS has a 64-bit off_t and no 32-bit compatibility cruft.
+#define flock64 flock
+#define ftruncate64 ftruncate
+#define isnanf __inline_isnanf
+#define lseek64 lseek
+#define pread64 pread
+#define pwrite64 pwrite
+
+// TODO: Darwin appears to have an fdatasync syscall.
+static inline int fdatasync(int fd) { return fsync(fd); }
+
+#ifndef MOE_WINDOWS
+// For Linux-compatible sendfile(3).
+#include <sys/socket.h>
+#include <sys/types.h>
+static inline ssize_t sendfile(int out_fd, int in_fd, off_t* offset, size_t count) {
+  off_t in_out_count = count;
+  int result = sendfile(in_fd, out_fd, *offset, &in_out_count, NULL, 0);
+  if (result == -1) {
+    return -1;
+  }
+  return in_out_count;
+}
+#endif
+
+#ifndef MOE_WINDOWS
+
+// For mincore(3).
+#define _DARWIN_C_SOURCE
+#include <sys/mman.h>
+#undef _DARWIN_C_SOURCE
+static inline int mincore(void* addr, size_t length, unsigned char* vec) {
+  return mincore(addr, length, reinterpret_cast<char*>(vec));
+}
+
+// For statfs(3).
+#include <sys/param.h>
+#include <sys/mount.h>
+
 #include <sys/statvfs.h>
 
+#endif
+
+#endif
+
 #include <netdb.h>
-#if defined(__BIONIC__)
-extern "C" int android_getaddrinfofornet(const char*, const char*, const struct addrinfo*, unsigned, unsigned, struct addrinfo**);
-#else
 static inline int android_getaddrinfofornet(const char* hostname, const char* servname,
     const struct addrinfo* hints, unsigned /*netid*/, unsigned /*mark*/, struct addrinfo** res) {
   return getaddrinfo(hostname, servname, hints, res);
 }
-#endif
-
-#if defined(__GLIBC__) && !defined(__LP64__)
-
-#include <unistd.h>
-
-// 32 bit GLIBC hardcodes a "long int" as the return type for
-// TEMP_FAILURE_RETRY so the return value here gets truncated for
-// functions that return 64 bit types.
-#undef TEMP_FAILURE_RETRY
-#define TEMP_FAILURE_RETRY(exp) ({         \
-    __typeof__(exp) _rc;                   \
-    do {                                   \
-        _rc = (exp);                       \
-    } while (_rc == -1 && errno == EINTR); \
-    _rc; })
-
-#endif  // __GLIBC__ && !__LP64__
 
 #endif  // PORTABILITY_H_included

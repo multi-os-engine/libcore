@@ -29,8 +29,10 @@
 #include "jni_util.h"
 
 #ifdef __APPLE__
+#ifndef MOE
 #include <crt_externs.h>
 #define environ (*_NSGetEnviron())
+#endif
 #endif
 #include "JNIHelp.h"
 
@@ -55,6 +57,7 @@ ProcessEnvironment_environ(JNIEnv *env, jclass ign)
     jobjectArray result;
     jclass byteArrCls = (*env)->FindClass(env, "[B");
 
+#ifndef MOE
     for (i = 0; environ[i]; i++) {
         /* Ignore corrupted environment variables */
         if (strchr(environ[i], '=') != NULL)
@@ -87,6 +90,9 @@ ProcessEnvironment_environ(JNIEnv *env, jclass ign)
             j++;
         }
     }
+#else
+    result = (*env)->NewObjectArray(env, 0, byteArrCls, 0);
+#endif
 
     return result;
 }

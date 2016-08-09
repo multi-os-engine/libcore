@@ -47,7 +47,7 @@ public final class AndroidHardcodedSystemProperties {
     // can use it.
     public final static String JAVA_VERSION = "0";
 
-    final static String[][] STATIC_PROPERTIES = {
+    final static String[][] STATIC_PROPERTIES_COMMON = {
         // None of these four are meaningful on Android, but these keys are guaranteed
         // to be present for System.getProperty. For java.class.version, we use the maximum
         // class file version that dx currently supports.
@@ -73,10 +73,6 @@ public final class AndroidHardcodedSystemProperties {
         { "java.net.preferIPv6Addresses", "false" },
 
         { "file.encoding", "UTF-8" },
-
-        { "file.separator", "/" },
-        { "line.separator", "\n" },
-        { "path.separator", ":" },
 
         // Turn off ICU debugging. This allows compile-time initialization of a range of
         // classes. b/28039175
@@ -106,6 +102,18 @@ public final class AndroidHardcodedSystemProperties {
 
         // Hardcode default value for AVA. b/28174137
         { "com.sun.security.preserveOldDCEncoding", null },
+    };
+
+    final static String[][] STATIC_PROPERTIES_UNIX = {
+        { "file.separator", "/" },
+        { "line.separator", "\n" },
+        { "path.separator", ":" },
+    };
+
+    final static String[][] STATIC_PROPERTIES_WINDOWS = {
+        { "file.separator", "\\" },
+        { "line.separator", "\r\n" },
+        { "path.separator", ";" },
     };
 }
 

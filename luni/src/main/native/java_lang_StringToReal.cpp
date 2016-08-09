@@ -871,7 +871,7 @@ OutOfMemory:
   return z;
 }
 
-static jfloat StringToReal_parseFltImpl(JNIEnv* env, jclass, jstring s, jint e) {
+static JNICALL jfloat StringToReal_parseFltImpl(JNIEnv* env, jclass, jstring s, jint e) {
     ScopedUtfChars str(env, s);
     if (str.c_str() == NULL) {
         return 0.0;
@@ -879,7 +879,7 @@ static jfloat StringToReal_parseFltImpl(JNIEnv* env, jclass, jstring s, jint e) 
     return createFloat(env, str.c_str(), e);
 }
 
-static jdouble StringToReal_parseDblImpl(JNIEnv* env, jclass, jstring s, jint e) {
+static JNICALL jdouble StringToReal_parseDblImpl(JNIEnv* env, jclass, jstring s, jint e) {
     ScopedUtfChars str(env, s);
     if (str.c_str() == NULL) {
         return 0.0;

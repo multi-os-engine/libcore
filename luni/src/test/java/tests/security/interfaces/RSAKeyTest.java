@@ -33,6 +33,7 @@ public class RSAKeyTest extends TestCase {
      *   Case 2: check public key
      */
     public void test_getModulus() throws Exception {
+        /* [XRT] crash
         KeyFactory gen = KeyFactory.getInstance("RSA");
         final BigInteger n = BigInteger.valueOf(3233);
         final BigInteger d = BigInteger.valueOf(2753);
@@ -46,5 +47,7 @@ public class RSAKeyTest extends TestCase {
         // Case 2: check public key
         key = (RSAKey) gen.generatePublic(new RSAPublicKeySpec(n, e));
         assertEquals("invalid modulus", n, key.getModulus());
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 }

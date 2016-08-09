@@ -85,46 +85,77 @@ public class KeyPairGeneratorTest extends TestCase {
     }
 
     public void test_getInstance_provider0() throws Exception {
+        /* [XRT] crash
         test_getInstance(0);
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getInstance_provider1() throws Exception {
+        /* [XRT] crash
         test_getInstance(1);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getInstance_provider2() throws Exception {
-        test_getInstance(2);
+        /* [XRT] crash
+         test_getInstance(2);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getInstance_provider3() throws Exception {
-        test_getInstance(3);
+        /* [XRT] crash
+         test_getInstance(3);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getInstance_provider4() throws Exception {
-        test_getInstance(4);
+        /* [XRT] crash
+         test_getInstance(4);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getInstance_provider5() throws Exception {
-        test_getInstance(5);
+        /* [XRT] crash
+         test_getInstance(5);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getInstance_provider6() throws Exception {
-        test_getInstance(6);
+        /* [XRT] crash
+         test_getInstance(6);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getInstance_provider7() throws Exception {
-        test_getInstance(7);
+        /* [XRT] crash
+         test_getInstance(7);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getInstance_provider8() throws Exception {
-        test_getInstance(8);
+        /* [XRT] crash
+         test_getInstance(8);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getInstance_provider9() throws Exception {
-        test_getInstance(9);
+        /* [XRT] crash
+         test_getInstance(9);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void test_getInstance(int providerIndex) throws Exception {
+        /* [XRT] crash
         if (providerIndex >= providers.size()) {
             // Providers can be added by vendors and other tests. We do not
             // specify a fixed number and silenty pass if the provider at the
@@ -177,6 +208,8 @@ public class KeyPairGeneratorTest extends TestCase {
                 throw new Exception("Problem testing KeyPairGenerator." + algorithm, e);
             }
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private static final Map<String, List<Integer>> KEY_SIZES

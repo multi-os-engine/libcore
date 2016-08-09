@@ -26,8 +26,11 @@ public class RSAPrivateCrtKeyTest extends TestCase {
 
     protected void setUp() throws Exception {
         super.setUp();
+        /* [XRT] crash
         KeyFactory gen = KeyFactory.getInstance("RSA");
         key = (RSAPrivateCrtKey) gen.generatePrivate(Util.rsaCrtParam);
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -35,8 +38,11 @@ public class RSAPrivateCrtKeyTest extends TestCase {
      * #getCrtCoefficient()
      */
     public void test_getCrtCoefficient() {
+        /* [XRT] crash
         assertEquals("invalid CRT coefficient",
                 Util.rsaCrtParam.getCrtCoefficient(), key.getCrtCoefficient());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -44,8 +50,11 @@ public class RSAPrivateCrtKeyTest extends TestCase {
      * #getPrimeExponentP()
      */
     public void test_getPrimeExponentP() {
+        /* [XRT] crash
         assertEquals("invalid prime exponent P",
                 Util.rsaCrtParam.getPrimeExponentP(), key.getPrimeExponentP());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -53,8 +62,11 @@ public class RSAPrivateCrtKeyTest extends TestCase {
      * #getPrimeExponentQ()
      */
     public void test_getPrimeExponentQ() {
+        /* [XRT] crash
         assertEquals("invalid prime exponent Q",
                 Util.rsaCrtParam.getPrimeExponentQ(), key.getPrimeExponentQ());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -62,8 +74,11 @@ public class RSAPrivateCrtKeyTest extends TestCase {
      * #getPrimeP()
      */
     public void test_getPrimeP() {
+        /* [XRT] crash
         assertEquals("invalid prime P",
                 Util.rsaCrtParam.getPrimeP(), key.getPrimeP());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -71,8 +86,11 @@ public class RSAPrivateCrtKeyTest extends TestCase {
      * #getPrimeQ()
      */
     public void test_getPrimeQ() {
+        /* [XRT] crash
         assertEquals("invalid prime Q",
                 Util.rsaCrtParam.getPrimeQ(), key.getPrimeQ());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -80,8 +98,11 @@ public class RSAPrivateCrtKeyTest extends TestCase {
      * #getPublicExponent()
      */
     public void test_getPublicExponent() {
+        /* [XRT] crash
         assertEquals("invalid public exponent",
                 Util.rsaCrtParam.getPublicExponent(), key.getPublicExponent());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     protected void tearDown() throws Exception {

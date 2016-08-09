@@ -36,6 +36,7 @@ public final class ThreadTest extends TestCase {
     }
 
     public void testLeakingStartedThreads() {
+        /* [XRT] crash
         final AtomicInteger finalizedThreadsCount = new AtomicInteger();
         for (int i = 0; true; i++) {
             try {
@@ -46,9 +47,12 @@ public final class ThreadTest extends TestCase {
         }
         FinalizationTester.induceFinalization();
         assertTrue("Started threads were never finalized!", finalizedThreadsCount.get() > 0);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testLeakingUnstartedThreads() {
+         /* [XRT] crash
         final AtomicInteger finalizedThreadsCount = new AtomicInteger();
         for (int i = 0; true; i++) {
             try {
@@ -59,6 +63,8 @@ public final class ThreadTest extends TestCase {
         }
         FinalizationTester.induceFinalization();
         assertTrue("Unstarted threads were never finalized!", finalizedThreadsCount.get() > 0);
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testThreadSleep() throws Exception {
@@ -141,6 +147,7 @@ public final class ThreadTest extends TestCase {
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException ignored) {
+                        return;
                     }
                 }
             }
@@ -153,6 +160,7 @@ public final class ThreadTest extends TestCase {
         // Expect to find MyThread.doSomething in the trace
         assertTrue(trace.getClassName().contains("ThreadTest")
                 && trace.getMethodName().equals("doSomething"));
+        t1.interrupt();
     }
 
     public void testGetAllStackTracesIncludesAllGroups() throws Exception {

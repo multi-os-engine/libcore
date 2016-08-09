@@ -18,7 +18,7 @@
 
 typedef void (*FreeFunction)(void*);
 
-static void NativeAllocationRegistry_applyFreeFunction(JNIEnv*,
+static JNICALL void NativeAllocationRegistry_applyFreeFunction(JNIEnv*,
                                                        jclass,
                                                        jlong freeFunction,
                                                        jlong ptr) {

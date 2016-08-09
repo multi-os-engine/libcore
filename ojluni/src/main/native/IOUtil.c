@@ -25,7 +25,9 @@
 
 #include <sys/types.h>
 #include <string.h>
+#ifndef MOE_WINDOWS
 #include <sys/resource.h>
+#endif
 
 #include "jni.h"
 #include "jni_util.h"
@@ -70,10 +72,16 @@ IOUtil_setfdVal(JNIEnv *env, jclass clazz, jobject fdo, jint val)
 static int
 configureBlocking(int fd, jboolean blocking)
 {
+// MOE TODO: This is not going to work with pipes!
+#ifndef MOE_WINDOWS
     int flags = fcntl(fd, F_GETFL);
     int newflags = blocking ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
 
     return (flags == newflags) ? 0 : fcntl(fd, F_SETFL, newflags);
+#else
+    u_long value = blocking ? 0 : 1;
+    return ioctlsocket((SOCKET)fd, FIONBIO, &value);
+#endif
 }
 
 JNIEXPORT void JNICALL
@@ -125,6 +133,7 @@ IOUtil_drain(JNIEnv *env, jclass cl, jint fd)
 JNIEXPORT jint JNICALL
 IOUtil_fdLimit(JNIEnv *env, jclass this)
 {
+#ifndef MOE_WINDOWS
     struct rlimit rlp;
     if (getrlimit(RLIMIT_NOFILE, &rlp) < 0) {
         JNU_ThrowIOExceptionWithLastError(env, "getrlimit failed");
@@ -136,6 +145,10 @@ IOUtil_fdLimit(JNIEnv *env, jclass this)
     } else {
         return (jint)rlp.rlim_max;
     }
+#else
+    // MOE TODO: check this.
+    return _getmaxstdio();
+#endif
 }
 
 /* Declared in nio_util.h for use elsewhere in NIO */

@@ -317,6 +317,7 @@ public class HttpsURLConnectionTest extends TestCase {
      * Tests if setHostnameVerifier() method replaces default verifier.
      */
     public void testSetHostnameVerifier() throws Throwable {
+        /* [XRT] crash
         // set up the properties pointing to the key/trust stores
         setUpStoreProperties();
 
@@ -339,7 +340,7 @@ public class HttpsURLConnectionTest extends TestCase {
         connection.setHostnameVerifier(connectionHostnameVerifier);
 
         // perform the interaction between the peers and check the results
-        executeClientRequest(connection, false /* doOutput */);
+        executeClientRequest(connection, false /* doOutput /);
         assertTrue("Hostname verification was not done", connectionHostnameVerifier.verified);
         assertFalse("Hostname verification should not be done by this verifier",
                 defaultHostnameVerifier.verified);
@@ -347,6 +348,8 @@ public class HttpsURLConnectionTest extends TestCase {
         checkConnectionStateParameters(connection, dispatcher.getLastRequest());
 
         webServer.shutdown();
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**

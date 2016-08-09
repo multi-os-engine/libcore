@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.JarURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
@@ -44,7 +46,11 @@ public class ClassPathURLStreamHandler extends Handler {
   private final JarFile jarFile;
 
   public ClassPathURLStreamHandler(String jarFileName) throws IOException {
-    jarFile = new JarFile(jarFileName);
+    if (new File(jarFileName).isDirectory()) {
+      jarFile = null;
+    } else {
+      jarFile = new JarFile(jarFileName);
+    }
 
     // File.toURI() is compliant with RFC 1738 in always creating absolute path names. If we
     // construct the URL by concatenating strings, we might end up with illegal URLs for relative
@@ -57,7 +63,21 @@ public class ClassPathURLStreamHandler extends Handler {
    * entry cannot be found under the exact name presented.
    */
   public URL getEntryUrlOrNull(String entryName) {
-    if (findEntryWithDirectoryFallback(jarFile, entryName) != null) {
+    if (jarFile == null) {
+      File entry;
+      try {
+        entry = new File(new URI(fileUri).getPath(), entryName);
+      } catch (URISyntaxException e1) {
+        return null;
+      }
+      if (entry.exists()) {
+        try {
+          return entry.toURL();
+        } catch (MalformedURLException e) {
+          return null;
+        }
+      }
+    } else if (findEntryWithDirectoryFallback(jarFile, entryName) != null) {
       try {
         // Encode the path to ensure that any special characters like # survive their trip through
         // the URL. Entry names must use / as the path separator.
@@ -75,8 +95,16 @@ public class ClassPathURLStreamHandler extends Handler {
    * and false otherwise.
    */
   public boolean isEntryStored(String entryName) {
-    ZipEntry entry = jarFile.getEntry(entryName);
-    return entry != null && entry.getMethod() == ZipEntry.STORED;
+    if (jarFile == null) {
+      try {
+        return new File(new URI(fileUri).getPath(), entryName).exists();
+      } catch (URISyntaxException e) {
+        return false;
+      }
+    } else {
+      ZipEntry entry = jarFile.getEntry(entryName);
+      return entry != null && entry.getMethod() == ZipEntry.STORED;
+    }
   }
 
   @Override

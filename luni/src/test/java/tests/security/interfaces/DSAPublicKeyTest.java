@@ -35,6 +35,7 @@ public class DSAPublicKeyTest extends TestCase {
      *           minute)
      */
     public void test_getY() throws Exception {
+        /* [XRT] hang
         KeyPairGenerator keyGen = null;
         KeyPair keys = null;
         DSAPrivateKey priv = null;
@@ -55,5 +56,7 @@ public class DSAPublicKeyTest extends TestCase {
         priv = (DSAPrivateKey) keys.getPrivate();
         publ = (DSAPublicKey) keys.getPublic();
         assertNotNull("Invalid Y value", publ.getY());
+         */
+        fail("[HANG] Turn off testcase due to hang");
     }
 }

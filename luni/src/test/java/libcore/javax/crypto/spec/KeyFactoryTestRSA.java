@@ -31,6 +31,9 @@ public class KeyFactoryTestRSA extends
 
     @Override
     protected void check(KeyPair keyPair) throws Exception {
+        /* [XRT] crash
         new CipherAsymmetricCryptHelper("RSA").test(keyPair);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 }

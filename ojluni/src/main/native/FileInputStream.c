@@ -23,7 +23,9 @@
  * questions.
  */
 
+#ifndef MOE_WINDOWS
 #include <sys/ioctl.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -88,6 +90,7 @@ FileInputStream_skip0(JNIEnv *env, jobject this, jlong toSkip) {
     return (end - cur);
 }
 
+#ifndef MOE_WINDOWS
 static int available(int fd, jlong *bytes) {
   int n;
   // Unlike the original OpenJdk implementation, we use FIONREAD for all file
@@ -113,6 +116,30 @@ static int available(int fd, jlong *bytes) {
   // Raise an exception for all other error types.
   return 0;
 }
+#else
+static int available(int fd, jlong *bytes) {
+    HANDLE file = (HANDLE)_get_osfhandle(fd);
+
+    DWORD pointerHigh = 0;
+    DWORD pointerLow = SetFilePointer(file, 0, &pointerHigh, FILE_CURRENT);
+    if (pointerLow == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR) {
+        *bytes = 0;
+        return 1;
+    }
+    jlong pointer = (jlong)pointerLow | (((jlong) pointerHigh) << 32);
+    
+    DWORD sizeHigh;
+    DWORD sizeLow = GetFileSize(file, &sizeHigh);
+    if (sizeLow == INVALID_FILE_SIZE && GetLastError() != NO_ERROR) {
+        *bytes = 0;
+        return 1;
+    }
+    jlong size = (jlong)sizeLow | (((jlong) sizeHigh) << 32);
+    
+    *bytes = size - pointer;
+    return 0;
+}
+#endif
 
 JNIEXPORT jint JNICALL
 FileInputStream_available0(JNIEnv *env, jobject this) {

@@ -35,6 +35,7 @@ public class InetSocketAddressTest extends TestCase {
     }
 
     public void test_ConstructorLInetAddressI() throws Exception {
+        /* [XRT] crash
         String[] validIPAddresses = {
             "::1.2.3.4",
             "::", "::",
@@ -76,9 +77,13 @@ public class InetSocketAddressTest extends TestCase {
             fail();
         } catch (IllegalArgumentException expected) {
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
+
     }
 
     public void test_ConstructorI() {
+        /* [XRT] crash
         InetSocketAddress isa = new  InetSocketAddress(65535);
         assertEquals("::", isa.getHostName());
         assertEquals(65535, isa.getPort());
@@ -94,6 +99,8 @@ public class InetSocketAddressTest extends TestCase {
             fail();
         } catch (IllegalArgumentException  expected) {
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_equals() throws Exception {

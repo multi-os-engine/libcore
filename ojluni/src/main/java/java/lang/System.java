@@ -988,7 +988,19 @@ public final class System {
         // Set static hardcoded properties.
         // These come last, as they must be guaranteed to agree with what a backend compiler
         // may assume when compiling the boot image on Android.
-        for (String[] pair : AndroidHardcodedSystemProperties.STATIC_PROPERTIES) {
+        for (String[] pair : AndroidHardcodedSystemProperties.STATIC_PROPERTIES_COMMON) {
+            if (p.containsKey(pair[0])) {
+                logE("Ignoring command line argument: -D" + pair[0]);
+            }
+            if (pair[1] == null) {
+                p.remove(pair[0]);
+            } else {
+                p.put(pair[0], pair[1]);
+            }
+        }
+
+        for (String[] pair : info.sysname.contains("Windows") ? AndroidHardcodedSystemProperties.STATIC_PROPERTIES_WINDOWS :
+                                                                AndroidHardcodedSystemProperties.STATIC_PROPERTIES_UNIX) {
             if (p.containsKey(pair[0])) {
                 logE("Ignoring command line argument: -D" + pair[0]);
             }
@@ -1502,7 +1514,9 @@ public final class System {
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */
     public static void load(String filename) {
-        Runtime.getRuntime().load0(VMStack.getStackClass1(), filename);
+        //Runtime.getRuntime().load0(VMStack.getStackClass1(), filename);
+        //MOE: In case of BootClassLoader we have to pass null.
+        Runtime.getRuntime().load(filename, VMStack.getCallingClassLoader());
     }
 
     /**
@@ -1527,7 +1541,9 @@ public final class System {
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */
     public static void loadLibrary(String libname) {
-        Runtime.getRuntime().loadLibrary0(VMStack.getCallingClassLoader(), libname);
+        //Runtime.getRuntime().loadLibrary0(VMStack.getCallingClassLoader(), libname);
+        //MOE: dynamic loading is not enabled on iOS
+        Runtime.getRuntime().load(libname, VMStack.getCallingClassLoader());
     }
 
     /**

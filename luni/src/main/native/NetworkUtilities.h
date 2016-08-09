@@ -42,4 +42,6 @@ bool inetAddressToSockaddrVerbatim(JNIEnv* env, jobject inetAddress, int port,
 
 // Changes 'fd' to be blocking/non-blocking. Returns false and sets errno on failure.
 // @Deprecated - use IoUtils.setBlocking
+#ifndef MOE_WINDOWS
 bool setBlocking(int fd, bool blocking);
+#endif

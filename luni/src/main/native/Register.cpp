@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (c) 2014-2016, Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +24,11 @@
 #include <stdlib.h>
 
 // DalvikVM calls this on startup, so we can statically register all our native methods.
+#ifdef MOE
+MOE_ONLOAD(javacore) {
+#else
 jint JNI_OnLoad(JavaVM* vm, void*) {
+#endif
     JNIEnv* env;
     if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
         ALOGE("JavaVM::GetEnv() failed");
@@ -45,9 +50,14 @@ jint JNI_OnLoad(JavaVM* vm, void*) {
     REGISTER(register_libcore_io_Memory);
     REGISTER(register_libcore_io_Posix);
     REGISTER(register_libcore_util_NativeAllocationRegistry);
+#ifndef MOE
     REGISTER(register_org_apache_harmony_dalvik_NativeTestTarget);
+#endif
     REGISTER(register_org_apache_harmony_xml_ExpatParser);
     REGISTER(register_sun_misc_Unsafe);
+    // MOE TODO: This file was re-added from older LibCore, but due to the
+    // ojluni changes it requires an update.
+    //REGISTER(register_java_net_NetworkInterface);
 #undef REGISTER
 
     return JNI_VERSION_1_6;

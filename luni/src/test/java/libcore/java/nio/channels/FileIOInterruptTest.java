@@ -114,6 +114,7 @@ public class FileIOInterruptTest extends TestCase {
 
   // This test fails on the RI: close() does not wake up a blocking FileInputStream.read() call.
   public void testStreamRead_exceptionOnCloseWhenBlocked() throws Exception {
+    /* [XRT] crash
     FifoWriter fifoWriter = new FifoWriter(fifoFile);
     fifoWriter.start();
 
@@ -134,6 +135,8 @@ public class FileIOInterruptTest extends TestCase {
 
     // Tidy up the writer thread.
     fifoWriter.tidyUp();
+    */
+    fail("[CRASH] Turn off testcase due to crash");
   }
 
   public void testStreamWrite_exceptionWhenAlreadyClosed() throws Exception {
@@ -156,6 +159,7 @@ public class FileIOInterruptTest extends TestCase {
 
   // This test fails on the RI: close() does not wake up a blocking FileInputStream.write() call.
   public void testStreamWrite_exceptionOnCloseWhenBlocked() throws Exception {
+     /* [XRT] crash
     FifoReader fifoReader = new FifoReader(fifoFile);
     fifoReader.start();
 
@@ -176,6 +180,8 @@ public class FileIOInterruptTest extends TestCase {
 
     // Tidy up the reader thread.
     fifoReader.tidyUp();
+    */
+    fail("[CRASH] Turn off testcase due to crash");
   }
 
   public void testChannelRead_exceptionWhenAlreadyClosed() throws Exception {
@@ -248,11 +254,17 @@ public class FileIOInterruptTest extends TestCase {
   }
 
   public void testChannelRead_exceptionOnCloseWhenBlocked() throws Exception {
-    testChannelRead_exceptionOnCloseWhenBlocked(ChannelReader.Method.READ);
+    /* [XRT] crash
+      testChannelRead_exceptionOnCloseWhenBlocked(ChannelReader.Method.READ);
+     */
+      fail("[CRASH] Turn off testcase due to crash");
   }
 
   public void testChannelReadV_exceptionOnCloseWhenBlocked() throws Exception {
+     /* [XRT] crash
     testChannelRead_exceptionOnCloseWhenBlocked(ChannelReader.Method.READV);
+    */
+    fail("[CRASH] Turn off testcase due to crash");
   }
 
   private void testChannelRead_exceptionOnCloseWhenBlocked(ChannelReader.Method method)
@@ -281,11 +293,17 @@ public class FileIOInterruptTest extends TestCase {
   }
 
   public void testChannelRead_exceptionOnInterrupt() throws Exception {
+    /* [XRT] crash
     testChannelRead_exceptionOnInterrupt(ChannelReader.Method.READ);
+    */
+    fail("[CRASH] Turn off testcase due to crash");
   }
 
   public void testChannelReadV_exceptionOnInterrupt() throws Exception {
+    /* [XRT] crash
     testChannelRead_exceptionOnInterrupt(ChannelReader.Method.READV);
+    */
+    fail("[CRASH] Turn off testcase due to crash");
   }
 
   private void testChannelRead_exceptionOnInterrupt(ChannelReader.Method method) throws Exception {
@@ -380,15 +398,23 @@ public class FileIOInterruptTest extends TestCase {
   }
 
   public void testChannelWrite_exceptionOnCloseWhenBlocked() throws Exception {
-    testChannelWrite_exceptionOnCloseWhenBlocked(ChannelWriter.Method.WRITE);
+    /* [XRT] crash
+      testChannelWrite_exceptionOnCloseWhenBlocked(ChannelWriter.Method.WRITE);
+     */
+      fail("[CRASH] Turn off testcase due to crash");
+
   }
 
   public void testChannelWriteV_exceptionOnCloseWhenBlocked() throws Exception {
-    testChannelWrite_exceptionOnCloseWhenBlocked(ChannelWriter.Method.WRITEV);
+    /* [XRT] crash
+      testChannelWrite_exceptionOnCloseWhenBlocked(ChannelWriter.Method.WRITEV);
+     */
+      fail("[CRASH] Turn off testcase due to crash");
   }
 
   private void testChannelWrite_exceptionOnCloseWhenBlocked(ChannelWriter.Method method)
       throws Exception {
+    /* [XRT] crash
     FifoReader fifoReader = new FifoReader(fifoFile);
     fifoReader.start();
     FileChannel fileOutputChannel = new FileOutputStream(fifoFile).getChannel();
@@ -419,14 +445,22 @@ public class FileIOInterruptTest extends TestCase {
 
     // Tidy up the writer thread.
     fifoReader.tidyUp();
+     */
+     fail("[CRASH] Turn off testcase due to crash");
   }
 
   public void testChannelWrite_exceptionOnInterrupt() throws Exception {
+    /* [XRT] crash
     testChannelWrite_exceptionOnInterrupt(ChannelWriter.Method.WRITE);
+     */
+    fail("[CRASH] Turn off testcase due to crash");
   }
 
   public void testChannelWriteV_exceptionOnInterrupt() throws Exception {
-    testChannelWrite_exceptionOnInterrupt(ChannelWriter.Method.WRITEV);
+     /* [XRT] crash
+      testChannelWrite_exceptionOnInterrupt(ChannelWriter.Method.WRITEV);
+      */
+      fail("[CRASH] Turn off testcase due to crash");
   }
 
   private void testChannelWrite_exceptionOnInterrupt(ChannelWriter.Method method) throws Exception {

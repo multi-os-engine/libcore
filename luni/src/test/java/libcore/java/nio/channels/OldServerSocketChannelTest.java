@@ -76,6 +76,7 @@ public class OldServerSocketChannelTest extends TestCase {
     }
 
     public void test_accept_Block_NoConnect_interrupt() throws IOException {
+        /* [XRT] crash
         assertTrue(this.serverChannel.isBlocking());
         ServerSocket gotSocket = this.serverChannel.socket();
         gotSocket.bind(null);
@@ -105,5 +106,7 @@ public class OldServerSocketChannelTest extends TestCase {
         if (thread.errMsg != null) {
             fail(thread.errMsg);
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 }

@@ -286,10 +286,13 @@ public class SocketTest extends junit.framework.TestCase {
 
     // http://b/5534202
     public void testAvailable() throws Exception {
+        /* [XRT] crash
         for (int i = 0; i < 100; i++) {
             assertAvailableReturnsZeroAfterSocketReadsAllData();
             System.out.println("Success on rep " + i);
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void assertAvailableReturnsZeroAfterSocketReadsAllData() throws Exception {

@@ -94,6 +94,7 @@ public class SSLEngineTest extends TestCase {
 
     // http://b/18554122
     public void test_SSLEngine_underflowsOnEmptyBuffersDuringHandshake() throws Exception {
+        /* [XRT] crash
         final SSLEngine sslEngine = SSLContext.getDefault().createSSLEngine();
         sslEngine.setUseClientMode(false);
         ByteBuffer input = ByteBuffer.allocate(1024);
@@ -104,6 +105,8 @@ public class SSLEngineTest extends TestCase {
         SSLEngineResult result = sslEngine.unwrap(input, output);
         assertEquals(SSLEngineResult.Status.BUFFER_UNDERFLOW, result.getStatus());
         assertEquals(SSLEngineResult.HandshakeStatus.NEED_UNWRAP, result.getHandshakeStatus());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     // http://b/18554122

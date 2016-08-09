@@ -56,6 +56,7 @@ public class OldAndroidDatagramTest extends TestCase {
                 while (alive) {
                     try {
                         packet.setLength(buffer.length);
+                        socket.setSoTimeout(5000);
                         socket.receive(packet);
                         String s = stringFromPacket(packet);
                         // System.out.println(s + " (from " + packet.getAddress() + ":" + packet.getPort() + ")");
@@ -116,7 +117,7 @@ public class OldAndroidDatagramTest extends TestCase {
      * Implements the main part of the Datagram test.
      */
     public void testDatagram() throws Exception {
-
+        /* [XRT] crash
         Reflector reflector = null;
         DatagramSocket socket = null;
 
@@ -162,10 +163,13 @@ public class OldAndroidDatagramTest extends TestCase {
                 socket.close();
             }
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     // Regression test for issue 1018003: DatagramSocket ignored a set timeout.
     public void testDatagramSocketSetSOTimeout() throws Exception {
+        /* [XRT] crash
         DatagramSocket sock = null;
         int timeout = 5000;
         long start = System.currentTimeMillis();
@@ -186,6 +190,8 @@ public class OldAndroidDatagramTest extends TestCase {
                 sock.close();
             }
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_54072_DatagramSocket() throws Exception {

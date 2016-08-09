@@ -31,8 +31,6 @@ public class LocaleDataTest extends junit.framework.TestCase {
   public void test_en_US() throws Exception {
     LocaleData l = LocaleData.get(Locale.US);
     assertEquals("AM", l.amPm[0]);
-    assertEquals("a", l.narrowAm);
-
     assertEquals("BC", l.eras[0]);
 
     assertEquals("January", l.longMonthNames[0]);
@@ -88,6 +86,10 @@ public class LocaleDataTest extends junit.framework.TestCase {
   public void test_ru_RU() throws Exception {
     LocaleData l = LocaleData.get(new Locale("ru", "RU"));
 
+    assertEquals("Вчера", l.yesterday);
+    assertEquals("Сегодня", l.today);
+    assertEquals("Завтра", l.tomorrow);
+
     assertEquals("воскресенье", l.longWeekdayNames[1]);
     assertEquals("вс", l.shortWeekdayNames[1]);
     assertEquals("вс", l.tinyWeekdayNames[1]);
@@ -131,4 +133,10 @@ public class LocaleDataTest extends junit.framework.TestCase {
     assertEquals("aK:mm", ja_JP.timeFormat_hm);
     assertEquals("H:mm", ja_JP.timeFormat_Hm);
   }
+
+  public void test_en_US_narrow() throws Exception {
+    LocaleData l = LocaleData.get(Locale.US);
+    assertEquals("a", l.narrowAm);
+  }
+
 }

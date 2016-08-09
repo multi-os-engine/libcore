@@ -194,6 +194,7 @@ public class OldURLClassLoaderTest extends junit.framework.TestCase {
 
     // SideEffect: Support_TestWebServer requires isolation.
     public void test_findResourceLjava_lang_String() throws Exception {
+        /* [XRT] crash
         File tmp = File.createTempFile("test", ".txt");
 
         Support_TestWebServer server = new Support_TestWebServer();
@@ -212,6 +213,8 @@ public class OldURLClassLoaderTest extends junit.framework.TestCase {
         } finally {
             server.close();
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -219,6 +222,7 @@ public class OldURLClassLoaderTest extends junit.framework.TestCase {
      */
     // SideEffect: Support_TestWebServer requires isolation.
     public void test_findResource_String() throws Exception {
+        /* [XRT] crash
         File tempFile1 = File.createTempFile("textFile", ".txt");
         tempFile1.createNewFile();
         tempFile1.deleteOnExit();
@@ -227,20 +231,21 @@ public class OldURLClassLoaderTest extends junit.framework.TestCase {
         tempFile2.deleteOnExit();
 
         Support_TestWebServer server = new Support_TestWebServer();
+        
+        String tempPath1 = tempFile1.getParentFile().getAbsolutePath() + "/";
+        InputStream is = getClass().getResourceAsStream(
+             "/tests/resources/hyts_patch.jar");
+        assertNotNull("Can't get resource", is);
+        Support_Resources.copyLocalFileto(tempFile2, is);
+        String tempPath2 = tempFile2.getAbsolutePath();
+        URLClassLoader urlLoader = getURLClassLoader(tempPath1, tempPath2);
+        assertNull("Found nonexistent resource", urlLoader.findResource("XXX"));
+        assertNotNull("Couldn't find resource from directory",
+        urlLoader.findResource(tempFile1.getName()));
+        assertNotNull("Couldn't find resource from jar", urlLoader.findResource("Blah.txt"));
+         
         try {
             int port = server.initServer();
-
-            String tempPath1 = tempFile1.getParentFile().getAbsolutePath() + "/";
-            InputStream is = getClass().getResourceAsStream(
-                    "/tests/resources/hyts_patch.jar");
-            Support_Resources.copyLocalFileto(tempFile2, is);
-            String tempPath2 = tempFile2.getAbsolutePath();
-            URLClassLoader urlLoader = getURLClassLoader(tempPath1, tempPath2);
-            assertNull("Found nonexistent resource", urlLoader.findResource("XXX"));
-            assertNotNull("Couldn't find resource from directory",
-                    urlLoader.findResource(tempFile1.getName()));
-            assertNotNull("Couldn't find resource from jar", urlLoader.findResource("Blah.txt"));
-
             String tempPath3 = "http://localhost:" + port + "/";
             urlLoader = getURLClassLoader(tempPath1, tempPath2, tempPath3);
             assertNotNull("Couldn't find resource from web", urlLoader.findResource("test1"));
@@ -249,6 +254,8 @@ public class OldURLClassLoaderTest extends junit.framework.TestCase {
         } finally {
             server.close();
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private static URLClassLoader getURLClassLoader(String... classPath)

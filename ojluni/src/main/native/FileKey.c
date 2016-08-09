@@ -33,7 +33,7 @@
 #define NATIVE_METHOD(className, functionName, signature) \
 { #functionName, signature, (void*)(className ## _ ## functionName) }
 
-#ifdef _ALLBSD_SOURCE
+#if defined(_ALLBSD_SOURCE) || defined(MOE_WINDOWS)
 #define stat64 stat
 
 #define fstat64 fstat

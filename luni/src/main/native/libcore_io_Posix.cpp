@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011 The Android Open Source Project
+ * Copyright (c) 2014-2016, Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,19 +34,31 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
+#ifndef MOE_WINDOWS
 #include <fcntl.h>
+#endif
+#ifndef MOE
 #include <linux/rtnetlink.h>
+#endif
+#ifndef MOE_WINDOWS
 #include <net/if.h>
+#endif
 #include <netdb.h>
 #include <netinet/in.h>
+#ifndef MOE
 #include <netpacket/packet.h>
+#endif
 #include <poll.h>
 #include <pwd.h>
 #include <signal.h>
 #include <stdlib.h>
+#ifndef MOE_WINDOWS
 #include <sys/ioctl.h>
+#endif
 #include <sys/mman.h>
+#ifndef MOE
 #include <sys/prctl.h>
+#endif
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
@@ -54,11 +67,17 @@
 #include <sys/uio.h>
 #include <sys/un.h>
 #include <sys/utsname.h>
+#ifndef MOE_WINDOWS
 #include <sys/wait.h>
 #include <sys/xattr.h>
 #include <termios.h>
+#endif
 #include <unistd.h>
 #include <memory>
+
+#ifdef MOE_WINDOWS
+#include "cutils/threads.h"
+#endif
 
 #ifndef __unused
 #define __unused __attribute__((__unused__))
@@ -262,7 +281,7 @@ static void throwGaiException(JNIEnv* env, const char* functionName, int error) 
 }
 
 template <typename rc_t>
-static rc_t throwIfMinusOne(JNIEnv* env, const char* name, rc_t rc) {
+static JNICALL rc_t throwIfMinusOne(JNIEnv* env, const char* name, rc_t rc) {
     if (rc == rc_t(-1)) {
         throwErrnoException(env, name);
     }
@@ -369,6 +388,7 @@ static jobject makeSocketAddress(JNIEnv* env, const sockaddr_storage& ss, const 
         static jmethodID ctor = env->GetMethodID(JniConstants::inetSocketAddressClass,
                 "<init>", "(Ljava/net/InetAddress;I)V");
         return env->NewObject(JniConstants::inetSocketAddressClass, ctor, inetAddress, port);
+#ifndef MOE
     } else if (ss.ss_family == AF_UNIX) {
         static jmethodID ctor = env->GetMethodID(JniConstants::unixSocketAddressClass,
                 "<init>", "([B)V");
@@ -402,6 +422,7 @@ static jobject makeSocketAddress(JNIEnv* env, const sockaddr_storage& ss, const 
                 static_cast<jbyte>(sll->sll_pkttype),
                 byteArray.get());
         return packetSocketAddress;
+#endif
     }
     jniThrowExceptionFmt(env, "java/lang/IllegalArgumentException", "unsupported ss_family: %d",
             ss.ss_family);
@@ -418,19 +439,37 @@ static jobject makeStructPasswd(JNIEnv* env, const struct passwd& pw) {
             pw_name, static_cast<jint>(pw.pw_uid), static_cast<jint>(pw.pw_gid), pw_dir, pw_shell);
 }
 
+#ifdef MOE_WINDOWS
+static jobject makeStructStat(JNIEnv* env, const struct stat& sb, const char* path) {
+#else
 static jobject makeStructStat(JNIEnv* env, const struct stat& sb) {
+#endif
     static jmethodID ctor = env->GetMethodID(JniConstants::structStatClass, "<init>",
             "(JJIJIIJJJJJJJ)V");
+#ifdef MOE_WINDOWS
+    DWORD sn, ss, ba, bn;
+    if (!GetDiskFreeSpace(path, &sn, &ss, &ba, &bn)) {
+        return 0;
+    }
+    DWORD st_blksize = sn * ss;
+#endif
     return env->NewObject(JniConstants::structStatClass, ctor,
             static_cast<jlong>(sb.st_dev), static_cast<jlong>(sb.st_ino),
             static_cast<jint>(sb.st_mode), static_cast<jlong>(sb.st_nlink),
             static_cast<jint>(sb.st_uid), static_cast<jint>(sb.st_gid),
             static_cast<jlong>(sb.st_rdev), static_cast<jlong>(sb.st_size),
             static_cast<jlong>(sb.st_atime), static_cast<jlong>(sb.st_mtime),
+#ifndef MOE_WINDOWS
             static_cast<jlong>(sb.st_ctime), static_cast<jlong>(sb.st_blksize),
             static_cast<jlong>(sb.st_blocks));
+#else
+            static_cast<jlong>(sb.st_ctime), static_cast<jlong>(st_blksize),
+            // MOE TODO: Temporal solution.
+            static_cast<jlong>((st_blksize + sb.st_size - 1) / sb.st_size));
+#endif
 }
 
+#ifndef MOE_WINDOWS
 static jobject makeStructStatVfs(JNIEnv* env, const struct statvfs& sb) {
     static jmethodID ctor = env->GetMethodID(JniConstants::structStatVfsClass, "<init>",
             "(JJJJJJJJJJJ)V");
@@ -447,6 +486,7 @@ static jobject makeStructStatVfs(JNIEnv* env, const struct statvfs& sb) {
                           static_cast<jlong>(sb.f_flag),
                           static_cast<jlong>(sb.f_namemax));
 }
+#endif
 
 static jobject makeStructLinger(JNIEnv* env, const struct linger& l) {
     static jmethodID ctor = env->GetMethodID(JniConstants::structLingerClass, "<init>", "(II)V");
@@ -459,10 +499,17 @@ static jobject makeStructTimeval(JNIEnv* env, const struct timeval& tv) {
             static_cast<jlong>(tv.tv_sec), static_cast<jlong>(tv.tv_usec));
 }
 
+#ifndef MOE_WINDOWS
 static jobject makeStructUcred(JNIEnv* env, const struct ucred& u __unused) {
+#ifdef MOE
+  jniThrowException(env, "java/lang/UnsupportedOperationException", "unimplemented support for ucred on a Mac");
+  return NULL;
+#else
   static jmethodID ctor = env->GetMethodID(JniConstants::structUcredClass, "<init>", "(III)V");
   return env->NewObject(JniConstants::structUcredClass, ctor, u.pid, u.uid, u.gid);
+#endif
 }
+#endif
 
 static jobject makeStructUtsname(JNIEnv* env, const struct utsname& buf) {
     TO_JAVA_STRING(sysname, buf.sysname);
@@ -476,6 +523,7 @@ static jobject makeStructUtsname(JNIEnv* env, const struct utsname& buf) {
             sysname, nodename, release, version, machine);
 };
 
+#ifndef MOE_WINDOWS
 static bool fillIfreq(JNIEnv* env, jstring javaInterfaceName, struct ifreq& req) {
     ScopedUtfChars interfaceName(env, javaInterfaceName);
     if (interfaceName.c_str() == NULL) {
@@ -486,6 +534,7 @@ static bool fillIfreq(JNIEnv* env, jstring javaInterfaceName, struct ifreq& req)
     req.ifr_name[sizeof(req.ifr_name) - 1] = '\0';
     return true;
 }
+#endif
 
 static bool fillUnixSocketAddress(JNIEnv* env, jobject javaUnixSocketAddress,
         const sockaddr_storage& ss, const socklen_t& sa_len) {
@@ -567,6 +616,7 @@ static bool javaInetSocketAddressToSockaddr(
 
 static bool javaNetlinkSocketAddressToSockaddr(
         JNIEnv* env, jobject javaSocketAddress, sockaddr_storage& ss, socklen_t& sa_len) {
+#ifndef MOE
     static jfieldID nlPidFid = env->GetFieldID(
             JniConstants::netlinkSocketAddressClass, "nlPortId", "I");
     static jfieldID nlGroupsFid = env->GetFieldID(
@@ -578,6 +628,9 @@ static bool javaNetlinkSocketAddressToSockaddr(
     nlAddr->nl_groups = env->GetIntField(javaSocketAddress, nlGroupsFid);
     sa_len = sizeof(sockaddr_nl);
     return true;
+#else
+    return false;
+#endif
 }
 
 static bool javaUnixSocketAddressToSockaddr(
@@ -607,6 +660,7 @@ static bool javaUnixSocketAddressToSockaddr(
 
 static bool javaPacketSocketAddressToSockaddr(
         JNIEnv* env, jobject javaSocketAddress, sockaddr_storage& ss, socklen_t& sa_len) {
+#ifndef MOE
     static jfieldID protocolFid = env->GetFieldID(
             JniConstants::packetSocketAddressClass, "sll_protocol", "S");
     static jfieldID ifindexFid = env->GetFieldID(
@@ -639,6 +693,9 @@ static bool javaPacketSocketAddressToSockaddr(
     }
     sa_len = sizeof(sockaddr_ll);
     return true;
+#else
+    return false;
+#endif
 }
 
 static bool javaSocketAddressToSockaddr(
@@ -662,19 +719,35 @@ static bool javaSocketAddressToSockaddr(
     return false;
 }
 
+#ifndef MOE_WINDOWS
 static jobject doStat(JNIEnv* env, jstring javaPath, bool isLstat) {
+#else
+static jobject doStat(JNIEnv* env, jstring javaPath) {
+#endif
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return NULL;
     }
     struct stat sb;
+#ifndef MOE_WINDOWS
     int rc = isLstat ? TEMP_FAILURE_RETRY(lstat(path.c_str(), &sb))
                      : TEMP_FAILURE_RETRY(stat(path.c_str(), &sb));
+#else
+    int rc = TEMP_FAILURE_RETRY(stat(path.c_str(), &sb));
+#endif
     if (rc == -1) {
+#ifndef MOE_WINDOWS
         throwErrnoException(env, isLstat ? "lstat" : "stat");
+#else
+        throwErrnoException(env, "stat");
+#endif
         return NULL;
     }
+#ifdef MOE_WINDOWS
+    return makeStructStat(env, sb, path.c_str());
+#else
     return makeStructStat(env, sb);
+#endif
 }
 
 static jobject doGetSockName(JNIEnv* env, jobject javaFd, bool is_sockname) {
@@ -694,6 +767,7 @@ static jobject doGetSockName(JNIEnv* env, jobject javaFd, bool is_sockname) {
 
 class Passwd {
 public:
+#ifndef MOE
     explicit Passwd(JNIEnv* env) : mEnv(env), mResult(NULL) {
         mBufferSize = sysconf(_SC_GETPW_R_SIZE_MAX);
         mBuffer.reset(new char[mBufferSize]);
@@ -710,8 +784,26 @@ public:
     struct passwd* get() {
         return mResult;
     }
+#else
+    explicit Passwd(JNIEnv* env) : mEnv(env) {
+
+    }
+
+    jobject getpwnam(const char* name) {
+        return process();
+    }
+
+    jobject getpwuid(uid_t uid) {
+        return process();
+    }
+
+    struct passwd* get() {
+        return &mPwd;
+    }
+#endif
 
 private:
+#ifndef MOE
     jobject process(const char* syscall, int error) {
         if (mResult == NULL) {
             errno = error;
@@ -720,15 +812,29 @@ private:
         }
         return makeStructPasswd(mEnv, *mResult);
     }
+#else
+    jobject process() {
+        mPwd.pw_name = getenv("MOE_USER_NAME");
+        mPwd.pw_shell = getenv("MOE_USER_SHELL");
+        mPwd.pw_dir = getenv("MOE_USER_HOME");
+        mPwd.pw_uid = getuid();
+        mPwd.pw_gid = getgid();
+        return makeStructPasswd(mEnv, mPwd);
+    }
+#endif
 
     JNIEnv* mEnv;
+#ifndef MOE
     std::unique_ptr<char[]> mBuffer;
     size_t mBufferSize;
+#endif
     struct passwd mPwd;
+#ifndef MOE
     struct passwd* mResult;
+#endif
 };
 
-static jobject Posix_accept(JNIEnv* env, jobject, jobject javaFd, jobject javaSocketAddress) {
+static JNICALL jobject Posix_accept(JNIEnv* env, jobject, jobject javaFd, jobject javaSocketAddress) {
     sockaddr_storage ss;
     socklen_t sl = sizeof(ss);
     memset(&ss, 0, sizeof(ss));
@@ -742,7 +848,7 @@ static jobject Posix_accept(JNIEnv* env, jobject, jobject javaFd, jobject javaSo
     return (clientFd != -1) ? jniCreateFileDescriptor(env, clientFd) : NULL;
 }
 
-static jboolean Posix_access(JNIEnv* env, jobject, jstring javaPath, jint mode) {
+static JNICALL jboolean Posix_access(JNIEnv* env, jobject, jstring javaPath, jint mode) {
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return JNI_FALSE;
@@ -754,12 +860,12 @@ static jboolean Posix_access(JNIEnv* env, jobject, jstring javaPath, jint mode) 
     return (rc == 0);
 }
 
-static void Posix_bind(JNIEnv* env, jobject, jobject javaFd, jobject javaAddress, jint port) {
+static JNICALL void Posix_bind(JNIEnv* env, jobject, jobject javaFd, jobject javaAddress, jint port) {
     // We don't need the return value because we'll already have thrown.
     (void) NET_IPV4_FALLBACK(env, int, bind, javaFd, javaAddress, port, NULL_ADDR_FORBIDDEN);
 }
 
-static void Posix_bindSocketAddress(
+static JNICALL void Posix_bindSocketAddress(
         JNIEnv* env, jobject, jobject javaFd, jobject javaSocketAddress) {
     sockaddr_storage ss;
     socklen_t sa_len;
@@ -772,7 +878,7 @@ static void Posix_bindSocketAddress(
     (void) NET_FAILURE_RETRY(env, int, bind, javaFd, sa, sa_len);
 }
 
-static void Posix_chmod(JNIEnv* env, jobject, jstring javaPath, jint mode) {
+static JNICALL void Posix_chmod(JNIEnv* env, jobject, jstring javaPath, jint mode) {
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return;
@@ -780,7 +886,7 @@ static void Posix_chmod(JNIEnv* env, jobject, jstring javaPath, jint mode) {
     throwIfMinusOne(env, "chmod", TEMP_FAILURE_RETRY(chmod(path.c_str(), mode)));
 }
 
-static void Posix_chown(JNIEnv* env, jobject, jstring javaPath, jint uid, jint gid) {
+static JNICALL void Posix_chown(JNIEnv* env, jobject, jstring javaPath, jint uid, jint gid) {
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return;
@@ -788,7 +894,7 @@ static void Posix_chown(JNIEnv* env, jobject, jstring javaPath, jint uid, jint g
     throwIfMinusOne(env, "chown", TEMP_FAILURE_RETRY(chown(path.c_str(), uid, gid)));
 }
 
-static void Posix_close(JNIEnv* env, jobject, jobject javaFd) {
+static JNICALL void Posix_close(JNIEnv* env, jobject, jobject javaFd) {
     // Get the FileDescriptor's 'fd' field and clear it.
     // We need to do this before we can throw an IOException (http://b/3222087).
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
@@ -800,11 +906,11 @@ static void Posix_close(JNIEnv* env, jobject, jobject javaFd) {
     throwIfMinusOne(env, "close", close(fd));
 }
 
-static void Posix_connect(JNIEnv* env, jobject, jobject javaFd, jobject javaAddress, jint port) {
+static JNICALL void Posix_connect(JNIEnv* env, jobject, jobject javaFd, jobject javaAddress, jint port) {
     (void) NET_IPV4_FALLBACK(env, int, connect, javaFd, javaAddress, port, NULL_ADDR_FORBIDDEN);
 }
 
-static void Posix_connectSocketAddress(
+static JNICALL void Posix_connectSocketAddress(
         JNIEnv* env, jobject, jobject javaFd, jobject javaSocketAddress) {
     sockaddr_storage ss;
     socklen_t sa_len;
@@ -817,24 +923,34 @@ static void Posix_connectSocketAddress(
     (void) NET_FAILURE_RETRY(env, int, connect, javaFd, sa, sa_len);
 }
 
-static jobject Posix_dup(JNIEnv* env, jobject, jobject javaOldFd) {
+static JNICALL jobject Posix_dup(JNIEnv* env, jobject, jobject javaOldFd) {
     int oldFd = jniGetFDFromFileDescriptor(env, javaOldFd);
     int newFd = throwIfMinusOne(env, "dup", TEMP_FAILURE_RETRY(dup(oldFd)));
     return (newFd != -1) ? jniCreateFileDescriptor(env, newFd) : NULL;
 }
 
-static jobject Posix_dup2(JNIEnv* env, jobject, jobject javaOldFd, jint newFd) {
+static JNICALL jobject Posix_dup2(JNIEnv* env, jobject, jobject javaOldFd, jint newFd) {
     int oldFd = jniGetFDFromFileDescriptor(env, javaOldFd);
     int fd = throwIfMinusOne(env, "dup2", TEMP_FAILURE_RETRY(dup2(oldFd, newFd)));
     return (fd != -1) ? jniCreateFileDescriptor(env, fd) : NULL;
 }
 
-static jobjectArray Posix_environ(JNIEnv* env, jobject) {
+static JNICALL jobjectArray Posix_environ(JNIEnv* env, jobject) {
+#ifndef MOE
     extern char** environ; // Standard, but not in any header file.
     return toStringArray(env, environ);
+#else
+    return env->NewObjectArray(0, JniConstants::stringClass, NULL);
+#endif
 }
 
-static void Posix_execve(JNIEnv* env, jobject, jstring javaFilename, jobjectArray javaArgv, jobjectArray javaEnvp) {
+static JNICALL void Posix_execve(JNIEnv* env, jobject, jstring javaFilename, jobjectArray javaArgv, jobjectArray javaEnvp) {
+#if defined(MOE) && TARGET_OS_IPHONE
+    errno = EPERM;
+    SLOGW("execve is not available on this platform");
+    throwErrnoException(env, "execve");
+    return;
+#else
     ScopedUtfChars path(env, javaFilename);
     if (path.c_str() == NULL) {
         return;
@@ -845,9 +961,16 @@ static void Posix_execve(JNIEnv* env, jobject, jstring javaFilename, jobjectArra
     TEMP_FAILURE_RETRY(execve(path.c_str(), argv.get(), envp.get()));
 
     throwErrnoException(env, "execve");
+#endif
 }
 
-static void Posix_execv(JNIEnv* env, jobject, jstring javaFilename, jobjectArray javaArgv) {
+static JNICALL void Posix_execv(JNIEnv* env, jobject, jstring javaFilename, jobjectArray javaArgv) {
+#if defined(MOE) && TARGET_OS_IPHONE
+    errno = EPERM;
+    SLOGW("execv is not available on this platform");
+    throwErrnoException(env, "execv");
+    return;
+#else
     ScopedUtfChars path(env, javaFilename);
     if (path.c_str() == NULL) {
         return;
@@ -857,19 +980,21 @@ static void Posix_execv(JNIEnv* env, jobject, jstring javaFilename, jobjectArray
     TEMP_FAILURE_RETRY(execv(path.c_str(), argv.get()));
 
     throwErrnoException(env, "execv");
+#endif
 }
 
-static void Posix_fchmod(JNIEnv* env, jobject, jobject javaFd, jint mode) {
+static JNICALL void Posix_fchmod(JNIEnv* env, jobject, jobject javaFd, jint mode) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     throwIfMinusOne(env, "fchmod", TEMP_FAILURE_RETRY(fchmod(fd, mode)));
 }
 
-static void Posix_fchown(JNIEnv* env, jobject, jobject javaFd, jint uid, jint gid) {
+static JNICALL void Posix_fchown(JNIEnv* env, jobject, jobject javaFd, jint uid, jint gid) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     throwIfMinusOne(env, "fchown", TEMP_FAILURE_RETRY(fchown(fd, uid, gid)));
 }
 
-static jint Posix_fcntlFlock(JNIEnv* env, jobject, jobject javaFd, jint cmd, jobject javaFlock) {
+static JNICALL jint Posix_fcntlFlock(JNIEnv* env, jobject, jobject javaFd, jint cmd, jobject javaFlock) {
+#ifndef MOE_WINDOWS
     static jfieldID typeFid = env->GetFieldID(JniConstants::structFlockClass, "l_type", "S");
     static jfieldID whenceFid = env->GetFieldID(JniConstants::structFlockClass, "l_whence", "S");
     static jfieldID startFid = env->GetFieldID(JniConstants::structFlockClass, "l_start", "J");
@@ -893,24 +1018,41 @@ static jint Posix_fcntlFlock(JNIEnv* env, jobject, jobject javaFd, jint cmd, job
         env->SetIntField(javaFlock, pidFid, lock.l_pid);
     }
     return rc;
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for fcntlFlock on Windows");
+    return -1;
+#endif
 }
 
-static jint Posix_fcntlInt(JNIEnv* env, jobject, jobject javaFd, jint cmd, jint arg) {
+static JNICALL jint Posix_fcntlInt(JNIEnv* env, jobject, jobject javaFd, jint cmd, jint arg) {
+#ifndef MOE_WINDOWS
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     return throwIfMinusOne(env, "fcntl", TEMP_FAILURE_RETRY(fcntl(fd, cmd, arg)));
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for fcntlInt on Windows");
+    return -1;
+#endif
 }
 
-static jint Posix_fcntlVoid(JNIEnv* env, jobject, jobject javaFd, jint cmd) {
+static JNICALL jint Posix_fcntlVoid(JNIEnv* env, jobject, jobject javaFd, jint cmd) {
+#ifndef MOE_WINDOWS
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     return throwIfMinusOne(env, "fcntl", TEMP_FAILURE_RETRY(fcntl(fd, cmd)));
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for fcntlVoid on Windows");
+    return -1;
+#endif
 }
 
-static void Posix_fdatasync(JNIEnv* env, jobject, jobject javaFd) {
+static JNICALL void Posix_fdatasync(JNIEnv* env, jobject, jobject javaFd) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     throwIfMinusOne(env, "fdatasync", TEMP_FAILURE_RETRY(fdatasync(fd)));
 }
 
-static jobject Posix_fstat(JNIEnv* env, jobject, jobject javaFd) {
+static JNICALL jobject Posix_fstat(JNIEnv* env, jobject, jobject javaFd) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     struct stat sb;
     int rc = TEMP_FAILURE_RETRY(fstat(fd, &sb));
@@ -918,10 +1060,18 @@ static jobject Posix_fstat(JNIEnv* env, jobject, jobject javaFd) {
         throwErrnoException(env, "fstat");
         return NULL;
     }
+#ifdef MOE_WINDOWS
+    char path[PATH_MAX + 1];
+    HANDLE handle = (HANDLE)_get_osfhandle(fd);
+    GetFinalPathNameByHandle(handle, path, PATH_MAX, FILE_NAME_OPENED);
+    return makeStructStat(env, sb, path);
+#else
     return makeStructStat(env, sb);
+#endif
 }
 
-static jobject Posix_fstatvfs(JNIEnv* env, jobject, jobject javaFd) {
+static JNICALL jobject Posix_fstatvfs(JNIEnv* env, jobject, jobject javaFd) {
+#ifndef MOE_WINDOWS
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     struct statvfs sb;
     int rc = TEMP_FAILURE_RETRY(fstatvfs(fd, &sb));
@@ -930,23 +1080,28 @@ static jobject Posix_fstatvfs(JNIEnv* env, jobject, jobject javaFd) {
         return NULL;
     }
     return makeStructStatVfs(env, sb);
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for fstatvfs on Windows");
+    return nullptr;
+#endif
 }
 
-static void Posix_fsync(JNIEnv* env, jobject, jobject javaFd) {
+static JNICALL void Posix_fsync(JNIEnv* env, jobject, jobject javaFd) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     throwIfMinusOne(env, "fsync", TEMP_FAILURE_RETRY(fsync(fd)));
 }
 
-static void Posix_ftruncate(JNIEnv* env, jobject, jobject javaFd, jlong length) {
+static JNICALL void Posix_ftruncate(JNIEnv* env, jobject, jobject javaFd, jlong length) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     throwIfMinusOne(env, "ftruncate", TEMP_FAILURE_RETRY(ftruncate64(fd, length)));
 }
 
-static jstring Posix_gai_strerror(JNIEnv* env, jobject, jint error) {
+static JNICALL jstring Posix_gai_strerror(JNIEnv* env, jobject, jint error) {
     return env->NewStringUTF(gai_strerror(error));
 }
 
-static jobjectArray Posix_android_getaddrinfo(JNIEnv* env, jobject, jstring javaNode,
+static JNICALL jobjectArray Posix_android_getaddrinfo(JNIEnv* env, jobject, jstring javaNode,
         jobject javaHints, jint netId) {
     ScopedUtfChars node(env, javaNode);
     if (node.c_str() == NULL) {
@@ -1014,19 +1169,19 @@ static jobjectArray Posix_android_getaddrinfo(JNIEnv* env, jobject, jstring java
     return result;
 }
 
-static jint Posix_getegid(JNIEnv*, jobject) {
+static JNICALL jint Posix_getegid(JNIEnv*, jobject) {
     return getegid();
 }
 
-static jint Posix_geteuid(JNIEnv*, jobject) {
+static JNICALL jint Posix_geteuid(JNIEnv*, jobject) {
     return geteuid();
 }
 
-static jint Posix_getgid(JNIEnv*, jobject) {
+static JNICALL jint Posix_getgid(JNIEnv*, jobject) {
     return getgid();
 }
 
-static jstring Posix_getenv(JNIEnv* env, jobject, jstring javaName) {
+static JNICALL jstring Posix_getenv(JNIEnv* env, jobject, jstring javaName) {
     ScopedUtfChars name(env, javaName);
     if (name.c_str() == NULL) {
         return NULL;
@@ -1034,7 +1189,7 @@ static jstring Posix_getenv(JNIEnv* env, jobject, jstring javaName) {
     return env->NewStringUTF(getenv(name.c_str()));
 }
 
-static jstring Posix_getnameinfo(JNIEnv* env, jobject, jobject javaAddress, jint flags) {
+static JNICALL jstring Posix_getnameinfo(JNIEnv* env, jobject, jobject javaAddress, jint flags) {
     sockaddr_storage ss;
     socklen_t sa_len;
     if (!inetAddressToSockaddrVerbatim(env, javaAddress, 0, ss, sa_len)) {
@@ -1050,23 +1205,23 @@ static jstring Posix_getnameinfo(JNIEnv* env, jobject, jobject javaAddress, jint
     return env->NewStringUTF(buf);
 }
 
-static jobject Posix_getpeername(JNIEnv* env, jobject, jobject javaFd) {
+static JNICALL jobject Posix_getpeername(JNIEnv* env, jobject, jobject javaFd) {
   return doGetSockName(env, javaFd, false);
 }
 
-static jint Posix_getpgid(JNIEnv* env, jobject, jint pid) {
+static JNICALL jint Posix_getpgid(JNIEnv* env, jobject, jint pid) {
     return throwIfMinusOne(env, "getpgid", TEMP_FAILURE_RETRY(getpgid(pid)));
 }
 
-static jint Posix_getpid(JNIEnv*, jobject) {
+static JNICALL jint Posix_getpid(JNIEnv*, jobject) {
     return TEMP_FAILURE_RETRY(getpid());
 }
 
-static jint Posix_getppid(JNIEnv*, jobject) {
+static JNICALL jint Posix_getppid(JNIEnv*, jobject) {
     return TEMP_FAILURE_RETRY(getppid());
 }
 
-static jobject Posix_getpwnam(JNIEnv* env, jobject, jstring javaName) {
+static JNICALL jobject Posix_getpwnam(JNIEnv* env, jobject, jstring javaName) {
     ScopedUtfChars name(env, javaName);
     if (name.c_str() == NULL) {
         return NULL;
@@ -1074,15 +1229,15 @@ static jobject Posix_getpwnam(JNIEnv* env, jobject, jstring javaName) {
     return Passwd(env).getpwnam(name.c_str());
 }
 
-static jobject Posix_getpwuid(JNIEnv* env, jobject, jint uid) {
+static JNICALL jobject Posix_getpwuid(JNIEnv* env, jobject, jint uid) {
     return Passwd(env).getpwuid(uid);
 }
 
-static jobject Posix_getsockname(JNIEnv* env, jobject, jobject javaFd) {
+static JNICALL jobject Posix_getsockname(JNIEnv* env, jobject, jobject javaFd) {
   return doGetSockName(env, javaFd, true);
 }
 
-static jint Posix_getsockoptByte(JNIEnv* env, jobject, jobject javaFd, jint level, jint option) {
+static JNICALL jint Posix_getsockoptByte(JNIEnv* env, jobject, jobject javaFd, jint level, jint option) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     u_char result = 0;
     socklen_t size = sizeof(result);
@@ -1090,7 +1245,7 @@ static jint Posix_getsockoptByte(JNIEnv* env, jobject, jobject javaFd, jint leve
     return result;
 }
 
-static jobject Posix_getsockoptInAddr(JNIEnv* env, jobject, jobject javaFd, jint level, jint option) {
+static JNICALL jobject Posix_getsockoptInAddr(JNIEnv* env, jobject, jobject javaFd, jint level, jint option) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     sockaddr_storage ss;
     memset(&ss, 0, sizeof(ss));
@@ -1105,7 +1260,7 @@ static jobject Posix_getsockoptInAddr(JNIEnv* env, jobject, jobject javaFd, jint
     return sockaddrToInetAddress(env, ss, NULL);
 }
 
-static jint Posix_getsockoptInt(JNIEnv* env, jobject, jobject javaFd, jint level, jint option) {
+static JNICALL jint Posix_getsockoptInt(JNIEnv* env, jobject, jobject javaFd, jint level, jint option) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     jint result = 0;
     socklen_t size = sizeof(result);
@@ -1113,7 +1268,7 @@ static jint Posix_getsockoptInt(JNIEnv* env, jobject, jobject javaFd, jint level
     return result;
 }
 
-static jobject Posix_getsockoptLinger(JNIEnv* env, jobject, jobject javaFd, jint level, jint option) {
+static JNICALL jobject Posix_getsockoptLinger(JNIEnv* env, jobject, jobject javaFd, jint level, jint option) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     struct linger l;
     socklen_t size = sizeof(l);
@@ -1126,7 +1281,7 @@ static jobject Posix_getsockoptLinger(JNIEnv* env, jobject, jobject javaFd, jint
     return makeStructLinger(env, l);
 }
 
-static jobject Posix_getsockoptTimeval(JNIEnv* env, jobject, jobject javaFd, jint level, jint option) {
+static JNICALL jobject Posix_getsockoptTimeval(JNIEnv* env, jobject, jobject javaFd, jint level, jint option) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     struct timeval tv;
     socklen_t size = sizeof(tv);
@@ -1139,7 +1294,8 @@ static jobject Posix_getsockoptTimeval(JNIEnv* env, jobject, jobject javaFd, jin
     return makeStructTimeval(env, tv);
 }
 
-static jobject Posix_getsockoptUcred(JNIEnv* env, jobject, jobject javaFd, jint level, jint option) {
+static JNICALL jobject Posix_getsockoptUcred(JNIEnv* env, jobject, jobject javaFd, jint level, jint option) {
+#ifndef MOE_WINDOWS
   int fd = jniGetFDFromFileDescriptor(env, javaFd);
   struct ucred u;
   socklen_t size = sizeof(u);
@@ -1150,22 +1306,33 @@ static jobject Posix_getsockoptUcred(JNIEnv* env, jobject, jobject javaFd, jint 
     return NULL;
   }
   return makeStructUcred(env, u);
-}
-
-static jint Posix_gettid(JNIEnv* env __unused, jobject) {
-#if defined(__BIONIC__)
-  return TEMP_FAILURE_RETRY(gettid());
 #else
-  return syscall(__NR_gettid);
+  jniThrowException(env, "java/lang/UnsupportedOperationException", "unimplemented support for ucred on Windows");
+  return NULL;
 #endif
 }
 
-static jint Posix_getuid(JNIEnv*, jobject) {
+static JNICALL jint Posix_gettid(JNIEnv* env __unused, jobject) {
+#if defined(__BIONIC__) || defined(MOE_WINDOWS)
+  return TEMP_FAILURE_RETRY(gettid());
+#else
+#ifndef MOE
+  return syscall(__NR_gettid);
+#else
+  uint64_t tid;
+  pthread_threadid_np(pthread_self(), &tid);
+  return tid;
+#endif
+#endif
+}
+
+static JNICALL jint Posix_getuid(JNIEnv*, jobject) {
     return getuid();
 }
 
-static jint Posix_getxattr(JNIEnv* env, jobject, jstring javaPath,
+static JNICALL jint Posix_getxattr(JNIEnv* env, jobject, jstring javaPath,
         jstring javaName, jbyteArray javaOutValue) {
+#ifndef MOE_WINDOWS
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return -1;
@@ -1179,22 +1346,37 @@ static jint Posix_getxattr(JNIEnv* env, jobject, jstring javaPath,
         return -1;
     }
     size_t outValueLength = env->GetArrayLength(javaOutValue);
+#ifndef MOE
     ssize_t size = getxattr(path.c_str(), name.c_str(), outValue.get(), outValueLength);
+#else
+    ssize_t size = getxattr(path.c_str(), name.c_str(), outValue.get(), outValueLength, 0, 0);
+#endif
     if (size < 0) {
         throwErrnoException(env, "getxattr");
     }
     return size;
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for getxattr on Windows");
+    return -1;
+#endif
 }
 
-static jstring Posix_if_indextoname(JNIEnv* env, jobject, jint index) {
+static JNICALL jstring Posix_if_indextoname(JNIEnv* env, jobject, jint index) {
+#ifndef MOE_WINDOWS
     char buf[IF_NAMESIZE];
     char* name = if_indextoname(index, buf);
     // if_indextoname(3) returns NULL on failure, which will come out of NewStringUTF unscathed.
     // There's no useful information in errno, so we don't bother throwing. Callers can null-check.
     return env->NewStringUTF(name);
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for if_indextoname on Windows");
+    return nullptr;
+#endif
 }
 
-static jobject Posix_inet_pton(JNIEnv* env, jobject, jint family, jstring javaName) {
+static JNICALL jobject Posix_inet_pton(JNIEnv* env, jobject, jint family, jstring javaName) {
     ScopedUtfChars name(env, javaName);
     if (name.c_str() == NULL) {
         return NULL;
@@ -1210,7 +1392,8 @@ static jobject Posix_inet_pton(JNIEnv* env, jobject, jint family, jstring javaNa
     return sockaddrToInetAddress(env, ss, NULL);
 }
 
-static jint Posix_ioctlFlags(JNIEnv* env, jobject, jobject javaFd, jstring javaInterfaceName) {
+static JNICALL jint Posix_ioctlFlags(JNIEnv* env, jobject, jobject javaFd, jstring javaInterfaceName) {
+#ifndef MOE_WINDOWS
      struct ifreq req;
      if (!fillIfreq(env, javaInterfaceName, req)) {
         return 0;
@@ -1218,35 +1401,60 @@ static jint Posix_ioctlFlags(JNIEnv* env, jobject, jobject javaFd, jstring javaI
      int fd = jniGetFDFromFileDescriptor(env, javaFd);
      throwIfMinusOne(env, "ioctl", TEMP_FAILURE_RETRY(ioctl(fd, SIOCGIFFLAGS, &req)));
      return req.ifr_flags;
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for ioctlFlags on Windows");
+    return nullptr;
+#endif
 }
 
-static jobject Posix_ioctlInetAddress(JNIEnv* env, jobject, jobject javaFd, jint cmd, jstring javaInterfaceName) {
+static JNICALL jobject Posix_ioctlInetAddress(JNIEnv* env, jobject, jobject javaFd, jint cmd, jstring javaInterfaceName) {
+#ifndef MOE_WINDOWS
     struct ifreq req;
     if (!fillIfreq(env, javaInterfaceName, req)) {
         return NULL;
     }
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
+#ifndef MOE
     int rc = throwIfMinusOne(env, "ioctl", TEMP_FAILURE_RETRY(ioctl(fd, cmd, &req)));
+#else
+    int rc = throwIfMinusOne(env, "ioctl", TEMP_FAILURE_RETRY(ioctl(fd, (unsigned int)cmd, &req)));
+#endif
     if (rc == -1) {
         return NULL;
     }
     return sockaddrToInetAddress(env, reinterpret_cast<sockaddr_storage&>(req.ifr_addr), NULL);
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for ioctlInetAddress on Windows");
+    return nullptr;
+#endif
 }
 
-static jint Posix_ioctlInt(JNIEnv* env, jobject, jobject javaFd, jint cmd, jobject javaArg) {
+static JNICALL jint Posix_ioctlInt(JNIEnv* env, jobject, jobject javaFd, jint cmd, jobject javaArg) {
+#ifndef MOE_WINDOWS
     // This is complicated because ioctls may return their result by updating their argument
     // or via their return value, so we need to support both.
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     static jfieldID valueFid = env->GetFieldID(JniConstants::mutableIntClass, "value", "I");
     jint arg = env->GetIntField(javaArg, valueFid);
+#ifndef MOE
     int rc = throwIfMinusOne(env, "ioctl", TEMP_FAILURE_RETRY(ioctl(fd, cmd, &arg)));
+#else
+    int rc = throwIfMinusOne(env, "ioctl", TEMP_FAILURE_RETRY(ioctl(fd, (unsigned int)cmd, &arg)));
+#endif
     if (!env->ExceptionCheck()) {
         env->SetIntField(javaArg, valueFid, arg);
     }
     return rc;
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for ioctlInt on Windows");
+    return -1;
+#endif
 }
 
-static jint Posix_ioctlMTU(JNIEnv* env, jobject, jobject javaFd, jstring javaInterfaceName) {
+static JNICALL jint Posix_ioctlMTU(JNIEnv* env, jobject, jobject javaFd, jstring javaInterfaceName) {
      struct ifreq req;
      if (!fillIfreq(env, javaInterfaceName, req)) {
         return 0;
@@ -1256,16 +1464,21 @@ static jint Posix_ioctlMTU(JNIEnv* env, jobject, jobject javaFd, jstring javaInt
      return req.ifr_mtu;
 }
 
-static jboolean Posix_isatty(JNIEnv* env, jobject, jobject javaFd) {
+static JNICALL jboolean Posix_isatty(JNIEnv* env, jobject, jobject javaFd) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     return TEMP_FAILURE_RETRY(isatty(fd)) == 1;
 }
 
-static void Posix_kill(JNIEnv* env, jobject, jint pid, jint sig) {
+static JNICALL void Posix_kill(JNIEnv* env, jobject, jint pid, jint sig) {
+#ifndef MOE_WINDOWS
     throwIfMinusOne(env, "kill", TEMP_FAILURE_RETRY(kill(pid, sig)));
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for kill on Windows");
+#endif
 }
 
-static void Posix_lchown(JNIEnv* env, jobject, jstring javaPath, jint uid, jint gid) {
+static JNICALL void Posix_lchown(JNIEnv* env, jobject, jstring javaPath, jint uid, jint gid) {
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return;
@@ -1273,7 +1486,7 @@ static void Posix_lchown(JNIEnv* env, jobject, jstring javaPath, jint uid, jint 
     throwIfMinusOne(env, "lchown", TEMP_FAILURE_RETRY(lchown(path.c_str(), uid, gid)));
 }
 
-static void Posix_link(JNIEnv* env, jobject, jstring javaOldPath, jstring javaNewPath) {
+static JNICALL void Posix_link(JNIEnv* env, jobject, jstring javaOldPath, jstring javaNewPath) {
     ScopedUtfChars oldPath(env, javaOldPath);
     if (oldPath.c_str() == NULL) {
         return;
@@ -1285,31 +1498,46 @@ static void Posix_link(JNIEnv* env, jobject, jstring javaOldPath, jstring javaNe
     throwIfMinusOne(env, "link", TEMP_FAILURE_RETRY(link(oldPath.c_str(), newPath.c_str())));
 }
 
-static void Posix_listen(JNIEnv* env, jobject, jobject javaFd, jint backlog) {
+static JNICALL void Posix_listen(JNIEnv* env, jobject, jobject javaFd, jint backlog) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     throwIfMinusOne(env, "listen", TEMP_FAILURE_RETRY(listen(fd, backlog)));
 }
 
-static jlong Posix_lseek(JNIEnv* env, jobject, jobject javaFd, jlong offset, jint whence) {
+static JNICALL jlong Posix_lseek(JNIEnv* env, jobject, jobject javaFd, jlong offset, jint whence) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     return throwIfMinusOne(env, "lseek", TEMP_FAILURE_RETRY(lseek64(fd, offset, whence)));
 }
 
-static jobject Posix_lstat(JNIEnv* env, jobject, jstring javaPath) {
+static JNICALL jobject Posix_lstat(JNIEnv* env, jobject, jstring javaPath) {
+#ifndef MOE_WINDOWS
     return doStat(env, javaPath, true);
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for lstat on Windows");
+    return nullptr;
+#endif
 }
 
-static void Posix_mincore(JNIEnv* env, jobject, jlong address, jlong byteCount, jbyteArray javaVector) {
+static JNICALL void Posix_mincore(JNIEnv* env, jobject, jlong address, jlong byteCount, jbyteArray javaVector) {
+#ifndef MOE_WINDOWS
     ScopedByteArrayRW vector(env, javaVector);
     if (vector.get() == NULL) {
         return;
     }
     void* ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     unsigned char* vec = reinterpret_cast<unsigned char*>(vector.get());
+#ifndef MOE
     throwIfMinusOne(env, "mincore", TEMP_FAILURE_RETRY(mincore(ptr, byteCount, vec)));
+#else
+    throwIfMinusOne(env, "mincore", TEMP_FAILURE_RETRY(mincore(ptr, (size_t)byteCount, (char*)vec)));
+#endif
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for mincore on Windows");
+#endif
 }
 
-static void Posix_mkdir(JNIEnv* env, jobject, jstring javaPath, jint mode) {
+static JNICALL void Posix_mkdir(JNIEnv* env, jobject, jstring javaPath, jint mode) {
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return;
@@ -1317,7 +1545,7 @@ static void Posix_mkdir(JNIEnv* env, jobject, jstring javaPath, jint mode) {
     throwIfMinusOne(env, "mkdir", TEMP_FAILURE_RETRY(mkdir(path.c_str(), mode)));
 }
 
-static void Posix_mkfifo(JNIEnv* env, jobject, jstring javaPath, jint mode) {
+static JNICALL void Posix_mkfifo(JNIEnv* env, jobject, jstring javaPath, jint mode) {
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return;
@@ -1325,12 +1553,12 @@ static void Posix_mkfifo(JNIEnv* env, jobject, jstring javaPath, jint mode) {
     throwIfMinusOne(env, "mkfifo", TEMP_FAILURE_RETRY(mkfifo(path.c_str(), mode)));
 }
 
-static void Posix_mlock(JNIEnv* env, jobject, jlong address, jlong byteCount) {
+static JNICALL void Posix_mlock(JNIEnv* env, jobject, jlong address, jlong byteCount) {
     void* ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     throwIfMinusOne(env, "mlock", TEMP_FAILURE_RETRY(mlock(ptr, byteCount)));
 }
 
-static jlong Posix_mmap(JNIEnv* env, jobject, jlong address, jlong byteCount, jint prot, jint flags, jobject javaFd, jlong offset) {
+static JNICALL jlong Posix_mmap(JNIEnv* env, jobject, jlong address, jlong byteCount, jint prot, jint flags, jobject javaFd, jlong offset) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     void* suggestedPtr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     void* ptr = mmap(suggestedPtr, byteCount, prot, flags, fd, offset);
@@ -1340,22 +1568,27 @@ static jlong Posix_mmap(JNIEnv* env, jobject, jlong address, jlong byteCount, ji
     return static_cast<jlong>(reinterpret_cast<uintptr_t>(ptr));
 }
 
-static void Posix_msync(JNIEnv* env, jobject, jlong address, jlong byteCount, jint flags) {
+static JNICALL void Posix_msync(JNIEnv* env, jobject, jlong address, jlong byteCount, jint flags) {
+#ifndef MOE_WINDOWS
     void* ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     throwIfMinusOne(env, "msync", TEMP_FAILURE_RETRY(msync(ptr, byteCount, flags)));
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for msync on Windows");
+#endif
 }
 
-static void Posix_munlock(JNIEnv* env, jobject, jlong address, jlong byteCount) {
+static JNICALL void Posix_munlock(JNIEnv* env, jobject, jlong address, jlong byteCount) {
     void* ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     throwIfMinusOne(env, "munlock", TEMP_FAILURE_RETRY(munlock(ptr, byteCount)));
 }
 
-static void Posix_munmap(JNIEnv* env, jobject, jlong address, jlong byteCount) {
+static JNICALL void Posix_munmap(JNIEnv* env, jobject, jlong address, jlong byteCount) {
     void* ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     throwIfMinusOne(env, "munmap", TEMP_FAILURE_RETRY(munmap(ptr, byteCount)));
 }
 
-static jobject Posix_open(JNIEnv* env, jobject, jstring javaPath, jint flags, jint mode) {
+static JNICALL jobject Posix_open(JNIEnv* env, jobject, jstring javaPath, jint flags, jint mode) {
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return NULL;
@@ -1364,9 +1597,17 @@ static jobject Posix_open(JNIEnv* env, jobject, jstring javaPath, jint flags, ji
     return fd != -1 ? jniCreateFileDescriptor(env, fd) : NULL;
 }
 
-static jobjectArray Posix_pipe2(JNIEnv* env, jobject, jint flags __unused) {
+static JNICALL jobjectArray Posix_pipe2(JNIEnv* env, jobject, jint flags __unused) {
+#if defined(MOE_WINDOWS)
+    jniThrowException(env, "java/lang/UnsupportedOperationException", "no pipe2 on Windows");
+    return NULL;
+#else
     int fds[2];
+#ifndef MOE
     throwIfMinusOne(env, "pipe2", TEMP_FAILURE_RETRY(pipe2(&fds[0], flags)));
+#else
+    throwIfMinusOne(env, "pipe", TEMP_FAILURE_RETRY(pipe(&fds[0])));
+#endif
     jobjectArray result = env->NewObjectArray(2, JniConstants::fileDescriptorClass, NULL);
     if (result == NULL) {
         return NULL;
@@ -1381,10 +1622,27 @@ static jobjectArray Posix_pipe2(JNIEnv* env, jobject, jint flags __unused) {
             return NULL;
         }
     }
+#ifdef MOE
+    // MOE TODO: We don't support forking on iOS, but if we add new platform support later that
+    // supports it, then this implementation can cause some unexpected problems, namely file
+    // descriptor leak. Described here in more details:
+    // http://man7.org/linux/man-pages/man2/fcntl.2.html
+    for (int i = 0; i < 2; ++i) {
+        if ((flags & O_NONBLOCK)) {
+          throwIfMinusOne(env, "fcntl(F_SETFL)",
+              TEMP_FAILURE_RETRY(fcntl(fds[i], F_SETFL, O_NONBLOCK)));
+        }
+        if ((flags & O_CLOEXEC)) {
+          throwIfMinusOne(env, "fcntl(F_SETFD)",
+              TEMP_FAILURE_RETRY(fcntl(fds[i], F_SETFD, FD_CLOEXEC)));
+        }
+    }
+#endif
     return result;
+#endif
 }
 
-static jint Posix_poll(JNIEnv* env, jobject, jobjectArray javaStructs, jint timeoutMs) {
+static JNICALL jint Posix_poll(JNIEnv* env, jobject, jobjectArray javaStructs, jint timeoutMs) {
     static jfieldID fdFid = env->GetFieldID(JniConstants::structPollfdClass, "fd", "Ljava/io/FileDescriptor;");
     static jfieldID eventsFid = env->GetFieldID(JniConstants::structPollfdClass, "events", "S");
     static jfieldID reventsFid = env->GetFieldID(JniConstants::structPollfdClass, "revents", "S");
@@ -1415,8 +1673,13 @@ static jint Posix_poll(JNIEnv* env, jobject, jobjectArray javaStructs, jint time
 
     int rc;
     while (true) {
+#ifndef MOE
         timespec before;
         clock_gettime(CLOCK_MONOTONIC, &before);
+#else
+        timeval before;
+        gettimeofday(&before, NULL);
+#endif
 
         rc = poll(fds.get(), count, timeoutMs);
         if (rc >= 0 || errno != EINTR) {
@@ -1425,6 +1688,7 @@ static jint Posix_poll(JNIEnv* env, jobject, jobjectArray javaStructs, jint time
 
         // We got EINTR. Work out how much of the original timeout is still left.
         if (timeoutMs > 0) {
+#ifndef MOE
             timespec now;
             clock_gettime(CLOCK_MONOTONIC, &now);
 
@@ -1437,6 +1701,21 @@ static jint Posix_poll(JNIEnv* env, jobject, jobjectArray javaStructs, jint time
             }
 
             jint diffMs = diff.tv_sec * 1000 + diff.tv_nsec / 1000000;
+#else
+            timeval now;
+            gettimeofday(&now, NULL);
+
+            timeval diff;
+            diff.tv_sec = now.tv_sec - before.tv_sec;
+            diff.tv_usec = now.tv_usec - before.tv_usec;
+            if (diff.tv_usec < 0) {
+                --diff.tv_sec;
+                diff.tv_usec += 1000000;
+            }
+
+            jint diffMs = diff.tv_sec * 1000 + diff.tv_usec / 1000;
+#endif
+
             if (diffMs >= timeoutMs) {
                 rc = 0; // We have less than 1ms left anyway, so just time out.
                 break;
@@ -1465,27 +1744,38 @@ static jint Posix_poll(JNIEnv* env, jobject, jobjectArray javaStructs, jint time
     return rc;
 }
 
-static void Posix_posix_fallocate(JNIEnv* env, jobject, jobject javaFd __unused,
+static JNICALL void Posix_posix_fallocate(JNIEnv* env, jobject, jobject javaFd __unused,
                                   jlong offset __unused, jlong length __unused) {
+#ifdef MOE
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+                      "fallocate doesn't exist on a Mac");
+#else
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     while ((errno = posix_fallocate64(fd, offset, length)) == EINTR) {
     }
     if (errno != 0) {
         throwErrnoException(env, "posix_fallocate");
     }
+    return throwIfMinusOne(env, "prctl", result);
+#endif
 }
 
-static jint Posix_prctl(JNIEnv* env, jobject, jint option __unused, jlong arg2 __unused,
+static JNICALL jint Posix_prctl(JNIEnv* env, jobject, jint option __unused, jlong arg2 __unused,
                         jlong arg3 __unused, jlong arg4 __unused, jlong arg5 __unused) {
+#ifdef MOE
+    jniThrowException(env, "java/lang/UnsupportedOperationException", "prctl doesn't exist on a Mac");
+    return 0;
+#else
     int result = TEMP_FAILURE_RETRY(prctl(static_cast<int>(option),
                                           static_cast<unsigned long>(arg2),
                                           static_cast<unsigned long>(arg3),
                                           static_cast<unsigned long>(arg4),
                                           static_cast<unsigned long>(arg5)));
     return throwIfMinusOne(env, "prctl", result);
+#endif
 }
 
-static jint Posix_preadBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jlong offset) {
+static JNICALL jint Posix_preadBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jlong offset) {
     ScopedBytesRW bytes(env, javaBytes);
     if (bytes.get() == NULL) {
         return -1;
@@ -1493,7 +1783,7 @@ static jint Posix_preadBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaB
     return IO_FAILURE_RETRY(env, ssize_t, pread64, javaFd, bytes.get() + byteOffset, byteCount, offset);
 }
 
-static jint Posix_pwriteBytes(JNIEnv* env, jobject, jobject javaFd, jbyteArray javaBytes, jint byteOffset, jint byteCount, jlong offset) {
+static JNICALL jint Posix_pwriteBytes(JNIEnv* env, jobject, jobject javaFd, jbyteArray javaBytes, jint byteOffset, jint byteCount, jlong offset) {
     ScopedBytesRO bytes(env, javaBytes);
     if (bytes.get() == NULL) {
         return -1;
@@ -1501,7 +1791,7 @@ static jint Posix_pwriteBytes(JNIEnv* env, jobject, jobject javaFd, jbyteArray j
     return IO_FAILURE_RETRY(env, ssize_t, pwrite64, javaFd, bytes.get() + byteOffset, byteCount, offset);
 }
 
-static jint Posix_readBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount) {
+static JNICALL jint Posix_readBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount) {
     ScopedBytesRW bytes(env, javaBytes);
     if (bytes.get() == NULL) {
         return -1;
@@ -1509,7 +1799,7 @@ static jint Posix_readBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBy
     return IO_FAILURE_RETRY(env, ssize_t, read, javaFd, bytes.get() + byteOffset, byteCount);
 }
 
-static jstring Posix_readlink(JNIEnv* env, jobject, jstring javaPath) {
+static JNICALL jstring Posix_readlink(JNIEnv* env, jobject, jstring javaPath) {
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return NULL;
@@ -1523,7 +1813,7 @@ static jstring Posix_readlink(JNIEnv* env, jobject, jstring javaPath) {
     return env->NewStringUTF(result.c_str());
 }
 
-static jstring Posix_realpath(JNIEnv* env, jobject, jstring javaPath) {
+static JNICALL jstring Posix_realpath(JNIEnv* env, jobject, jstring javaPath) {
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return NULL;
@@ -1538,7 +1828,7 @@ static jstring Posix_realpath(JNIEnv* env, jobject, jstring javaPath) {
     return env->NewStringUTF(real_path.get());
 }
 
-static jint Posix_readv(JNIEnv* env, jobject, jobject javaFd, jobjectArray buffers, jintArray offsets, jintArray byteCounts) {
+static JNICALL jint Posix_readv(JNIEnv* env, jobject, jobject javaFd, jobjectArray buffers, jintArray offsets, jintArray byteCounts) {
     IoVec<ScopedBytesRW> ioVec(env, env->GetArrayLength(buffers));
     if (!ioVec.init(buffers, offsets, byteCounts)) {
         return -1;
@@ -1546,7 +1836,7 @@ static jint Posix_readv(JNIEnv* env, jobject, jobject javaFd, jobjectArray buffe
     return IO_FAILURE_RETRY(env, ssize_t, readv, javaFd, ioVec.get(), ioVec.size());
 }
 
-static jint Posix_recvfromBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jint flags, jobject javaInetSocketAddress) {
+static JNICALL jint Posix_recvfromBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jint flags, jobject javaInetSocketAddress) {
     ScopedBytesRW bytes(env, javaBytes);
     if (bytes.get() == NULL) {
         return -1;
@@ -1556,14 +1846,18 @@ static jint Posix_recvfromBytes(JNIEnv* env, jobject, jobject javaFd, jobject ja
     memset(&ss, 0, sizeof(ss));
     sockaddr* from = (javaInetSocketAddress != NULL) ? reinterpret_cast<sockaddr*>(&ss) : NULL;
     socklen_t* fromLength = (javaInetSocketAddress != NULL) ? &sl : 0;
+#ifndef MOE_WINDOWS
     jint recvCount = NET_FAILURE_RETRY(env, ssize_t, recvfrom, javaFd, bytes.get() + byteOffset, byteCount, flags, from, fromLength);
+#else
+    jint recvCount = NET_FAILURE_RETRY(env, ssize_t, recvfrom, javaFd, (char*)bytes.get() + byteOffset, byteCount, flags, from, fromLength);
+#endif
     if (recvCount > 0) {
         fillInetSocketAddress(env, javaInetSocketAddress, ss);
     }
     return recvCount;
 }
 
-static void Posix_remove(JNIEnv* env, jobject, jstring javaPath) {
+static JNICALL void Posix_remove(JNIEnv* env, jobject, jstring javaPath) {
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return;
@@ -1571,7 +1865,8 @@ static void Posix_remove(JNIEnv* env, jobject, jstring javaPath) {
     throwIfMinusOne(env, "remove", TEMP_FAILURE_RETRY(remove(path.c_str())));
 }
 
-static void Posix_removexattr(JNIEnv* env, jobject, jstring javaPath, jstring javaName) {
+static JNICALL void Posix_removexattr(JNIEnv* env, jobject, jstring javaPath, jstring javaName) {
+#ifndef MOE_WINDOWS
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return;
@@ -1581,13 +1876,21 @@ static void Posix_removexattr(JNIEnv* env, jobject, jstring javaPath, jstring ja
         return;
     }
 
+#ifndef MOE
     int res = removexattr(path.c_str(), name.c_str());
+#else
+    int res = removexattr(path.c_str(), name.c_str(), 0);
+#endif
     if (res < 0) {
         throwErrnoException(env, "removexattr");
     }
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for removexattr on Windows");
+#endif
 }
 
-static void Posix_rename(JNIEnv* env, jobject, jstring javaOldPath, jstring javaNewPath) {
+static JNICALL void Posix_rename(JNIEnv* env, jobject, jstring javaOldPath, jstring javaNewPath) {
     ScopedUtfChars oldPath(env, javaOldPath);
     if (oldPath.c_str() == NULL) {
         return;
@@ -1599,7 +1902,7 @@ static void Posix_rename(JNIEnv* env, jobject, jstring javaOldPath, jstring java
     throwIfMinusOne(env, "rename", TEMP_FAILURE_RETRY(rename(oldPath.c_str(), newPath.c_str())));
 }
 
-static jlong Posix_sendfile(JNIEnv* env, jobject, jobject javaOutFd, jobject javaInFd, jobject javaOffset, jlong byteCount) {
+static JNICALL jlong Posix_sendfile(JNIEnv* env, jobject, jobject javaOutFd, jobject javaInFd, jobject javaOffset, jlong byteCount) {
     int outFd = jniGetFDFromFileDescriptor(env, javaOutFd);
     int inFd = jniGetFDFromFileDescriptor(env, javaInFd);
     static jfieldID valueFid = env->GetFieldID(JniConstants::mutableLongClass, "value", "J");
@@ -1617,17 +1920,21 @@ static jlong Posix_sendfile(JNIEnv* env, jobject, jobject javaOutFd, jobject jav
     return result;
 }
 
-static jint Posix_sendtoBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jint flags, jobject javaInetAddress, jint port) {
+static JNICALL jint Posix_sendtoBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jint flags, jobject javaInetAddress, jint port) {
     ScopedBytesRO bytes(env, javaBytes);
     if (bytes.get() == NULL) {
         return -1;
     }
 
     return NET_IPV4_FALLBACK(env, ssize_t, sendto, javaFd, javaInetAddress, port,
+#ifndef MOE_WINDOWS
                              NULL_ADDR_OK, bytes.get() + byteOffset, byteCount, flags);
+#else
+                             NULL_ADDR_OK, (const char*)bytes.get() + byteOffset, byteCount, flags);
+#endif
 }
 
-static jint Posix_sendtoBytesSocketAddress(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jint flags, jobject javaSocketAddress) {
+static JNICALL jint Posix_sendtoBytesSocketAddress(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jint flags, jobject javaSocketAddress) {
     if (env->IsInstanceOf(javaSocketAddress, JniConstants::inetSocketAddressClass)) {
         // Use the InetAddress version so we get the benefit of NET_IPV4_FALLBACK.
         jobject javaInetAddress;
@@ -1650,14 +1957,18 @@ static jint Posix_sendtoBytesSocketAddress(JNIEnv* env, jobject, jobject javaFd,
 
     const sockaddr* sa = reinterpret_cast<const sockaddr*>(&ss);
     // We don't need the return value because we'll already have thrown.
+#ifndef MOE_WINDOWS
     return NET_FAILURE_RETRY(env, ssize_t, sendto, javaFd, bytes.get() + byteOffset, byteCount, flags, sa, sa_len);
+#else
+    return NET_FAILURE_RETRY(env, ssize_t, sendto, javaFd, (const char*)bytes.get() + byteOffset, byteCount, flags, sa, sa_len);
+#endif
 }
 
-static void Posix_setegid(JNIEnv* env, jobject, jint egid) {
+static JNICALL void Posix_setegid(JNIEnv* env, jobject, jint egid) {
     throwIfMinusOne(env, "setegid", TEMP_FAILURE_RETRY(setegid(egid)));
 }
 
-static void Posix_setenv(JNIEnv* env, jobject, jstring javaName, jstring javaValue, jboolean overwrite) {
+static JNICALL void Posix_setenv(JNIEnv* env, jobject, jstring javaName, jstring javaValue, jboolean overwrite) {
     ScopedUtfChars name(env, javaName);
     if (name.c_str() == NULL) {
         return;
@@ -1669,51 +1980,56 @@ static void Posix_setenv(JNIEnv* env, jobject, jstring javaName, jstring javaVal
     throwIfMinusOne(env, "setenv", setenv(name.c_str(), value.c_str(), overwrite));
 }
 
-static void Posix_seteuid(JNIEnv* env, jobject, jint euid) {
+static JNICALL void Posix_seteuid(JNIEnv* env, jobject, jint euid) {
     throwIfMinusOne(env, "seteuid", TEMP_FAILURE_RETRY(seteuid(euid)));
 }
 
-static void Posix_setgid(JNIEnv* env, jobject, jint gid) {
+static JNICALL void Posix_setgid(JNIEnv* env, jobject, jint gid) {
     throwIfMinusOne(env, "setgid", TEMP_FAILURE_RETRY(setgid(gid)));
 }
 
-static void Posix_setpgid(JNIEnv* env, jobject, jint pid, int pgid) {
+static JNICALL void Posix_setpgid(JNIEnv* env, jobject, jint pid, int pgid) {
     throwIfMinusOne(env, "setpgid", TEMP_FAILURE_RETRY(setpgid(pid, pgid)));
 }
 
-static void Posix_setregid(JNIEnv* env, jobject, jint rgid, int egid) {
+static JNICALL void Posix_setregid(JNIEnv* env, jobject, jint rgid, int egid) {
     throwIfMinusOne(env, "setregid", TEMP_FAILURE_RETRY(setregid(rgid, egid)));
 }
 
-static void Posix_setreuid(JNIEnv* env, jobject, jint ruid, int euid) {
+static JNICALL void Posix_setreuid(JNIEnv* env, jobject, jint ruid, int euid) {
     throwIfMinusOne(env, "setreuid", TEMP_FAILURE_RETRY(setreuid(ruid, euid)));
 }
 
-static jint Posix_setsid(JNIEnv* env, jobject) {
+static JNICALL jint Posix_setsid(JNIEnv* env, jobject) {
     return throwIfMinusOne(env, "setsid", TEMP_FAILURE_RETRY(setsid()));
 }
 
-static void Posix_setsockoptByte(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jint value) {
+static JNICALL void Posix_setsockoptByte(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jint value) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     u_char byte = value;
     throwIfMinusOne(env, "setsockopt", TEMP_FAILURE_RETRY(setsockopt(fd, level, option, &byte, sizeof(byte))));
 }
 
-static void Posix_setsockoptIfreq(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jstring javaInterfaceName) {
+static JNICALL void Posix_setsockoptIfreq(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jstring javaInterfaceName) {
+#ifndef MOE_WINDOWS
     struct ifreq req;
     if (!fillIfreq(env, javaInterfaceName, req)) {
         return;
     }
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     throwIfMinusOne(env, "setsockopt", TEMP_FAILURE_RETRY(setsockopt(fd, level, option, &req, sizeof(req))));
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for setsockoptIfreq on Windows");
+#endif
 }
 
-static void Posix_setsockoptInt(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jint value) {
+static JNICALL void Posix_setsockoptInt(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jint value) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     throwIfMinusOne(env, "setsockopt", TEMP_FAILURE_RETRY(setsockopt(fd, level, option, &value, sizeof(value))));
 }
 
-static void Posix_setsockoptIpMreqn(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jint value) {
+static JNICALL void Posix_setsockoptIpMreqn(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jint value) {
     ip_mreqn req;
     memset(&req, 0, sizeof(req));
     req.imr_ifindex = value;
@@ -1721,7 +2037,7 @@ static void Posix_setsockoptIpMreqn(JNIEnv* env, jobject, jobject javaFd, jint l
     throwIfMinusOne(env, "setsockopt", TEMP_FAILURE_RETRY(setsockopt(fd, level, option, &req, sizeof(req))));
 }
 
-static void Posix_setsockoptGroupReq(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jobject javaGroupReq) {
+static JNICALL void Posix_setsockoptGroupReq(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jobject javaGroupReq) {
     struct group_req req;
     memset(&req, 0, sizeof(req));
 
@@ -1754,7 +2070,7 @@ static void Posix_setsockoptGroupReq(JNIEnv* env, jobject, jobject javaFd, jint 
     throwIfMinusOne(env, "setsockopt", rc);
 }
 
-static void Posix_setsockoptGroupSourceReq(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jobject javaGroupSourceReq) {
+static JNICALL void Posix_setsockoptGroupSourceReq(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jobject javaGroupSourceReq) {
     socklen_t sa_len;
     struct group_source_req req;
     memset(&req, 0, sizeof(req));
@@ -1796,7 +2112,7 @@ static void Posix_setsockoptGroupSourceReq(JNIEnv* env, jobject, jobject javaFd,
     throwIfMinusOne(env, "setsockopt", rc);
 }
 
-static void Posix_setsockoptLinger(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jobject javaLinger) {
+static JNICALL void Posix_setsockoptLinger(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jobject javaLinger) {
     static jfieldID lOnoffFid = env->GetFieldID(JniConstants::structLingerClass, "l_onoff", "I");
     static jfieldID lLingerFid = env->GetFieldID(JniConstants::structLingerClass, "l_linger", "I");
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
@@ -1806,7 +2122,7 @@ static void Posix_setsockoptLinger(JNIEnv* env, jobject, jobject javaFd, jint le
     throwIfMinusOne(env, "setsockopt", TEMP_FAILURE_RETRY(setsockopt(fd, level, option, &value, sizeof(value))));
 }
 
-static void Posix_setsockoptTimeval(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jobject javaTimeval) {
+static JNICALL void Posix_setsockoptTimeval(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jobject javaTimeval) {
     static jfieldID tvSecFid = env->GetFieldID(JniConstants::structTimevalClass, "tv_sec", "J");
     static jfieldID tvUsecFid = env->GetFieldID(JniConstants::structTimevalClass, "tv_usec", "J");
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
@@ -1816,12 +2132,13 @@ static void Posix_setsockoptTimeval(JNIEnv* env, jobject, jobject javaFd, jint l
     throwIfMinusOne(env, "setsockopt", TEMP_FAILURE_RETRY(setsockopt(fd, level, option, &value, sizeof(value))));
 }
 
-static void Posix_setuid(JNIEnv* env, jobject, jint uid) {
+static JNICALL void Posix_setuid(JNIEnv* env, jobject, jint uid) {
     throwIfMinusOne(env, "setuid", TEMP_FAILURE_RETRY(setuid(uid)));
 }
 
-static void Posix_setxattr(JNIEnv* env, jobject, jstring javaPath, jstring javaName,
+static JNICALL void Posix_setxattr(JNIEnv* env, jobject, jstring javaPath, jstring javaName,
         jbyteArray javaValue, jint flags) {
+#ifndef MOE_WINDOWS
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return;
@@ -1835,39 +2152,59 @@ static void Posix_setxattr(JNIEnv* env, jobject, jstring javaPath, jstring javaN
         return;
     }
     size_t valueLength = env->GetArrayLength(javaValue);
+#ifndef MOE
     int res = setxattr(path.c_str(), name.c_str(), value.get(), valueLength, flags);
+#else
+    int res = setxattr(path.c_str(), name.c_str(), value.get(), valueLength, 0, flags);
+#endif
     if (res < 0) {
         throwErrnoException(env, "setxattr");
     }
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for setxattr on Windows");
+#endif
 }
 
-static void Posix_shutdown(JNIEnv* env, jobject, jobject javaFd, jint how) {
+static JNICALL void Posix_shutdown(JNIEnv* env, jobject, jobject javaFd, jint how) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     throwIfMinusOne(env, "shutdown", TEMP_FAILURE_RETRY(shutdown(fd, how)));
 }
 
-static jobject Posix_socket(JNIEnv* env, jobject, jint domain, jint type, jint protocol) {
+static JNICALL jobject Posix_socket(JNIEnv* env, jobject, jint domain, jint type, jint protocol) {
+#ifndef MOE
     if (domain == AF_PACKET) {
         protocol = htons(protocol);  // Packet sockets specify the protocol in host byte order.
     }
+#endif
     int fd = throwIfMinusOne(env, "socket", TEMP_FAILURE_RETRY(socket(domain, type, protocol)));
     return fd != -1 ? jniCreateFileDescriptor(env, fd) : NULL;
 }
 
-static void Posix_socketpair(JNIEnv* env, jobject, jint domain, jint type, jint protocol, jobject javaFd1, jobject javaFd2) {
+static JNICALL void Posix_socketpair(JNIEnv* env, jobject, jint domain, jint type, jint protocol, jobject javaFd1, jobject javaFd2) {
+#ifndef MOE_WINDOWS
     int fds[2];
     int rc = throwIfMinusOne(env, "socketpair", TEMP_FAILURE_RETRY(socketpair(domain, type, protocol, fds)));
     if (rc != -1) {
         jniSetFileDescriptorOfFD(env, javaFd1, fds[0]);
         jniSetFileDescriptorOfFD(env, javaFd2, fds[1]);
     }
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for socketpair on Windows");
+#endif
 }
 
-static jobject Posix_stat(JNIEnv* env, jobject, jstring javaPath) {
+static JNICALL jobject Posix_stat(JNIEnv* env, jobject, jstring javaPath) {
+#ifndef MOE_WINDOWS
     return doStat(env, javaPath, false);
+#else
+    return doStat(env, javaPath);
+#endif
 }
 
-static jobject Posix_statvfs(JNIEnv* env, jobject, jstring javaPath) {
+static JNICALL jobject Posix_statvfs(JNIEnv* env, jobject, jstring javaPath) {
+#ifndef MOE_WINDOWS
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return NULL;
@@ -1879,19 +2216,24 @@ static jobject Posix_statvfs(JNIEnv* env, jobject, jstring javaPath) {
         return NULL;
     }
     return makeStructStatVfs(env, sb);
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for statvfs on Windows");
+    return nullptr;
+#endif
 }
 
-static jstring Posix_strerror(JNIEnv* env, jobject, jint errnum) {
+static JNICALL jstring Posix_strerror(JNIEnv* env, jobject, jint errnum) {
     char buffer[BUFSIZ];
     const char* message = jniStrError(errnum, buffer, sizeof(buffer));
     return env->NewStringUTF(message);
 }
 
-static jstring Posix_strsignal(JNIEnv* env, jobject, jint signal) {
+static JNICALL jstring Posix_strsignal(JNIEnv* env, jobject, jint signal) {
     return env->NewStringUTF(strsignal(signal));
 }
 
-static void Posix_symlink(JNIEnv* env, jobject, jstring javaOldPath, jstring javaNewPath) {
+static JNICALL void Posix_symlink(JNIEnv* env, jobject, jstring javaOldPath, jstring javaNewPath) {
     ScopedUtfChars oldPath(env, javaOldPath);
     if (oldPath.c_str() == NULL) {
         return;
@@ -1903,7 +2245,7 @@ static void Posix_symlink(JNIEnv* env, jobject, jstring javaOldPath, jstring jav
     throwIfMinusOne(env, "symlink", TEMP_FAILURE_RETRY(symlink(oldPath.c_str(), newPath.c_str())));
 }
 
-static jlong Posix_sysconf(JNIEnv* env, jobject, jint name) {
+static JNICALL jlong Posix_sysconf(JNIEnv* env, jobject, jint name) {
     // Since -1 is a valid result from sysconf(3), detecting failure is a little more awkward.
     errno = 0;
     long result = sysconf(name);
@@ -1913,21 +2255,31 @@ static jlong Posix_sysconf(JNIEnv* env, jobject, jint name) {
     return result;
 }
 
-static void Posix_tcdrain(JNIEnv* env, jobject, jobject javaFd) {
+static JNICALL void Posix_tcdrain(JNIEnv* env, jobject, jobject javaFd) {
+#ifndef MOE_WINDOWS
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     throwIfMinusOne(env, "tcdrain", TEMP_FAILURE_RETRY(tcdrain(fd)));
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for tcdrain on Windows");
+#endif
 }
 
-static void Posix_tcsendbreak(JNIEnv* env, jobject, jobject javaFd, jint duration) {
+static JNICALL void Posix_tcsendbreak(JNIEnv* env, jobject, jobject javaFd, jint duration) {
+#ifndef MOE_WINDOWS
   int fd = jniGetFDFromFileDescriptor(env, javaFd);
   throwIfMinusOne(env, "tcsendbreak", TEMP_FAILURE_RETRY(tcsendbreak(fd, duration)));
+#else
+  jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for tcsendbreak on Windows");
+#endif
 }
 
-static jint Posix_umaskImpl(JNIEnv*, jobject, jint mask) {
+static JNICALL jint Posix_umaskImpl(JNIEnv*, jobject, jint mask) {
     return umask(mask);
 }
 
-static jobject Posix_uname(JNIEnv* env, jobject) {
+static JNICALL jobject Posix_uname(JNIEnv* env, jobject) {
     struct utsname buf;
     if (TEMP_FAILURE_RETRY(uname(&buf)) == -1) {
         return NULL; // Can't happen.
@@ -1935,7 +2287,7 @@ static jobject Posix_uname(JNIEnv* env, jobject) {
     return makeStructUtsname(env, buf);
 }
 
-static void Posix_unlink(JNIEnv* env, jobject, jstring javaPathname) {
+static JNICALL void Posix_unlink(JNIEnv* env, jobject, jstring javaPathname) {
     ScopedUtfChars pathname(env, javaPathname);
     if (pathname.c_str() == NULL) {
         return;
@@ -1943,7 +2295,7 @@ static void Posix_unlink(JNIEnv* env, jobject, jstring javaPathname) {
     throwIfMinusOne(env, "unlink", unlink(pathname.c_str()));
 }
 
-static void Posix_unsetenv(JNIEnv* env, jobject, jstring javaName) {
+static JNICALL void Posix_unsetenv(JNIEnv* env, jobject, jstring javaName) {
     ScopedUtfChars name(env, javaName);
     if (name.c_str() == NULL) {
         return;
@@ -1951,7 +2303,8 @@ static void Posix_unsetenv(JNIEnv* env, jobject, jstring javaName) {
     throwIfMinusOne(env, "unsetenv", unsetenv(name.c_str()));
 }
 
-static jint Posix_waitpid(JNIEnv* env, jobject, jint pid, jobject javaStatus, jint options) {
+static JNICALL jint Posix_waitpid(JNIEnv* env, jobject, jint pid, jobject javaStatus, jint options) {
+#ifndef MOE_WINDOWS
     int status;
     int rc = throwIfMinusOne(env, "waitpid", TEMP_FAILURE_RETRY(waitpid(pid, &status, options)));
     if (rc != -1) {
@@ -1959,9 +2312,14 @@ static jint Posix_waitpid(JNIEnv* env, jobject, jint pid, jobject javaStatus, ji
         env->SetIntField(javaStatus, valueFid, status);
     }
     return rc;
+#else
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+       "unimplemented support for waitpid on Windows");
+    return -1;
+#endif
 }
 
-static jint Posix_writeBytes(JNIEnv* env, jobject, jobject javaFd, jbyteArray javaBytes, jint byteOffset, jint byteCount) {
+static JNICALL jint Posix_writeBytes(JNIEnv* env, jobject, jobject javaFd, jbyteArray javaBytes, jint byteOffset, jint byteCount) {
     ScopedBytesRO bytes(env, javaBytes);
     if (bytes.get() == NULL) {
         return -1;
@@ -1969,7 +2327,7 @@ static jint Posix_writeBytes(JNIEnv* env, jobject, jobject javaFd, jbyteArray ja
     return IO_FAILURE_RETRY(env, ssize_t, write, javaFd, bytes.get() + byteOffset, byteCount);
 }
 
-static jint Posix_writev(JNIEnv* env, jobject, jobject javaFd, jobjectArray buffers, jintArray offsets, jintArray byteCounts) {
+static JNICALL jint Posix_writev(JNIEnv* env, jobject, jobject javaFd, jobjectArray buffers, jintArray offsets, jintArray byteCounts) {
     IoVec<ScopedBytesRO> ioVec(env, env->GetArrayLength(buffers));
     if (!ioVec.init(buffers, offsets, byteCounts)) {
         return -1;

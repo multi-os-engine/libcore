@@ -306,6 +306,7 @@ public class SSLEngineTest extends TestCase {
      * Exception case: SSLException should be thrown.
      */
     public void test_unwrap_01() throws Exception {
+        /* [XRT] crash
         prepareEngines();
         doHandshake();
 
@@ -316,6 +317,8 @@ public class SSLEngineTest extends TestCase {
             fail("SSLException wasn't thrown");
         } catch (SSLException expected) {
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -453,11 +456,14 @@ public class SSLEngineTest extends TestCase {
     }
 
     public void test_wrap_01() throws Exception {
+        /* [XRT] crash
         prepareEngines();
         doHandshake();
         ByteBuffer bbs = ByteBuffer.allocate(100);
         ByteBuffer bbd = ByteBuffer.allocate(MAX_TLS_RECORD_SIZE);
         clientEngine.engine.wrap(new ByteBuffer[] { bbs }, 0, 1, bbd);
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -566,6 +572,7 @@ public class SSLEngineTest extends TestCase {
      *                                     int length, ByteBuffer dst)
      */
     public void test_wrap_06() throws Exception {
+        /* [XRT] crash
         String host = "new host";
         int port = 8080;
         ByteBuffer bb = ByteBuffer.allocate(MAX_TLS_RECORD_SIZE);
@@ -577,6 +584,8 @@ public class SSLEngineTest extends TestCase {
         assertEquals(SSLEngineResult.Status.OK, result.getStatus());
         assertEquals(0, result.bytesConsumed());
         assertTrue(result.bytesProduced() > 0);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -608,6 +617,7 @@ public class SSLEngineTest extends TestCase {
      * SSLException should be thrown.
      */
     public void test_unwrap_ByteBuffer_ByteBuffer_01() throws Exception {
+        /* [XRT] crash
         prepareEngines();
         doHandshake();
         ByteBuffer bbs = ByteBuffer.allocate(100);
@@ -619,6 +629,8 @@ public class SSLEngineTest extends TestCase {
         } catch (SSLException ex) {
             //expected
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -715,6 +727,7 @@ public class SSLEngineTest extends TestCase {
      * SSLException should be thrown.
      */
     public void test_unwrap_ByteBuffer$ByteBuffer_01() throws Exception {
+        /* [XRT] crash
         prepareEngines();
         doHandshake();
 
@@ -726,6 +739,8 @@ public class SSLEngineTest extends TestCase {
             fail("SSLException wasn't thrown");
         } catch (SSLException expected) {
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -823,11 +838,14 @@ public class SSLEngineTest extends TestCase {
     }
 
     public void test_wrap_ByteBuffer_ByteBuffer_01() throws Exception {
+        /* [XRT] crash
         prepareEngines();
         doHandshake();
         ByteBuffer bbs = ByteBuffer.allocate(20);
         ByteBuffer bbd = ByteBuffer.allocate(20000);
         clientEngine.engine.wrap(bbs, bbd);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -920,6 +938,7 @@ public class SSLEngineTest extends TestCase {
      * SSLException should be thrown.
      */
     public void test_wrap_ByteBuffer$ByteBuffer_01() throws Exception {
+        /* [XRT] crash
         prepareEngines();
         doHandshake();
         ByteBuffer bbs = ByteBuffer.allocate(100);
@@ -927,6 +946,8 @@ public class SSLEngineTest extends TestCase {
 
         clientEngine.engine.wrap(new ByteBuffer[] { bbs }, bbd);
         serverEngine.engine.wrap(new ByteBuffer[] { bbs }, bbd);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -1147,7 +1168,7 @@ public class SSLEngineTest extends TestCase {
     }
 
     public void testHandshake() throws Exception {
-
+        /* [XRT] crash
         prepareEngines();
 
         assertTrue("handshake failed", doHandshake());
@@ -1160,6 +1181,8 @@ public class SSLEngineTest extends TestCase {
         assertEquals("Handshake not finished",
                 SSLEngineResult.HandshakeStatus.FINISHED,
                 serverEngine.getStatus());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     void prepareEngines() throws Exception {

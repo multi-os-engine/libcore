@@ -202,7 +202,8 @@ public class SourceChannelTest extends TestCase {
 	 * @tests java.nio.channels.Pipe.SourceChannel#read(ByteBuffer)
 	 */
 	public void test_read_$LByteBuffer_Exception() throws IOException {
-		ByteBuffer[] nullBufArrayRef = null;
+		/* [XRT] crash
+        ByteBuffer[] nullBufArrayRef = null;
 		try {
 			source.read(nullBufArrayRef);
 			fail("should throw NullPointerException");
@@ -227,6 +228,9 @@ public class SourceChannelTest extends TestCase {
 		} catch (NullPointerException e) {
 			// expected
 		}
+         */
+        fail("[CRASH] Turn off testcase due to crash");
+
 	}
 
 	/**

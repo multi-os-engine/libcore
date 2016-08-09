@@ -16,6 +16,10 @@
 
 #define LOG_TAG "ICU"
 
+#ifdef USE_APPLE_CF
+    #import <CoreFoundation/CoreFoundation.h>
+#endif
+
 #include "IcuUtilities.h"
 #include "JNIHelp.h"
 #include "JniConstants.h"
@@ -28,12 +32,10 @@
 #include "cutils/log.h"
 #include "toStringArray.h"
 #include "unicode/brkiter.h"
-#include "unicode/calendar.h"
 #include "unicode/datefmt.h"
 #include "unicode/dcfmtsym.h"
 #include "unicode/decimfmt.h"
 #include "unicode/dtfmtsym.h"
-#include "unicode/dtptngen.h"
 #include "unicode/gregocal.h"
 #include "unicode/locid.h"
 #include "unicode/numfmt.h"
@@ -65,6 +67,39 @@
 #include <memory>
 #include <vector>
 
+#ifndef USE_APPLE_CF
+    #include "unicode/calendar.h"
+    #include "unicode/dtptngen.h"
+#else
+
+    #include <cf_calendar.h>
+    #include <cf_date_format_symbols.h>
+    #include <cf_date_time_pattern_generator.h>
+    #include <cf_relative_days.h>
+    #include <cf_number_format.h>
+    #include <cf_decimal_format_symbols.h>
+    #include <cf_currency.h>
+    #include <cf_mutable_string.h>
+
+    #define ICU_TYPE(a) cf_##a
+
+    #define DecimalFormatSymbols ICU_TYPE(DecimalFormatSymbols)
+    #define NumberFormat ICU_TYPE(NumberFormat)
+    #define DecimalFormat ICU_TYPE(DecimalFormat)
+    #define TimeZoneNames ICU_TYPE(TimeZoneNames)
+    #define Calendar ICU_TYPE(Calendar)
+    #define DateFormatSymbols ICU_TYPE(DateFormatSymbols)
+    #define DateTimePatternGenerator ICU_TYPE(DateTimePatternGenerator)
+    #define Locale ICU_TYPE(Locale)
+#endif
+
+// TODO: put this in a header file and use it everywhere!
+// DISALLOW_COPY_AND_ASSIGN disallows the copy and operator= functions.
+// It goes in the private: declarations in a class.
+#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
+    TypeName(const TypeName&); \
+    void operator=(const TypeName&)
+
 class ScopedResourceBundle {
  public:
   explicit ScopedResourceBundle(UResourceBundle* bundle) : bundle_(bundle) {
@@ -91,7 +126,7 @@ class ScopedResourceBundle {
   DISALLOW_COPY_AND_ASSIGN(ScopedResourceBundle);
 };
 
-static jstring ICU_addLikelySubtags(JNIEnv* env, jclass, jstring javaLocaleName) {
+static JNICALL jstring ICU_addLikelySubtags2(JNIEnv* env, jclass, jstring javaLocaleName) {
     UErrorCode status = U_ZERO_ERROR;
     ScopedUtfChars localeID(env, javaLocaleName);
     char maximizedLocaleID[ULOC_FULLNAME_CAPACITY];
@@ -102,7 +137,15 @@ static jstring ICU_addLikelySubtags(JNIEnv* env, jclass, jstring javaLocaleName)
     return env->NewStringUTF(maximizedLocaleID);
 }
 
-static jstring ICU_getScript(JNIEnv* env, jclass, jstring javaLocaleName) {
+static JNICALL jstring ICU_addLikelySubtags(JNIEnv* env, jclass jc, jstring javaLocaleName) {
+#ifndef USE_APPLE_CF
+    return ICU_addLikelySubtags2(env, jc, javaLocaleName);
+#else
+    return javaLocaleName;
+#endif
+}
+
+static JNICALL jstring ICU_getScript(JNIEnv* env, jclass, jstring javaLocaleName) {
   ScopedIcuLocale icuLocale(env, javaLocaleName);
   if (!icuLocale.valid()) {
     return NULL;
@@ -110,7 +153,9 @@ static jstring ICU_getScript(JNIEnv* env, jclass, jstring javaLocaleName) {
   return env->NewStringUTF(icuLocale.locale().getScript());
 }
 
-static jint ICU_getCurrencyFractionDigits(JNIEnv* env, jclass, jstring javaCurrencyCode) {
+#ifndef USE_APPLE_CF
+
+static JNICALL jint ICU_getCurrencyFractionDigits(JNIEnv* env, jclass, jstring javaCurrencyCode) {
   ScopedJavaUnicodeString currencyCode(env, javaCurrencyCode);
   if (!currencyCode.valid()) {
     return 0;
@@ -120,7 +165,7 @@ static jint ICU_getCurrencyFractionDigits(JNIEnv* env, jclass, jstring javaCurre
   return ucurr_getDefaultFractionDigits(icuCurrencyCode.getTerminatedBuffer(), &status);
 }
 
-static jint ICU_getCurrencyNumericCode(JNIEnv* env, jclass, jstring javaCurrencyCode) {
+static JNICALL jint ICU_getCurrencyNumericCode(JNIEnv* env, jclass, jstring javaCurrencyCode) {
   ScopedJavaUnicodeString currencyCode(env, javaCurrencyCode);
   if (!currencyCode.valid()) {
     return 0;
@@ -130,7 +175,7 @@ static jint ICU_getCurrencyNumericCode(JNIEnv* env, jclass, jstring javaCurrency
 }
 
 // TODO: rewrite this with int32_t ucurr_forLocale(const char* locale, UChar* buff, int32_t buffCapacity, UErrorCode* ec)...
-static jstring ICU_getCurrencyCode(JNIEnv* env, jclass, jstring javaCountryCode) {
+static JNICALL jstring ICU_getCurrencyCode(JNIEnv* env, jclass, jstring javaCountryCode) {
     UErrorCode status = U_ZERO_ERROR;
     ScopedResourceBundle supplData(ures_openDirect(U_ICUDATA_CURR, "supplementalData", &status));
     if (U_FAILURE(status)) {
@@ -168,7 +213,11 @@ static jstring ICU_getCurrencyCode(JNIEnv* env, jclass, jstring javaCountryCode)
     }
 
     int32_t charCount;
+#ifndef MOE_WINDOWS
     const jchar* chars = ures_getString(currencyId.get(), &charCount, &status);
+#else
+    const jchar* chars = CAST_TO_CONST_JCHAR(ures_getString(currencyId.get(), &charCount, &status));
+#endif
     return (charCount == 0) ? env->NewStringUTF("XXX") : env->NewString(chars, charCount);
 }
 
@@ -201,18 +250,106 @@ static jstring getCurrencyName(JNIEnv* env, jstring javaLanguageTag, jstring jav
       charCount = icuCurrencyCode.length();
     }
   }
+#ifndef MOE_WINDOWS
   return (charCount == 0) ? NULL : env->NewString(chars, charCount);
+#else
+  return (charCount == 0) ? NULL : env->NewString(CAST_TO_CONST_JCHAR(chars), charCount);
+#endif
+}
+#else
+
+static JNICALL jint ICU_getCurrencyNumericCode(JNIEnv* env, jclass, jstring javaCurrencyCode) {
+    ScopedJavaUnicodeString currencyCode(env, javaCurrencyCode);
+    if (!currencyCode.valid()) {
+        return 0;
+    }
+    UnicodeString icuCurrencyCode(currencyCode.unicodeString());
+    return ucurr_getNumericCode(icuCurrencyCode.getTerminatedBuffer());
 }
 
-static jstring ICU_getCurrencyDisplayName(JNIEnv* env, jclass, jstring javaLanguageTag, jstring javaCurrencyCode) {
+static JNICALL jint ICU_getCurrencyFractionDigits(JNIEnv* env, jclass, jstring javaCurrencyCode) {
+
+    ScopedUtfChars currencyCodeStr(env, javaCurrencyCode);
+    
+    cf_Currency currency (cf_Locale(), cf_CurrencyCode(currencyCodeStr.c_str()));
+    
+    return currency.fractionDigits();
+
+}
+
+static JNICALL jstring ICU_getCurrencyCode2(JNIEnv* env, jclass, jstring javaCountryCode) {
+    ScopedJavaUnicodeString countryCode(env, javaCountryCode);
+    
+    //currency code fits ascii symbols
+    cf_Currency currency (cf_String(countryCode.unicodeString()));
+
+    //printf("currency.code=%s\n", currency.code().c_str());
+
+    return env->NewStringUTF(currency.code().c_str());
+}
+
+static JNICALL jstring ICU_getCurrencyCode(JNIEnv* env, jclass, jstring javaCountryCode) {
+    return ICU_getCurrencyCode2(env, nullptr,  javaCountryCode) ;
+}
+
+static jstring getCurrencyName2(JNIEnv* env, jstring javaLanguageTag, jstring javaCurrencyCode, UCurrNameStyle nameStyle){
+    ScopedIcuLocale icuLocale(env, javaLanguageTag);
+    if (!icuLocale.valid()) {
+        return NULL;
+    }
+    ScopedUtfChars currencyCodeStr(env, javaCurrencyCode);
+
+    cf_Currency currency (icuLocale.locale(), cf_CurrencyCode(currencyCodeStr.c_str()));
+
+    return env->NewStringUTF(currency.displayName().c_str());
+}
+
+#endif
+
+
+
+static JNICALL jstring ICU_getCurrencyDisplayName(JNIEnv* env, jclass, jstring javaLanguageTag, jstring javaCurrencyCode) {
+#ifndef USE_APPLE_CF
   return getCurrencyName(env, javaLanguageTag, javaCurrencyCode, UCURR_LONG_NAME);
+#else
+  return getCurrencyName2(env, javaLanguageTag, javaCurrencyCode, UCURR_LONG_NAME);
+#endif
 }
 
-static jstring ICU_getCurrencySymbol(JNIEnv* env, jclass, jstring javaLanguageTag, jstring javaCurrencyCode) {
+static JNICALL jstring ICU_getCurrencySymbol2(JNIEnv* env, jclass, jstring javaLanguageTag, jstring javaCurrencyCode) {
+#ifndef USE_APPLE_CF
   return getCurrencyName(env, javaLanguageTag, javaCurrencyCode, UCURR_SYMBOL_NAME);
+#else
+    ScopedIcuLocale icuLocale(env, javaLanguageTag);
+    if (!icuLocale.valid()) {
+        return NULL;
+    }
+    UErrorCode status = U_ZERO_ERROR;
+    
+    ScopedUtfChars currencyCode(env, javaCurrencyCode);
+    
+    //check that currency code is valid, without locale env
+    cf_CurrencyCode cc(currencyCode.c_str(), status);
+    
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+    
+    //curency symbol is per locale
+    cf_Currency currency(icuLocale.locale(), cc);
+    
+    //printf("currency.symbol=%s\n", currency.symbol().c_str());
+
+    auto symbol = (UnicodeString)currency.symbol();
+    return env->NewString(symbol.getBuffer(), symbol.length());
+#endif
 }
 
-static jstring ICU_getDisplayCountryNative(JNIEnv* env, jclass, jstring javaTargetLanguageTag, jstring javaLanguageTag) {
+static JNICALL jstring ICU_getCurrencySymbol(JNIEnv* env, jclass, jstring javaLanguageTag, jstring javaCurrencyCode) {
+    return ICU_getCurrencySymbol2(env, nullptr, javaLanguageTag, javaCurrencyCode);
+}
+
+static JNICALL jstring ICU_getDisplayCountryNative(JNIEnv* env, jclass, jstring javaTargetLanguageTag, jstring javaLanguageTag) {
   ScopedIcuLocale icuLocale(env, javaLanguageTag);
   if (!icuLocale.valid()) {
     return NULL;
@@ -224,10 +361,14 @@ static jstring ICU_getDisplayCountryNative(JNIEnv* env, jclass, jstring javaTarg
 
   icu::UnicodeString str;
   icuTargetLocale.locale().getDisplayCountry(icuLocale.locale(), str);
+#ifndef MOE_WINDOWS
   return env->NewString(str.getBuffer(), str.length());
+#else
+  return env->NewString(CAST_TO_CONST_JCHAR(str.getBuffer()), str.length());
+#endif
 }
 
-static jstring ICU_getDisplayLanguageNative(JNIEnv* env, jclass, jstring javaTargetLanguageTag, jstring javaLanguageTag) {
+static JNICALL jstring ICU_getDisplayLanguageNative(JNIEnv* env, jclass, jstring javaTargetLanguageTag, jstring javaLanguageTag) {
   ScopedIcuLocale icuLocale(env, javaLanguageTag);
   if (!icuLocale.valid()) {
     return NULL;
@@ -239,10 +380,14 @@ static jstring ICU_getDisplayLanguageNative(JNIEnv* env, jclass, jstring javaTar
 
   icu::UnicodeString str;
   icuTargetLocale.locale().getDisplayLanguage(icuLocale.locale(), str);
+#ifndef MOE_WINDOWS
   return env->NewString(str.getBuffer(), str.length());
+#else
+  return env->NewString(CAST_TO_CONST_JCHAR(str.getBuffer()), str.length());
+#endif
 }
 
-static jstring ICU_getDisplayScriptNative(JNIEnv* env, jclass, jstring javaTargetLanguageTag, jstring javaLanguageTag) {
+static JNICALL jstring ICU_getDisplayScriptNative(JNIEnv* env, jclass, jstring javaTargetLanguageTag, jstring javaLanguageTag) {
   ScopedIcuLocale icuLocale(env, javaLanguageTag);
   if (!icuLocale.valid()) {
     return NULL;
@@ -254,10 +399,14 @@ static jstring ICU_getDisplayScriptNative(JNIEnv* env, jclass, jstring javaTarge
 
   icu::UnicodeString str;
   icuTargetLocale.locale().getDisplayScript(icuLocale.locale(), str);
+#ifndef MOE_WINDOWS
   return env->NewString(str.getBuffer(), str.length());
+#else
+  return env->NewString(CAST_TO_CONST_JCHAR(str.getBuffer()), str.length());
+#endif
 }
 
-static jstring ICU_getDisplayVariantNative(JNIEnv* env, jclass, jstring javaTargetLanguageTag, jstring javaLanguageTag) {
+static JNICALL jstring ICU_getDisplayVariantNative(JNIEnv* env, jclass, jstring javaTargetLanguageTag, jstring javaLanguageTag) {
   ScopedIcuLocale icuLocale(env, javaLanguageTag);
   if (!icuLocale.valid()) {
     return NULL;
@@ -269,10 +418,14 @@ static jstring ICU_getDisplayVariantNative(JNIEnv* env, jclass, jstring javaTarg
 
   icu::UnicodeString str;
   icuTargetLocale.locale().getDisplayVariant(icuLocale.locale(), str);
+#ifndef MOE_WINDOWS
   return env->NewString(str.getBuffer(), str.length());
+#else
+  return env->NewString(CAST_TO_CONST_JCHAR(str.getBuffer()), str.length());
+#endif
 }
 
-static jstring ICU_getISO3Country(JNIEnv* env, jclass, jstring javaLanguageTag) {
+static JNICALL jstring ICU_getISO3Country(JNIEnv* env, jclass, jstring javaLanguageTag) {
   ScopedIcuLocale icuLocale(env, javaLanguageTag);
   if (!icuLocale.valid()) {
     return NULL;
@@ -280,7 +433,7 @@ static jstring ICU_getISO3Country(JNIEnv* env, jclass, jstring javaLanguageTag) 
   return env->NewStringUTF(icuLocale.locale().getISO3Country());
 }
 
-static jstring ICU_getISO3Language(JNIEnv* env, jclass, jstring javaLanguageTag) {
+static JNICALL jstring ICU_getISO3Language(JNIEnv* env, jclass, jstring javaLanguageTag) {
   ScopedIcuLocale icuLocale(env, javaLanguageTag);
   if (!icuLocale.valid()) {
     return NULL;
@@ -288,36 +441,60 @@ static jstring ICU_getISO3Language(JNIEnv* env, jclass, jstring javaLanguageTag)
   return env->NewStringUTF(icuLocale.locale().getISO3Language());
 }
 
-static jobjectArray ICU_getISOCountriesNative(JNIEnv* env, jclass) {
+static JNICALL jobjectArray ICU_getISOCountriesNative(JNIEnv* env, jclass) {
     return toStringArray(env, icu::Locale::getISOCountries());
 }
 
-static jobjectArray ICU_getISOLanguagesNative(JNIEnv* env, jclass) {
+static JNICALL jobjectArray ICU_getISOLanguagesNative(JNIEnv* env, jclass) {
     return toStringArray(env, icu::Locale::getISOLanguages());
 }
 
-static jobjectArray ICU_getAvailableLocalesNative(JNIEnv* env, jclass) {
+static JNICALL jobjectArray ICU_getAvailableLocalesNative(JNIEnv* env, jclass) {
+#ifndef USE_APPLE_CF
     return toStringArray(env, uloc_countAvailable, uloc_getAvailable);
+#else 
+    return toStringArray(env, Locale::getAvailable());
+#endif
 }
 
-static jobjectArray ICU_getAvailableBreakIteratorLocalesNative(JNIEnv* env, jclass) {
+static JNICALL jobjectArray ICU_getAvailableBreakIteratorLocalesNative(JNIEnv* env, jclass) {
+#ifndef USE_APPLE_CF
     return toStringArray(env, ubrk_countAvailable, ubrk_getAvailable);
+#else
+    return toStringArray(env, Locale::getAvailable());
+#endif
 }
 
-static jobjectArray ICU_getAvailableCalendarLocalesNative(JNIEnv* env, jclass) {
+static JNICALL jobjectArray ICU_getAvailableCalendarLocalesNative(JNIEnv* env, jclass) {
+#ifndef USE_APPLE_CF
     return toStringArray(env, ucal_countAvailable, ucal_getAvailable);
+#else
+    return toStringArray(env, Locale::getAvailable());
+#endif
 }
 
-static jobjectArray ICU_getAvailableCollatorLocalesNative(JNIEnv* env, jclass) {
+static JNICALL jobjectArray ICU_getAvailableCollatorLocalesNative(JNIEnv* env, jclass) {
+#ifndef USE_APPLE_CF
     return toStringArray(env, ucol_countAvailable, ucol_getAvailable);
+#else
+    return toStringArray(env, Locale::getAvailable());
+#endif
 }
 
-static jobjectArray ICU_getAvailableDateFormatLocalesNative(JNIEnv* env, jclass) {
+static JNICALL jobjectArray ICU_getAvailableDateFormatLocalesNative(JNIEnv* env, jclass) {
+#ifndef USE_APPLE_CF
     return toStringArray(env, udat_countAvailable, udat_getAvailable);
+#else
+    return toStringArray(env, Locale::getAvailable());
+#endif
 }
 
-static jobjectArray ICU_getAvailableNumberFormatLocalesNative(JNIEnv* env, jclass) {
+static JNICALL jobjectArray ICU_getAvailableNumberFormatLocalesNative(JNIEnv* env, jclass) {
+#ifndef USE_APPLE_CF
     return toStringArray(env, unum_countAvailable, unum_getAvailable);
+#else
+    return toStringArray(env, Locale::getAvailable());
+#endif
 }
 
 static bool setIntegerField(JNIEnv* env, jobject obj, const char* fieldName, int value) {
@@ -342,7 +519,11 @@ static void setStringArrayField(JNIEnv* env, jobject obj, const char* fieldName,
 static void setStringArrayField(JNIEnv* env, jobject obj, const char* fieldName, const icu::UnicodeString* valueArray, int32_t size) {
     ScopedLocalRef<jobjectArray> result(env, env->NewObjectArray(size, JniConstants::stringClass, NULL));
     for (int32_t i = 0; i < size ; i++) {
+#ifndef MOE_WINDOWS
         ScopedLocalRef<jstring> s(env, env->NewString(valueArray[i].getBuffer(),valueArray[i].length()));
+#else
+        ScopedLocalRef<jstring> s(env, env->NewString(CAST_TO_CONST_JCHAR(valueArray[i].getBuffer()),valueArray[i].length()));
+#endif
         if (env->ExceptionCheck()) {
             return;
         }
@@ -359,7 +540,11 @@ static void setStringField(JNIEnv* env, jobject obj, const char* fieldName, URes
   int charCount;
   const UChar* chars = ures_getStringByIndex(bundle, index, &charCount, &status);
   if (U_SUCCESS(status)) {
+#ifndef MOE_WINDOWS
     setStringField(env, obj, fieldName, env->NewString(chars, charCount));
+#else
+    setStringField(env, obj, fieldName, env->NewString(CAST_TO_CONST_JCHAR(chars), charCount));
+#endif
   } else {
     ALOGE("Error setting String field %s from ICU resource (index %d): %s", fieldName, index, u_errorName(status));
   }
@@ -375,41 +560,16 @@ static void setCharField(JNIEnv* env, jobject obj, const char* fieldName, const 
 
 static void setStringField(JNIEnv* env, jobject obj, const char* fieldName, const icu::UnicodeString& value) {
     const UChar* chars = value.getBuffer();
+#ifndef MOE_WINDOWS
     setStringField(env, obj, fieldName, env->NewString(chars, value.length()));
+#else
+    setStringField(env, obj, fieldName, env->NewString(CAST_TO_CONST_JCHAR(chars), value.length()));
+#endif
 }
 
-static void setNumberPatterns(JNIEnv* env, jobject obj, icu::Locale& locale) {
-    UErrorCode status = U_ZERO_ERROR;
-
-    icu::UnicodeString pattern;
-    std::unique_ptr<icu::DecimalFormat> fmt(static_cast<icu::DecimalFormat*>(icu::NumberFormat::createInstance(locale, UNUM_CURRENCY, status)));
-    pattern = fmt->toPattern(pattern.remove());
-    setStringField(env, obj, "currencyPattern", pattern);
-
-    fmt.reset(static_cast<icu::DecimalFormat*>(icu::NumberFormat::createInstance(locale, UNUM_DECIMAL, status)));
-    pattern = fmt->toPattern(pattern.remove());
-    setStringField(env, obj, "numberPattern", pattern);
-
-    fmt.reset(static_cast<icu::DecimalFormat*>(icu::NumberFormat::createInstance(locale, UNUM_PERCENT, status)));
-    pattern = fmt->toPattern(pattern.remove());
-    setStringField(env, obj, "percentPattern", pattern);
-}
-
-static void setDecimalFormatSymbolsData(JNIEnv* env, jobject obj, icu::Locale& locale) {
-    UErrorCode status = U_ZERO_ERROR;
-    icu::DecimalFormatSymbols dfs(locale, status);
-
-    setCharField(env, obj, "decimalSeparator", dfs.getSymbol(icu::DecimalFormatSymbols::kDecimalSeparatorSymbol));
-    setCharField(env, obj, "groupingSeparator", dfs.getSymbol(icu::DecimalFormatSymbols::kGroupingSeparatorSymbol));
-    setCharField(env, obj, "patternSeparator", dfs.getSymbol(icu::DecimalFormatSymbols::kPatternSeparatorSymbol));
-    setStringField(env, obj, "percent", dfs.getSymbol(icu::DecimalFormatSymbols::kPercentSymbol));
-    setCharField(env, obj, "perMill", dfs.getSymbol(icu::DecimalFormatSymbols::kPerMillSymbol));
-    setCharField(env, obj, "monetarySeparator", dfs.getSymbol(icu::DecimalFormatSymbols::kMonetarySeparatorSymbol));
-    setStringField(env, obj, "minusSign", dfs.getSymbol(icu::DecimalFormatSymbols:: kMinusSignSymbol));
-    setStringField(env, obj, "exponentSeparator", dfs.getSymbol(icu::DecimalFormatSymbols::kExponentialSymbol));
-    setStringField(env, obj, "infinity", dfs.getSymbol(icu::DecimalFormatSymbols::kInfinitySymbol));
-    setStringField(env, obj, "NaN", dfs.getSymbol(icu::DecimalFormatSymbols::kNaNSymbol));
-    setCharField(env, obj, "zeroDigit", dfs.getSymbol(icu::DecimalFormatSymbols::kZeroDigitSymbol));
+static void setStringField(JNIEnv* env, jobject obj, const char* fieldName, const std::string& value) {
+    UnicodeString ustr(value.c_str(), value.size());
+    setStringField(env, obj, fieldName, ustr);
 }
 
 
@@ -446,27 +606,104 @@ class LocaleNameIterator {
   DISALLOW_COPY_AND_ASSIGN(LocaleNameIterator);
 };
 
+static bool setNumberPatterns(JNIEnv* env, jobject localeData, Locale& locale) {
+    UErrorCode status = U_ZERO_ERROR;
+    
+    icu::UnicodeString pattern;
+    std::unique_ptr<DecimalFormat> fmt(static_cast<DecimalFormat*>(NumberFormat::createInstance(locale, UNUM_CURRENCY, status)));
+    if (U_FAILURE(status)) {
+        return false;
+    }
+    pattern = fmt->toPattern(pattern.remove());
+    setStringField(env, localeData, "currencyPattern", pattern);
+    
+    fmt.reset(static_cast<DecimalFormat*>(NumberFormat::createInstance(locale, UNUM_DECIMAL, status)));
+    if (U_FAILURE(status)) {
+        return false;
+    }
+    pattern = fmt->toPattern(pattern.remove());
+    setStringField(env, localeData, "numberPattern", pattern);
+    
+    fmt.reset(static_cast<DecimalFormat*>(NumberFormat::createInstance(locale, UNUM_PERCENT, status)));
+    if (U_FAILURE(status)) {
+        return false;
+    }
+    pattern = fmt->toPattern(pattern.remove());
+    setStringField(env, localeData, "percentPattern", pattern);
+    
+    return true;
+}
+
+static bool setDecimalFormatSymbolsData(JNIEnv* env, jobject localeData, Locale& locale) {
+    UErrorCode status = U_ZERO_ERROR;
+    DecimalFormatSymbols dfs(locale, status);
+    if (U_FAILURE(status)) {
+        return false;
+    }
+    
+    setCharField(env, localeData, "decimalSeparator", dfs.getSymbol(DecimalFormatSymbols::kDecimalSeparatorSymbol));
+    setCharField(env, localeData, "groupingSeparator", dfs.getSymbol(DecimalFormatSymbols::kGroupingSeparatorSymbol));
+    setCharField(env, localeData, "patternSeparator", dfs.getSymbol(DecimalFormatSymbols::kPatternSeparatorSymbol));
+    setStringField(env, localeData, "percent", dfs.getSymbol(DecimalFormatSymbols::kPercentSymbol));
+    setCharField(env, localeData, "perMill", dfs.getSymbol(DecimalFormatSymbols::kPerMillSymbol));
+    setCharField(env, localeData, "monetarySeparator", dfs.getSymbol(DecimalFormatSymbols::kMonetarySeparatorSymbol));
+    setStringField(env, localeData, "minusSign", dfs.getSymbol(DecimalFormatSymbols::kMinusSignSymbol));
+    setStringField(env, localeData, "exponentSeparator", dfs.getSymbol(DecimalFormatSymbols::kExponentialSymbol));
+    setStringField(env, localeData, "infinity", dfs.getSymbol(DecimalFormatSymbols::kInfinitySymbol));
+    setStringField(env, localeData, "NaN", dfs.getSymbol(DecimalFormatSymbols::kNaNSymbol));
+    setCharField(env, localeData, "zeroDigit", dfs.getSymbol(DecimalFormatSymbols::kZeroDigitSymbol));
+    
+    
+    return true;
+}
+
+
+#ifndef USE_APPLE_CF
+
+static bool setCurrencySymbols(JNIEnv* env, jstring javaLanguageTag, jobject localeData, Locale& icuLocale) {
+    
+    jstring countryCode = env->NewStringUTF(icuLocale.getCountry());
+    jstring internationalCurrencySymbol = ICU_getCurrencyCode(env, NULL, countryCode);
+    env->DeleteLocalRef(countryCode);
+    countryCode = NULL;
+
+    jstring currencySymbol = NULL;
+    if (internationalCurrencySymbol != NULL) {
+        currencySymbol = ICU_getCurrencySymbol(env, NULL, javaLanguageTag, internationalCurrencySymbol);
+    } else {
+        internationalCurrencySymbol = env->NewStringUTF("XXX");
+    }
+    if (currencySymbol == NULL) {
+        // This is the UTF-8 encoding of U+00A4 (CURRENCY SIGN).
+        currencySymbol = env->NewStringUTF("\xc2\xa4");
+    }
+    setStringField(env, localeData, "currencySymbol", currencySymbol);
+    setStringField(env, localeData, "internationalCurrencySymbol", internationalCurrencySymbol);
+    
+    return true;
+}
+
 static bool getAmPmMarkersNarrow(JNIEnv* env, jobject localeData, const char* locale_name) {
-  UErrorCode status = U_ZERO_ERROR;
-  ScopedResourceBundle root(ures_open(NULL, locale_name, &status));
-  if (U_FAILURE(status)) {
-    return false;
-  }
-  ScopedResourceBundle calendar(ures_getByKey(root.get(), "calendar", NULL, &status));
-  if (U_FAILURE(status)) {
-    return false;
-  }
-  ScopedResourceBundle gregorian(ures_getByKey(calendar.get(), "gregorian", NULL, &status));
-  if (U_FAILURE(status)) {
-    return false;
-  }
-  ScopedResourceBundle amPmMarkersNarrow(ures_getByKey(gregorian.get(), "AmPmMarkersNarrow", NULL, &status));
-  if (U_FAILURE(status)) {
-    return false;
-  }
-  setStringField(env, localeData, "narrowAm", amPmMarkersNarrow.get(), 0);
-  setStringField(env, localeData, "narrowPm", amPmMarkersNarrow.get(), 1);
-  return true;
+    UErrorCode status = U_ZERO_ERROR;
+    ScopedResourceBundle root(ures_open(NULL, locale_name, &status));
+    if (U_FAILURE(status)) {
+        return false;
+    }
+    ScopedResourceBundle calendar(ures_getByKey(root.get(), "calendar", NULL, &status));
+    if (U_FAILURE(status)) {
+        return false;
+    }
+    ScopedResourceBundle gregorian(ures_getByKey(calendar.get(), "gregorian", NULL, &status));
+    if (U_FAILURE(status)) {
+        return false;
+    }
+    ScopedResourceBundle amPmMarkersNarrow(ures_getByKey(gregorian.get(), "AmPmMarkersNarrow", NULL, &status));
+    if (U_FAILURE(status)) {
+        return false;
+    }
+    setStringField(env, localeData, "narrowAm", amPmMarkersNarrow.get(), 0);
+    setStringField(env, localeData, "narrowPm", amPmMarkersNarrow.get(), 1);
+    return true;
 }
 
 static bool getDateTimePatterns(JNIEnv* env, jobject localeData, const char* locale_name) {
@@ -531,8 +768,77 @@ static bool getYesterdayTodayAndTomorrow(JNIEnv* env, jobject localeData, const 
   setStringField(env, localeData, "tomorrow", tomorrow);
   return true;
 }
+#else 
 
-static jboolean ICU_initLocaleDataNative(JNIEnv* env, jclass, jstring javaLanguageTag, jobject localeData) {
+
+    static bool getAmPmMarkersNarrow(JNIEnv* env, jobject localeData, const char* locale_name) {
+        //TODO: ampm narrow markers are not available thru CoreFoundation so far
+        return true;
+    }
+    static bool getYesterdayTodayAndTomorrow(JNIEnv* env, jobject localeData, const ICU_TYPE(Locale)& locale, const char* locale_name) {
+        
+        UErrorCode status = U_ZERO_ERROR;
+        cf_RelativeDays daysNames(locale, status);
+        
+        if (U_FAILURE(status)) {
+            return false;
+        }
+
+        setStringField(env, localeData, "yesterday", daysNames.getYesterday());
+        setStringField(env, localeData, "today", daysNames.getToday());
+        setStringField(env, localeData, "tomorrow", daysNames.getTomorrow());
+       
+        return true;
+    }
+
+    static bool getDateTimePatterns(JNIEnv* env, jobject localeData, const char* locale_name) {
+      
+      UErrorCode status = U_ZERO_ERROR;
+      cf_Locale locale(locale_name);
+    
+      cf_DateTimePatterns dateTimePatterns (locale, status);
+      if (U_FAILURE(status)) {
+          return false;
+      }
+      setStringField(env, localeData, "fullTimeFormat", dateTimePatterns.getFullTimeFormat());
+      setStringField(env, localeData, "longTimeFormat", dateTimePatterns.getLongTimeFormat());
+      setStringField(env, localeData, "mediumTimeFormat", dateTimePatterns.getMediumTimeFormat());
+      setStringField(env, localeData, "shortTimeFormat", dateTimePatterns.getShortTimeFormat());
+      setStringField(env, localeData, "fullDateFormat", dateTimePatterns.getFullDateFormat());
+      setStringField(env, localeData, "longDateFormat", dateTimePatterns.getLongDateFormat());
+      setStringField(env, localeData, "mediumDateFormat", dateTimePatterns.getMediumDateFormat());
+      setStringField(env, localeData, "shortDateFormat", dateTimePatterns.getShortDateFormat());
+    
+      return true;
+  }
+
+static bool setCurrencySymbols(JNIEnv* env, jstring , jobject localeData, Locale& icuLocale) {
+    UErrorCode status = U_ZERO_ERROR;
+    DecimalFormatSymbols dfs(icuLocale, status);
+    if (U_FAILURE(status)) {
+        return false;
+    }
+    UnicodeString currencySymbol = dfs.getSymbol(DecimalFormatSymbols::kCurrencySymbol);
+    UnicodeString internationalCurrencySymbol = dfs.getSymbol(DecimalFormatSymbols::kIntlCurrencySymbol);
+    
+    if (internationalCurrencySymbol.isEmpty()) {
+        internationalCurrencySymbol = UnicodeString("XXX", 3);
+    }
+    if (currencySymbol.isEmpty()) {
+        // This is the UTF-8 encoding of U+00A4 (CURRENCY SIGN).
+        currencySymbol = UnicodeString("\xc2\xa4", 2);
+    }
+
+    setStringField(env, localeData, "currencySymbol", currencySymbol);
+    setStringField(env, localeData, "internationalCurrencySymbol", internationalCurrencySymbol);
+
+    return true;
+}
+
+#endif
+
+static JNICALL jboolean ICU_initLocaleDataNative2(JNIEnv* env, jclass, jstring javaLanguageTag, jobject localeData) {
+    
     ScopedUtfChars languageTag(env, javaLanguageTag);
     if (languageTag.c_str() == NULL) {
         return JNI_FALSE;
@@ -653,46 +959,62 @@ static jboolean ICU_initLocaleDataNative(JNIEnv* env, jclass, jstring javaLangua
     status = U_ZERO_ERROR;
 
     // For numberPatterns and symbols.
-    setNumberPatterns(env, localeData, icuLocale.locale());
-    setDecimalFormatSymbolsData(env, localeData, icuLocale.locale());
-
-    jstring countryCode = env->NewStringUTF(icuLocale.locale().getCountry());
-    jstring internationalCurrencySymbol = ICU_getCurrencyCode(env, NULL, countryCode);
-    env->DeleteLocalRef(countryCode);
-    countryCode = NULL;
-
-    jstring currencySymbol = NULL;
-    if (internationalCurrencySymbol != NULL) {
-        currencySymbol = ICU_getCurrencySymbol(env, NULL, javaLanguageTag, internationalCurrencySymbol);
-    } else {
-        internationalCurrencySymbol = env->NewStringUTF("XXX");
+    if(!setNumberPatterns(env, localeData, icuLocale.locale())) {
+        ALOGE("Couldn't set ICU setNumberPatterns for %s", languageTag.c_str());
+        return JNI_FALSE;
     }
-    if (currencySymbol == NULL) {
-        // This is the UTF-8 encoding of U+00A4 (CURRENCY SIGN).
-        currencySymbol = env->NewStringUTF("\xc2\xa4");
+    if (!setDecimalFormatSymbolsData(env, localeData, icuLocale.locale())) {
+        ALOGE("Couldn't set ICU setDecimalFormatSymbolsData for %s", languageTag.c_str());
+        return JNI_FALSE;
     }
-    setStringField(env, localeData, "currencySymbol", currencySymbol);
-    setStringField(env, localeData, "internationalCurrencySymbol", internationalCurrencySymbol);
+    
+    if (!setCurrencySymbols(env, javaLanguageTag, localeData, icuLocale.locale())){
+        ALOGE("Couldn't set ICU currencySymbol, and internationalCurrencySymbol for %s", languageTag.c_str());
+        return JNI_FALSE;
+    }
 
     return JNI_TRUE;
 }
 
-static jstring ICU_toLowerCase(JNIEnv* env, jclass, jstring javaString, jstring javaLanguageTag) {
-  ScopedJavaUnicodeString scopedString(env, javaString);
-  if (!scopedString.valid()) {
-    return NULL;
-  }
-  ScopedIcuLocale icuLocale(env, javaLanguageTag);
-  if (!icuLocale.valid()) {
-    return NULL;
-  }
-  icu::UnicodeString& s(scopedString.unicodeString());
-  icu::UnicodeString original(s);
-  s.toLower(icuLocale.locale());
-  return s == original ? javaString : env->NewString(s.getBuffer(), s.length());
+
+static JNICALL jboolean ICU_initLocaleDataNative(JNIEnv* env, jclass, jstring javaLanguageTag, jobject localeData) {
+#ifndef USE_APPLE_CF
+    return ICU_initLocaleDataNative2(env, nullptr, javaLanguageTag, localeData);
+#else
+    return ICU_initLocaleDataNative2(env, nullptr, javaLanguageTag, localeData);
+
+#endif
 }
 
-static jstring ICU_toUpperCase(JNIEnv* env, jclass, jstring javaString, jstring javaLanguageTag) {
+
+static JNICALL jstring ICU_toLowerCase(JNIEnv* env, jclass, jstring javaString, jstring javaLanguageTag) {
+  ScopedJavaUnicodeString scopedString(env, javaString);
+  if (!scopedString.valid()) {
+    return NULL;
+  }
+  ScopedIcuLocale icuLocale(env, javaLanguageTag);
+  if (!icuLocale.valid()) {
+    return NULL;
+  }
+
+  icu::UnicodeString& s(scopedString.unicodeString());
+  icu::UnicodeString original(s);
+    //TODO: fix
+#ifndef USE_APPLE_CF
+    s.toLower(icuLocale.locale());
+#ifndef MOE_WINDOWS
+    return s == original ? javaString : env->NewString(s.getBuffer(), s.length());
+#else
+    return s == original ? javaString : env->NewString(CAST_TO_CONST_JCHAR(s.getBuffer()), s.length());
+#endif
+#else
+    cf::MutableString str(original);
+    icu::UnicodeString sUni = str.lowercase(icuLocale.locale());;
+    return env->NewString(sUni.getBuffer(), sUni.length());
+#endif
+}
+
+static JNICALL jstring ICU_toUpperCase(JNIEnv* env, jclass, jstring javaString, jstring javaLanguageTag) {
   ScopedJavaUnicodeString scopedString(env, javaString);
   if (!scopedString.valid()) {
     return NULL;
@@ -703,9 +1025,22 @@ static jstring ICU_toUpperCase(JNIEnv* env, jclass, jstring javaString, jstring 
   }
   icu::UnicodeString& s(scopedString.unicodeString());
   icu::UnicodeString original(s);
+
+#ifndef USE_APPLE_CF
   s.toUpper(icuLocale.locale());
+#ifndef MOE_WINDOWS
   return s == original ? javaString : env->NewString(s.getBuffer(), s.length());
+#else
+  return s == original ? javaString : env->NewString(CAST_TO_CONST_JCHAR(s.getBuffer()), s.length());
+#endif
+#else
+  cf::MutableString str(original);
+  icu::UnicodeString sUni = str.uppercase(icuLocale.locale());
+  return env->NewString(sUni.getBuffer(), sUni.length());
+#endif
 }
+
+#ifndef USE_APPLE_CF
 
 static jstring versionString(JNIEnv* env, const UVersionInfo& version) {
     char versionString[U_MAX_VERSION_STRING_LENGTH];
@@ -713,26 +1048,26 @@ static jstring versionString(JNIEnv* env, const UVersionInfo& version) {
     return env->NewStringUTF(versionString);
 }
 
-static jstring ICU_getCldrVersion(JNIEnv* env, jclass) {
+static JNICALL jstring ICU_getCldrVersion(JNIEnv* env, jclass) {
   UErrorCode status = U_ZERO_ERROR;
   UVersionInfo cldrVersion;
   ulocdata_getCLDRVersion(cldrVersion, &status);
   return versionString(env, cldrVersion);
 }
 
-static jstring ICU_getIcuVersion(JNIEnv* env, jclass) {
+static JNICALL jstring ICU_getIcuVersion(JNIEnv* env, jclass) {
     UVersionInfo icuVersion;
     u_getVersion(icuVersion);
     return versionString(env, icuVersion);
 }
 
-static jstring ICU_getUnicodeVersion(JNIEnv* env, jclass) {
+static JNICALL jstring ICU_getUnicodeVersion(JNIEnv* env, jclass) {
     UVersionInfo unicodeVersion;
     u_getUnicodeVersion(unicodeVersion);
     return versionString(env, unicodeVersion);
 }
 
-static jstring ICU_getTZDataVersion(JNIEnv* env, jclass) {
+static JNICALL jstring ICU_getTZDataVersion(JNIEnv* env, jclass) {
   UErrorCode status = U_ZERO_ERROR;
   const char* version = icu::TimeZone::getTZDataVersion(status);
   if (maybeThrowIcuException(env, "icu::TimeZone::getTZDataVersion", status)) {
@@ -741,13 +1076,40 @@ static jstring ICU_getTZDataVersion(JNIEnv* env, jclass) {
   return env->NewStringUTF(version);
 }
 
-static jobject ICU_getAvailableCurrencyCodes(JNIEnv* env, jclass) {
+static JNICALL jobject ICU_getAvailableCurrencyCodes(JNIEnv* env, jclass) {
   UErrorCode status = U_ZERO_ERROR;
   icu::UStringEnumeration e(ucurr_openISOCurrencies(UCURR_COMMON|UCURR_NON_DEPRECATED, &status));
   return fromStringEnumeration(env, status, "ucurr_openISOCurrencies", &e);
 }
+#else //core foundation doesnt provide version info
+static JNICALL jstring ICU_getCldrVersion(JNIEnv* env, jclass) {
+    return env->NewStringUTF("");
+}
 
-static jstring ICU_getBestDateTimePatternNative(JNIEnv* env, jclass, jstring javaSkeleton, jstring javaLanguageTag) {
+static JNICALL jstring ICU_getIcuVersion(JNIEnv* env, jclass) {
+    return env->NewStringUTF("");
+}
+
+static JNICALL jstring ICU_getUnicodeVersion(JNIEnv* env, jclass) {
+    return env->NewStringUTF("");
+}
+
+static JNICALL jstring ICU_getTZDataVersion(JNIEnv* env, jclass) {
+  return env->NewStringUTF("");
+}
+
+static JNICALL jobject ICU_getAvailableCurrencyCodes(JNIEnv* env, jclass) {
+    UErrorCode status = U_ZERO_ERROR;
+    auto codes = cf_Currency::getAvailableCodes();
+
+    return fromStdVector(env, status, codes);
+}
+
+#endif
+
+
+
+static JNICALL jstring ICU_getBestDateTimePatternNative(JNIEnv* env, jclass, jstring javaSkeleton, jstring javaLanguageTag) {
   ScopedIcuLocale icuLocale(env, javaLanguageTag);
   if (!icuLocale.valid()) {
     return NULL;
@@ -768,10 +1130,14 @@ static jstring ICU_getBestDateTimePatternNative(JNIEnv* env, jclass, jstring jav
     return NULL;
   }
 
+#ifndef MOE_WINDOWS
   return env->NewString(result.getBuffer(), result.length());
+#else
+  return env->NewString(CAST_TO_CONST_JCHAR(result.getBuffer()), result.length());
+#endif
 }
 
-static void ICU_setDefaultLocale(JNIEnv* env, jclass, jstring javaLanguageTag) {
+static JNICALL void ICU_setDefaultLocale(JNIEnv* env, jclass, jstring javaLanguageTag) {
   ScopedIcuLocale icuLocale(env, javaLanguageTag);
   if (!icuLocale.valid()) {
     return;
@@ -782,7 +1148,7 @@ static void ICU_setDefaultLocale(JNIEnv* env, jclass, jstring javaLanguageTag) {
   maybeThrowIcuException(env, "Locale::setDefault", status);
 }
 
-static jstring ICU_getDefaultLocale(JNIEnv* env, jclass) {
+static JNICALL jstring ICU_getDefaultLocale(JNIEnv* env, jclass) {
   return env->NewStringUTF(icu::Locale::getDefault().getName());
 }
 
@@ -797,6 +1163,7 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(ICU, getAvailableNumberFormatLocalesNative, "()[Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getBestDateTimePatternNative, "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getCldrVersion, "()Ljava/lang/String;"),
+    NATIVE_METHOD(ICU, getIcuVersion, "()Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getCurrencyCode, "(Ljava/lang/String;)Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getCurrencyDisplayName, "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getCurrencyFractionDigits, "(Ljava/lang/String;)I"),
@@ -811,7 +1178,6 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(ICU, getISO3Language, "(Ljava/lang/String;)Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getISOCountriesNative, "()[Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getISOLanguagesNative, "()[Ljava/lang/String;"),
-    NATIVE_METHOD(ICU, getIcuVersion, "()Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getScript, "(Ljava/lang/String;)Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getTZDataVersion, "()Ljava/lang/String;"),
     NATIVE_METHOD(ICU, getUnicodeVersion, "()Ljava/lang/String;"),
@@ -820,6 +1186,8 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(ICU, toLowerCase, "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"),
     NATIVE_METHOD(ICU, toUpperCase, "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"),
 };
+
+#ifndef USE_APPLE_CF
 
 #define FAIL_WITH_STRERROR(s) \
     ALOGE("Couldn't " s " '%s': %s", path.c_str(), strerror(errno)); \
@@ -895,14 +1263,27 @@ void register_libcore_icu_ICU(JNIEnv* env) {
     }
 
     // Use the ICU data files that shipped with the device for everything else.
+#ifndef MOE
     const char* systemPathPrefix = getenv("ANDROID_ROOT");
+#else
+    const char* systemPathPrefix = getenv("MOE_ICU_DATA");
+#endif
     if (systemPathPrefix == NULL) {
-        ALOGE("ANDROID_ROOT environment variable not set"); \
+#ifndef MOE
+        ALOGE("ANDROID_ROOT environment variable not set");
+#else
+        ALOGE("MOE_ICU_DATA environment variable not set");
+#endif
         abort();
     }
     std::string systemPath;
     systemPath = systemPathPrefix;
+    // MOE TODO: How will we find ICU? 
+#ifndef MOE
     systemPath += "/usr/icu/";
+#else
+    systemPath += "/";
+#endif
     systemPath += U_ICUDATA_NAME;
     systemPath += ".dat";
 
@@ -921,3 +1302,9 @@ void register_libcore_icu_ICU(JNIEnv* env) {
 
     jniRegisterNativeMethods(env, "libcore/icu/ICU", gMethods, NELEM(gMethods));
 }
+#else
+
+/*extern "C"*/ void register_libcore_icu_ICU(JNIEnv* env) {
+    jniRegisterNativeMethods(env, "libcore/icu/ICU", gMethods, NELEM(gMethods));
+}
+#endif

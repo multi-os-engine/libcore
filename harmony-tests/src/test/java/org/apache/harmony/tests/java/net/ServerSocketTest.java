@@ -119,6 +119,7 @@ public class ServerSocketTest extends junit.framework.TestCase {
      * java.net.ServerSocket#ServerSocket(int, int)
      */
     public void test_ConstructorII() throws IOException {
+        /* [XRT] crash
         try {
             s = new ServerSocket(0, 10);
             s.setSoTimeout(2000);
@@ -146,6 +147,8 @@ public class ServerSocketTest extends junit.framework.TestCase {
         s1.close();
         s1 = new ServerSocket(allocatedPort);
         s1.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -153,6 +156,7 @@ public class ServerSocketTest extends junit.framework.TestCase {
      */
     public void test_ConstructorIILjava_net_InetAddress()
             throws UnknownHostException, IOException {
+        /* [XRT] crash
         s = new ServerSocket(0, 10, InetAddress.getLocalHost());
         try {
             s.setSoTimeout(5000);
@@ -163,12 +167,15 @@ public class ServerSocketTest extends junit.framework.TestCase {
         } finally {
             s.close();
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.ServerSocket#accept()
      */
     public void test_accept() throws IOException {
+        /* [XRT] crash
         s = new ServerSocket(0);
         try {
             s.setSoTimeout(5000);
@@ -237,6 +244,8 @@ public class ServerSocketTest extends junit.framework.TestCase {
         } catch (IOException e) {
             fail("Unexpected IOException : " + e.getMessage());
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -350,6 +359,7 @@ public class ServerSocketTest extends junit.framework.TestCase {
      * java.net.ServerSocket#setSoTimeout(int)
      */
     public void test_setSoTimeoutI() throws IOException {
+        /* [XRT] crash
         // Timeout should trigger and throw InterruptedIOException
         final int timeoutSet = 100;
         try {
@@ -368,12 +378,15 @@ public class ServerSocketTest extends junit.framework.TestCase {
         startClient(s.getLocalPort());
         s.setSoTimeout(10000);
         sconn = s.accept();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * java.net.ServerSocket#toString()
      */
     public void test_toString() throws Exception {
+        /* [XRT] crash
         s = new ServerSocket(0);
         try {
             int portNumber = s.getLocalPort();
@@ -383,6 +396,8 @@ public class ServerSocketTest extends junit.framework.TestCase {
         } finally {
             s.close();
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**

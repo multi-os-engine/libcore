@@ -1056,6 +1056,9 @@ int
 NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
                int len)
 {
+// MOE TODO: the second branch was copied from the Windows
+// version of OpenJDK, check whether this is valid.
+#ifndef MOE_WINDOWS
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e
 #endif
@@ -1252,6 +1255,51 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
 #endif
 
     return setsockopt(fd, level, opt, arg, len);
+#else
+    int rv = 0;
+    int parg = 0;
+    int plen = sizeof(parg);
+
+    if (level == IPPROTO_IP && optname == IP_TOS) {
+        int *tos = (int *)optval;
+        *tos &= (IPTOS_TOS_MASK | IPTOS_PREC_MASK);
+    }
+
+    if (optname == SO_REUSEADDR) {
+        /*
+         * Do not set SO_REUSEADDE if SO_EXCLUSIVEADDUSE is already set
+         */
+        rv = NET_GetSockOpt(s, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (char *)&parg, &plen);
+        if (rv == 0 && parg == 1) {
+            return rv;
+        }
+    }
+
+    rv = setsockopt(s, level, optname, optval, optlen);
+
+    if (rv == SOCKET_ERROR) {
+        /*
+         * IP_TOS & IP_MULTICAST_LOOP can't be set on some versions
+         * of Windows.
+         */
+        if ((WSAGetLastError() == WSAENOPROTOOPT) &&
+            (level == IPPROTO_IP) &&
+            (optname == IP_TOS || optname == IP_MULTICAST_LOOP)) {
+            rv = 0;
+        }
+
+        /*
+         * IP_TOS can't be set on unbound UDP sockets.
+         */
+        if ((WSAGetLastError() == WSAEINVAL) &&
+            (level == IPPROTO_IP) &&
+            (optname == IP_TOS)) {
+            rv = 0;
+        }
+    }
+
+    return rv;
+#endif
 }
 
 /*
@@ -1430,9 +1478,12 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
     return timeout;
 }
 
+
+#if defined(__linux__) && defined(AF_INET6)
 // http://b/27301951
 __attribute__((destructor))
 static void netUtilCleanUp() {
     if (loRoutes != 0) free(loRoutes);
     if (localifs != 0) free(localifs);
 }
+#endif

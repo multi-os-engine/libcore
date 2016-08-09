@@ -30,26 +30,33 @@ public class UnsupportedAddressTypeExceptionTest extends TestCase {
      * @tests {@link java.nio.channels.UnsupportedAddressTypeException#UnsupportedAddressTypeException()}
      */
     public void test_Constructor() {
+        /* [XRT] crash
         UnsupportedAddressTypeException e = new UnsupportedAddressTypeException();
         assertNull(e.getMessage());
         assertNull(e.getLocalizedMessage());
         assertNull(e.getCause());
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * @tests serialization/deserialization compatibility.
      */
     public void testSerializationSelf() throws Exception {
-
+        /* [XRT] crash
         SerializationTest.verifySelf(new UnsupportedAddressTypeException());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
      * @tests serialization/deserialization compatibility with RI.
      */
     public void testSerializationCompatibility() throws Exception {
-
+       /* [XRT] crash
         SerializationTest.verifyGolden(this,
                 new UnsupportedAddressTypeException());
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 }

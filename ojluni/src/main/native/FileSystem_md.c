@@ -33,7 +33,11 @@
 JNIEXPORT jobject JNICALL
 FileSystem_getFileSystem(JNIEnv *env, jclass ignored)
 {
+#ifdef MOE_WINDOWS
+    return JNU_NewObjectByName(env, "java/io/Win32FileSystem", "()V");
+#else
     return JNU_NewObjectByName(env, "java/io/UnixFileSystem", "()V");
+#endif
 }
 
 

@@ -27,10 +27,28 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#ifndef MOE_WINDOWS
 #include <netinet/in_systm.h>
+#endif
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#ifndef MOE
 #include <netinet/ip_icmp.h>
+#else
+#define ICMP_ECHOREPLY 0
+#define ICMP_ECHO 8
+
+struct icmp {
+    uint8_t     icmp_type;
+    uint8_t     icmp_code;
+    uint16_t    icmp_cksum;
+    uint16_t    icmp_id;
+    uint16_t    icmp_seq;
+    uint8_t     icmp_data[];
+};
+
+#define ICMP_ADVLENMIN sizeof(struct icmp)
+#endif
 #include <netdb.h>
 #include <string.h>
 #include <stdlib.h>
@@ -240,7 +258,11 @@ Inet4AddressImpl_isReachable0(JNIEnv *env, jobject this,
      * Let's try to create a RAW socket to send ICMP packets
      * This usually requires "root" privileges, so it's likely to fail.
      */
+#ifndef MOE
     fd = JVM_Socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+#else
+    fd = JVM_Socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
+#endif
     if (fd != -1) {
       /*
        * It didn't fail, so we can use ICMP_ECHO requests.

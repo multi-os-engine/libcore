@@ -885,10 +885,11 @@ public class Runtime {
     }
 
     synchronized void load0(Class fromClass, String filename) {
-        if (!(new File(filename).isAbsolute())) {
+        //MOE: we have to skip this check for static JNI library support on iOS
+        /*if (!(new File(filename).isAbsolute())) {
             throw new UnsatisfiedLinkError(
                 "Expecting an absolute path of the library: " + filename);
-        }
+        }*/
         if (filename == null) {
             throw new NullPointerException("filename == null");
         }

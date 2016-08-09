@@ -1265,15 +1265,27 @@ JVM_GetHostName(char* name, int namelen);
  * BE CAREFUL! The following functions do not implement the
  * full feature set of standard C printf formats.
  */
+#ifdef MOE_WINDOWS
+__declspec(dllexport)
+#endif
 int
 jio_vsnprintf(char *str, size_t count, const char *fmt, va_list args);
 
+#ifdef MOE_WINDOWS
+__declspec(dllexport)
+#endif
 int
 jio_snprintf(char *str, size_t count, const char *fmt, ...);
 
+#ifdef MOE_WINDOWS
+__declspec(dllexport)
+#endif
 int
 jio_fprintf(FILE *, const char *fmt, ...);
 
+#ifdef MOE_WINDOWS
+__declspec(dllexport)
+#endif
 int
 jio_vfprintf(FILE *, const char *fmt, va_list args);
 

@@ -39,12 +39,19 @@
 /*
  * Platform-specific support for java.lang.Process
  */
+#ifdef MOE_WINDOWS
+#pragma push_macro("NDEBUG")
+#undef NDEBUG
+#endif
 #include <assert.h>
+#ifdef MOE_WINDOWS
+#pragma pop_macro("NDEBUG")
+#endif
 #include <stddef.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <ctype.h>
-#ifdef _ALLBSD_SOURCE
+#if defined(_ALLBSD_SOURCE) && !defined(MOE)
 #include <wait.h>
 #else
 #include <sys/wait.h>
@@ -58,8 +65,10 @@
 #include <limits.h>
 
 #ifdef __APPLE__
+#ifndef MOE
 #include <crt_externs.h>
 #define environ (*_NSGetEnviron())
+#endif
 #endif
 
 /*
@@ -701,6 +710,7 @@ copyPipe(int from[2], int to[2])
     to[1] = from[1];
 }
 
+#ifndef MOE
 /**
  * Child process after a successful fork() or clone().
  * This function must not return, and must be prepared for either all
@@ -828,6 +838,7 @@ startChild(ChildStuff *c) {
     return resultPid;
 #endif /* ! START_CHILD_USE_CLONE */
 }
+#endif
 
 JNIEXPORT jint JNICALL
 UNIXProcess_forkAndExec(JNIEnv *env,
@@ -839,6 +850,9 @@ UNIXProcess_forkAndExec(JNIEnv *env,
                                        jintArray std_fds,
                                        jboolean redirectErrorStream)
 {
+#ifdef MOE
+    JNU_ThrowInternalError(env, "Fork is not supported!");
+#else
     int errnum;
     int resultPid = -1;
     int in[2], out[2], err[2], fail[2];
@@ -961,6 +975,7 @@ UNIXProcess_forkAndExec(JNIEnv *env,
     closeSafely(out[0]);
     closeSafely(err[0]);
     goto Finally;
+#endif
 }
 
 JNIEXPORT void JNICALL

@@ -439,27 +439,45 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     enum WriteKind { BYTE_BY_BYTE, SMALL_BUFFERS, LARGE_BUFFERS }
 
     public void test_chunkedUpload_byteByByte() throws Exception {
+        /* [XRT] crash
         doUpload(TransferKind.CHUNKED, WriteKind.BYTE_BY_BYTE);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_chunkedUpload_smallBuffers() throws Exception {
-        doUpload(TransferKind.CHUNKED, WriteKind.SMALL_BUFFERS);
+        /* [XRT] crash
+         doUpload(TransferKind.CHUNKED, WriteKind.SMALL_BUFFERS);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_chunkedUpload_largeBuffers() throws Exception {
+        /* [XRT] crash
         doUpload(TransferKind.CHUNKED, WriteKind.LARGE_BUFFERS);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_fixedLengthUpload_byteByByte() throws Exception {
+        /* [XRT] crash
         doUpload(TransferKind.FIXED_LENGTH, WriteKind.BYTE_BY_BYTE);
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_fixedLengthUpload_smallBuffers() throws Exception {
+        /* [XRT] crash
         doUpload(TransferKind.FIXED_LENGTH, WriteKind.SMALL_BUFFERS);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_fixedLengthUpload_largeBuffers() throws Exception {
+         /* [XRT] crash
         doUpload(TransferKind.FIXED_LENGTH, WriteKind.LARGE_BUFFERS);
+          */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void doUpload(TransferKind uploadKind, WriteKind writeKind) throws Exception {
@@ -534,6 +552,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     }
 
     public void testConnectViaHttpsReusingConnections() throws IOException, InterruptedException {
+        /* [XRT] crash
         TestSSLContext testSSLContext = TestSSLContext.create();
         SSLSocketFactory clientSocketFactory = testSSLContext.clientContext.getSocketFactory();
 
@@ -552,6 +571,8 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
 
         assertEquals(0, server.takeRequest().getSequenceNumber());
         assertEquals(1, server.takeRequest().getSequenceNumber());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testConnectViaHttpsReusingConnectionsDifferentFactories()
@@ -653,12 +674,18 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     }
 
     public void testConnectViaHttpProxyToHttpsUsingProxyArgWithNoProxy() throws Exception {
+        /* [XRT] crash
         testConnectViaDirectProxyToHttps(ProxyConfig.NO_PROXY);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testConnectViaHttpProxyToHttpsUsingHttpProxySystemProperty() throws Exception {
+        /* [XRT] crash
         // https should not use http proxy
         testConnectViaDirectProxyToHttps(ProxyConfig.HTTP_PROXY_SYSTEM_PROPERTY);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     private void testConnectViaDirectProxyToHttps(ProxyConfig proxyConfig) throws Exception {
@@ -976,6 +1003,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     // Don't disconnect after building a tunnel with CONNECT
     // http://code.google.com/p/android/issues/detail?id=37221
     public void testProxyWithConnectionClose() throws IOException {
+        /* [XRT] crash
         TestSSLContext testSSLContext = TestSSLContext.create();
         server.useHttps(testSSLContext.serverContext.getSocketFactory(), true);
         server.enqueue(new MockResponse()
@@ -992,6 +1020,8 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
         connection.setHostnameVerifier(new RecordingHostnameVerifier());
 
         assertContent("this response comes via a proxy", connection);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testDisconnectedConnection() throws IOException {
@@ -1155,6 +1185,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
      * imply a bug in the implementation.
      */
     public void testGzipEncodingEnabledByDefault() throws IOException, InterruptedException {
+        /* [XRT] crash
         server.enqueue(new MockResponse()
                 .setBody(gzip("ABCABCABC".getBytes("UTF-8")))
                 .addHeader("Content-Encoding: gzip"));
@@ -1167,6 +1198,8 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
 
         RecordedRequest request = server.takeRequest();
         assertContains(request.getHeaders(), "Accept-Encoding: gzip");
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testClientConfiguredGzipContentEncoding() throws Exception {
@@ -1845,20 +1878,33 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
     }
 
     public void testResponse300MultipleChoiceWithPost() throws Exception {
+        /* [XRT] crash
         // Chrome doesn't follow the redirect, but Firefox and the RI both do
         testResponseRedirectedWithPost(HttpURLConnection.HTTP_MULT_CHOICE);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testResponse301MovedPermanentlyWithPost() throws Exception {
+        /* [XRT] crash
         testResponseRedirectedWithPost(HttpURLConnection.HTTP_MOVED_PERM);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testResponse302MovedTemporarilyWithPost() throws Exception {
+        /* [XRT] crash
         testResponseRedirectedWithPost(HttpURLConnection.HTTP_MOVED_TEMP);
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testResponse303SeeOtherWithPost() throws Exception {
+        /* [XRT] crash
         testResponseRedirectedWithPost(HttpURLConnection.HTTP_SEE_OTHER);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
+
     }
 
     private void testResponseRedirectedWithPost(int redirectCode) throws Exception {
@@ -1946,6 +1992,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
      * full timeout for each.
      */
     public void testConnectTimeouts() throws IOException {
+        /* [XRT] crash
         // During CTS tests we are limited in what host names we can depend on and unfortunately
         // DNS lookups are not pluggable through standard APIs. During manual testing you should be
         // able to change this to any name that can be resolved to multiple IPs and it should still
@@ -1997,14 +2044,17 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
         } finally {
             SocketFactory.setDefault(originalDefault);
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testReadTimeouts() throws IOException {
+         /* [XRT] crash
         /*
          * This relies on the fact that MockWebServer doesn't close the
          * connection after a response has been sent. This causes the client to
          * try to read more bytes than are sent, which results in a timeout.
-         */
+         /
         MockResponse timeout = new MockResponse()
                 .setBody("ABC")
                 .clearHeaders()
@@ -2024,6 +2074,8 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
             fail();
         } catch (SocketTimeoutException expected) {
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testSetChunkedEncodingAsRequestProperty() throws IOException, InterruptedException {
@@ -2433,6 +2485,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
      * Don't explode if the cache returns a null body. http://b/3373699
      */
     public void testResponseCacheReturnsNullOutputStream() throws Exception {
+         /* [XRT] crash
         final AtomicBoolean aborted = new AtomicBoolean();
         ResponseCache.setDefault(new ResponseCache() {
             @Override public CacheResponse get(URI uri, String requestMethod,
@@ -2459,6 +2512,8 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
         assertEquals("abc", readAscii(in, 3));
         in.close();
         assertFalse(aborted.get()); // The best behavior is ambiguous, but RI 6 doesn't abort here
+          */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
 

@@ -38,6 +38,7 @@ import tests.net.StuckServer;
  */
 public class ConcurrentCloseTest extends junit.framework.TestCase {
     public void test_accept() throws Exception {
+        /* [XRT] crash
         ServerSocket ss = new ServerSocket(0);
         new Killer(ss).start();
         try {
@@ -47,9 +48,12 @@ public class ConcurrentCloseTest extends junit.framework.TestCase {
         } catch (SocketException expected) {
             assertEquals("Socket closed", expected.getMessage());
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_connect() throws Exception {
+        /* [XRT] crash
         StuckServer ss = new StuckServer(false);
         Socket s = new Socket();
         new Killer(s).start();
@@ -62,9 +66,12 @@ public class ConcurrentCloseTest extends junit.framework.TestCase {
         } finally {
             ss.close();
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_connect_timeout() throws Exception {
+        /* [XRT] crash
         StuckServer ss = new StuckServer(false);
         Socket s = new Socket();
         new Killer(s).start();
@@ -77,9 +84,12 @@ public class ConcurrentCloseTest extends junit.framework.TestCase {
         } finally {
             ss.close();
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_connect_nonBlocking() throws Exception {
+        /* [XRT] crash
         StuckServer ss = new StuckServer(false);
         SocketChannel s = SocketChannel.open();
         new Killer(s.socket()).start();
@@ -101,9 +111,12 @@ public class ConcurrentCloseTest extends junit.framework.TestCase {
         } finally {
             ss.close();
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_read() throws Exception {
+        /* [XRT] crash
         SilentServer ss = new SilentServer();
         Socket s = new Socket();
         s.connect(ss.getLocalSocketAddress());
@@ -116,9 +129,12 @@ public class ConcurrentCloseTest extends junit.framework.TestCase {
             assertEquals("Socket closed", expected.getMessage());
         }
         ss.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_read_multiple() throws Throwable {
+        /* [XRT] crash
         SilentServer ss = new SilentServer();
         final Socket s = new Socket();
         s.connect(ss.getLocalSocketAddress());
@@ -159,9 +175,12 @@ public class ConcurrentCloseTest extends junit.framework.TestCase {
         }
 
         ss.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_recv() throws Exception {
+        /* [XRT] crash
         DatagramSocket s = new DatagramSocket();
         byte[] buf = new byte[200];
         DatagramPacket p = new DatagramPacket(buf, 200);
@@ -173,9 +192,12 @@ public class ConcurrentCloseTest extends junit.framework.TestCase {
         } catch (SocketException expected) {
             assertEquals("Socket closed", expected.getMessage());
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_write() throws Exception {
+        /* [XRT] crash
         final SilentServer ss = new SilentServer(128); // Minimal receive buffer size.
         Socket s = new Socket();
 
@@ -204,6 +226,8 @@ public class ConcurrentCloseTest extends junit.framework.TestCase {
             // assertEquals("Socket closed", expected.getMessage());
         }
         ss.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     // This server accepts connections, but doesn't read or write anything.

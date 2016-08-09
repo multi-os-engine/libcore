@@ -184,6 +184,7 @@ public class HttpURLConnectionTest extends TestCase {
      * method will be used for connection to the server
      */
     public void testUsingProxy() throws Exception {
+        /* [XRT] crash
         // Regression for HARMONY-570
         MockServer server = new MockServer("server");
         MockServer proxy = new MockServer("proxy");
@@ -217,6 +218,8 @@ public class HttpURLConnectionTest extends TestCase {
 
         HttpURLConnection huc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
         assertFalse(huc.usingProxy());
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**
@@ -224,6 +227,7 @@ public class HttpURLConnectionTest extends TestCase {
      * will be used for connection to the server
      */
     public void testUsingProxySelector() throws Exception {
+        /* [XRT] crash
         // Regression for HARMONY-570
         MockServer server = new MockServer("server");
         MockServer proxy = new MockServer("proxy");
@@ -267,6 +271,8 @@ public class HttpURLConnectionTest extends TestCase {
             // restore default proxy selector
             ProxySelector.setDefault(defPS);
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
     // SideEffect: Suffers from side effect of other, currently unknown test
     public void testProxyAuthorization() throws Exception {

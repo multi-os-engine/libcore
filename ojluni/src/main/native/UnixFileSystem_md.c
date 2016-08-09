@@ -23,7 +23,14 @@
  * questions.
  */
 
+#ifdef MOE_WINDOWS
+#pragma push_macro("NDEBUG")
+#undef NDEBUG
+#endif
 #include <assert.h>
+#ifdef MOE_WINDOWS
+#pragma pop_macro("NDEBUG")
+#endif
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/stat.h>

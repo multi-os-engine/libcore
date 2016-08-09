@@ -51,13 +51,17 @@ public abstract class KeyFactoryTest<PublicKeySpec extends KeySpec, PrivateKeySp
     }
 
     public void testKeyFactory() throws Exception {
-        PrivateKeySpec privateKeySpec = factory.getKeySpec(DefaultKeys.getPrivateKey(algorithmName),
+        if(this.algorithmName != "RSA"){
+            PrivateKeySpec privateKeySpec = factory.getKeySpec(DefaultKeys.getPrivateKey(algorithmName),
                                                            privateKeySpecClass);
-        PrivateKey privateKey =  factory.generatePrivate(privateKeySpec);
-        PublicKeySpec publicKeySpec = factory.getKeySpec(DefaultKeys.getPublicKey(algorithmName),
-                                                         publicKeySpecClass);
-        PublicKey publicKey = factory.generatePublic(publicKeySpec);
-        check(new KeyPair(publicKey, privateKey));
+            PrivateKey privateKey =  factory.generatePrivate(privateKeySpec);
+            PublicKeySpec publicKeySpec = factory.getKeySpec(DefaultKeys.getPublicKey(algorithmName),
+                                                             publicKeySpecClass);
+            PublicKey publicKey = factory.generatePublic(publicKeySpec);
+            check(new KeyPair(publicKey, privateKey));
+        } else {
+            fail("[CRASH] Turn off testcase due to crash");
+        }
     }
 
     protected void check(KeyPair keyPair) throws Exception {}

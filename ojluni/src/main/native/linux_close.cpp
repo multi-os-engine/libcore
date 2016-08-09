@@ -45,7 +45,11 @@ extern "C" {
 /*
  * Signal to unblock thread
  */
+#ifndef MOE
 static int sigWakeup = (__SIGRTMAX - 2);
+#else
+static int sigWakeup = SIGUSR1;
+#endif
 
 /*
  * Close or dup2 a file descriptor ensuring that all threads blocked on
@@ -122,7 +126,11 @@ int NET_SocketClose(int fd) {
 
 
 int NET_Read(int s, void* buf, size_t len) {
+#ifndef MOE_WINDOWS
     BLOCKING_IO_RETURN_INT( s, recv(s, buf, len, 0) );
+#else
+    BLOCKING_IO_RETURN_INT( s, recv(s, (char*)buf, len, 0) );
+#endif
 }
 
 int NET_ReadV(int s, const struct iovec * vector, int count) {
@@ -132,12 +140,20 @@ int NET_ReadV(int s, const struct iovec * vector, int count) {
 int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
        struct sockaddr *from, int *fromlen) {
     socklen_t socklen = *fromlen;
+#ifndef MOE_WINDOWS
     BLOCKING_IO_RETURN_INT( s, recvfrom(s, buf, len, flags, from, &socklen) );
+#else
+    BLOCKING_IO_RETURN_INT( s, recvfrom(s, (char*)buf, len, flags, from, &socklen) );
+#endif
     *fromlen = socklen;
 }
 
 int NET_Send(int s, void *msg, int len, unsigned int flags) {
+#ifndef MOE_WINDOWS
     BLOCKING_IO_RETURN_INT( s, send(s, msg, len, flags) );
+#else
+    BLOCKING_IO_RETURN_INT( s, send(s, (const char*)msg, len, flags) );
+#endif
 }
 
 int NET_WriteV(int s, const struct iovec * vector, int count) {
@@ -146,7 +162,11 @@ int NET_WriteV(int s, const struct iovec * vector, int count) {
 
 int NET_SendTo(int s, const void *msg, int len,  unsigned  int
        flags, const struct sockaddr *to, int tolen) {
+#ifndef MOE_WINDOWS
     BLOCKING_IO_RETURN_INT( s, sendto(s, msg, len, flags, to, tolen) );
+#else
+    BLOCKING_IO_RETURN_INT( s, sendto(s, (const char*)msg, len, flags, to, tolen) );
+#endif
 }
 
 int NET_Accept(int s, struct sockaddr *addr, int *addrlen) {

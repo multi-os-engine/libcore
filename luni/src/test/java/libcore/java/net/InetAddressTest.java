@@ -162,6 +162,7 @@ public class InetAddressTest extends junit.framework.TestCase {
     }
 
     public void test_isReachable() throws Exception {
+        /* [XRT] crash
         // http://code.google.com/p/android/issues/detail?id=20203
         String s = "aced0005737200146a6176612e6e65742e496e6574416464726573732d9b57af"
                 + "9fe3ebdb0200034900076164647265737349000666616d696c794c0008686f737"
@@ -180,6 +181,8 @@ public class InetAddressTest extends junit.framework.TestCase {
                 return a.getHostName().equals(b.getHostName());
             }
         }.test();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_isReachable_neverThrows() throws Exception {
@@ -208,6 +211,7 @@ public class InetAddressTest extends junit.framework.TestCase {
     }
 
     public void test_getByName() throws Exception {
+        /* [XRT] crash
         for (String invalid : INVALID_IPv4_NUMERIC_ADDRESSES) {
             try {
                 InetAddress.getByName(invalid);
@@ -215,6 +219,8 @@ public class InetAddressTest extends junit.framework.TestCase {
             } catch (UnknownHostException expected) {
             }
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getLoopbackAddress() throws Exception {

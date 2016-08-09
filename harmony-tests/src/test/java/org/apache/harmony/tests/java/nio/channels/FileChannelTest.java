@@ -2931,6 +2931,7 @@ public class FileChannelTest extends TestCase {
      */
     public void test_transferToJJLWritableByteChannel_SocketChannel()
             throws Exception {
+    /* [XRT] crash
         // inits data into file.
         writeDataToFile(fileOfReadOnlyFileChannel);
 
@@ -2982,6 +2983,8 @@ public class FileChannelTest extends TestCase {
         for (int i = OFFSET; i < CONTENT_AS_BYTES_LENGTH; i++) {
             assertEquals(CONTENT_AS_BYTES[i], readBuffer.get());
         }
+     */
+      fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**

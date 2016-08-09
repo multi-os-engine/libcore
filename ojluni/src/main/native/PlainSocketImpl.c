@@ -50,6 +50,10 @@
 #include "jni_util.h"
 #include "net_util.h"
 
+#ifdef MOE_WINDOWS
+#include "net_util_md.h"
+#endif
+
 #include "java_net_SocketOptions.h"
 #include "java_net_PlainSocketImpl.h"
 #include "JNIHelp.h"

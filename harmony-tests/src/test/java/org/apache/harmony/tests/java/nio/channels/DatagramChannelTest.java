@@ -487,6 +487,7 @@ public class DatagramChannelTest extends TestCase {
      * Test method for 'DatagramChannelImpl.connect(SocketAddress)'
      */
     public void testConnect_Unresolved() throws IOException {
+         /* [XRT] crash
         assertFalse(this.channel1.isConnected());
         InetSocketAddress unresolved = new InetSocketAddress(
                 "unresolved address", 1080);
@@ -496,6 +497,8 @@ public class DatagramChannelTest extends TestCase {
         } catch (UnresolvedAddressException e) {
             // OK.
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testConnect_EmptyHost() throws Exception {
@@ -1759,6 +1762,7 @@ public class DatagramChannelTest extends TestCase {
 
 
     public void testReadWrite_asyncClose() throws Exception {
+        /* [XRT] crash
         byte[] targetArray = new byte[2];
         ByteBuffer targetBuf = ByteBuffer.wrap(targetArray);
 
@@ -1782,6 +1786,8 @@ public class DatagramChannelTest extends TestCase {
         } catch (AsynchronousCloseException e) {
             // ok
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testReadWrite_Block_Zero() throws Exception {
@@ -1817,6 +1823,7 @@ public class DatagramChannelTest extends TestCase {
     }
 
     public void testReadWrite_Block_Empty() throws Exception {
+        /* [XRT] crash
         // empty buf
         byte[] sourceArray = "".getBytes();
         byte[] targetArray = new byte[CAPACITY_NORMAL];
@@ -1832,10 +1839,13 @@ public class DatagramChannelTest extends TestCase {
         ByteBuffer targetBuf = ByteBuffer.wrap(targetArray);
         // empty message let the reader blocked
         closeBlockedReaderChannel2(targetBuf);
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testReadWrite_changeBlock_Empty() throws Exception {
-        // empty buf
+        /* [XRT] crash
+         // empty buf
         byte[] sourceArray = "".getBytes();
         byte[] targetArray = new byte[CAPACITY_NORMAL];
 
@@ -1869,6 +1879,8 @@ public class DatagramChannelTest extends TestCase {
             assertFalse(this.channel2.isBlocking());
             // OK.
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testReadWrite_Block_8KB() throws Exception {
@@ -1938,6 +1950,7 @@ public class DatagramChannelTest extends TestCase {
     }
 
     public void testReadWrite_Block_DifferentAddr() throws Exception {
+        /* [XRT] crash
         byte[] sourceArray = new byte[CAPACITY_NORMAL];
         byte[] targetArray = new byte[CAPACITY_NORMAL];
         for (int i = 0; i < sourceArray.length; i++) {
@@ -1956,9 +1969,12 @@ public class DatagramChannelTest extends TestCase {
         // the wrong connected addr will make the read blocked.
         // we close the blocked channel
         closeBlockedReaderChannel2(targetBuf);
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void testReadWrite_Block_WriterNotBound() throws Exception {
+        /* [XRT] crash
         byte[] sourceArray = new byte[CAPACITY_NORMAL];
         byte[] targetArray = new byte[CAPACITY_NORMAL];
         for (int i = 0; i < sourceArray.length; i++) {
@@ -1981,6 +1997,8 @@ public class DatagramChannelTest extends TestCase {
         closeBlockedReaderChannel2(targetBuf);
 
         dc.close();
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     // NOTE: The original harmony test tested that things still work
@@ -2328,6 +2346,7 @@ public class DatagramChannelTest extends TestCase {
      * @tests DatagramChannel#send(ByteBuffer, SocketAddress)
      */
     public void test_send_LByteBuffer_LSocketAddress_closed() throws IOException{
+        /* [XRT] crash
         // regression test for Harmony-913
         channel1.close();
         ByteBuffer buf = ByteBuffer.allocate(CAPACITY_NORMAL);
@@ -2355,6 +2374,8 @@ public class DatagramChannelTest extends TestCase {
         } catch (NullPointerException e) {
             //pass
         }
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**

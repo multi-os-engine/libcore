@@ -61,6 +61,8 @@ public class BufferTest extends TestCase {
      * Try to create a {@link MappedByteBuffer} from /dev/zero, to see if
      * we support mapping UNIX character devices.
      */
+    //[XRT] no access from application to dev/zero on macosx
+    /*
     public void testDevZeroMap() throws Exception {
         RandomAccessFile raf = new RandomAccessFile("/dev/zero", "r");
         try {
@@ -80,12 +82,15 @@ public class BufferTest extends TestCase {
         } finally {
             raf.close();
         }
-    }
+    }*/
+
 
     /**
      * Same as {@link libcore.java.nio.BufferTest#testDevZeroMap()}, but try to see
      * if we can write to the UNIX character device.
      */
+    //[XRT] no access from application to dev/zero on macosx
+    /*
     public void testDevZeroMapRW() throws Exception {
         RandomAccessFile raf = new RandomAccessFile("/dev/zero", "rw");
         try {
@@ -112,6 +117,7 @@ public class BufferTest extends TestCase {
             raf.close();
         }
     }
+    */
 
     public void testByteSwappedBulkGetDirect() throws Exception {
         testByteSwappedBulkGet(ByteBuffer.allocateDirect(10));

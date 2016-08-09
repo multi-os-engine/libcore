@@ -57,12 +57,15 @@ public class NetworkInterfaceTest extends TestCase {
         List<InetAddress> addresses = new ArrayList<InetAddress>(1);
         List<InterfaceAddress> ifAddresses = new ArrayList<InterfaceAddress>(1);
 
+       /* [XRT] avoid compilation error
         NetworkInterface.collectIpv6Addresses("wlan0", 1, addresses,
                 ifAddresses, lines);
         assertEquals(1, addresses.size());
         assertEquals(1, ifAddresses.size());
         // Make sure the prefix length (field #3) is parsed correctly
         assertEquals(4*16 + 0, ifAddresses.get(0).getNetworkPrefixLength());
+        */
+        fail("collectIpv6Addresses function cannot be applied to such types");
     }
 
     public void test_collectIpv6Addresses_skipsUnmatchedLines() throws Exception {
@@ -73,10 +76,13 @@ public class NetworkInterfaceTest extends TestCase {
         List<InetAddress> addresses = new ArrayList<InetAddress>(1);
         List<InterfaceAddress> ifAddresses = new ArrayList<InterfaceAddress>(1);
 
-        NetworkInterface.collectIpv6Addresses("wlan0", 1, addresses,
+        /* [XRT] avoid compilation
+         errorNetworkInterface.collectIpv6Addresses("wlan0", 1, addresses,
                 ifAddresses, lines);
         assertEquals(1, addresses.size());
         assertEquals(1, ifAddresses.size());
+         */
+        fail("collectIpv6Addresses function cannot be applied to such types");
     }*/
 
     public void testInterfaceProperties() throws Exception {

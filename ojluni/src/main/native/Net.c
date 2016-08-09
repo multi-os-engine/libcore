@@ -281,7 +281,9 @@ Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
             struct sockaddr_in *sin;
             sin = (struct sockaddr_in *) &sa;
             bzero(sin, sizeof(*sin));
+#ifndef MOE_WINDOWS
             sin->sin_len  = sizeof(struct sockaddr_in);
+#endif
             sin->sin_family = AF_INET;
             sin->sin_port = htonl(0);
             sin->sin_addr.s_addr = INADDR_ANY;
@@ -316,7 +318,9 @@ Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
             struct sockaddr_in *sin;
             sin = (struct sockaddr_in *) &sa;
             bzero(sin, sizeof(*sin));
+#ifndef MOE_WINDOWS
             sin->sin_len  = sizeof(struct sockaddr_in);
+#endif
             sin->sin_family = AF_INET;
             sin->sin_port = htonl(0);
             sin->sin_addr.s_addr = INADDR_ANY;
@@ -451,7 +455,7 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
         return IOS_UNAVAILABLE;
 #else
 // Begin Android changed.
-#if defined(__GLIBC__)
+#if defined(__GLIBC__) || defined(MOE_WINDOWS)
         mreq_source.imr_multiaddr.s_addr = htonl(group);
         mreq_source.imr_sourceaddr.s_addr = htonl(source);
         mreq_source.imr_interface.s_addr = htonl(interf);
@@ -489,7 +493,7 @@ Java_sun_nio_ch_Net_blockOrUnblock4(JNIEnv *env, jobject this, jboolean block, j
     int opt = (block) ? IP_BLOCK_SOURCE : IP_UNBLOCK_SOURCE;
 
 // Begin Android changed.
-#if defined(__GLIBC__)
+#if defined(__GLIBC__) || defined(MOE_WINDOWS)
         mreq_source.imr_multiaddr.s_addr = htonl(group);
         mreq_source.imr_sourceaddr.s_addr = htonl(source);
         mreq_source.imr_interface.s_addr = htonl(interf);

@@ -334,6 +334,7 @@ public class HandshakeCompletedEventTest extends TestCase {
      */
 
     public void testClientAuth() throws Exception {
+        /* [XRT] crash
 
         boolean useBKS = true;
 
@@ -369,6 +370,8 @@ public class HandshakeCompletedEventTest extends TestCase {
         assertNull(e);
 
         assertTrue(listener.completeDone);
+         */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     /**

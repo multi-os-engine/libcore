@@ -90,7 +90,11 @@ extern jint net_JNI_OnLoad(JavaVM*, void*);
 extern void register_java_lang_Character(JNIEnv*);
 
 // DalvikVM calls this on startup, so we can statically register all our native methods.
+#ifdef MOE
+MOE_ONLOAD(openjdk) { JNIEnv* env;
+#else
 jint JNI_OnLoad(JavaVM* vm, void*) { JNIEnv* env;
+#endif
     if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
         ALOGE("JavaVM::GetEnv() failed");
         abort();
@@ -104,8 +108,11 @@ jint JNI_OnLoad(JavaVM* vm, void*) { JNIEnv* env;
     register_java_util_zip_Adler32(env);
     register_java_io_FileSystem(env);
     register_sun_nio_ch_IOUtil(env);
+// MOE TODO: revisit these!
+#ifndef MOE_WINDOWS
     register_sun_nio_ch_FileChannelImpl(env);
     register_sun_nio_ch_FileDispatcherImpl(env);
+#endif
     register_java_io_Console(env);
     register_java_io_FileOutputStream(env);
     register_java_io_FileInputStream(env);
@@ -132,23 +139,37 @@ jint JNI_OnLoad(JavaVM* vm, void*) { JNIEnv* env;
     register_java_net_InetAddress(env);
     register_java_net_Inet4Address(env);
     register_java_net_Inet6Address(env);
+// MOE TODO: revisit these!
+#ifndef MOE_WINDOWS
     register_java_net_PlainSocketImpl(env);
     register_java_net_PlainDatagramSocketImpl(env);
     register_java_net_NetworkInterface(env);
+#endif
     register_java_net_DatagramPacket(env);
+// MOE TODO: revisit these!
+#ifndef MOE_WINDOWS
     register_java_net_Inet6AddressImpl(env);
     register_java_net_SocketInputStream(env);
     register_java_net_SocketOutputStream(env);
+#endif
     register_java_nio_Bits(env);
     register_java_util_prefs_FileSystemPreferences(env);
+// MOE TODO: revisit these!
+#ifndef MOE_WINDOWS
     register_sun_nio_ch_ServerSocketChannelImpl(env);
     register_sun_nio_ch_SocketChannelImpl(env);
     register_sun_nio_ch_InheritedChannel(env);
     register_sun_nio_ch_Net(env);
     register_sun_nio_ch_DatagramChannelImpl(env);
     register_sun_nio_ch_DatagramDispatcher(env);
+#endif
+#ifndef MOE
     register_sun_nio_ch_EPollArrayWrapper(env);
+#endif
     register_java_nio_MappedByteBuffer(env);
+// MOE TODO: revisit these!
+#ifndef MOE_WINDOWS
     net_JNI_OnLoad(vm, NULL);
+#endif
     return JNI_VERSION_1_6;
 }

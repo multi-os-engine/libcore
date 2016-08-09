@@ -68,6 +68,9 @@ JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_DatagramDispatcher_readv0(JNIEnv *env, jclass clazz,
                               jobject fdo, jlong address, jint len)
 {
+// MOE TODO: the second branch was copied from the Windows
+// version of OpenJDK, check whether this is valid.
+#ifndef MOE_WINDOWS
     jint fd = fdval(env, fdo);
     ssize_t result = 0;
     struct iovec *iov = (struct iovec *)jlong_to_ptr(address);
@@ -92,6 +95,49 @@ Java_sun_nio_ch_DatagramDispatcher_readv0(JNIEnv *env, jclass clazz,
         return -2;
     }
     return convertLongReturnVal(env, (jlong)result, JNI_TRUE);
+#else
+    /* set up */
+    int i = 0;
+    DWORD read = 0;
+    DWORD flags = 0;
+    jint fd = fdval(env, fdo);
+    struct iovec *iovp = (struct iovec *)address;
+    WSABUF *bufs = malloc(len * sizeof(WSABUF));
+
+    /* copy iovec into WSABUF */
+    for(i=0; i<len; i++) {
+        bufs[i].buf = (char *)iovp[i].iov_base;
+        bufs[i].len = (u_long)iovp[i].iov_len;
+    }
+
+    /* read into the buffers */
+    i = WSARecv((SOCKET)fd, /* Socket */
+            bufs,           /* pointers to the buffers */
+            (DWORD)len,     /* number of buffers to process */
+            &read,          /* receives number of bytes read */
+            &flags,         /* no flags */
+            0,              /* no overlapped sockets */
+            0);             /* no completion routine */
+
+    /* clean up */
+    free(bufs);
+
+    if (i != 0) {
+        int theErr = (jint)WSAGetLastError();
+        if (theErr == WSAEWOULDBLOCK) {
+            return IOS_UNAVAILABLE;
+        }
+        if (theErr == WSAECONNRESET) {
+            purgeOutstandingICMP(env, clazz, fd);
+            JNU_ThrowByName(env, JNU_JAVANETPKG "PortUnreachableException", 0);
+            return IOS_THROWN;
+        }
+        JNU_ThrowIOExceptionWithLastError(env, "Write failed");
+        return IOS_THROWN;
+    }
+
+    return convertLongReturnVal(env, (jlong)read, JNI_TRUE);
+#endif
 }
 
 JNIEXPORT jint JNICALL
@@ -112,6 +158,9 @@ JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_DatagramDispatcher_writev0(JNIEnv *env, jclass clazz,
                                        jobject fdo, jlong address, jint len)
 {
+// MOE TODO: the second branch was copied from the Windows
+// version of OpenJDK, check whether this is valid.
+#ifndef MOE_WINDOWS
     jint fd = fdval(env, fdo);
     struct iovec *iov = (struct iovec *)jlong_to_ptr(address);
     struct msghdr m;
@@ -137,6 +186,48 @@ Java_sun_nio_ch_DatagramDispatcher_writev0(JNIEnv *env, jclass clazz,
         return -2;
     }
     return convertLongReturnVal(env, (jlong)result, JNI_FALSE);
+#else
+    /* set up */
+    int i = 0;
+    DWORD written = 0;
+    jint fd = fdval(env, fdo);
+    struct iovec *iovp = (struct iovec *)address;
+    WSABUF *bufs = malloc(len * sizeof(WSABUF));
+
+    /* copy iovec into WSABUF */
+    for(i=0; i<len; i++) {
+        bufs[i].buf = (char *)iovp[i].iov_base;
+        bufs[i].len = (u_long)iovp[i].iov_len;
+    }
+
+    /* read into the buffers */
+    i = WSASend((SOCKET)fd, /* Socket */
+            bufs,           /* pointers to the buffers */
+            (DWORD)len,     /* number of buffers to process */
+            &written,       /* receives number of bytes written */
+            0,              /* no flags */
+            0,              /* no overlapped sockets */
+            0);             /* no completion routine */
+
+    /* clean up */
+    free(bufs);
+
+    if (i != 0) {
+        int theErr = (jint)WSAGetLastError();
+        if (theErr == WSAEWOULDBLOCK) {
+            return IOS_UNAVAILABLE;
+        }
+        if (theErr == WSAECONNRESET) {
+            purgeOutstandingICMP(env, clazz, fd);
+            JNU_ThrowByName(env, JNU_JAVANETPKG "PortUnreachableException", 0);
+            return IOS_THROWN;
+        }
+        JNU_ThrowIOExceptionWithLastError(env, "Write failed");
+        return IOS_THROWN;
+    }
+
+    return convertLongReturnVal(env, (jlong)written, JNI_FALSE);
+#endif
 }
 
 static JNINativeMethod gMethods[] = {

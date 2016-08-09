@@ -98,33 +98,33 @@ static int fourValidHandles(JNIEnv* env, jlong a, jlong b, jlong c, jlong d) {
   return isValidHandle(env, d, "Mandatory handle (fourth) passed as null");
 }
 
-static jlong NativeBN_BN_new(JNIEnv* env, jclass) {
+static JNICALL jlong NativeBN_BN_new(JNIEnv* env, jclass) {
   jlong result = static_cast<jlong>(reinterpret_cast<uintptr_t>(BN_new()));
   throwExceptionIfNecessary(env);
   return result;
 }
 
-static jlong NativeBN_getNativeFinalizer(JNIEnv*, jclass) {
+static JNICALL jlong NativeBN_getNativeFinalizer(JNIEnv*, jclass) {
   return static_cast<jlong>(reinterpret_cast<uintptr_t>(&BN_free));
 }
 
-static void NativeBN_BN_free(JNIEnv* env, jclass, jlong a) {
+static JNICALL void NativeBN_BN_free(JNIEnv* env, jclass, jlong a) {
   if (!oneValidHandle(env, a)) return;
   BN_free(toBigNum(a));
 }
 
-static int NativeBN_BN_cmp(JNIEnv* env, jclass, jlong a, jlong b) {
+static JNICALL int NativeBN_BN_cmp(JNIEnv* env, jclass, jlong a, jlong b) {
   if (!twoValidHandles(env, a, b)) return 1;
   return BN_cmp(toBigNum(a), toBigNum(b));
 }
 
-static void NativeBN_BN_copy(JNIEnv* env, jclass, jlong to, jlong from) {
+static JNICALL void NativeBN_BN_copy(JNIEnv* env, jclass, jlong to, jlong from) {
   if (!twoValidHandles(env, to, from)) return;
   BN_copy(toBigNum(to), toBigNum(from));
   throwExceptionIfNecessary(env);
 }
 
-static void NativeBN_putULongInt(JNIEnv* env, jclass, jlong a0, jlong java_dw, jboolean neg) {
+static JNICALL void NativeBN_putULongInt(JNIEnv* env, jclass, jlong a0, jlong java_dw, jboolean neg) {
   if (!oneValidHandle(env, a0)) return;
 
   uint64_t dw = java_dw;
@@ -153,7 +153,7 @@ static void NativeBN_putULongInt(JNIEnv* env, jclass, jlong a0, jlong java_dw, j
   }
 }
 
-static void NativeBN_putLongInt(JNIEnv* env, jclass cls, jlong a, jlong dw) {
+static JNICALL void NativeBN_putLongInt(JNIEnv* env, jclass cls, jlong a, jlong dw) {
   if (dw >= 0) {
     NativeBN_putULongInt(env, cls, a, dw, JNI_FALSE);
   } else {
@@ -161,7 +161,7 @@ static void NativeBN_putLongInt(JNIEnv* env, jclass cls, jlong a, jlong dw) {
   }
 }
 
-static int NativeBN_BN_dec2bn(JNIEnv* env, jclass, jlong a0, jstring str) {
+static JNICALL int NativeBN_BN_dec2bn(JNIEnv* env, jclass, jlong a0, jstring str) {
   if (!oneValidHandle(env, a0)) return -1;
   ScopedUtfChars chars(env, str);
   if (chars.c_str() == NULL) {
@@ -173,7 +173,7 @@ static int NativeBN_BN_dec2bn(JNIEnv* env, jclass, jlong a0, jstring str) {
   return result;
 }
 
-static int NativeBN_BN_hex2bn(JNIEnv* env, jclass, jlong a0, jstring str) {
+static JNICALL int NativeBN_BN_hex2bn(JNIEnv* env, jclass, jlong a0, jstring str) {
   if (!oneValidHandle(env, a0)) return -1;
   ScopedUtfChars chars(env, str);
   if (chars.c_str() == NULL) {
@@ -185,7 +185,7 @@ static int NativeBN_BN_hex2bn(JNIEnv* env, jclass, jlong a0, jstring str) {
   return result;
 }
 
-static void NativeBN_BN_bin2bn(JNIEnv* env, jclass, jbyteArray arr, int len, jboolean neg, jlong ret) {
+static JNICALL void NativeBN_BN_bin2bn(JNIEnv* env, jclass, jbyteArray arr, int len, jboolean neg, jlong ret) {
   if (!oneValidHandle(env, ret)) return;
   ScopedByteArrayRO bytes(env, arr);
   if (bytes.get() == NULL) {
@@ -204,7 +204,7 @@ static void NativeBN_BN_bin2bn(JNIEnv* env, jclass, jbyteArray arr, int len, jbo
  * Also note that the same representation is used in the Cordoba Java Implementation of BigIntegers,
  *        whereof certain functionality is still being used.
  */
-static void NativeBN_litEndInts2bn(JNIEnv* env, jclass, jintArray arr, int len, jboolean neg, jlong ret0) {
+static JNICALL void NativeBN_litEndInts2bn(JNIEnv* env, jclass, jintArray arr, int len, jboolean neg, jlong ret0) {
   if (!oneValidHandle(env, ret0)) return;
   BIGNUM* ret = toBigNum(ret0);
   bn_check_top(ret);
@@ -308,7 +308,7 @@ static void negBigEndianBytes2bn(JNIEnv*, jclass, const unsigned char* bytes, in
   }
 }
 
-static void NativeBN_twosComp2bn(JNIEnv* env, jclass cls, jbyteArray arr, int bytesLen, jlong ret0) {
+static JNICALL void NativeBN_twosComp2bn(JNIEnv* env, jclass cls, jbyteArray arr, int bytesLen, jlong ret0) {
   if (!oneValidHandle(env, ret0)) return;
   BIGNUM* ret = toBigNum(ret0);
 
@@ -333,7 +333,7 @@ static void NativeBN_twosComp2bn(JNIEnv* env, jclass cls, jbyteArray arr, int by
   throwExceptionIfNecessary(env);
 }
 
-static jlong NativeBN_longInt(JNIEnv* env, jclass, jlong a0) {
+static JNICALL jlong NativeBN_longInt(JNIEnv* env, jclass, jlong a0) {
   if (!oneValidHandle(env, a0)) return -1;
 
   BIGNUM* a = toBigNum(a0);
@@ -367,7 +367,7 @@ static char* leadingZerosTrimmed(char* s) {
     return p;
 }
 
-static jstring NativeBN_BN_bn2dec(JNIEnv* env, jclass, jlong a) {
+static JNICALL jstring NativeBN_BN_bn2dec(JNIEnv* env, jclass, jlong a) {
   if (!oneValidHandle(env, a)) return NULL;
   char* tmpStr = BN_bn2dec(toBigNum(a));
   if (tmpStr == NULL) {
@@ -379,7 +379,7 @@ static jstring NativeBN_BN_bn2dec(JNIEnv* env, jclass, jlong a) {
   return returnJString;
 }
 
-static jstring NativeBN_BN_bn2hex(JNIEnv* env, jclass, jlong a) {
+static JNICALL jstring NativeBN_BN_bn2hex(JNIEnv* env, jclass, jlong a) {
   if (!oneValidHandle(env, a)) return NULL;
   char* tmpStr = BN_bn2hex(toBigNum(a));
   if (tmpStr == NULL) {
@@ -391,7 +391,7 @@ static jstring NativeBN_BN_bn2hex(JNIEnv* env, jclass, jlong a) {
   return returnJString;
 }
 
-static jbyteArray NativeBN_BN_bn2bin(JNIEnv* env, jclass, jlong a0) {
+static JNICALL jbyteArray NativeBN_BN_bn2bin(JNIEnv* env, jclass, jlong a0) {
   if (!oneValidHandle(env, a0)) return NULL;
   BIGNUM* a = toBigNum(a0);
   jbyteArray result = env->NewByteArray(BN_num_bytes(a));
@@ -406,7 +406,7 @@ static jbyteArray NativeBN_BN_bn2bin(JNIEnv* env, jclass, jlong a0) {
   return result;
 }
 
-static jintArray NativeBN_bn2litEndInts(JNIEnv* env, jclass, jlong a0) {
+static JNICALL jintArray NativeBN_bn2litEndInts(JNIEnv* env, jclass, jlong a0) {
   if (!oneValidHandle(env, a0)) return NULL;
   BIGNUM* a = toBigNum(a0);
   bn_check_top(a);
@@ -434,7 +434,7 @@ static jintArray NativeBN_bn2litEndInts(JNIEnv* env, jclass, jlong a0) {
   return result;
 }
 
-static int NativeBN_sign(JNIEnv* env, jclass, jlong a) {
+static JNICALL int NativeBN_sign(JNIEnv* env, jclass, jlong a) {
   if (!oneValidHandle(env, a)) return -2;
   if (BN_is_zero(toBigNum(a))) {
       return 0;
@@ -444,12 +444,12 @@ static int NativeBN_sign(JNIEnv* env, jclass, jlong a) {
   return 1;
 }
 
-static void NativeBN_BN_set_negative(JNIEnv* env, jclass, jlong b, int n) {
+static JNICALL void NativeBN_BN_set_negative(JNIEnv* env, jclass, jlong b, int n) {
   if (!oneValidHandle(env, b)) return;
   BN_set_negative(toBigNum(b), n);
 }
 
-static int NativeBN_bitLength(JNIEnv* env, jclass, jlong a0) {
+static JNICALL int NativeBN_bitLength(JNIEnv* env, jclass, jlong a0) {
   if (!oneValidHandle(env, a0)) return JNI_FALSE;
   BIGNUM* a = toBigNum(a0);
   bn_check_top(a);
@@ -468,12 +468,12 @@ static int NativeBN_bitLength(JNIEnv* env, jclass, jlong a0) {
   return (wLen - 1) * sizeof(BN_ULONG) * 8 + BN_num_bits_word(msd);
 }
 
-static jboolean NativeBN_BN_is_bit_set(JNIEnv* env, jclass, jlong a, int n) {
+static JNICALL jboolean NativeBN_BN_is_bit_set(JNIEnv* env, jclass, jlong a, int n) {
   if (!oneValidHandle(env, a)) return JNI_FALSE;
   return BN_is_bit_set(toBigNum(a), n);
 }
 
-static void NativeBN_BN_shift(JNIEnv* env, jclass, jlong r, jlong a, int n) {
+static JNICALL void NativeBN_BN_shift(JNIEnv* env, jclass, jlong r, jlong a, int n) {
   if (!twoValidHandles(env, r, a)) return;
   if (n >= 0) {
     BN_lshift(toBigNum(r), toBigNum(a), n);
@@ -483,87 +483,87 @@ static void NativeBN_BN_shift(JNIEnv* env, jclass, jlong r, jlong a, int n) {
   throwExceptionIfNecessary(env);
 }
 
-static void NativeBN_BN_add_word(JNIEnv* env, jclass, jlong a, BN_ULONG w) {
+static JNICALL void NativeBN_BN_add_word(JNIEnv* env, jclass, jlong a, BN_ULONG w) {
   if (!oneValidHandle(env, a)) return;
   BN_add_word(toBigNum(a), w);
   throwExceptionIfNecessary(env);
 }
 
-static void NativeBN_BN_mul_word(JNIEnv* env, jclass, jlong a, BN_ULONG w) {
+static JNICALL void NativeBN_BN_mul_word(JNIEnv* env, jclass, jlong a, BN_ULONG w) {
   if (!oneValidHandle(env, a)) return;
   BN_mul_word(toBigNum(a), w);
   throwExceptionIfNecessary(env);
 }
 
-static BN_ULONG NativeBN_BN_mod_word(JNIEnv* env, jclass, jlong a, BN_ULONG w) {
+static JNICALL BN_ULONG NativeBN_BN_mod_word(JNIEnv* env, jclass, jlong a, BN_ULONG w) {
   if (!oneValidHandle(env, a)) return 0;
   int result = BN_mod_word(toBigNum(a), w);
   throwExceptionIfNecessary(env);
   return result;
 }
 
-static void NativeBN_BN_add(JNIEnv* env, jclass, jlong r, jlong a, jlong b) {
+static JNICALL void NativeBN_BN_add(JNIEnv* env, jclass, jlong r, jlong a, jlong b) {
   if (!threeValidHandles(env, r, a, b)) return;
   BN_add(toBigNum(r), toBigNum(a), toBigNum(b));
   throwExceptionIfNecessary(env);
 }
 
-static void NativeBN_BN_sub(JNIEnv* env, jclass, jlong r, jlong a, jlong b) {
+static JNICALL void NativeBN_BN_sub(JNIEnv* env, jclass, jlong r, jlong a, jlong b) {
   if (!threeValidHandles(env, r, a, b)) return;
   BN_sub(toBigNum(r), toBigNum(a), toBigNum(b));
   throwExceptionIfNecessary(env);
 }
 
-static void NativeBN_BN_gcd(JNIEnv* env, jclass, jlong r, jlong a, jlong b) {
+static JNICALL void NativeBN_BN_gcd(JNIEnv* env, jclass, jlong r, jlong a, jlong b) {
   if (!threeValidHandles(env, r, a, b)) return;
   Unique_BN_CTX ctx(BN_CTX_new());
   BN_gcd(toBigNum(r), toBigNum(a), toBigNum(b), ctx.get());
   throwExceptionIfNecessary(env);
 }
 
-static void NativeBN_BN_mul(JNIEnv* env, jclass, jlong r, jlong a, jlong b) {
+static JNICALL void NativeBN_BN_mul(JNIEnv* env, jclass, jlong r, jlong a, jlong b) {
   if (!threeValidHandles(env, r, a, b)) return;
   Unique_BN_CTX ctx(BN_CTX_new());
   BN_mul(toBigNum(r), toBigNum(a), toBigNum(b), ctx.get());
   throwExceptionIfNecessary(env);
 }
 
-static void NativeBN_BN_exp(JNIEnv* env, jclass, jlong r, jlong a, jlong p) {
+static JNICALL void NativeBN_BN_exp(JNIEnv* env, jclass, jlong r, jlong a, jlong p) {
   if (!threeValidHandles(env, r, a, p)) return;
   Unique_BN_CTX ctx(BN_CTX_new());
   BN_exp(toBigNum(r), toBigNum(a), toBigNum(p), ctx.get());
   throwExceptionIfNecessary(env);
 }
 
-static void NativeBN_BN_div(JNIEnv* env, jclass, jlong dv, jlong rem, jlong m, jlong d) {
+static JNICALL void NativeBN_BN_div(JNIEnv* env, jclass, jlong dv, jlong rem, jlong m, jlong d) {
   if (!fourValidHandles(env, (rem ? rem : dv), (dv ? dv : rem), m, d)) return;
   Unique_BN_CTX ctx(BN_CTX_new());
   BN_div(toBigNum(dv), toBigNum(rem), toBigNum(m), toBigNum(d), ctx.get());
   throwExceptionIfNecessary(env);
 }
 
-static void NativeBN_BN_nnmod(JNIEnv* env, jclass, jlong r, jlong a, jlong m) {
+static JNICALL void NativeBN_BN_nnmod(JNIEnv* env, jclass, jlong r, jlong a, jlong m) {
   if (!threeValidHandles(env, r, a, m)) return;
   Unique_BN_CTX ctx(BN_CTX_new());
   BN_nnmod(toBigNum(r), toBigNum(a), toBigNum(m), ctx.get());
   throwExceptionIfNecessary(env);
 }
 
-static void NativeBN_BN_mod_exp(JNIEnv* env, jclass, jlong r, jlong a, jlong p, jlong m) {
+static JNICALL void NativeBN_BN_mod_exp(JNIEnv* env, jclass, jlong r, jlong a, jlong p, jlong m) {
   if (!fourValidHandles(env, r, a, p, m)) return;
   Unique_BN_CTX ctx(BN_CTX_new());
   BN_mod_exp(toBigNum(r), toBigNum(a), toBigNum(p), toBigNum(m), ctx.get());
   throwExceptionIfNecessary(env);
 }
 
-static void NativeBN_BN_mod_inverse(JNIEnv* env, jclass, jlong ret, jlong a, jlong n) {
+static JNICALL void NativeBN_BN_mod_inverse(JNIEnv* env, jclass, jlong ret, jlong a, jlong n) {
   if (!threeValidHandles(env, ret, a, n)) return;
   Unique_BN_CTX ctx(BN_CTX_new());
   BN_mod_inverse(toBigNum(ret), toBigNum(a), toBigNum(n), ctx.get());
   throwExceptionIfNecessary(env);
 }
 
-static void NativeBN_BN_generate_prime_ex(JNIEnv* env, jclass, jlong ret, int bits,
+static JNICALL void NativeBN_BN_generate_prime_ex(JNIEnv* env, jclass, jlong ret, int bits,
                                           jboolean safe, jlong add, jlong rem, jlong cb) {
   if (!oneValidHandle(env, ret)) return;
   BN_generate_prime_ex(toBigNum(ret), bits, safe, toBigNum(add), toBigNum(rem),
@@ -571,7 +571,7 @@ static void NativeBN_BN_generate_prime_ex(JNIEnv* env, jclass, jlong ret, int bi
   throwExceptionIfNecessary(env);
 }
 
-static jboolean NativeBN_BN_is_prime_ex(JNIEnv* env, jclass, jlong p, int nchecks, jlong cb) {
+static JNICALL jboolean NativeBN_BN_is_prime_ex(JNIEnv* env, jclass, jlong p, int nchecks, jlong cb) {
   if (!oneValidHandle(env, p)) return JNI_FALSE;
   Unique_BN_CTX ctx(BN_CTX_new());
   return BN_is_prime_ex(toBigNum(p), nchecks, ctx.get(), reinterpret_cast<BN_GENCB*>(cb));

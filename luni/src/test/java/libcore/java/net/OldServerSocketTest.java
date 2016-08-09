@@ -85,16 +85,19 @@ public class OldServerSocketTest extends OldSocketTestCase {
     }
 
     public void test_ConstructorII() throws IOException {
+        /* [XRT] crash
         s = new ServerSocket(0, 1);
         s.setSoTimeout(2000);
         startClient(s.getLocalPort());
         sconn = s.accept();
         sconn.close();
         s.close();
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     static class SSClient implements Runnable {
-        Socket cs;
+        Socket cs=null;
 
         int port;
 
@@ -131,6 +134,7 @@ public class OldServerSocketTest extends OldSocketTestCase {
     }
 
     public void test_ConstructorI() throws Exception {
+        /* [XRT] crash
         s = new ServerSocket(0);
         try {
             new ServerSocket(s.getLocalPort());
@@ -156,6 +160,8 @@ public class OldServerSocketTest extends OldSocketTestCase {
         } finally {
             s.close();
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_ConstructorIILjava_net_InetAddress() throws IOException {
@@ -212,6 +218,7 @@ public class OldServerSocketTest extends OldSocketTestCase {
     }
 
     public void test_accept() throws IOException {
+        /* [XRT] crash
         ServerSocket newSocket = new ServerSocket(0);
         newSocket.setSoTimeout(500);
         try {
@@ -233,6 +240,8 @@ public class OldServerSocketTest extends OldSocketTestCase {
             ss.close();
             ssc.close();
         }
+        */
+        fail("[CRASH] Turn off testcase due to crash");
     }
 
     public void test_getSoTimeout_setSoTimeout() throws Exception {
