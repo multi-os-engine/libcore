@@ -319,9 +319,9 @@ public class InetAddressTest extends junit.framework.TestCase {
     public void test_getHostNameCaches() throws Exception {
         InetAddress inetAddress = InetAddress.getByAddress(LOOPBACK6_BYTES);
         assertEquals("::1", inetAddress.getHostString());
-        assertEquals("ip6-localhost", inetAddress.getHostName());
+        assertEquals("localhost", inetAddress.getHostName());
         // getHostString() should now be different.
-        assertEquals("ip6-localhost", inetAddress.getHostString());
+        assertEquals("localhost", inetAddress.getHostString());
     }
 
     public void test_getByAddress_loopbackIpv4() throws Exception {
@@ -332,7 +332,7 @@ public class InetAddressTest extends junit.framework.TestCase {
 
     public void test_getByAddress_loopbackIpv6() throws Exception {
         InetAddress inetAddress = InetAddress.getByAddress(LOOPBACK6_BYTES);
-        assertEquals(LOOPBACK6_BYTES, "ip6-localhost", inetAddress);
+        assertEquals(LOOPBACK6_BYTES, "localhost", inetAddress);
         assertTrue(inetAddress.isLoopbackAddress());
     }
 
@@ -344,23 +344,24 @@ public class InetAddressTest extends junit.framework.TestCase {
 
     public void test_getByName_loopbackIpv6() throws Exception {
         InetAddress inetAddress = InetAddress.getByName("::1");
-        assertEquals(LOOPBACK6_BYTES, "ip6-localhost", inetAddress);
+        assertEquals(LOOPBACK6_BYTES, "localhost", inetAddress);
         assertTrue(inetAddress.isLoopbackAddress());
     }
 
     public void test_getAllByName_localhost() throws Exception {
         InetAddress[] inetAddresses = InetAddress.getAllByName("localhost");
-        assertEquals(1, inetAddresses.length);
+        assertEquals(2, inetAddresses.length);
         InetAddress inetAddress = inetAddresses[0];
-        assertEquals(LOOPBACK4_BYTES, "localhost", inetAddress);
+        //MOE: both localhost ipv6 and ipv4 has the same name
+        //assertEquals(LOOPBACK4_BYTES, "localhost", inetAddress);
         assertTrue(inetAddress.isLoopbackAddress());
     }
 
     public void test_getAllByName_ip6_localhost() throws Exception {
-        InetAddress[] inetAddresses = InetAddress.getAllByName("ip6-localhost");
-        assertEquals(1, inetAddresses.length);
+        InetAddress[] inetAddresses = InetAddress.getAllByName("localhost");
+        assertEquals(2, inetAddresses.length);
         InetAddress inetAddress = inetAddresses[0];
-        assertEquals(LOOPBACK6_BYTES, "ip6-localhost", inetAddress);
+        assertEquals(LOOPBACK6_BYTES, "localhost", inetAddress);
         assertTrue(inetAddress.isLoopbackAddress());
     }
 

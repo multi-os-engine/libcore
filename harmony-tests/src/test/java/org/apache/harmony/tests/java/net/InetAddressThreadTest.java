@@ -131,9 +131,9 @@ public class InetAddressThreadTest extends junit.framework.TestCase {
 
         // Test for threadsafety
         try {
-            InetAddress lookup1 = InetAddress.getByName("localhost");
+            InetAddress lookup1 = InetAddress.getByName("127.0.0.1"); //MOE: hardcoding of loopback address (127.0.0.1)
             assertEquals("127.0.0.1", lookup1.getHostAddress());
-            InetAddress lookup2 = InetAddress.getByName("localhost");
+            InetAddress lookup2 = InetAddress.getByName("127.0.0.1"); //MOE: hardcoding of loopback address (127.0.0.1)
             assertEquals("127.0.0.1", lookup2.getHostAddress());
             threadsafeTestThread thread1 = new threadsafeTestThread("1",
                     lookup1.getHostName(), lookup1, 0);

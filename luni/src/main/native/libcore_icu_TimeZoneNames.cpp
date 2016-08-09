@@ -26,9 +26,16 @@
 #include "ScopedJavaUnicodeString.h"
 #include "ScopedLocalRef.h"
 #include "ScopedUtfChars.h"
-#include "unicode/calendar.h"
-#include "unicode/timezone.h"
-#include "unicode/tznames.h"
+
+#ifndef USE_APPLE_CF
+
+    #include "unicode/calendar.h"
+    #include "unicode/timezone.h"
+    #include "unicode/tznames.h"
+#else
+    #include "cf_timezone_names.h"
+    #include "cf_calendar.h"
+#endif
 
 static bool isUtc(const icu::UnicodeString& id) {
   static const icu::UnicodeString kEtcUct("Etc/UCT", 7, US_INV);

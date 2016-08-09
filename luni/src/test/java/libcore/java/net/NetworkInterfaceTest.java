@@ -36,6 +36,9 @@ public class NetworkInterfaceTest extends TestCase {
     private final static int ARPHRD_ETHER = 1; // from if_arp.h
     public void testIPv6() throws Exception {
         NetworkInterface lo = NetworkInterface.getByName("lo");
+        //MOE: no lo interface on ios, only lo0
+        if(lo == null)
+            lo = NetworkInterface.getByName("lo0");
         Set<InetAddress> actual = new HashSet<InetAddress>(Collections.list(lo.getInetAddresses()));
 
         Set<InetAddress> expected = new HashSet<InetAddress>();
@@ -52,12 +55,15 @@ public class NetworkInterfaceTest extends TestCase {
         List<InetAddress> addresses = new ArrayList<InetAddress>(1);
         List<InterfaceAddress> ifAddresses = new ArrayList<InterfaceAddress>(1);
 
+       /* [XRT] avoid compilation error
         NetworkInterface.collectIpv6Addresses("wlan0", 1, addresses,
                 ifAddresses, lines);
         assertEquals(1, addresses.size());
         assertEquals(1, ifAddresses.size());
         // Make sure the prefix length (field #3) is parsed correctly
         assertEquals(4*16 + 0, ifAddresses.get(0).getNetworkPrefixLength());
+        */
+        fail("collectIpv6Addresses function cannot be applied to such types");
     }
 
     public void test_collectIpv6Addresses_skipsUnmatchedLines() throws Exception {
@@ -68,10 +74,13 @@ public class NetworkInterfaceTest extends TestCase {
         List<InetAddress> addresses = new ArrayList<InetAddress>(1);
         List<InterfaceAddress> ifAddresses = new ArrayList<InterfaceAddress>(1);
 
-        NetworkInterface.collectIpv6Addresses("wlan0", 1, addresses,
+        /* [XRT] avoid compilation 
+         errorNetworkInterface.collectIpv6Addresses("wlan0", 1, addresses,
                 ifAddresses, lines);
         assertEquals(1, addresses.size());
         assertEquals(1, ifAddresses.size());
+         */
+        fail("collectIpv6Addresses function cannot be applied to such types");
     }
 
     public void testInterfaceProperties() throws Exception {
@@ -95,9 +104,15 @@ public class NetworkInterfaceTest extends TestCase {
 
     public void testLoopback() throws Exception {
         NetworkInterface lo = NetworkInterface.getByName("lo");
+        //MOE: no lo interface on ios, only lo0
+        if(lo == null)
+            lo = NetworkInterface.getByName("lo0");
+
         assertNull(lo.getHardwareAddress());
         for (InterfaceAddress ia : lo.getInterfaceAddresses()) {
-            assertNull(ia.getBroadcast());
+            //MOE: for Inet4Address there is not null broadcast address
+            if (!(ia.getAddress() instanceof Inet4Address))
+                assertNull(ia.getBroadcast());
         }
     }
 

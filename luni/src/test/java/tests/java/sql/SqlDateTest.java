@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+package tests.java.sql;
+
 import java.sql.Date;
 
 import junit.framework.TestCase;

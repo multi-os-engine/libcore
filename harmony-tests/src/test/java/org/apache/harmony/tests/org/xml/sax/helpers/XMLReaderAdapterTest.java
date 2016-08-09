@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package tests.api.org.xml.sax.helpers;
+package org.apache.harmony.tests.org.xml.sax.helpers;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -35,10 +35,10 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.LocatorImpl;
 import org.xml.sax.helpers.XMLReaderAdapter;
 
-import tests.api.org.xml.sax.support.MethodLogger;
-import tests.api.org.xml.sax.support.MockHandler;
-import tests.api.org.xml.sax.support.MockReader;
-import tests.api.org.xml.sax.support.MockResolver;
+import org.apache.harmony.tests.org.xml.sax.support.MethodLogger;
+import org.apache.harmony.tests.org.xml.sax.support.MockHandler;
+import org.apache.harmony.tests.org.xml.sax.support.MockReader;
+import org.apache.harmony.tests.org.xml.sax.support.MockResolver;
 
 @SuppressWarnings("deprecation")
 public class XMLReaderAdapterTest extends TestCase {

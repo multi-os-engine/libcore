@@ -294,6 +294,9 @@ public final class IoBridge {
             return Libcore.os.getsockoptInt(fd, SOL_SOCKET, SO_RCVBUF);
         case SocketOptions.SO_REUSEADDR:
             return booleanFromInt(Libcore.os.getsockoptInt(fd, SOL_SOCKET, SO_REUSEADDR));
+        // MOE : added option supported on Mac
+        case SocketOptions.SO_REUSEPORT:
+            return booleanFromInt(Libcore.os.getsockoptInt(fd, SOL_SOCKET, SO_REUSEPORT));
         case SocketOptions.SO_SNDBUF:
             return Libcore.os.getsockoptInt(fd, SOL_SOCKET, SO_SNDBUF);
         case SocketOptions.SO_TIMEOUT:
@@ -373,6 +376,10 @@ public final class IoBridge {
             return;
         case SocketOptions.SO_REUSEADDR:
             Libcore.os.setsockoptInt(fd, SOL_SOCKET, SO_REUSEADDR, booleanToInt((Boolean) value));
+            return;
+        // MOE : added option supported on Mac
+        case SocketOptions.SO_REUSEPORT:
+            Libcore.os.setsockoptInt(fd, SOL_SOCKET, SO_REUSEPORT, booleanToInt((Boolean) value));
             return;
         case SocketOptions.SO_SNDBUF:
             Libcore.os.setsockoptInt(fd, SOL_SOCKET, SO_SNDBUF, (Integer) value);

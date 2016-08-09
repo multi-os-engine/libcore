@@ -57,8 +57,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     private transient Locale locale;
     private transient String exponentSeparator;
 
-    private transient com.ibm.icu.text.DecimalFormatSymbols cachedIcuDFS = null;
-
     /**
      * Constructs a new {@code DecimalFormatSymbols} containing the symbols for
      * the user's default locale.
@@ -112,77 +110,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             intlCurrencySymbol = localeData.internationalCurrencySymbol;
         }
     }
-
-    /**
-     * Convert an instance of this class to the ICU version so that it can be used with ICU4J.
-     * @hide
-     */
-    protected com.ibm.icu.text.DecimalFormatSymbols getIcuDecimalFormatSymbols() {
-        if (cachedIcuDFS != null) {
-            return cachedIcuDFS;
-        }
-
-        cachedIcuDFS = new com.ibm.icu.text.DecimalFormatSymbols(this.locale);
-        cachedIcuDFS.setZeroDigit(zeroDigit);
-        cachedIcuDFS.setDigit(digit);
-        cachedIcuDFS.setDecimalSeparator(decimalSeparator);
-        cachedIcuDFS.setGroupingSeparator(groupingSeparator);
-        cachedIcuDFS.setPatternSeparator(patternSeparator);
-        cachedIcuDFS.setPercent((percent.length() > 1) ? '%' : percent.charAt(0));
-        cachedIcuDFS.setMonetaryDecimalSeparator(monetarySeparator);
-        cachedIcuDFS.setMinusSign((minusSign.length() > 1) ? '-' : minusSign.charAt(0));
-        cachedIcuDFS.setInfinity(infinity);
-        cachedIcuDFS.setNaN(NaN);
-        cachedIcuDFS.setExponentSeparator(exponentSeparator);
-
-        try {
-            cachedIcuDFS.setCurrency(
-                    com.ibm.icu.util.Currency.getInstance(currency.getCurrencyCode()));
-        } catch (NullPointerException e) {
-            currency = Currency.getInstance("XXX");
-        }
-
-        cachedIcuDFS.setCurrencySymbol(currencySymbol);
-        cachedIcuDFS.setInternationalCurrencySymbol(intlCurrencySymbol);
-
-        return cachedIcuDFS;
-    }
-
-    /**
-     * Create an instance of DecimalFormatSymbols using the ICU equivalent of this class.
-     * @hide
-     */
-    protected static DecimalFormatSymbols fromIcuInstance(
-            com.ibm.icu.text.DecimalFormatSymbols dfs) {
-        DecimalFormatSymbols result = new DecimalFormatSymbols(dfs.getLocale());
-        result.setZeroDigit(dfs.getZeroDigit());
-        result.setDigit(dfs.getDigit());
-        result.setDecimalSeparator(dfs.getDecimalSeparator());
-        result.setGroupingSeparator(dfs.getGroupingSeparator());
-        result.setPatternSeparator(dfs.getPatternSeparator());
-        result.setPercent(dfs.getPercent());
-        result.setPerMill(dfs.getPerMill());
-        result.setMonetaryDecimalSeparator(dfs.getMonetaryDecimalSeparator());
-        result.setMinusSign(dfs.getMinusSign());
-        result.setInfinity(dfs.getInfinity());
-        result.setNaN(dfs.getNaN());
-        result.setExponentSeparator(dfs.getExponentSeparator());
-
-        try {
-            if (dfs.getCurrency() != null) {
-                result.setCurrency(Currency.getInstance(dfs.getCurrency().getCurrencyCode()));
-            } else {
-                result.setCurrency(Currency.getInstance("XXX"));
-            }
-        } catch (IllegalArgumentException e) {
-            result.setCurrency(Currency.getInstance("XXX"));
-        }
-
-        result.setCurrencySymbol(dfs.getCurrencySymbol());
-        result.setInternationalCurrencySymbol(dfs.getInternationalCurrencySymbol());
-        return result;
-    }
-
 
     /**
      * Returns a new {@code DecimalFormatSymbols} instance for the user's default locale.
@@ -501,11 +428,9 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         if (currency == null) {
             throw new NullPointerException("currency == null");
         }
-
         this.currency = currency;
         intlCurrencySymbol = currency.getCurrencyCode();
         currencySymbol = currency.getSymbol(locale);
-        cachedIcuDFS = null;
     }
 
     /**
@@ -537,7 +462,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             currency = null;
         }
         intlCurrencySymbol = value;
-        cachedIcuDFS = null;
     }
 
     /**
@@ -548,7 +472,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setCurrencySymbol(String value) {
         this.currencySymbol = value;
-        cachedIcuDFS = null;
     }
 
     /**
@@ -559,7 +482,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setDecimalSeparator(char value) {
         this.decimalSeparator = value;
-        cachedIcuDFS = null;
     }
 
     /**
@@ -570,7 +492,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setDigit(char value) {
         this.digit = value;
-        cachedIcuDFS = null;
     }
 
     /**
@@ -581,7 +502,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setGroupingSeparator(char value) {
         this.groupingSeparator = value;
-        cachedIcuDFS = null;
     }
 
     /**
@@ -592,7 +512,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setInfinity(String value) {
         this.infinity = value;
-        cachedIcuDFS = null;
     }
 
     /**
@@ -603,7 +522,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setMinusSign(char value) {
         this.minusSign = String.valueOf(value);
-        cachedIcuDFS = null;
     }
 
     /**
@@ -615,7 +533,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setMonetaryDecimalSeparator(char value) {
         this.monetarySeparator = value;
-        cachedIcuDFS = null;
     }
 
     /**
@@ -626,7 +543,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setNaN(String value) {
         this.NaN = value;
-        cachedIcuDFS = null;
     }
 
     /**
@@ -638,7 +554,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setPatternSeparator(char value) {
         this.patternSeparator = value;
-        cachedIcuDFS = null;
     }
 
     /**
@@ -649,7 +564,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setPercent(char value) {
         this.percent = String.valueOf(value);
-        cachedIcuDFS = null;
     }
 
     /**
@@ -660,7 +574,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setPerMill(char value) {
         this.perMill = value;
-        cachedIcuDFS = null;
     }
 
     /**
@@ -671,7 +584,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setZeroDigit(char value) {
         this.zeroDigit = value;
-        cachedIcuDFS = null;
     }
 
     /**
@@ -683,7 +595,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             throw new NullPointerException("value == null");
         }
         this.exponentSeparator = value;
-        cachedIcuDFS = null;
     }
 
     private static final ObjectStreamField[] serialPersistentFields = {

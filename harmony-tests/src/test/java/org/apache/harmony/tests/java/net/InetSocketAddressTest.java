@@ -124,7 +124,7 @@ public class InetSocketAddressTest extends TestCase {
 
         Object[] testCases = {
                 InetSocketAddress.createUnresolved("badhost", 1000), // unresolved
-                new InetSocketAddress("Localhost", 1000) };
+                new InetSocketAddress("127.0.0.1", 1000) }; //MOE: hardcoding of loopback address (127.0.0.1)
 
         SerializationTest.verifyGolden(this, testCases, COMPARATOR);
     }

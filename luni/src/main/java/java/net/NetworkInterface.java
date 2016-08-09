@@ -48,6 +48,15 @@ public final class NetworkInterface extends Object {
     private final List<NetworkInterface> children = new LinkedList<NetworkInterface>();
 
     private NetworkInterface parent = null;
+    
+    // [XRT] Begin
+    private static native String[] getInterfaceNames();
+    private static native int getInterfaceIndex(String interfaceName);
+    private static native byte[] getIpv6Addresses(String interfaceName);
+    private static native byte[] getHardwareAddress(String interfaceName);
+    private static native int getInterfaceFlags(String interfaceName);
+    private static native int getMTU(String interfaceName);
+    // [XRT] End
 
     private NetworkInterface(String name, int interfaceIndex,
             List<InetAddress> addresses, List<InterfaceAddress> interfaceAddresses) {
@@ -109,13 +118,45 @@ public final class NetworkInterface extends Object {
             return null;
         }
 
-        return getByNameInternal(interfaceName, readIfInet6Lines());
+        // [XRT] Begin
+        int interfaceIndex = getInterfaceIndex(interfaceName);
+        if (interfaceIndex <= 0) {
+            return null;
+        }
+        // [XRT] End
+        
+        // [XRT] return getByNameInternal(interfaceName, readIfInet6Lines());
+        return getByNameInternal(interfaceIndex, interfaceName);
     }
 
     /**
      * Similar to {@link #getByName(String)} except that {@code interfaceName}
      * is assumed to be valid.
      */
+    private static NetworkInterface getByNameInternal(int interfaceIndex, String interfaceName) throws SocketException
+    {
+        if (interfaceName == null) {
+            throw new NullPointerException("interfaceName must not be null");
+        }
+        
+        if(interfaceIndex == 0) {
+            interfaceIndex = getInterfaceIndex(interfaceName);
+            
+            if (interfaceIndex <= 0) {
+                return null;
+            }
+        }
+        
+        List<InetAddress> addresses = new ArrayList<InetAddress>();
+        List<InterfaceAddress> interfaceAddresses = new ArrayList<InterfaceAddress>();
+        
+        collectIpv6Addresses(interfaceName, interfaceIndex, addresses, interfaceAddresses);
+        collectIpv4Address(interfaceName, addresses, interfaceAddresses);
+        
+        return new NetworkInterface(interfaceName, interfaceIndex, addresses, interfaceAddresses);
+    }
+    /* [XRT] Begin
+
     private static NetworkInterface getByNameInternal(String interfaceName,
             String[] ifInet6Lines) throws SocketException {
         int interfaceIndex = readIntFile("/sys/class/net/" + interfaceName + "/ifindex");
@@ -136,15 +177,17 @@ public final class NetworkInterface extends Object {
             throw rethrowAsSocketException(ioe);
         }
     }
-
+  [XRT] End */
+     
     /**
      * Visible for testing only.
      *
      * @hide
      */
     public static void collectIpv6Addresses(String interfaceName, int interfaceIndex,
-            List<InetAddress> addresses, List<InterfaceAddress> interfaceAddresses,
-            String[] ifInet6Lines) throws SocketException {
+        List<InetAddress> addresses, List<InterfaceAddress> interfaceAddresses) throws SocketException {
+        /* [XRT]
+
         // Format of /proc/net/if_inet6.
         // All numeric fields are implicit hex,
         // but not necessarily two-digit (http://code.google.com/p/android/issues/detail?id=34022).
@@ -184,23 +227,61 @@ public final class NetworkInterface extends Object {
         } catch (NumberFormatException ex) {
             throw rethrowAsSocketException(ex);
         }
+         */
+        
+        byte[] bytes = getIpv6Addresses(interfaceName);
+        
+        final int addressLen = 16;
+        
+        if (bytes != null) {
+            for (int i = 0; i < bytes.length; i += (addressLen * 2)) {
+                byte[] addressBytes = new byte[addressLen];
+                byte[] netmaskBytes = new byte[addressLen];
+                
+                System.arraycopy(bytes, i, addressBytes, 0, addressLen);
+                System.arraycopy(bytes, i + addressLen, netmaskBytes, 0, addressLen);
+                
+                Inet6Address inet6Address = new Inet6Address(addressBytes, null, interfaceIndex);
+                
+                addresses.add(inet6Address);
+                
+                interfaceAddresses.add(new InterfaceAddress(inet6Address, (short) ipv6NetmaskToPrefixLength(netmaskBytes)));
+            }
+        }
     }
-
+    
     private static void collectIpv4Address(String interfaceName, List<InetAddress> addresses,
             List<InterfaceAddress> interfaceAddresses) throws SocketException {
         FileDescriptor fd = null;
         try {
             fd = Libcore.os.socket(AF_INET, SOCK_DGRAM, 0);
             InetAddress address = Libcore.os.ioctlInetAddress(fd, SIOCGIFADDR, interfaceName);
-            InetAddress broadcast = Libcore.os.ioctlInetAddress(fd, SIOCGIFBRDADDR, interfaceName);
+            InetAddress broadcast = Inet4Address.ANY;
+            
+            // [XRT] Begin
+            try
+            {
+                broadcast = Libcore.os.ioctlInetAddress(fd, SIOCGIFBRDADDR, interfaceName);
+            }
+            catch(ErrnoException e)
+            {
+                if (e.errno != EINVAL)
+                {
+                    throw e;
+                }
+            }
+            // [XRT] End
+            
             InetAddress netmask = Libcore.os.ioctlInetAddress(fd, SIOCGIFNETMASK, interfaceName);
-            if (broadcast.equals(Inet4Address.ANY)) {
+            if (broadcast != null && broadcast.equals(Inet4Address.ANY)) {
                 broadcast = null;
             }
 
-            addresses.add(address);
-            interfaceAddresses.add(new InterfaceAddress((Inet4Address) address,
-                    (Inet4Address) broadcast, (Inet4Address) netmask));
+            if(address != null) {
+                addresses.add(address);
+                interfaceAddresses.add(new InterfaceAddress((Inet4Address) address,
+                        (Inet4Address) broadcast, (Inet4Address) netmask));
+            }
         } catch (ErrnoException errnoException) {
             if (errnoException.errno != EADDRNOTAVAIL) {
                 // EADDRNOTAVAIL just means no IPv4 address for this interface.
@@ -216,22 +297,30 @@ public final class NetworkInterface extends Object {
 
     @FindBugsSuppressWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
     private static boolean isValidInterfaceName(String interfaceName) {
-        final String[] interfaceList = SYS_CLASS_NET.list();
+        List<NetworkInterface> interfaceList = null;
+        try {
+            interfaceList = getNetworkInterfacesList();
+        } catch (SocketException e) {
+            return false;
+        }
+        //MOE : no interfaces list in sys/class/net
+        //SYS_CLASS_NET.list();
         // We have no interfaces listed under /sys/class/net
         if (interfaceList == null) {
             return false;
         }
 
         // Don't just stat because a crafty user might have / or .. in the supposed interface name.
-        for (String validName : interfaceList) {
-            if (interfaceName.equals(validName)) {
+        for (NetworkInterface validInt : interfaceList) {
+            if (interfaceName.equals(validInt.getName())) {
                 return true;
             }
         }
         return false;
     }
 
-    private static int readIntFile(String path) throws SocketException {
+    /* [XRT]
+     private static int readIntFile(String path) throws SocketException {
         try {
             String s = IoUtils.readFileAsString(path).trim();
             if (s.startsWith("0x")) {
@@ -243,6 +332,7 @@ public final class NetworkInterface extends Object {
             throw rethrowAsSocketException(ex);
         }
     }
+     */
 
     private static SocketException rethrowAsSocketException(Exception ex) throws SocketException {
         SocketException result = new SocketException();
@@ -300,15 +390,13 @@ public final class NetworkInterface extends Object {
 
     @FindBugsSuppressWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
     private static List<NetworkInterface> getNetworkInterfacesList() throws SocketException {
-        String[] interfaceNames = SYS_CLASS_NET.list();
+        String[] interfaceNames = getInterfaceNames();
+
         NetworkInterface[] interfaces = new NetworkInterface[interfaceNames.length];
         boolean[] done = new boolean[interfaces.length];
 
-        String[] ifInet6Lines = readIfInet6Lines();
         for (int i = 0; i < interfaceNames.length; ++i) {
-            interfaces[i] = NetworkInterface.getByNameInternal(interfaceNames[i], ifInet6Lines);
-            // http://b/5833739: getByName can return null if the interface went away between our
-            // readdir(2) and our stat(2), so mark interfaces that disappeared as 'done'.
+            interfaces[i] = NetworkInterface.getByNameInternal(0, interfaceNames[i]);
             if (interfaces[i] == null) {
                 done[i] = true;
             }
@@ -472,7 +560,10 @@ public final class NetworkInterface extends Object {
     }
 
     private boolean hasFlag(int mask) throws SocketException {
-        int flags = readIntFile("/sys/class/net/" + name + "/flags");
+        // [XRT]
+        // int flags = readIntFile("/sys/class/net/" + name + "/flags");
+        int flags = getInterfaceFlags(name);
+        
         return (flags & mask) != 0;
     }
 
@@ -483,6 +574,7 @@ public final class NetworkInterface extends Object {
      * @since 1.6
      */
     public byte[] getHardwareAddress() throws SocketException {
+        /* [XRT]
         try {
             // Parse colon-separated bytes with a trailing newline: "aa:bb:cc:dd:ee:ff\n".
             String s = IoUtils.readFileAsString("/sys/class/net/" + name + "/address");
@@ -499,7 +591,9 @@ public final class NetworkInterface extends Object {
             return null;
         } catch (Exception ex) {
             throw rethrowAsSocketException(ex);
-        }
+        }*/
+        
+        return getHardwareAddress(name);
     }
 
     /**
@@ -510,7 +604,10 @@ public final class NetworkInterface extends Object {
      * @since 1.6
      */
     public int getMTU() throws SocketException {
-        return readIntFile("/sys/class/net/" + name + "/mtu");
+        // [XRT]
+        //return readIntFile("/sys/class/net/" + name + "/mtu");
+        return getMTU(name);
+
     }
 
     /**
@@ -528,4 +625,38 @@ public final class NetworkInterface extends Object {
     public boolean isVirtual() {
         return parent != null;
     }
+
+                                           
+    private static int ipv6NetmaskToPrefixLength(byte[] netmask)
+    {
+        int prefixLength = 0;
+        int index = 0;
+        
+        while (index < netmask.length) {
+            int b = netmask[index++] & 0xff;
+            
+            if (b != 0xff) {
+                break;
+            }
+            
+            prefixLength += 8;
+        }
+        
+        if (index == netmask.length) {
+            return prefixLength;
+        }
+        
+        byte b = netmask[index];
+        
+        for (int bit = 7; bit != 0; bit--) {
+            if ((b & (1 << bit)) == 0) {
+                break;
+            }
+            
+            prefixLength++;
+        }
+        
+        return prefixLength;
+    }
+
 }

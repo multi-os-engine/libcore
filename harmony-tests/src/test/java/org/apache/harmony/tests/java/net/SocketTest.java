@@ -150,7 +150,6 @@ public class SocketTest extends junit.framework.TestCase {
      * java.net.Socket#bind(java.net.SocketAddress)
      */
     public void test_bindLjava_net_SocketAddress() throws IOException {
-
         @SuppressWarnings("serial")
         class UnsupportedSocketAddress extends SocketAddress {
             public UnsupportedSocketAddress() {
@@ -296,7 +295,6 @@ public class SocketTest extends junit.framework.TestCase {
     }
 
     public void test_connectLjava_net_SocketAddress() throws Exception {
-
         @SuppressWarnings("serial")
         class UnsupportedSocketAddress extends SocketAddress {
             public UnsupportedSocketAddress() {
@@ -387,7 +385,6 @@ public class SocketTest extends junit.framework.TestCase {
      * java.net.Socket#connect(java.net.SocketAddress, int)
      */
     public void test_connectLjava_net_SocketAddressI() throws Exception {
-
         @SuppressWarnings("serial")
         class UnsupportedSocketAddress extends SocketAddress {
             public UnsupportedSocketAddress() {
@@ -529,7 +526,6 @@ public class SocketTest extends junit.framework.TestCase {
      */
     public void test_ConstructorLjava_lang_StringILjava_net_InetAddressI()
             throws IOException {
-
         ServerSocket server = new ServerSocket(0);
         int serverPort = server.getLocalPort();
         Socket client = new Socket(InetAddress.getLocalHost().getHostName(),
@@ -626,7 +622,6 @@ public class SocketTest extends junit.framework.TestCase {
      * java.net.Socket#Socket(Proxy)
      */
     public void test_ConstructorLjava_net_Proxy_Exception() {
-
         SocketAddress addr1 = InetSocketAddress.createUnresolved("127.0.0.1", 80);
 
         Proxy proxy1 = new Proxy(Proxy.Type.HTTP, addr1);
@@ -773,6 +768,7 @@ public class SocketTest extends junit.framework.TestCase {
         client.bind(new InetSocketAddress(InetAddress.getByName("0.0.0.0"), 0));
         assertTrue(client.getLocalAddress().isAnyLocalAddress());
         client.close();
+        
     }
 
     public void test_getOOBInline() throws Exception {
@@ -786,6 +782,7 @@ public class SocketTest extends junit.framework.TestCase {
 
         theSocket.setOOBInline(false);
         assertFalse("expected OOBIline to be false", theSocket.getOOBInline());
+        
     }
 
     /**
@@ -880,6 +877,7 @@ public class SocketTest extends junit.framework.TestCase {
         } catch (SocketException e) {
             // expected
         }
+        
     }
 
     public void test_getPort() throws IOException {
@@ -891,6 +889,7 @@ public class SocketTest extends junit.framework.TestCase {
 
         client.close();
         server.close();
+        
     }
 
     public void test_getReceiveBufferSize() throws Exception {
@@ -902,6 +901,7 @@ public class SocketTest extends junit.framework.TestCase {
 
         client.close();
         server.close();
+        
     }
 
     /**
@@ -935,6 +935,7 @@ public class SocketTest extends junit.framework.TestCase {
         theSocket.close();
 
         server.close();
+        
     }
 
     public void test_getReuseAddress() throws Exception {
@@ -943,6 +944,7 @@ public class SocketTest extends junit.framework.TestCase {
         assertTrue("getReuseAddress false when it should be true", theSocket.getReuseAddress());
         theSocket.setReuseAddress(false);
         assertFalse("getReuseAddress true when it should be False", theSocket.getReuseAddress());
+        
     }
 
     public void test_getSendBufferSize() throws Exception {
@@ -952,6 +954,7 @@ public class SocketTest extends junit.framework.TestCase {
         assertTrue("Incorrect buffer size", client.getSendBufferSize() >= 134);
         client.close();
         server.close();
+        
     }
 
     public void test_getSoLinger() throws Exception {
@@ -994,6 +997,7 @@ public class SocketTest extends junit.framework.TestCase {
         int trafficClass = new Socket().getTrafficClass();
         assertTrue(0 <= trafficClass);
         assertTrue(trafficClass <= 255);
+        
     }
 
     /**
@@ -1039,6 +1043,7 @@ public class SocketTest extends junit.framework.TestCase {
         client.close();
         assertTrue("Socket indicated not bound when it should be (3b)", client
                 .isBound());
+        
     }
 
     /**
@@ -1070,6 +1075,7 @@ public class SocketTest extends junit.framework.TestCase {
         server.close();
         assertTrue("Server Socket should indicate it is closed:", server
                 .isClosed());
+        
     }
 
     /**
@@ -1105,6 +1111,7 @@ public class SocketTest extends junit.framework.TestCase {
         client.close();
         worker.close();
         server.close();
+        
     }
 
     /**
@@ -1142,6 +1149,7 @@ public class SocketTest extends junit.framework.TestCase {
 
         theInput.close();
         theOutput.close();
+        
     }
 
     /**
@@ -1179,6 +1187,7 @@ public class SocketTest extends junit.framework.TestCase {
 
         theInput.close();
         theOutput.close();
+        
     }
 
     /**
@@ -1395,13 +1404,13 @@ public class SocketTest extends junit.framework.TestCase {
 
         assertEquals("Sole urgent data was not received",
                 (int) (urgentByte & 0xff), byteRead);
+        
     }
 
     /**
      * java.net.Socket#setKeepAlive(boolean)
      */
     public void test_setKeepAliveZ() throws IOException {
-
         class TestSocket extends Socket {
             public TestSocket(SocketImpl impl) throws SocketException {
                 super(impl);
@@ -1420,17 +1429,20 @@ public class SocketTest extends junit.framework.TestCase {
 
         // Regression test for HARMONY-1136
         new TestSocket(null).setKeepAlive(true);
+        
     }
 
     public void test_setOOBInlineZ() throws Exception {
         Socket theSocket = new Socket();
         theSocket.setOOBInline(true);
         assertTrue("expected OOBIline to be true", theSocket.getOOBInline());
+        
     }
 
     public void test_setPerformancePreference_Int_Int_Int() throws IOException {
         Socket theSocket = new Socket();
         theSocket.setPerformancePreferences(1, 1, 1);
+        
     }
 
     public void test_setReceiveBufferSizeI() throws Exception {
@@ -1616,6 +1628,7 @@ public class SocketTest extends junit.framework.TestCase {
             fail("should throw SocketException");
         } catch (SocketException se) {
             // Expected
+            s.close();
         }
         s.close();
     }

@@ -64,8 +64,8 @@ public class MulticastSocketTest extends junit.framework.TestCase {
         loopbackInterface = NetworkInterface.getByInetAddress(InetAddress.getLoopbackAddress());
         assertNotNull(loopbackInterface);
         assertTrue(loopbackInterface.isLoopback());
-        assertFalse(loopbackInterface.supportsMulticast());
-
+        //assertFalse(loopbackInterface.supportsMulticast()); //MOE : multicast is enabled by default
+        
         Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
         assertNotNull(interfaces);
 
@@ -222,24 +222,33 @@ public class MulticastSocketTest extends junit.framework.TestCase {
         if (!supportsMulticast) {
             return;
         }
-        test_joinGroupLjava_net_InetAddress(GOOD_IPv4);
+        //MOE : add flag to add default network interface for ipv6
+        test_joinGroupLjava_net_InetAddress(GOOD_IPv4, false);
     }
 
     public void test_joinGroupLjava_net_InetAddress_IPv6() throws Exception {
         if (!supportsMulticast) {
             return;
         }
-        test_joinGroupLjava_net_InetAddress(GOOD_IPv6);
+        //MOE : add flag to add default network interface for ipv6
+        test_joinGroupLjava_net_InetAddress(GOOD_IPv6, true);
     }
 
-    private void test_joinGroupLjava_net_InetAddress(InetAddress group) throws Exception {
+    private void test_joinGroupLjava_net_InetAddress(InetAddress group, boolean isIPv6) throws Exception {
         MulticastSocket receivingSocket = createReceivingSocket(0);
-        receivingSocket.joinGroup(group);
-
+        
         String msg = "Hello World";
         MulticastSocket sendingSocket = new MulticastSocket(receivingSocket.getLocalPort());
         InetSocketAddress groupAddress =
                 new InetSocketAddress(group, receivingSocket.getLocalPort());
+        //MOE : add default network interface for ipv6
+        if(isIPv6){
+            receivingSocket.joinGroup(groupAddress, ipv6NetworkInterface);
+            sendingSocket.setNetworkInterface(ipv6NetworkInterface);
+        } else {
+            receivingSocket.joinGroup(group);
+        }
+        
         DatagramPacket sdp = createSendDatagramPacket(groupAddress, msg);
         sendingSocket.send(sdp, (byte) 10 /* ttl */);
 
@@ -296,8 +305,9 @@ public class MulticastSocketTest extends junit.framework.TestCase {
         if (!supportsMulticast) {
             return;
         }
+        //MOE : add flag to add default network interface for ipv6
         test_joinGroupLjava_net_SocketAddressLjava_net_NetworkInterface(
-                ipv4NetworkInterface, GOOD_IPv4, BAD_IPv4);
+                ipv4NetworkInterface, GOOD_IPv4, BAD_IPv4, false);
     }
 
     public void test_joinGroupLjava_net_SocketAddressLjava_net_NetworkInterface_IPv6()
@@ -305,22 +315,23 @@ public class MulticastSocketTest extends junit.framework.TestCase {
         if (!supportsMulticast) {
             return;
         }
+        //MOE : add flag to add default network interface for ipv6
         test_joinGroupLjava_net_SocketAddressLjava_net_NetworkInterface(
-                ipv6NetworkInterface, GOOD_IPv6, BAD_IPv6);
+                ipv6NetworkInterface, GOOD_IPv6, BAD_IPv6, true);
     }
 
     public void test_joinGroupLjava_net_SocketAddressLjava_net_NetworkInterface_IPv4_nullInterface()
             throws Exception {
-        test_joinGroupLjava_net_SocketAddressLjava_net_NetworkInterface(null, GOOD_IPv4, BAD_IPv4);
+        test_joinGroupLjava_net_SocketAddressLjava_net_NetworkInterface(null, GOOD_IPv4, BAD_IPv4, false);
     }
 
     public void test_joinGroupLjava_net_SocketAddressLjava_net_NetworkInterface_IPv6_nullInterface()
             throws Exception {
-        test_joinGroupLjava_net_SocketAddressLjava_net_NetworkInterface(null, GOOD_IPv6, BAD_IPv6);
+        test_joinGroupLjava_net_SocketAddressLjava_net_NetworkInterface(null, GOOD_IPv6, BAD_IPv6, true);
     }
 
     private void test_joinGroupLjava_net_SocketAddressLjava_net_NetworkInterface(
-            NetworkInterface networkInterface, InetAddress group, InetAddress group2)
+            NetworkInterface networkInterface, InetAddress group, InetAddress group2, boolean isIPv6)
             throws Exception {
         // Create the sending socket and specify the interface to use as needed (otherwise use the
         // default).
@@ -485,25 +496,36 @@ public class MulticastSocketTest extends junit.framework.TestCase {
         if (!supportsMulticast) {
             return;
         }
-        test_leaveGroupLjava_net_InetAddress(GOOD_IPv4);
+        //MOE : add flag to add default network interface for ipv6
+        test_leaveGroupLjava_net_InetAddress(GOOD_IPv4, false);
     }
 
     public void test_leaveGroupLjava_net_InetAddress_IPv6() throws Exception {
         if (!supportsMulticast) {
             return;
         }
-        test_leaveGroupLjava_net_InetAddress(GOOD_IPv6);
+        //MOE : add flag to add default network interface for ipv6
+        test_leaveGroupLjava_net_InetAddress(GOOD_IPv6, true);
     }
 
-    private void test_leaveGroupLjava_net_InetAddress(InetAddress group) throws Exception {
+    private void test_leaveGroupLjava_net_InetAddress(InetAddress group, boolean isIPv6) throws Exception {
         String msg = "Hello World";
         MulticastSocket mss = new MulticastSocket(0);
         InetSocketAddress groupAddress = new InetSocketAddress(group, mss.getLocalPort());
         DatagramPacket sdp = createSendDatagramPacket(groupAddress, msg);
+        //MOE : add default network interface for ipv6
+        if(isIPv6){
+            mss.setNetworkInterface(ipv6NetworkInterface);
+        }
+        
         mss.send(sdp, (byte) 10 /* ttl */);
         try {
             // Try to leave a group we didn't join.
-            mss.leaveGroup(group);
+            if(isIPv6){
+                mss.leaveGroup(groupAddress, ipv6NetworkInterface);
+            } else {
+                mss.leaveGroup(group);
+            }
             fail();
         } catch (IOException expected) {
         }
@@ -554,8 +576,9 @@ public class MulticastSocketTest extends junit.framework.TestCase {
         if (!supportsMulticast) {
             return;
         }
+        //MOE : add flag to add default network interface for ipv6
         test_leaveGroupLjava_net_SocketAddressLjava_net_NetworkInterface(
-                ipv4NetworkInterface, GOOD_IPv4, BAD_IPv4);
+                ipv4NetworkInterface, GOOD_IPv4, BAD_IPv4, false);
     }
 
     public void test_leaveGroupLjava_net_SocketAddressLjava_net_NetworkInterface_IPv6()
@@ -563,22 +586,34 @@ public class MulticastSocketTest extends junit.framework.TestCase {
         if (!supportsMulticast) {
             return;
         }
+        //MOE : add flag to add default network interface for ipv6
         test_leaveGroupLjava_net_SocketAddressLjava_net_NetworkInterface(
-                ipv6NetworkInterface, GOOD_IPv6, BAD_IPv6);
+                ipv6NetworkInterface, GOOD_IPv6, BAD_IPv6, true);
     }
 
     private void test_leaveGroupLjava_net_SocketAddressLjava_net_NetworkInterface(
-            NetworkInterface networkInterface, InetAddress group, InetAddress group2)
+            NetworkInterface networkInterface, InetAddress group, InetAddress group2, boolean isIPv6)
             throws Exception {
         SocketAddress groupSockAddr = null;
         SocketAddress groupSockAddr2 = null;
 
         MulticastSocket mss = new MulticastSocket(0);
         groupSockAddr = new InetSocketAddress(group, mss.getLocalPort());
-        mss.joinGroup(groupSockAddr, null);
-        mss.leaveGroup(groupSockAddr, null);
-        try {
+        //MOE : add default network interface for ipv6
+        if(isIPv6){
+            mss.joinGroup(groupSockAddr, ipv6NetworkInterface);
+            mss.leaveGroup(groupSockAddr, ipv6NetworkInterface);
+        } else {
+            mss.joinGroup(groupSockAddr, null);
             mss.leaveGroup(groupSockAddr, null);
+        }
+        try {
+            if(isIPv6){
+                mss.leaveGroup(groupSockAddr, ipv6NetworkInterface);
+            } else {
+                mss.leaveGroup(groupSockAddr, null);
+            }
+            
             fail("Did not get exception when trying to leave group that was already left");
         } catch (IOException expected) {
         }
@@ -606,23 +641,32 @@ public class MulticastSocketTest extends junit.framework.TestCase {
         if (!supportsMulticast) {
             return;
         }
-        test_sendLjava_net_DatagramPacketB(GOOD_IPv4);
+        //MOE : add flag to add default network interface for ipv6
+        test_sendLjava_net_DatagramPacketB(GOOD_IPv4,false);
     }
 
     public void test_sendLjava_net_DatagramPacketB_IPv6() throws Exception {
         if (!supportsMulticast) {
             return;
         }
-        test_sendLjava_net_DatagramPacketB(GOOD_IPv6);
+        //MOE : add flag to add default network interface for ipv6
+        test_sendLjava_net_DatagramPacketB(GOOD_IPv6, true);
     }
 
-    private void test_sendLjava_net_DatagramPacketB(InetAddress group) throws Exception {
+    private void test_sendLjava_net_DatagramPacketB(InetAddress group, boolean isIPv6) throws Exception {
         String msg = "Hello World";
         MulticastSocket sendingSocket = new MulticastSocket(0);
         MulticastSocket receivingSocket = createReceivingSocket(sendingSocket.getLocalPort());
-        receivingSocket.joinGroup(group);
-
+        
         InetSocketAddress groupAddress = new InetSocketAddress(group, sendingSocket.getLocalPort());
+        //MOE : add default network interface for ipv6
+        if(isIPv6){
+            receivingSocket.joinGroup(groupAddress, ipv6NetworkInterface);
+            sendingSocket.setNetworkInterface(ipv6NetworkInterface);
+        } else {
+            receivingSocket.joinGroup(group);
+        }
+        
         DatagramPacket sdp = createSendDatagramPacket(groupAddress, msg);
         sendingSocket.send(sdp, (byte) 10 /* ttl */);
         sendingSocket.close();
@@ -722,6 +766,8 @@ public class MulticastSocketTest extends junit.framework.TestCase {
 
     private void test_setNetworkInterfaceLjava_net_NetworkInterface(InetAddress group)
             throws IOException, InterruptedException {
+        //MOE : ignore EADDRNOTAVAIL and continue find out interface for our address
+        boolean isFinished = false;
         // Set up the receiving socket and join the group.
         Enumeration theInterfaces = NetworkInterface.getNetworkInterfaces();
         while (theInterfaces.hasMoreElements()) {
@@ -731,7 +777,15 @@ public class MulticastSocketTest extends junit.framework.TestCase {
                     MulticastSocket receivingSocket = createReceivingSocket(0);
                     InetSocketAddress groupAddress =
                             new InetSocketAddress(group, receivingSocket.getLocalPort());
-                    receivingSocket.joinGroup(groupAddress, thisInterface);
+                    try{
+                        receivingSocket.joinGroup(groupAddress, thisInterface);
+                    }catch(SocketException ex) {
+                        if(ex.toString().contains("EADDRNOTAVAIL")){
+                            continue;
+                        } else {
+                            throw(ex);
+                        }
+                    }
 
                     // Send the packets on a particular interface. The source address in the
                     // received packet should be one of the addresses for the interface set.
@@ -749,9 +803,14 @@ public class MulticastSocketTest extends junit.framework.TestCase {
                     // Stop the server.
                     receivingSocket.close();
                     sendingSocket.close();
+                    isFinished = true;
                 }
             }
         }
+        if(!isFinished){
+            fail("no workable interfaces for this address");
+        }
+            
     }
 
     public void test_setTimeToLiveI() throws Exception {
@@ -839,26 +898,35 @@ public class MulticastSocketTest extends junit.framework.TestCase {
         if (!supportsMulticast) {
             return;
         }
-        test_setLoopbackModeSendReceive(GOOD_IPv4);
+        //MOE : add flag to add default network interface for ipv6
+        test_setLoopbackModeSendReceive(GOOD_IPv4, false);
     }
 
     public void test_setLoopbackModeSendReceive_IPv6() throws Exception {
         if (!supportsMulticast) {
             return;
         }
-        test_setLoopbackModeSendReceive(GOOD_IPv6);
+        //MOE : add flag to add default network interface for ipv6
+        test_setLoopbackModeSendReceive(GOOD_IPv6, true);
     }
 
-    private void test_setLoopbackModeSendReceive(InetAddress group) throws IOException {
+    private void test_setLoopbackModeSendReceive(InetAddress group, boolean isIPv6) throws IOException {
         // Test send receive.
         final String message = "Hello, world!";
 
         MulticastSocket socket = new MulticastSocket(0);
         socket.setLoopbackMode(false); // false indicates doing loop back
-        socket.joinGroup(group);
 
         // Send the datagram.
         InetSocketAddress groupAddress = new InetSocketAddress(group, socket.getLocalPort());
+        //MOE : add default network interface for ipv6
+        if(isIPv6) {
+            socket.joinGroup(groupAddress, ipv6NetworkInterface);
+            socket.setNetworkInterface(ipv6NetworkInterface);
+        } else {
+            socket.joinGroup(group);
+        }
+        
         DatagramPacket sendDatagram = createSendDatagramPacket(groupAddress, message);
         socket.send(sendDatagram);
 
@@ -877,10 +945,10 @@ public class MulticastSocketTest extends junit.framework.TestCase {
         }
         // Test case were we to set ReuseAddress to false.
         MulticastSocket theSocket1 = new MulticastSocket(null);
-        theSocket1.setReuseAddress(false);
+        theSocket1.setReusePort(false); //MOE : reuse port is analog reuse address on macos
 
         MulticastSocket theSocket2 = new MulticastSocket(null);
-        theSocket2.setReuseAddress(false);
+        theSocket2.setReusePort(false); //MOE : reuse port is analog reuse address on macos
 
         InetSocketAddress addr = new InetSocketAddress(Inet4Address.getLocalHost(), 0);
         theSocket1.bind(addr);

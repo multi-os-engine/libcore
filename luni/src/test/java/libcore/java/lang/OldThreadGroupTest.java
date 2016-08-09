@@ -38,11 +38,12 @@ public class OldThreadGroupTest extends TestCase implements Thread.UncaughtExcep
         public void run() {
             while (true) {
                 heartBeat++;
-                try {
+            try {
                     Thread.sleep(50);
-                } catch (InterruptedException e) {
-                    break;
-                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
             }
         }
 
@@ -237,6 +238,10 @@ public class OldThreadGroupTest extends TestCase implements Thread.UncaughtExcep
 
         assertEquals(2, thrGroup.enumerate(listOfGroups, true));
         assertEquals(1, thrGroup.enumerate(listOfGroups, false));
+        
+        for(MyThread thr:subThreads1) {
+            thr.interrupt();
+        }
     }
 
     /**
@@ -296,6 +301,8 @@ public class OldThreadGroupTest extends TestCase implements Thread.UncaughtExcep
             fail();
         } catch (UnsupportedOperationException expected) {
         }
+        
+        thread.interrupt();
     }
 
     private Thread launchFiveSecondDummyThread(ThreadGroup group) {

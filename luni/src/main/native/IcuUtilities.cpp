@@ -27,7 +27,28 @@
 #include "unicode/uloc.h"
 #include "unicode/ustring.h"
 
-jobjectArray fromStringEnumeration(JNIEnv* env, UErrorCode& status, const char* provider, icu::StringEnumeration* se) {
+#ifdef USE_APPLE_CF
+#include <vector>
+#include <string>
+#include <cf_string.h>
+
+
+jobjectArray fromStdVector(JNIEnv* env, UErrorCode& status, const std::vector<std::string> &  codes) {
+    
+    int32_t count = codes.size();
+    
+    jobjectArray result = env->NewObjectArray(count, JniConstants::stringClass, NULL);
+    for (int32_t i = 0; i < count; ++i) {
+        UnicodeString string = cf_String(codes[i]);
+
+        ScopedLocalRef<jstring> javaString(env, env->NewString(string.getBuffer(), string.length()));
+        env->SetObjectArrayElement(result, i, javaString.get());
+    }
+    return result;
+}
+#endif
+
+jobjectArray fromStringEnumeration(JNIEnv* env, UErrorCode& status, const char* provider, StringEnumeration* se) {
   if (maybeThrowIcuException(env, provider, status)) {
     return NULL;
   }

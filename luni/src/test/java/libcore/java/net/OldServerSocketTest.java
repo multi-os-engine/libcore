@@ -94,7 +94,7 @@ public class OldServerSocketTest extends OldSocketTestCase {
     }
 
     static class SSClient implements Runnable {
-        Socket cs;
+        Socket cs=null;
 
         int port;
 

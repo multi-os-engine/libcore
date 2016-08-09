@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.JarURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
@@ -48,8 +50,12 @@ public class ClassPathURLStreamHandler extends JarHandler {
   private JarFile jarFile;
 
   public ClassPathURLStreamHandler(String jarFileName) throws IOException {
-    // We use StrictJarFile because it is much less heap memory hungry than ZipFile / JarFile.
-    strictJarFile = new StrictJarFile(jarFileName);
+    if (new File(jarFileName).isDirectory()) {
+      strictJarFile = null;
+    } else {
+      // We use StrictJarFile because it is much less heap memory hungry than ZipFile / JarFile.
+      strictJarFile = new StrictJarFile(jarFileName);
+    }
 
     // File.toURI() is compliant with RFC 1738 in always creating absolute path names. If we
     // construct the URL by concatenating strings, we might end up with illegal URLs for relative
@@ -74,7 +80,21 @@ public class ClassPathURLStreamHandler extends JarHandler {
    * entry cannot be found under the exact name presented.
    */
   public URL getEntryUrlOrNull(String entryName) {
-    if (findEntryWithDirectoryFallback(strictJarFile, entryName) != null) {
+    if (strictJarFile == null) {
+      File entry;
+      try {
+        entry = new File(new URI(fileUri).getPath(), entryName);
+      } catch (URISyntaxException e1) {
+        return null;
+      }
+      if (entry.exists()) {
+        try {
+          return entry.toURL();
+        } catch (MalformedURLException e) {
+          return null;
+        }
+      }
+    } else if (findEntryWithDirectoryFallback(strictJarFile, entryName) != null) {
       try {
         // We rely on the URL/the stream handler to deal with any url encoding necessary here, and
         // we assume it is completely reversible.
@@ -91,8 +111,16 @@ public class ClassPathURLStreamHandler extends JarHandler {
    * and false otherwise.
    */
   public boolean isEntryStored(String entryName) {
-    ZipEntry entry = strictJarFile.findEntry(entryName);
-    return entry != null && entry.getMethod() == ZipEntry.STORED;
+    if (strictJarFile == null) {
+      try {
+        return new File(new URI(fileUri).getPath(), entryName).exists();
+      } catch (URISyntaxException e) {
+        return false;
+      }
+    } else {
+      ZipEntry entry = strictJarFile.findEntry(entryName);
+      return entry != null && entry.getMethod() == ZipEntry.STORED;
+    }
   }
 
   @Override

@@ -181,6 +181,13 @@ public abstract class TimeZone implements Serializable, Cloneable {
             if (zoneName != null) {
                 zoneName = zoneName.trim();
             }
+
+            // [XRT] Begin
+            if (zoneName == null || zoneName.isEmpty()) {
+                zoneName = ZoneInfoDB.getInstance().getDefaultID();
+            }
+            // [XRT] End
+            
             if (zoneName == null || zoneName.isEmpty()) {
                 try {
                     // On the host, we can find the configured timezone here.

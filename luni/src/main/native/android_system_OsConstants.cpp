@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011 The Android Open Source Project
+ * Copyright (C) 2014-2016 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +31,9 @@
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#ifndef MOE
 #include <sys/prctl.h>
+#endif
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
@@ -38,17 +41,27 @@
 #include <sys/xattr.h>
 #include <unistd.h>
 
+#ifndef MOE
 #include <net/if_arp.h>
 #include <linux/if_ether.h>
+#endif
 
 // After the others because these are not necessarily self-contained in glibc.
+#ifndef MOE
 #include <linux/if_addr.h>
 #include <linux/rtnetlink.h>
+#endif
 
 #include <net/if.h> // After <sys/socket.h> to work around a Mac header file bug.
 
 #if defined(__BIONIC__)
 #include <linux/capability.h>
+#endif
+
+#ifdef MOE
+#define F_GETLK64 F_GETLK
+#define F_SETLK64 F_SETLK
+#define F_SETLKW64 F_SETLKW
 #endif
 
 static void initConstant(JNIEnv* env, jclass c, const char* fieldName, int value) {
@@ -59,8 +72,10 @@ static void initConstant(JNIEnv* env, jclass c, const char* fieldName, int value
 static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "AF_INET", AF_INET);
     initConstant(env, c, "AF_INET6", AF_INET6);
+#ifndef MOE
     initConstant(env, c, "AF_PACKET", AF_PACKET);
     initConstant(env, c, "AF_NETLINK", AF_NETLINK);
+#endif
     initConstant(env, c, "AF_UNIX", AF_UNIX);
     initConstant(env, c, "AF_UNSPEC", AF_UNSPEC);
     initConstant(env, c, "AI_ADDRCONFIG", AI_ADDRCONFIG);
@@ -72,8 +87,10 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
 #endif
     initConstant(env, c, "AI_PASSIVE", AI_PASSIVE);
     initConstant(env, c, "AI_V4MAPPED", AI_V4MAPPED);
+#ifndef MOE
     initConstant(env, c, "ARPHRD_ETHER", ARPHRD_ETHER);
     initConstant(env, c, "ARPHRD_LOOPBACK", ARPHRD_LOOPBACK);
+#endif
 #if defined(CAP_LAST_CAP)
     initConstant(env, c, "CAP_AUDIT_CONTROL", CAP_AUDIT_CONTROL);
     initConstant(env, c, "CAP_AUDIT_WRITE", CAP_AUDIT_WRITE);
@@ -177,7 +194,9 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "ENOLINK", ENOLINK);
     initConstant(env, c, "ENOMEM", ENOMEM);
     initConstant(env, c, "ENOMSG", ENOMSG);
+#ifndef MOE
     initConstant(env, c, "ENONET", ENONET);
+#endif
     initConstant(env, c, "ENOPROTOOPT", ENOPROTOOPT);
     initConstant(env, c, "ENOSPC", ENOSPC);
     initConstant(env, c, "ENOSR", ENOSR);
@@ -202,9 +221,11 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "ESPIPE", ESPIPE);
     initConstant(env, c, "ESRCH", ESRCH);
     initConstant(env, c, "ESTALE", ESTALE);
+#ifndef MOE
     initConstant(env, c, "ETH_P_ARP", ETH_P_ARP);
     initConstant(env, c, "ETH_P_IP", ETH_P_IP);
     initConstant(env, c, "ETH_P_IPV6", ETH_P_IPV6);
+#endif
     initConstant(env, c, "ETIME", ETIME);
     initConstant(env, c, "ETIMEDOUT", ETIMEDOUT);
     initConstant(env, c, "ETXTBSY", ETXTBSY);
@@ -337,6 +358,9 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "MAP_SHARED", MAP_SHARED);
 #if defined(MCAST_JOIN_GROUP)
     initConstant(env, c, "MCAST_JOIN_GROUP", MCAST_JOIN_GROUP);
+    //MOE : add new const instead of unworkable MCAST_JOIN_GROUP/MCAST_LEAVE_GROUP
+    initConstant(env, c, "IPV6_JOIN_GROUP", IPV6_JOIN_GROUP);
+    initConstant(env, c, "IPV6_LEAVE_GROUP", IPV6_LEAVE_GROUP);
 #endif
 #if defined(MCAST_LEAVE_GROUP)
     initConstant(env, c, "MCAST_LEAVE_GROUP", MCAST_LEAVE_GROUP);
@@ -365,7 +389,9 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "MS_ASYNC", MS_ASYNC);
     initConstant(env, c, "MS_INVALIDATE", MS_INVALIDATE);
     initConstant(env, c, "MS_SYNC", MS_SYNC);
+#ifndef MOE
     initConstant(env, c, "NETLINK_ROUTE", NETLINK_ROUTE);
+#endif
     initConstant(env, c, "NI_DGRAM", NI_DGRAM);
     initConstant(env, c, "NI_NAMEREQD", NI_NAMEREQD);
     initConstant(env, c, "NI_NOFQDN", NI_NOFQDN);
@@ -413,6 +439,7 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
 // members. The best we can do (barring UAPI / kernel version checks) is
 // to hope they exist on all host linuxes we're building on. These
 // constants have been around since 2.6.35 at least, so we should be ok.
+#ifndef MOE
     initConstant(env, c, "RT_SCOPE_HOST", RT_SCOPE_HOST);
     initConstant(env, c, "RT_SCOPE_LINK", RT_SCOPE_LINK);
     initConstant(env, c, "RT_SCOPE_NOWHERE", RT_SCOPE_NOWHERE);
@@ -431,6 +458,7 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "RTMGRP_NEIGH", RTMGRP_NEIGH);
     initConstant(env, c, "RTMGRP_NOTIFY", RTMGRP_NOTIFY);
     initConstant(env, c, "RTMGRP_TC", RTMGRP_TC);
+#endif
     initConstant(env, c, "SEEK_CUR", SEEK_CUR);
     initConstant(env, c, "SEEK_END", SEEK_END);
     initConstant(env, c, "SEEK_SET", SEEK_SET);
@@ -507,6 +535,8 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "SO_RCVLOWAT", SO_RCVLOWAT);
     initConstant(env, c, "SO_RCVTIMEO", SO_RCVTIMEO);
     initConstant(env, c, "SO_REUSEADDR", SO_REUSEADDR);
+    // MOE : added option supported on Mac
+    initConstant(env, c, "SO_REUSEPORT", SO_REUSEPORT);
     initConstant(env, c, "SO_SNDBUF", SO_SNDBUF);
     initConstant(env, c, "SO_SNDLOWAT", SO_SNDLOWAT);
     initConstant(env, c, "SO_SNDTIMEO", SO_SNDTIMEO);
@@ -514,6 +544,7 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "STDERR_FILENO", STDERR_FILENO);
     initConstant(env, c, "STDIN_FILENO", STDIN_FILENO);
     initConstant(env, c, "STDOUT_FILENO", STDOUT_FILENO);
+#ifndef MOE
     initConstant(env, c, "ST_MANDLOCK", ST_MANDLOCK);
     initConstant(env, c, "ST_NOATIME", ST_NOATIME);
     initConstant(env, c, "ST_NODEV", ST_NODEV);
@@ -523,6 +554,7 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "ST_RDONLY", ST_RDONLY);
     initConstant(env, c, "ST_RELATIME", ST_RELATIME);
     initConstant(env, c, "ST_SYNCHRONOUS", ST_SYNCHRONOUS);
+#endif
     initConstant(env, c, "S_IFBLK", S_IFBLK);
     initConstant(env, c, "S_IFCHR", S_IFCHR);
     initConstant(env, c, "S_IFDIR", S_IFDIR);

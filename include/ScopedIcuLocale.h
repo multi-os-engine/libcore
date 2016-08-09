@@ -19,7 +19,16 @@
 
 #include "JNIHelp.h"
 #include "ScopedUtfChars.h"
-#include "unicode/locid.h"
+
+
+#ifndef USE_APPLE_CF
+    #include "unicode/locid.h"
+#else
+    //TODO: remove locid
+    #include "unicode/locid.h"
+    #include "cf_locale.h"
+	#define Locale cf_Locale
+#endif
 
 class ScopedIcuLocale {
  public:

@@ -75,11 +75,12 @@ public final class TimeZoneNames {
             // Ending up in this method too often is an easy way to make your app slow, so we ensure
             // it's easy to tell from the log (a) what we were doing, (b) how long it took, and
             // (c) that it's all ICU's fault.
+
             long end = System.nanoTime();
             long nativeDuration = TimeUnit.NANOSECONDS.toMillis(nativeEnd - nativeStart);
             long duration = TimeUnit.NANOSECONDS.toMillis(end - start);
-            System.logI("Loaded time zone names for \"" + locale + "\" in " + duration + "ms" +
-                        " (" + nativeDuration + "ms in ICU)");
+            /*System.logI("Loaded time zone names for \"" + locale + "\" in " + duration + "ms" +
+                        " (" + nativeDuration + "ms in ICU)");*/
             return result;
         }
 

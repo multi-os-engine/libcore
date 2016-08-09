@@ -320,11 +320,13 @@ public class SimpleDateFormatTest extends junit.framework.TestCase {
     }
 
     // http://code.google.com/p/android/issues/detail?id=14963
-    public void testParseTimezoneOnly() throws Exception {
+    public void testParseTimezoneOnly_UTC_France() throws Exception {
         new SimpleDateFormat("z", Locale.FRANCE).parse("UTC");
+    }
+	
+    public void testParseTimezone_UTC_Us() throws Exception {
         new SimpleDateFormat("z", Locale.US).parse("UTC");
     }
-
     // http://code.google.com/p/android/issues/detail?id=36689
     public void testParseArabic() throws Exception {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", new Locale("ar", "EG"));

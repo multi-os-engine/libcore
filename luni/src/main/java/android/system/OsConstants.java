@@ -316,6 +316,9 @@ public final class OsConstants {
     public static final int MAP_PRIVATE = placeholder();
     public static final int MAP_SHARED = placeholder();
     public static final int MCAST_JOIN_GROUP = placeholder();
+    //MOE : add new const instead of unworkable MCAST_JOIN_GROUP/MCAST_LEAVE_GROUP
+    public static final int IPV6_JOIN_GROUP = placeholder();
+    public static final int IPV6_LEAVE_GROUP = placeholder();
     public static final int MCAST_LEAVE_GROUP = placeholder();
     public static final int MCAST_JOIN_SOURCE_GROUP = placeholder();
     public static final int MCAST_LEAVE_SOURCE_GROUP = placeholder();
@@ -451,6 +454,7 @@ public final class OsConstants {
     public static final int SO_RCVLOWAT = placeholder();
     public static final int SO_RCVTIMEO = placeholder();
     public static final int SO_REUSEADDR = placeholder();
+    public static final int SO_REUSEPORT = placeholder(); // MOE : added option supported on Mac
     public static final int SO_SNDBUF = placeholder();
     public static final int SO_SNDLOWAT = placeholder();
     public static final int SO_SNDTIMEO = placeholder();

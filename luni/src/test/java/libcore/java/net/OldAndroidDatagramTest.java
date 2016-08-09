@@ -56,6 +56,7 @@ public class OldAndroidDatagramTest extends TestCase {
                 while (alive) {
                     try {
                         packet.setLength(buffer.length);
+                        socket.setSoTimeout(5000);
                         socket.receive(packet);
                         String s = stringFromPacket(packet);
                         // System.out.println(s + " (from " + packet.getAddress() + ":" + packet.getPort() + ")");

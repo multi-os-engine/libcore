@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011 The Android Open Source Project
+ * Copyright (C) 2014-2016 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,20 +35,29 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifndef MOE
 #include <linux/rtnetlink.h>
+#endif
 #include <net/if.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#ifndef MOE
 #include <netpacket/packet.h>
+#endif
 #include <poll.h>
 #include <pwd.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#ifndef MOE
 #include <sys/prctl.h>
+#endif
 #include <sys/socket.h>
 #include <sys/stat.h>
+#ifdef __APPLE__
+#include <ifaddrs.h>
+#endif
 #include <sys/syscall.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -93,6 +103,7 @@ static bool isIPv4MappedAddress(const sockaddr *sa) {
  * created using Posix.socket(AF_INET, ...) are IPv4 sockets and only support operations using IPv4
  * socket addresses structures.
  */
+#ifndef MOE
 #define NET_IPV4_FALLBACK(jni_env, return_type, syscall_name, java_fd, java_addr, port, null_addr_ok, args...) ({ \
     return_type _rc = -1; \
     do { \
@@ -121,6 +132,41 @@ static bool isIPv4MappedAddress(const sockaddr *sa) {
         } \
     } while (0); \
     _rc; }) \
+
+#else
+
+#define NET_IPV4_FALLBACK(jni_env, return_type, syscall_name, java_fd, java_addr, port, null_addr_ok, args...) ({ \
+    return_type _rc = -1; \
+    do { \
+        sockaddr_storage _ss; \
+        socklen_t _salen; \
+        if (java_addr == NULL && null_addr_ok) { \
+        /* No IP address specified (e.g., sendto() on a connected socket). */ \
+            _salen = 0; \
+        } else if (!inetAddressToSockaddr(jni_env, java_addr, port, _ss, _salen)) { \
+        /* Invalid socket address, return -1. inetAddressToSockaddr has already thrown. */ \
+            break; \
+        } \
+        sockaddr* _sa = _salen ? reinterpret_cast<sockaddr*>(&_ss) : NULL; \
+        /* inetAddressToSockaddr always returns an IPv6 sockaddr. Assume that java_fd was created \
+         * by Java API calls, which always create IPv6 socket fds, and pass it in as is. */ \
+        _rc = NET_FAILURE_RETRY(jni_env, return_type, syscall_name, java_fd, ##args, _sa, _salen); \
+        if (_rc == -1 && errno == EAFNOSUPPORT && _salen && isIPv4MappedAddress(_sa)) { \
+            /* We passed in an IPv4 address in an IPv6 sockaddr and the kernel told us that we got \
+             * the address family wrong. Pass in the same address in an IPv4 sockaddr. */ \
+            jni_env->ExceptionClear(); \
+            if (!inetAddressToSockaddrVerbatim(jni_env, java_addr, port, _ss, _salen)) { \
+                break; \
+            } \
+            _sa = reinterpret_cast<sockaddr*>(&_ss); \
+            _rc = NET_FAILURE_RETRY(jni_env, return_type, syscall_name, java_fd, ##args, _sa, _salen); \
+        } else if (_rc == -1 && errno == EAFNOSUPPORT && _salen == 28) { \
+            jni_env->ExceptionClear(); /* MOE : connect to null return exception and it is ok */ \
+        } \
+    } while (0); \
+    _rc; }) \
+
+#endif
 
 /**
  * Used to retry networking system calls that can be interrupted with a signal. Unlike
@@ -363,6 +409,7 @@ static jobject makeSocketAddress(JNIEnv* env, const sockaddr_storage& ss, const 
         static jmethodID ctor = env->GetMethodID(JniConstants::inetSocketAddressClass,
                 "<init>", "(Ljava/net/InetAddress;I)V");
         return env->NewObject(JniConstants::inetSocketAddressClass, ctor, inetAddress, port);
+#ifndef MOE
     } else if (ss.ss_family == AF_UNIX) {
         static jmethodID ctor = env->GetMethodID(JniConstants::unixSocketAddressClass,
                 "<init>", "([B)V");
@@ -396,6 +443,7 @@ static jobject makeSocketAddress(JNIEnv* env, const sockaddr_storage& ss, const 
                 static_cast<jbyte>(sll->sll_pkttype),
                 byteArray.get());
         return packetSocketAddress;
+#endif
     }
     jniThrowExceptionFmt(env, "java/lang/IllegalArgumentException", "unsupported ss_family: %d",
             ss.ss_family);
@@ -454,8 +502,13 @@ static jobject makeStructTimeval(JNIEnv* env, const struct timeval& tv) {
 }
 
 static jobject makeStructUcred(JNIEnv* env, const struct ucred& u __unused) {
+#ifdef MOE
+  jniThrowException(env, "java/lang/UnsupportedOperationException", "unimplemented support for ucred on a Mac");
+  return NULL;
+#else
   static jmethodID ctor = env->GetMethodID(JniConstants::structUcredClass, "<init>", "(III)V");
   return env->NewObject(JniConstants::structUcredClass, ctor, u.pid, u.uid, u.gid);
+#endif
 }
 
 static jobject makeStructUtsname(JNIEnv* env, const struct utsname& buf) {
@@ -551,6 +604,7 @@ static bool javaInetSocketAddressToSockaddr(
 
 static bool javaNetlinkSocketAddressToSockaddr(
         JNIEnv* env, jobject javaSocketAddress, sockaddr_storage& ss, socklen_t& sa_len) {
+#ifndef MOE
     static jfieldID nlPidFid = env->GetFieldID(
             JniConstants::netlinkSocketAddressClass, "nlPortId", "I");
     static jfieldID nlGroupsFid = env->GetFieldID(
@@ -562,6 +616,9 @@ static bool javaNetlinkSocketAddressToSockaddr(
     nlAddr->nl_groups = env->GetIntField(javaSocketAddress, nlGroupsFid);
     sa_len = sizeof(sockaddr_nl);
     return true;
+#else
+    return false;
+#endif
 }
 
 static bool javaUnixSocketAddressToSockaddr(
@@ -591,6 +648,7 @@ static bool javaUnixSocketAddressToSockaddr(
 
 static bool javaPacketSocketAddressToSockaddr(
         JNIEnv* env, jobject javaSocketAddress, sockaddr_storage& ss, socklen_t& sa_len) {
+#ifndef MOE
     static jfieldID protocolFid = env->GetFieldID(
             JniConstants::packetSocketAddressClass, "sll_protocol", "S");
     static jfieldID ifindexFid = env->GetFieldID(
@@ -623,6 +681,9 @@ static bool javaPacketSocketAddressToSockaddr(
     }
     sa_len = sizeof(sockaddr_ll);
     return true;
+#else
+    return false;
+#endif
 }
 
 static bool javaSocketAddressToSockaddr(
@@ -678,6 +739,7 @@ static jobject doGetSockName(JNIEnv* env, jobject javaFd, bool is_sockname) {
 
 class Passwd {
 public:
+#ifndef MOE
     Passwd(JNIEnv* env) : mEnv(env), mResult(NULL) {
         mBufferSize = sysconf(_SC_GETPW_R_SIZE_MAX);
         mBuffer.reset(new char[mBufferSize]);
@@ -694,8 +756,26 @@ public:
     struct passwd* get() {
         return mResult;
     }
+#else
+    Passwd(JNIEnv* env) : mEnv(env) {
+
+    }
+
+    jobject getpwnam(const char* name) {
+        return process();
+    }
+
+    jobject getpwuid(uid_t uid) {
+        return process();
+    }
+
+    struct passwd* get() {
+        return &mPwd;
+    }
+#endif
 
 private:
+#ifndef MOE
     jobject process(const char* syscall, int error) {
         if (mResult == NULL) {
             errno = error;
@@ -704,12 +784,26 @@ private:
         }
         return makeStructPasswd(mEnv, *mResult);
     }
+#else
+    jobject process() {
+        mPwd.pw_name = getenv("MOE_USER_NAME");
+        mPwd.pw_shell = getenv("MOE_USER_SHELL");
+        mPwd.pw_dir = getenv("MOE_USER_HOME");
+        mPwd.pw_uid = getuid();
+        mPwd.pw_gid = getgid();
+        return makeStructPasswd(mEnv, mPwd);
+    }
+#endif
 
     JNIEnv* mEnv;
+#ifndef MOE
     std::unique_ptr<char[]> mBuffer;
     size_t mBufferSize;
+#endif
     struct passwd mPwd;
+#ifndef MOE
     struct passwd* mResult;
+#endif
 };
 
 static jobject Posix_accept(JNIEnv* env, jobject, jobject javaFd, jobject javaSocketAddress) {
@@ -814,11 +908,21 @@ static jobject Posix_dup2(JNIEnv* env, jobject, jobject javaOldFd, jint newFd) {
 }
 
 static jobjectArray Posix_environ(JNIEnv* env, jobject) {
+#ifndef MOE
     extern char** environ; // Standard, but not in any header file.
     return toStringArray(env, environ);
+#else
+    return env->NewObjectArray(0, JniConstants::stringClass, NULL);
+#endif
 }
 
 static void Posix_execve(JNIEnv* env, jobject, jstring javaFilename, jobjectArray javaArgv, jobjectArray javaEnvp) {
+#if defined(MOE) && TARGET_OS_IPHONE
+    errno = EPERM;
+    SLOGW("execve is not available on this platform");
+    throwErrnoException(env, "execve");
+    return;
+#else
     ScopedUtfChars path(env, javaFilename);
     if (path.c_str() == NULL) {
         return;
@@ -829,9 +933,16 @@ static void Posix_execve(JNIEnv* env, jobject, jstring javaFilename, jobjectArra
     TEMP_FAILURE_RETRY(execve(path.c_str(), argv.get(), envp.get()));
 
     throwErrnoException(env, "execve");
+#endif
 }
 
 static void Posix_execv(JNIEnv* env, jobject, jstring javaFilename, jobjectArray javaArgv) {
+#if defined(MOE) && TARGET_OS_IPHONE
+    errno = EPERM;
+    SLOGW("execv is not available on this platform");
+    throwErrnoException(env, "execv");
+    return;
+#else
     ScopedUtfChars path(env, javaFilename);
     if (path.c_str() == NULL) {
         return;
@@ -841,6 +952,7 @@ static void Posix_execv(JNIEnv* env, jobject, jstring javaFilename, jobjectArray
     TEMP_FAILURE_RETRY(execv(path.c_str(), argv.get()));
 
     throwErrnoException(env, "execv");
+#endif
 }
 
 static void Posix_fchmod(JNIEnv* env, jobject, jobject javaFd, jint mode) {
@@ -1140,7 +1252,13 @@ static jint Posix_gettid(JNIEnv* env __unused, jobject) {
 #if defined(__BIONIC__)
   return TEMP_FAILURE_RETRY(gettid());
 #else
+#ifndef MOE
   return syscall(__NR_gettid);
+#else
+  uint64_t tid;
+  pthread_threadid_np(pthread_self(), &tid);
+  return tid;
+#endif
 #endif
 }
 
@@ -1163,7 +1281,11 @@ static jint Posix_getxattr(JNIEnv* env, jobject, jstring javaPath,
         return -1;
     }
     size_t outValueLength = env->GetArrayLength(javaOutValue);
+#ifndef MOE
     ssize_t size = getxattr(path.c_str(), name.c_str(), outValue.get(), outValueLength);
+#else
+    ssize_t size = getxattr(path.c_str(), name.c_str(), outValue.get(), outValueLength, 0, 0);
+#endif
     if (size < 0) {
         throwErrnoException(env, "getxattr");
     }
@@ -1195,16 +1317,56 @@ static jobject Posix_inet_pton(JNIEnv* env, jobject, jint family, jstring javaNa
 }
 
 static jobject Posix_ioctlInetAddress(JNIEnv* env, jobject, jobject javaFd, jint cmd, jstring javaInterfaceName) {
+#ifndef __APPLE__
     struct ifreq req;
     if (!fillIfreq(env, javaInterfaceName, req)) {
         return NULL;
     }
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
+#ifndef MOE
     int rc = throwIfMinusOne(env, "ioctl", TEMP_FAILURE_RETRY(ioctl(fd, cmd, &req)));
+#else
+    int rc = throwIfMinusOne(env, "ioctl", TEMP_FAILURE_RETRY(ioctl(fd, (unsigned int)cmd, &req)));
+#endif
     if (rc == -1) {
         return NULL;
     }
-    return sockaddrToInetAddress(env, reinterpret_cast<sockaddr_storage&>(req.ifr_addr), NULL);
+    
+    return sockaddrToInetAddress(env, /*reinterpret_cast<sockaddr_storage&>(req.ifr_addr*/tmp, NULL);
+#else
+    //MOE: ioctl doesn't work on ios 64 bit (EOPNOTSUPP), use getifaddr instead
+    struct ifaddrs *if_addrs = NULL;
+    struct ifaddrs *if_addr = NULL;
+    ScopedUtfChars name(env, javaInterfaceName);
+
+    if (0 == getifaddrs(&if_addrs)) {
+        for (if_addr = if_addrs; if_addr != NULL; if_addr = if_addr->ifa_next) {
+            if((int)cmd == (int)SIOCGIFADDR){
+                //address
+                if (if_addr->ifa_addr->sa_family == AF_INET && !strcmp(if_addr->ifa_name, name.c_str())) {
+                    return sockaddrToInetAddress(env, reinterpret_cast<sockaddr_storage&>(*(if_addr->ifa_addr)), NULL);
+                }
+            } else if ((int)cmd == (int)SIOCGIFBRDADDR){
+                //broadcst address
+                if (if_addr->ifa_addr->sa_family == AF_INET && !strcmp(if_addr->ifa_name, name.c_str())){// && (if_addr->ifa_flags & IFF_BROADCAST)) {
+                    return sockaddrToInetAddress(env, reinterpret_cast<sockaddr_storage&>(*(if_addr->ifa_broadaddr)), NULL);
+                }
+            } else if ((int)cmd == (int)SIOCGIFNETMASK){
+                //netmask
+                if (if_addr->ifa_netmask != NULL) {
+                    if (if_addr->ifa_netmask->sa_family == AF_INET && !strcmp(if_addr->ifa_name, name.c_str())) {
+                        return sockaddrToInetAddress(env, reinterpret_cast<sockaddr_storage&>(*(if_addr->ifa_netmask)), NULL);
+                    }
+                }
+            }
+        }
+    }
+
+    freeifaddrs(if_addrs);
+    if_addrs = NULL;
+    
+    return NULL;
+#endif
 }
 
 static jint Posix_ioctlInt(JNIEnv* env, jobject, jobject javaFd, jint cmd, jobject javaArg) {
@@ -1213,7 +1375,11 @@ static jint Posix_ioctlInt(JNIEnv* env, jobject, jobject javaFd, jint cmd, jobje
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     static jfieldID valueFid = env->GetFieldID(JniConstants::mutableIntClass, "value", "I");
     jint arg = env->GetIntField(javaArg, valueFid);
+#ifndef MOE
     int rc = throwIfMinusOne(env, "ioctl", TEMP_FAILURE_RETRY(ioctl(fd, cmd, &arg)));
+#else
+    int rc = throwIfMinusOne(env, "ioctl", TEMP_FAILURE_RETRY(ioctl(fd, (unsigned int)cmd, &arg)));
+#endif
     if (!env->ExceptionCheck()) {
         env->SetIntField(javaArg, valueFid, arg);
     }
@@ -1270,7 +1436,11 @@ static void Posix_mincore(JNIEnv* env, jobject, jlong address, jlong byteCount, 
     }
     void* ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     unsigned char* vec = reinterpret_cast<unsigned char*>(vector.get());
+#ifndef MOE
     throwIfMinusOne(env, "mincore", TEMP_FAILURE_RETRY(mincore(ptr, byteCount, vec)));
+#else
+    throwIfMinusOne(env, "mincore", TEMP_FAILURE_RETRY(mincore(ptr, (size_t)byteCount, (char*)vec)));
+#endif
 }
 
 static void Posix_mkdir(JNIEnv* env, jobject, jstring javaPath, jint mode) {
@@ -1329,8 +1499,16 @@ static jobject Posix_open(JNIEnv* env, jobject, jstring javaPath, jint flags, ji
 }
 
 static jobjectArray Posix_pipe2(JNIEnv* env, jobject, jint flags __unused) {
+#if defined(MOE_WINDOWS)
+    jniThrowException(env, "java/lang/UnsupportedOperationException", "no pipe2 on Windows");
+    return NULL;
+#else
     int fds[2];
+#ifndef MOE
     throwIfMinusOne(env, "pipe2", TEMP_FAILURE_RETRY(pipe2(&fds[0], flags)));
+#else
+    throwIfMinusOne(env, "pipe", TEMP_FAILURE_RETRY(pipe(&fds[0])));
+#endif
     jobjectArray result = env->NewObjectArray(2, JniConstants::fileDescriptorClass, NULL);
     if (result == NULL) {
         return NULL;
@@ -1345,7 +1523,24 @@ static jobjectArray Posix_pipe2(JNIEnv* env, jobject, jint flags __unused) {
             return NULL;
         }
     }
+#ifdef MOE
+    // MOE TODO: We don't support forking on iOS, but if we add new platform support later that
+    // supports it, then this implementation can cause some unexpected problems, namely file
+    // descriptor leak. Described here in more details:
+    // http://man7.org/linux/man-pages/man2/fcntl.2.html
+    for (int i = 0; i < 2; ++i) {
+        if ((flags & O_NONBLOCK)) {
+          throwIfMinusOne(env, "fcntl(F_SETFL)",
+              TEMP_FAILURE_RETRY(fcntl(fds[i], F_SETFL, O_NONBLOCK)));
+        }
+        if ((flags & O_CLOEXEC)) {
+          throwIfMinusOne(env, "fcntl(F_SETFD)",
+              TEMP_FAILURE_RETRY(fcntl(fds[i], F_SETFD, FD_CLOEXEC)));
+        }
+    }
+#endif
     return result;
+#endif
 }
 
 static jint Posix_poll(JNIEnv* env, jobject, jobjectArray javaStructs, jint timeoutMs) {
@@ -1379,8 +1574,13 @@ static jint Posix_poll(JNIEnv* env, jobject, jobjectArray javaStructs, jint time
 
     int rc;
     while (true) {
+#ifndef MOE
         timespec before;
         clock_gettime(CLOCK_MONOTONIC, &before);
+#else
+        timeval before;
+        gettimeofday(&before, NULL);
+#endif
 
         rc = poll(fds.get(), count, timeoutMs);
         if (rc >= 0 || errno != EINTR) {
@@ -1389,6 +1589,7 @@ static jint Posix_poll(JNIEnv* env, jobject, jobjectArray javaStructs, jint time
 
         // We got EINTR. Work out how much of the original timeout is still left.
         if (timeoutMs > 0) {
+#ifndef MOE
             timespec now;
             clock_gettime(CLOCK_MONOTONIC, &now);
 
@@ -1401,6 +1602,21 @@ static jint Posix_poll(JNIEnv* env, jobject, jobjectArray javaStructs, jint time
             }
 
             jint diffMs = diff.tv_sec * 1000 + diff.tv_nsec / 1000000;
+#else
+            timeval now;
+            gettimeofday(&now, NULL);
+
+            timeval diff;
+            diff.tv_sec = now.tv_sec - before.tv_sec;
+            diff.tv_usec = now.tv_usec - before.tv_usec;
+            if (diff.tv_usec < 0) {
+                --diff.tv_sec;
+                diff.tv_usec += 1000000;
+            }
+
+            jint diffMs = diff.tv_sec * 1000 + diff.tv_usec / 1000;
+#endif
+
             if (diffMs >= timeoutMs) {
                 rc = 0; // We have less than 1ms left anyway, so just time out.
                 break;
@@ -1431,22 +1647,33 @@ static jint Posix_poll(JNIEnv* env, jobject, jobjectArray javaStructs, jint time
 
 static void Posix_posix_fallocate(JNIEnv* env, jobject, jobject javaFd __unused,
                                   jlong offset __unused, jlong length __unused) {
+#ifdef MOE
+    jniThrowException(env, "java/lang/UnsupportedOperationException",
+                      "fallocate doesn't exist on a Mac");
+#else
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     while ((errno = posix_fallocate64(fd, offset, length)) == EINTR) {
     }
     if (errno != 0) {
         throwErrnoException(env, "posix_fallocate");
     }
+    return throwIfMinusOne(env, "prctl", result);
+#endif
 }
 
 static jint Posix_prctl(JNIEnv* env, jobject, jint option __unused, jlong arg2 __unused,
                         jlong arg3 __unused, jlong arg4 __unused, jlong arg5 __unused) {
+#ifdef MOE
+    jniThrowException(env, "java/lang/UnsupportedOperationException", "prctl doesn't exist on a Mac");
+    return 0;
+#else
     int result = TEMP_FAILURE_RETRY(prctl(static_cast<int>(option),
                                           static_cast<unsigned long>(arg2),
                                           static_cast<unsigned long>(arg3),
                                           static_cast<unsigned long>(arg4),
                                           static_cast<unsigned long>(arg5)));
     return throwIfMinusOne(env, "prctl", result);
+#endif
 }
 
 static jint Posix_preadBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jlong offset) {
@@ -1531,7 +1758,11 @@ static void Posix_removexattr(JNIEnv* env, jobject, jstring javaPath, jstring ja
         return;
     }
 
+#ifndef MOE
     int res = removexattr(path.c_str(), name.c_str());
+#else
+    int res = removexattr(path.c_str(), name.c_str(), 0);
+#endif
     if (res < 0) {
         throwErrnoException(env, "removexattr");
     }
@@ -1572,9 +1803,38 @@ static jint Posix_sendtoBytes(JNIEnv* env, jobject, jobject javaFd, jobject java
     if (bytes.get() == NULL) {
         return -1;
     }
+    
+    sockaddr_storage ss;
+    socklen_t sa_len = 0;
+    if (javaInetAddress != NULL && !inetAddressToSockaddr(env, javaInetAddress, port, ss, sa_len)) {
+        return -1;
+    }
+    const sockaddr* to = (javaInetAddress != NULL) ? reinterpret_cast<const sockaddr*>(&ss) : NULL;
+#if defined(__APPLE__)
+    // MOE: sendto() fails on Darwin for connected datagram sockets if a destination address is specified even if
+    // that address is identical to the address connected to.
+    if (to) {
+        int fd = jniGetFDFromFileDescriptor(env, javaFd);
+        if (fd != -1) {
+            int type = 0;
+            socklen_t size = sizeof(type);
+            int rc = throwIfMinusOne(env, "getsockopt", TEMP_FAILURE_RETRY(getsockopt(fd, SOL_SOCKET, SO_TYPE, &type, &size)));
+            if (rc == -1) {
+                return rc;
+            }
+            if (type == SOCK_DGRAM) {
+                sockaddr_storage peer;
+                size = sizeof(peer);
+                rc = getpeername(fd, (sockaddr*) &peer, &size);
+                if (!rc) {
+                    to = NULL;
+                }
+            }
+        }
+    }
+#endif
 
-    return NET_IPV4_FALLBACK(env, ssize_t, sendto, javaFd, javaInetAddress, port,
-                             NULL_ADDR_OK, bytes.get() + byteOffset, byteCount, flags);
+    return NET_FAILURE_RETRY(env, ssize_t, sendto, javaFd, bytes.get() + byteOffset, byteCount, flags, to, sa_len);
 }
 
 static jint Posix_sendtoBytesSocketAddress(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jint flags, jobject javaSocketAddress) {
@@ -1646,7 +1906,14 @@ static jint Posix_setsid(JNIEnv* env, jobject) {
 static void Posix_setsockoptByte(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jint value) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     u_char byte = value;
-    throwIfMinusOne(env, "setsockopt", TEMP_FAILURE_RETRY(setsockopt(fd, level, option, &byte, sizeof(byte))));
+#ifdef MOE
+    if(level == IPPROTO_IP && (option == IP_MULTICAST_LOOP || option == IP_MULTICAST_TTL)){
+        return; // MOE : this option works only for ipv4, for Mac it is not workable
+    } else
+#endif
+    {
+        throwIfMinusOne(env, "setsockopt", TEMP_FAILURE_RETRY(setsockopt(fd, level, option, &byte, sizeof(byte))));
+    }
 }
 
 static void Posix_setsockoptIfreq(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jstring javaInterfaceName) {
@@ -1660,7 +1927,14 @@ static void Posix_setsockoptIfreq(JNIEnv* env, jobject, jobject javaFd, jint lev
 
 static void Posix_setsockoptInt(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jint value) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
-    throwIfMinusOne(env, "setsockopt", TEMP_FAILURE_RETRY(setsockopt(fd, level, option, &value, sizeof(value))));
+#ifdef MOE
+    if(level == IPPROTO_IP && option == IP_TOS ){
+        return; // MOE : this option works only for ipv4, for Mac it is not workable
+    } else
+#endif
+    {
+        throwIfMinusOne(env, "setsockopt", TEMP_FAILURE_RETRY(setsockopt(fd, level, option, &value, sizeof(value))));
+    }
 }
 
 static void Posix_setsockoptIpMreqn(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jint value) {
@@ -1668,25 +1942,56 @@ static void Posix_setsockoptIpMreqn(JNIEnv* env, jobject, jobject javaFd, jint l
     memset(&req, 0, sizeof(req));
     req.imr_ifindex = value;
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
-    throwIfMinusOne(env, "setsockopt", TEMP_FAILURE_RETRY(setsockopt(fd, level, option, &req, sizeof(req))));
+#ifdef MOE
+    if(level == IPPROTO_IP && option == IP_MULTICAST_IF ){
+        return; // MOE : for Mac it is not workable
+    } else
+#endif
+    {
+        throwIfMinusOne(env, "setsockopt", TEMP_FAILURE_RETRY(setsockopt(fd, level, option, &req, sizeof(req))));
+    }
 }
 
 static void Posix_setsockoptGroupReq(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jobject javaGroupReq) {
+    //MOE : MCAST_JOIN_GROUP doesn't work on iOS, use IPV6_JOIN_GROUP
+#ifndef __APPLE__
     struct group_req req;
+#else
+    struct ipv6_mreq req;
+    if(level == IPPROTO_IP){
+        option = (option == MCAST_JOIN_GROUP)? IPV6_JOIN_GROUP : IPV6_LEAVE_GROUP;
+        level = IPPROTO_IPV6;
+    } else {
+        option = (option == MCAST_JOIN_GROUP)? IPV6_JOIN_GROUP : IPV6_LEAVE_GROUP;
+    }
+#endif
     memset(&req, 0, sizeof(req));
 
     static jfieldID grInterfaceFid = env->GetFieldID(JniConstants::structGroupReqClass, "gr_interface", "I");
+#ifndef __APPLE__
     req.gr_interface = env->GetIntField(javaGroupReq, grInterfaceFid);
+#else
+    req.ipv6mr_interface = env->GetIntField(javaGroupReq, grInterfaceFid);
+#endif
     // Get the IPv4 or IPv6 multicast address to join or leave.
     static jfieldID grGroupFid = env->GetFieldID(JniConstants::structGroupReqClass, "gr_group", "Ljava/net/InetAddress;");
     ScopedLocalRef<jobject> javaGroup(env, env->GetObjectField(javaGroupReq, grGroupFid));
     socklen_t sa_len;
-    if (!inetAddressToSockaddrVerbatim(env, javaGroup.get(), 0, req.gr_group, sa_len)) {
+    sockaddr_storage tmp;
+    
+    if (!inetAddressToSockaddr(env, javaGroup.get(), 0, tmp, sa_len)) {
         return;
     }
+    
+#ifndef __APPLE__
+    req.gr_group = tmp;
+#else
+    req.ipv6mr_multiaddr = ((sockaddr_in6*)&tmp)->sin6_addr;
+#endif
 
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     int rc = TEMP_FAILURE_RETRY(setsockopt(fd, level, option, &req, sizeof(req)));
+#ifndef __APPLE__
     if (rc == -1 && errno == EINVAL) {
         // Maybe we're a 32-bit binary talking to a 64-bit kernel?
         // glibc doesn't automatically handle this.
@@ -1701,6 +2006,7 @@ static void Posix_setsockoptGroupReq(JNIEnv* env, jobject, jobject javaFd, jint 
         memcpy(&req64.gr_group, &req.gr_group, sizeof(req.gr_group));
         rc = TEMP_FAILURE_RETRY(setsockopt(fd, level, option, &req64, sizeof(req64)));
     }
+#endif
     throwIfMinusOne(env, "setsockopt", rc);
 }
 
@@ -1785,7 +2091,11 @@ static void Posix_setxattr(JNIEnv* env, jobject, jstring javaPath, jstring javaN
         return;
     }
     size_t valueLength = env->GetArrayLength(javaValue);
+#ifndef MOE
     int res = setxattr(path.c_str(), name.c_str(), value.get(), valueLength, flags);
+#else
+    int res = setxattr(path.c_str(), name.c_str(), value.get(), valueLength, 0, flags);
+#endif
     if (res < 0) {
         throwErrnoException(env, "setxattr");
     }
@@ -1797,9 +2107,11 @@ static void Posix_shutdown(JNIEnv* env, jobject, jobject javaFd, jint how) {
 }
 
 static jobject Posix_socket(JNIEnv* env, jobject, jint domain, jint type, jint protocol) {
+#ifndef MOE
     if (domain == AF_PACKET) {
         protocol = htons(protocol);  // Packet sockets specify the protocol in host byte order.
     }
+#endif
     int fd = throwIfMinusOne(env, "socket", TEMP_FAILURE_RETRY(socket(domain, type, protocol)));
     return fd != -1 ? jniCreateFileDescriptor(env, fd) : NULL;
 }
@@ -1882,6 +2194,7 @@ static jobject Posix_uname(JNIEnv* env, jobject) {
     if (TEMP_FAILURE_RETRY(uname(&buf)) == -1) {
         return NULL; // Can't happen.
     }
+    
     return makeStructUtsname(env, buf);
 }
 

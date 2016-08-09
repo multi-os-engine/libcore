@@ -38,7 +38,11 @@ static AsynchronousCloseMonitor* blockedThreadList = NULL;
  * The specific signal chosen here is arbitrary, but bionic needs to know so that SIGRTMIN
  * starts at a higher value.
  */
+#ifndef MOE
 static const int BLOCKED_THREAD_SIGNAL = __SIGRTMIN + 2;
+#else
+static const int BLOCKED_THREAD_SIGNAL = SIGUSR2;
+#endif
 
 static void blockedThreadSignalHandler(int /*signal*/) {
     // Do nothing. We only sent this signal for its side-effect of interrupting syscalls.

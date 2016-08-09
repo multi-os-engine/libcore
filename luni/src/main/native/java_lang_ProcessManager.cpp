@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2007 The Android Open Source Project
+ * Copyright (C) 2014-2016 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +86,12 @@ static pid_t ExecuteProcess(JNIEnv* env, char** commands, char** environment,
                             jobject outDescriptor, jobject errDescriptor,
                             jboolean redirectErrorStream) {
 
+#if defined(MOE) && TARGET_OS_IPHONE
+  errno = EPERM;
+  SLOGW("execvp is not available on this platform");
+  jniThrowIOException(env, errno);
+  return -1;
+#else
   // Create 4 pipes: stdin, stdout, stderr, and an exec() status pipe.
   int pipes[PIPE_COUNT * 2] = { -1, -1, -1, -1, -1, -1, -1, -1 };
   for (int i = 0; i < PIPE_COUNT; i++) {
@@ -144,10 +151,12 @@ static pid_t ExecuteProcess(JNIEnv* env, char** commands, char** environment,
     }
 
     // Set up environment.
+#ifdef MOE
     if (environment != NULL) {
       extern char** environ; // Standard, but not in any header file.
       environ = environment;
     }
+#endif
 
     // Execute process. By convention, the first argument in the arg array
     // should be the command itself.
@@ -194,6 +203,7 @@ static pid_t ExecuteProcess(JNIEnv* env, char** commands, char** environment,
   jniSetFileDescriptorOfFD(env, errDescriptor, stderrIn);
 
   return childPid;
+#endif
 }
 
 /**

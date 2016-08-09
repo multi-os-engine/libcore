@@ -334,7 +334,6 @@ public class HandshakeCompletedEventTest extends TestCase {
      */
 
     public void testClientAuth() throws Exception {
-
         boolean useBKS = true;
 
         listener = new MyHandshakeListener();

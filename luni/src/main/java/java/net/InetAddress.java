@@ -406,7 +406,16 @@ public class InetAddress implements Serializable {
      */
     public static InetAddress getLocalHost() throws UnknownHostException {
         String host = Libcore.os.uname().nodename;
-        return lookupHostByName(host, NETID_UNSET)[0];
+        InetAddress res;
+        //MOE: on some systems ip6-localhost can be unknown
+        try{
+            res = lookupHostByName(host, NETID_UNSET)[0];
+        } catch (UnknownHostException e){
+            host = "localhost";
+            res = lookupHostByName(host, NETID_UNSET)[0];
+        }
+        
+        return res;
     }
 
     /**

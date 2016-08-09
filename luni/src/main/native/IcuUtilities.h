@@ -17,11 +17,19 @@
 #ifndef ICU_UTILITIES_H_included
 #define ICU_UTILITIES_H_included
 
+#undef U_HAVE_STD_STRING
+#define U_HAVE_STD_STRING 1 // For UnicodeString::toUTF8String(std::string&).
+
 #include "jni.h"
 #include "ustrenum.h" // For UStringEnumeration.
 #include "unicode/utypes.h" // For UErrorCode.
 
 extern jobjectArray fromStringEnumeration(JNIEnv* env, UErrorCode& status, const char* provider, icu::StringEnumeration*);
 bool maybeThrowIcuException(JNIEnv* env, const char* function, UErrorCode error);
+#ifdef USE_APPLE_CF
+    #include <vector>
+    #include <string>
+    jobjectArray fromStdVector(JNIEnv*, UErrorCode& , const std::vector<std::string> & );
+#endif
 
 #endif  // ICU_UTILITIES_H_included

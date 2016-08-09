@@ -939,6 +939,23 @@ public class Socket implements Closeable {
         checkOpenAndCreate(true);
         return (Boolean) impl.getOption(SocketOptions.SO_REUSEADDR);
     }
+    
+    // MOE : added option supported on Mac
+    /**
+     * Sets this socket's {@link SocketOptions#SO_REUSEADDR} option.
+     */
+    public void setReusePort(boolean reuse) throws SocketException {
+        checkOpenAndCreate(true);
+        impl.setOption(SocketOptions.SO_REUSEPORT, Boolean.valueOf(reuse));
+    }
+    
+    /**
+     * Returns this socket's {@link SocketOptions#SO_REUSEADDR} setting.
+     */
+    public boolean getReusePort() throws SocketException {
+        checkOpenAndCreate(true);
+        return (Boolean) impl.getOption(SocketOptions.SO_REUSEPORT);
+    }
 
     /**
      * Sets this socket's {@link SocketOptions#SO_OOBINLINE} option.

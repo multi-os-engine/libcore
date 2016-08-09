@@ -47,7 +47,13 @@ public class InetAddressTest extends junit.framework.TestCase {
     }
 
     public void test_equalsLjava_lang_Object() throws Exception {
-        InetAddress ia1 = InetAddress.getByName("ip6-localhost");
+        //MOE: on some systems ip6-localhost can be unknown
+        InetAddress ia1;
+        try{
+            ia1 = InetAddress.getByName("ip6-localhost");
+        } catch (UnknownHostException e){
+            ia1 = InetAddress.getByName("localhost");
+        }
         InetAddress ia2 = InetAddress.getByName("::1");
         assertEquals(ia2, ia1);
     }
@@ -425,7 +431,7 @@ public class InetAddressTest extends junit.framework.TestCase {
     public void testSerializationCompatibility() throws Exception {
 
         SerializationTest.verifyGolden(this,
-                InetAddress.getByName("localhost"), COMPARATOR);
+                InetAddress.getByName("127.0.0.1"), COMPARATOR);    //MOE: hardcoding of loopback address (127.0.0.1)
     }
 
     /**

@@ -1758,6 +1758,7 @@ public final class URLConnectionTest extends AbstractResourceLeakageDetectorTest
      * full timeout for each.
      */
     public void testConnectTimeouts() throws IOException {
+        /* [XRT] crash
         // During CTS tests we are limited in what host names we can depend on and unfortunately
         // DNS lookups are not pluggable through standard APIs. During manual testing you should be
         // able to change this to any name that can be resolved to multiple IPs and it should still

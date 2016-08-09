@@ -248,7 +248,7 @@ public class X500PrincipalTest extends TestCase {
     public void test_equals() {
         String name1 = "CN=Duke, OU=JavaSoft, O=Sun Microsystems, C=US";
         String name2 = "cn=duke,ou=javasoft,o=sun microsystems,c=us";
-        String name3 = "CN=Alex Astapchuk, OU=SSG, O=Intel ZAO, C=RU";
+        String name3 = "CN=Alex Astapchuk, OU=SSG, O=MOE, C=RU";
         X500Principal xpr1 = new X500Principal(name1);
         X500Principal xpr2 = new X500Principal(name2);
         X500Principal xpr3 = new X500Principal(name3);

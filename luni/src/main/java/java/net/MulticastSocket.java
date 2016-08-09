@@ -43,6 +43,7 @@ public class MulticastSocket extends DatagramSocket {
     public MulticastSocket() throws IOException {
         super((SocketAddress) null);
         setReuseAddress(true);
+        setReusePort(true); //MOE: reuse port option is analog reuse addr on Linux
         bind(null);
     }
 
@@ -67,6 +68,7 @@ public class MulticastSocket extends DatagramSocket {
     public MulticastSocket(SocketAddress localAddress) throws IOException {
         super((SocketAddress) null);
         setReuseAddress(true);
+        setReusePort(true); //MOE: reuse port option is analog reuse addr on Linux
         if (localAddress != null) {
             bind(localAddress);
         }
@@ -78,29 +80,42 @@ public class MulticastSocket extends DatagramSocket {
      *
      * @throws SocketException if an error occurs.
      */
+    //MOE : rewrite code to use IP_MULTICAST_IF2 instead of IP_MULTICAST_IF
     public InetAddress getInterface() throws SocketException {
         checkOpen();
         if (setAddress != null) {
             return setAddress;
         }
-        InetAddress ipvXaddress = (InetAddress) impl.getOption(SocketOptions.IP_MULTICAST_IF);
-        if (ipvXaddress.isAnyLocalAddress()) {
-            // the address was not set at the IPv4 level so check the IPv6
-            // level
-            NetworkInterface theInterface = getNetworkInterface();
-            if (theInterface != null) {
-                Enumeration<InetAddress> addresses = theInterface.getInetAddresses();
-                if (addresses != null) {
-                    while (addresses.hasMoreElements()) {
-                        InetAddress nextAddress = addresses.nextElement();
-                        if (nextAddress instanceof Inet6Address) {
-                            return nextAddress;
-                        }
+        int index = (Integer) impl.getOption(SocketOptions.IP_MULTICAST_IF2);
+        NetworkInterface theInterface = null;
+        if (index != 0) {
+             theInterface = NetworkInterface.getByIndex(index);
+        }
+        if (theInterface != null) {
+            Enumeration<InetAddress> addresses = theInterface.getInetAddresses();
+            if (addresses != null) {
+                while (addresses.hasMoreElements()) {
+                    InetAddress nextAddress = addresses.nextElement();
+                    if (!nextAddress.isAnyLocalAddress()) {
+                        return nextAddress;
                     }
                 }
             }
         }
-        return ipvXaddress;
+        
+        theInterface = getNetworkInterface();
+        if (theInterface != null) {
+            Enumeration<InetAddress> addresses = theInterface.getInetAddresses();
+            if (addresses != null) {
+                while (addresses.hasMoreElements()) {
+                    InetAddress nextAddress = addresses.nextElement();
+                    if (nextAddress instanceof Inet6Address) {
+                        return nextAddress;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -335,6 +350,7 @@ public class MulticastSocket extends DatagramSocket {
         impl.create();
         try {
             impl.setOption(SocketOptions.SO_REUSEADDR, Boolean.TRUE);
+            impl.setOption(SocketOptions.SO_REUSEPORT, Boolean.TRUE); //MOE : reuse port option is analog reuse addr on Linux
             impl.bind(aPort, addr);
             isBound = true;
         } catch (SocketException e) {

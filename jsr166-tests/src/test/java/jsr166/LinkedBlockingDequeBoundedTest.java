@@ -9,7 +9,7 @@ package jsr166;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 
-public class LinkedBlockingDequeBoundedTest extends JSR166TestCase {
+public class LinkedBlockingDequeBoundedTest extends BlockingQueueTest {
 
     protected BlockingQueue emptyCollection() {
         return new LinkedBlockingDeque(SIZE);

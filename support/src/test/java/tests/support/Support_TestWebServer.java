@@ -206,6 +206,12 @@ public class Support_TestWebServer implements Support_HttpConstants {
         /* Stop the Accept thread */
         if (acceptT != null) {
             log("Closing AcceptThread"+acceptT);
+            acceptT.stop_run();
+            try{
+               acceptT.join();
+            } catch (Exception e){
+                System.out.println("exception in join "+e.toString());
+            }
             acceptT.close();
             acceptT = null;
         }
@@ -217,7 +223,7 @@ public class Support_TestWebServer implements Support_HttpConstants {
     class AcceptThread extends Thread {
 
         ServerSocket ss = null;
-        boolean running = false;
+        volatile boolean running = false;
 
         /**
          * @param port the port to use, or 0 to let the OS choose.
@@ -234,8 +240,8 @@ public class Support_TestWebServer implements Support_HttpConstants {
          * Main thread responding to new connections
          */
         public synchronized void run() {
-            running = true;
-            while (running) {
+            this.running = true;
+            while (this.running) {
                 try {
                     Socket s = ss.accept();
                     acceptedConnections++;
@@ -244,12 +250,18 @@ public class Support_TestWebServer implements Support_HttpConstants {
                     }
                     new Thread(new Worker(s), "additional worker").start();
                 } catch (SocketException e) {
+                    this.running = false;
                     log(e.getMessage());
                 } catch (IOException e) {
+                    this.running = false;
                     log(e.getMessage());
                 }
             }
             log("AcceptThread terminated" + this);
+        }
+        
+        public void stop_run(){
+            this.running = false;
         }
 
         // Close this socket

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2014-2016 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +34,10 @@
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
+
+#if defined(MOE)
+#import <mach/mach_time.h>
+#endif
 
 #if defined(__ANDROID__)
 extern "C" void android_get_LD_LIBRARY_PATH(char*, size_t);
@@ -112,10 +117,25 @@ static jlong System_currentTimeMillis(JNIEnv*, jclass) {
     return when;
 }
 
+#ifdef MOE
+static mach_timebase_info_data_t timeInfo;
+#endif
+
 static jlong System_nanoTime(JNIEnv*, jclass) {
+#if defined(__linux__)
     timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
     return now.tv_sec * 1000000000LL + now.tv_nsec;
+#elif defined(MOE)
+    uint64_t t = mach_absolute_time();
+    t *= timeInfo.numer;
+    t /= timeInfo.denom;
+    return t;
+#else // __APPLE__
+    timeval now;
+    gettimeofday(&now, NULL);
+    return static_cast<jlong>(now.tv_sec) * 1000000000LL + now.tv_usec * 1000LL;
+#endif
 }
 
 static JNINativeMethod gMethods[] = {
@@ -126,5 +146,8 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(System, specialProperties, "()[Ljava/lang/String;"),
 };
 void register_java_lang_System(JNIEnv* env) {
+#ifdef MOE
+    mach_timebase_info(&timeInfo);
+#endif
     jniRegisterNativeMethods(env, "java/lang/System", gMethods, NELEM(gMethods));
 }

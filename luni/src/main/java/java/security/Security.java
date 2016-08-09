@@ -59,13 +59,13 @@ public final class Security {
             secprops.load(input);
             loaded = true;
         } catch (Exception ex) {
-            System.logE("Could not load 'security.properties'", ex);
+            //ignore
         } finally {
             if (input != null) {
                 try {
                     input.close();
                 } catch (Exception ex) {
-                    System.logW("Could not close 'security.properties'", ex);
+                    //ignore
                 }
             }
         }
@@ -91,6 +91,13 @@ public final class Security {
         secprops.put("security.provider.1", "com.android.org.conscrypt.OpenSSLProvider");
         secprops.put("security.provider.2", "com.android.org.bouncycastle.jce.provider.BouncyCastleProvider");
         secprops.put("security.provider.3", "com.android.org.conscrypt.JSSEProvider");
+        secprops.put("ssl.SocketFactory.provider","com.android.org.conscrypt.OpenSSLSocketFactoryImpl");
+        secprops.put("ssl.ServerSocketFactory.provider","com.android.org.conscrypt.OpenSSLSocketFactoryImpl");
+        secprops.put("keystore.type","BKS");
+        secprops.put("ssl.KeyManagerFactory.algorithm","PKIX");
+        secprops.put("ssl.TrustManagerFactory.algorithm","PKIX");
+        secprops.put("system.scope","org.apache.harmony.security.SystemScope");
+        secprops.put("ssl.disablePeerCertificateChainVerification","false");
     }
 
     /**

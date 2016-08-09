@@ -330,8 +330,7 @@ public class Inet4AddressTest extends junit.framework.TestCase {
      * serialization/deserialization compatibility.
      */
     public void testSerializationSelf() throws Exception {
-
-        SerializationTest.verifySelf(Inet4Address.getByName("localhost"),
+        SerializationTest.verifySelf(Inet4Address.getByName("127.0.0.1"), //MOE: hardcoding of loopback address (127.0.0.1) because OS prefers IPv6 over IPv4
                 COMPARATOR);
     }
 
@@ -339,8 +338,7 @@ public class Inet4AddressTest extends junit.framework.TestCase {
      * serialization/deserialization compatibility with RI.
      */
     public void testSerializationCompatibility() throws Exception {
-
         SerializationTest.verifyGolden(this, Inet4Address
-                .getByName("localhost"), COMPARATOR);
+                .getByName("127.0.0.1"), COMPARATOR); //MOE: hardcoding of loopback address (127.0.0.1) because OS prefers IPv6 over IPv4
     }
 }

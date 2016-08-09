@@ -695,19 +695,19 @@ public final class TestCertUtils {
      * Utility class used to generate some amount of uniq names.
      */
     public static class UniGen {
-        public static final String rootName = "CN=Alex Astapchuk, OU=SSG, O=Intel ZAO, C=RU";
+        public static final String rootName = "CN=Alex MOE, OU=OU, O=MOE, C=RU";
 
         private static final String datasNames[] = { "CN", "OU", "O", "C" };
 
         private static final String datas[][] = {
         // Names database
-                { "Alex Astapchuk", null, null, null },
-                { "John Doe", null, null, null },
+                { "Alex MOE", null, null, null },
+                { "John MOE", null, null, null },
                 // 'organisation unit'-s
-                { null, "SSG", null, null }, { null, "SSG/DRL", null, null },
+                { null, "OU", null, null }, { null, "OU", null, null },
                 // organizations
-                { null, null, "Intel ZAO", null },
-                { null, null, "Intel Inc", null },
+                { null, null, "MOE", null },
+                { null, null, "MOE", null },
                 // countries
                 { null, null, null, "RU" }, { null, null, null, "US" },
                 { null, null, null, "GB" }, { null, null, null, "JA" },

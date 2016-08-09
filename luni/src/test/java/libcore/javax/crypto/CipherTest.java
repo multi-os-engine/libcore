@@ -2624,7 +2624,7 @@ public final class CipherTest extends TestCase {
     }
 
     public void testRSA_ECB_NoPadding_GetOutputSize_Success() throws Exception {
-        for (String provider : RSA_PROVIDERS) {
+         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_GetOutputSize_Success(provider);
         }
     }
@@ -2645,7 +2645,7 @@ public final class CipherTest extends TestCase {
     }
 
     public void testRSA_ECB_NoPadding_GetIV_Success() throws Exception {
-        for (String provider : RSA_PROVIDERS) {
+         for (String provider : RSA_PROVIDERS) {
             testRSA_ECB_NoPadding_GetIV_Success(provider);
         }
     }

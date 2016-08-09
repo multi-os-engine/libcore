@@ -659,7 +659,8 @@ public class DatagramSocketTest extends junit.framework.TestCase {
 
         // connect causes implicit bind
         theSocket = new DatagramSocket(null);
-        theSocket.connect(new InetSocketAddress(Inet6Address.LOOPBACK, 0));
+        // MOE : connect to 0 port fails  on simulator
+        theSocket.connect(new InetSocketAddress(Inet6Address.LOOPBACK, 5555));
         assertTrue(theSocket.isBound());
         theSocket.close();
 
@@ -758,14 +759,19 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         // test case were we set it to false
         DatagramSocket theSocket1 = null;
         DatagramSocket theSocket2 = null;
+        // MOE : reuse address option on mac allow to connect to the same address, not port
+        // on Linux it allows to connect to the same address and port, so test was changed to
+        // be correct for both Mac and Linux
+        byte theBytes[] = { 0, 0, 0, 0 };
         try {
-            InetSocketAddress theAddress = new InetSocketAddress(InetAddress.getLocalHost(), 0);
+            InetSocketAddress theAddress = new InetSocketAddress(InetAddress.getLocalHost(), 5555);
+            InetSocketAddress theAddress0 = new InetSocketAddress(InetAddress.getByAddress(theBytes), 5555);
             theSocket1 = new DatagramSocket(null);
             theSocket2 = new DatagramSocket(null);
             theSocket1.setReuseAddress(false);
             theSocket2.setReuseAddress(false);
-            theSocket1.bind(theAddress);
-            theSocket2.bind(new InetSocketAddress(InetAddress.getLocalHost(), theSocket1.getLocalPort()));
+            theSocket1.bind(theAddress0);
+            theSocket2.bind(theAddress);
             fail();
         } catch (BindException expected) {
         }
@@ -777,13 +783,14 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         }
 
         // test case were we set it to true
-        InetSocketAddress theAddress = new InetSocketAddress(InetAddress.getLocalHost(), 0);
+        InetSocketAddress theAddress = new InetSocketAddress(InetAddress.getLocalHost(), 5555);
+        InetSocketAddress theAddress0 = new InetSocketAddress(InetAddress.getByAddress(theBytes), 5555);
         theSocket1 = new DatagramSocket(null);
         theSocket2 = new DatagramSocket(null);
         theSocket1.setReuseAddress(true);
         theSocket2.setReuseAddress(true);
-        theSocket1.bind(theAddress);
-        theSocket2.bind(new InetSocketAddress(InetAddress.getLocalHost(), theSocket1.getLocalPort()));
+        theSocket1.bind(theAddress0);
+        theSocket2.bind(theAddress);
 
         if (theSocket1 != null) {
             theSocket1.close();
@@ -795,11 +802,12 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         // test the default case which we expect to be the same on all
         // platforms
         try {
-            theAddress = new InetSocketAddress(InetAddress.getLocalHost(), 0);
+            theAddress = new InetSocketAddress(InetAddress.getLocalHost(), 5555);
+            theAddress0 = new InetSocketAddress(InetAddress.getByAddress(theBytes), 5555);
             theSocket1 = new DatagramSocket(null);
             theSocket2 = new DatagramSocket(null);
-            theSocket1.bind(theAddress);
-            theSocket2.bind(new InetSocketAddress(InetAddress.getLocalHost(), theSocket1.getLocalPort()));
+            theSocket1.bind(theAddress0);
+            theSocket2.bind(theAddress);
             fail("No exception when trying to connect to do duplicate socket bind with re-useaddr left as default");
         } catch (BindException expected) {
         }
@@ -817,7 +825,7 @@ public class DatagramSocketTest extends junit.framework.TestCase {
             //expected
         }
     }
-
+    
     public void test_getReuseAddress() throws Exception {
         DatagramSocket theSocket = new DatagramSocket(null);
         theSocket.setReuseAddress(true);
@@ -832,16 +840,117 @@ public class DatagramSocketTest extends junit.framework.TestCase {
             //expected
         }
     }
+    
+    // MOE : reuse port option is exist on Mac but not supported on Linux
+    //The same functionality is supported on Linux with reuse address option
+    public void test_setReusePortZ() throws Exception {
+        // test case were we set it to false
+        DatagramSocket theSocket1 = null;
+        DatagramSocket theSocket2 = null;
+        try {
+            InetSocketAddress theAddress = new InetSocketAddress(InetAddress.getLocalHost(), 0);
+            theSocket1 = new DatagramSocket(null);
+            theSocket2 = new DatagramSocket(null);
+            theSocket1.setReusePort(false);
+            theSocket2.setReusePort(false);
+            theSocket1.bind(theAddress);
+            theSocket2.bind(new InetSocketAddress(InetAddress.getLocalHost(), theSocket1.getLocalPort()));
+            fail();
+        } catch (BindException expected) {
+        }
+        if (theSocket1 != null) {
+            theSocket1.close();
+        }
+        if (theSocket2 != null) {
+            theSocket2.close();
+        }
+        
+        // test case were we set it to true
+        InetSocketAddress theAddress = new InetSocketAddress(InetAddress.getLocalHost(), 0);
+        theSocket1 = new DatagramSocket(null);
+        theSocket2 = new DatagramSocket(null);
+        theSocket1.setReusePort(true);
+        theSocket2.setReusePort(true);
+        theSocket1.bind(theAddress);
+        theSocket2.bind(new InetSocketAddress(InetAddress.getLocalHost(), theSocket1.getLocalPort()));
+        
+        if (theSocket1 != null) {
+            theSocket1.close();
+        }
+        if (theSocket2 != null) {
+            theSocket2.close();
+        }
+        
+        // test the default case which we expect to be the same on all
+        // platforms
+        try {
+            theAddress = new InetSocketAddress(InetAddress.getLocalHost(), 0);
+            theSocket1 = new DatagramSocket(null);
+            theSocket2 = new DatagramSocket(null);
+            theSocket1.bind(theAddress);
+            theSocket2.bind(new InetSocketAddress(InetAddress.getLocalHost(), theSocket1.getLocalPort()));
+            fail("No exception when trying to connect to do duplicate socket bind with re-useport left as default");
+        } catch (BindException expected) {
+        }
+        if (theSocket1 != null) {
+            theSocket1.close();
+        }
+        if (theSocket2 != null) {
+            theSocket2.close();
+        }
+        
+        try {
+            theSocket1.setReusePort(true);
+            fail("SocketException was not thrown.");
+        } catch(SocketException se) {
+            //expected
+        }
+        
+        //check that reuseaddr is not enough to use the same address
+        try {
+            theAddress = new InetSocketAddress(InetAddress.getLocalHost(), 0);
+            theSocket1 = new DatagramSocket(null);
+            theSocket2 = new DatagramSocket(null);
+            theSocket1.setReuseAddress(true);
+            theSocket2.setReuseAddress(true);
+            theSocket1.bind(theAddress);
+            theSocket2.bind(new InetSocketAddress(InetAddress.getLocalHost(), theSocket1.getLocalPort()));
+            fail("No exception when trying to connect to do duplicate socket bind with re-useport left as default");
+        } catch (BindException expected) {
+        }
+        if (theSocket1 != null) {
+            theSocket1.close();
+        }
+        if (theSocket2 != null) {
+            theSocket2.close();
+        }
+
+    }
+
+    public void test_getReusePort() throws Exception {
+        DatagramSocket theSocket = new DatagramSocket();
+        theSocket.setReusePort(true);
+        assertTrue("getReusePort false when it should be true", theSocket.getReusePort());
+        theSocket.setReusePort(false);
+        assertFalse("getReusePort true when it should be False", theSocket.getReusePort());
+        theSocket.close();
+        try {
+            theSocket.getReusePort();
+            fail("SocketException was not thrown.");
+        } catch(SocketException se) {
+            //expected
+        }
+    }
 
     public void test_setBroadcastZ() throws Exception {
-        DatagramSocket theSocket = new DatagramSocket(0);
+        DatagramSocket theSocket = new DatagramSocket(null);
         theSocket.setBroadcast(false);
         byte theBytes[] = { -1, -1, -1, -1 };
 
         // validate we cannot connect to the broadcast address when
         // setBroadcast is false
         try {
-            theSocket.connect(new InetSocketAddress(InetAddress.getByAddress(theBytes), 0));
+            theSocket.connect(new InetSocketAddress(InetAddress.getByAddress(theBytes), theSocket.getLocalPort()));
             fail();
         } catch (Exception expected) {
         }
@@ -849,7 +958,8 @@ public class DatagramSocketTest extends junit.framework.TestCase {
         // now validate that we can connect to the broadcast address when
         // setBroadcast is true
         theSocket.setBroadcast(true);
-        theSocket.connect(new InetSocketAddress(InetAddress.getByAddress(theBytes), 0));
+        // MOE : connect to 0 port failed on Mac
+        theSocket.connect(new InetSocketAddress(InetAddress.getByAddress(theBytes), theSocket.getLocalPort()));
 
         theSocket.close();
         try {

@@ -335,7 +335,8 @@ public class LogManager {
                     // fall back to using the built-in logging.properties file
                     input = LogManager.class.getResourceAsStream("logging.properties");
                     if (input == null) {
-                        throw exception;
+                        setConfiguration();
+                        return;
                     }
                 }
                 readConfiguration(new BufferedInputStream(input));
@@ -362,6 +363,30 @@ public class LogManager {
         }
     }
 
+    // initialization process
+    private synchronized void setConfiguration()
+    {
+        reset();
+        props.setProperty("handlers","java.util.logging.ConsoleHandler");
+        
+        // The RI treats the root logger as special. For compatibility, always
+        // update the root logger's handlers.
+        Logger root = loggers.get("");
+        if (root != null) {
+            root.setManager(this);
+        }
+        
+        // parse property "config" and apply setting
+        String configs = "";
+        
+        // set levels for logger
+        Collection<Logger> allLoggers = loggers.values();
+        for (Logger logger : allLoggers) {
+            logger.setLevel(Level.INFO);
+        }
+        listeners.firePropertyChange(null, null, null);
+    }
+    
     // actual initialization process from a given input stream
     private synchronized void readConfigurationImpl(InputStream ins)
             throws IOException {

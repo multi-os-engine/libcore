@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2014-2016 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +24,11 @@
 #include <stdlib.h>
 
 // DalvikVM calls this on startup, so we can statically register all our native methods.
+#ifdef MOE
+MOE_ONLOAD(javacore) {
+#else
 jint JNI_OnLoad(JavaVM* vm, void*) {
+#endif
     JNIEnv* env;
     if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
         ALOGE("JavaVM::GetEnv() failed");
@@ -55,15 +60,21 @@ jint JNI_OnLoad(JavaVM* vm, void*) {
     REGISTER(register_java_util_zip_Deflater);
     REGISTER(register_java_util_zip_Inflater);
     REGISTER(register_libcore_icu_ICU);
+    REGISTER(register_libcore_icu_NativeBreakIterator);
+    REGISTER(register_libcore_icu_NativeCollation);
     REGISTER(register_libcore_icu_NativeConverter);
     REGISTER(register_libcore_icu_NativeDecimalFormat);
     REGISTER(register_libcore_icu_TimeZoneNames);
+    REGISTER(register_libcore_icu_Transliterator);
     REGISTER(register_libcore_io_AsynchronousCloseMonitor);
     REGISTER(register_libcore_io_Memory);
     REGISTER(register_libcore_io_Posix);
+#ifndef MOE
     REGISTER(register_org_apache_harmony_dalvik_NativeTestTarget);
+#endif
     REGISTER(register_org_apache_harmony_xml_ExpatParser);
     REGISTER(register_sun_misc_Unsafe);
+    REGISTER(register_java_net_NetworkInterface);
 #undef REGISTER
 
     return JNI_VERSION_1_6;

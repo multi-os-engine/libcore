@@ -628,6 +628,37 @@ public class DatagramSocket implements Closeable {
         return ((Boolean) impl.getOption(SocketOptions.SO_REUSEADDR)).booleanValue();
     }
 
+    // MOE : added option supported on Mac
+    /**
+     * Sets the socket option {@code SocketOptions.SO_REUSEPORT}. This option
+     * has to be enabled if more than one UDP socket wants to be bound to the
+     * same address. That could be needed for receiving multicast packets.
+     * <p>
+     * There is an undefined behavior if this option is set after the socket is
+     * already bound.
+     *
+     * @param reuse
+     *            the socket option value to enable or disable this option.
+     * @throws SocketException
+     *             if the socket is closed or the option could not be set.
+     */
+    public void setReusePort(boolean reuse) throws SocketException {
+        checkOpen();
+        impl.setOption(SocketOptions.SO_REUSEPORT, Boolean.valueOf(reuse));
+    }
+    
+    /**
+     * Gets the state of the socket option {@code SocketOptions.SO_REUSEPORT}.
+     *
+     * @return {@code true} if the option is enabled, {@code false} otherwise.
+     * @throws SocketException
+     *             if the socket is closed or the option is invalid.
+     */
+    public boolean getReusePort() throws SocketException {
+        checkOpen();
+        return ((Boolean) impl.getOption(SocketOptions.SO_REUSEPORT)).booleanValue();
+    }
+    
     /**
      * Sets the socket option {@code SocketOptions.SO_BROADCAST}. This option
      * must be enabled to send broadcast messages.

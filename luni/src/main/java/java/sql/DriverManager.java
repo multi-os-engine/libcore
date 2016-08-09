@@ -232,9 +232,10 @@ public class DriverManager {
              * does understand the URL
              */
             for (Driver driver : theDrivers) {
-                if (driver.acceptsURL(url) &&
-                        DriverManager.isClassFromClassLoader(driver, callerClassLoader)) {
-                    return driver;
+                if (driver.acceptsURL(url)){
+                    if((callerClassLoader==null) || DriverManager.isClassFromClassLoader(driver, callerClassLoader)) {
+                        return driver;
+                    }
                 }
             }
         }

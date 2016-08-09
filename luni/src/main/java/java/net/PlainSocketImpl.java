@@ -29,6 +29,7 @@ import libcore.io.IoBridge;
 import libcore.io.Libcore;
 import libcore.io.Memory;
 import libcore.io.Streams;
+import android.system.StructPollfd;
 import static android.system.OsConstants.*;
 
 /**
@@ -83,8 +84,30 @@ public class PlainSocketImpl extends SocketImpl {
             ((PlainSocketImpl) newImpl).socksAccept();
             return;
         }
-
+        
         try {
+            // MOE: accept() on ios does not interrupt accep according to SO_RCVTIMEO
+            int timeout = (Integer) getOption(SO_TIMEOUT);
+            StructPollfd pfd = new StructPollfd();
+            pfd.fd = fd;
+            pfd.events = (short) (POLLIN | POLLERR);
+            StructPollfd[] pfds = new StructPollfd[] {pfd};
+            while (true) {
+                try {
+                    if (Libcore.os.poll(pfds, timeout) == 0) {
+                        throw new SocketTimeoutException("accept() timed out");
+                    }
+                    break;
+                } catch (ErrnoException e) {
+                    //if (e.errno == EINTR) {
+                        /*long now = System.currentTimeMillis();
+                        timeout = (int) (deadline - now);
+                    } else {*/
+                        throw e;
+                    //}
+                }
+            }
+            
             InetSocketAddress peerAddress = new InetSocketAddress();
             FileDescriptor clientFd = Libcore.os.accept(fd, peerAddress);
 

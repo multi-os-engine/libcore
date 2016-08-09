@@ -68,9 +68,12 @@ public class OsTest extends TestCase {
   }
 
   public void testUnixDomainSockets_in_file_system() throws Exception {
+    /* [XRT] hang
     String path = System.getProperty("java.io.tmpdir") + "/test_unix_socket";
     new File(path).delete();
     checkUnixDomainSocket(UnixSocketAddress.createFileSystem(path), false);
+    */
+    fail("[HANG] Turn off testcase due to hang");
   }
 
   public void testUnixDomainSocket_abstract_name() throws Exception {

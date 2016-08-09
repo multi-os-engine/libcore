@@ -101,7 +101,11 @@ static bool inetAddressToSockaddr(JNIEnv* env, jobject inetAddress, int port, so
     static jfieldID familyFid = env->GetFieldID(JniConstants::inetAddressClass, "family", "I");
     ss.ss_family = env->GetIntField(inetAddress, familyFid);
     if (ss.ss_family == AF_UNSPEC) {
+#ifndef MOE
         sa_len = sizeof(ss.ss_family);
+#else
+        sa_len = 28; // MOE : for Mac sizeof structure for AF_UNSPEC should be 28
+#endif
         return true; // Job done!
     }
 

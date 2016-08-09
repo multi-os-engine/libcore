@@ -93,35 +93,35 @@ public class KeyPairGeneratorTest extends TestCase {
     }
 
     public void test_getInstance_provider2() throws Exception {
-        test_getInstance(2);
+         test_getInstance(2);
     }
 
     public void test_getInstance_provider3() throws Exception {
-        test_getInstance(3);
+         test_getInstance(3);
     }
 
     public void test_getInstance_provider4() throws Exception {
-        test_getInstance(4);
+         test_getInstance(4);
     }
 
     public void test_getInstance_provider5() throws Exception {
-        test_getInstance(5);
+         test_getInstance(5);
     }
 
     public void test_getInstance_provider6() throws Exception {
-        test_getInstance(6);
+         test_getInstance(6);
     }
 
     public void test_getInstance_provider7() throws Exception {
-        test_getInstance(7);
+         test_getInstance(7);
     }
 
     public void test_getInstance_provider8() throws Exception {
-        test_getInstance(8);
+         test_getInstance(8);
     }
 
     public void test_getInstance_provider9() throws Exception {
-        test_getInstance(9);
+         test_getInstance(9);
     }
 
     private void test_getInstance(int providerIndex) throws Exception {

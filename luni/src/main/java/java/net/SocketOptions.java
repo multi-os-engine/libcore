@@ -100,6 +100,9 @@ public interface SocketOptions {
      * </a> for more information about socket re-use.
      */
     public static final int SO_REUSEADDR = 4;
+    
+    // MOE : added option supported on Mac
+    public static final int SO_REUSEPORT = 0x0200;	/* allow local address & port reuse */
 
     /**
      * The size in bytes of a socket's send buffer. This must be an integer greater than 0.

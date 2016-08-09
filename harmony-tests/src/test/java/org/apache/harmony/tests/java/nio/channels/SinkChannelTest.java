@@ -147,7 +147,7 @@ public class SinkChannelTest extends TestCase {
 	 * @tests java.nio.channels.Pipe.SinkChannel#write(ByteBuffer)
 	 */
 	public void test_write_LByteBuffer_Exception() throws IOException {
-		// write null ByteBuffer
+        // write null ByteBuffer
 		ByteBuffer nullBuf = null;
 		try {
 			sink.write(nullBuf);
@@ -179,7 +179,7 @@ public class SinkChannelTest extends TestCase {
 	 * @tests java.nio.channels.Pipe.SinkChannel#write(ByteBuffer[])
 	 */
 	public void test_write_$LByteBuffer() throws IOException {
-		ByteBuffer[] bufArray = { buffer, positionedBuffer };
+        ByteBuffer[] bufArray = { buffer, positionedBuffer };
 		boolean[] sinkBlockingMode = { true, true, false, false };
 		boolean[] sourceBlockingMode = { true, false, true, false };
 		for (int i = 0; i < sinkBlockingMode.length; ++i) {
@@ -212,7 +212,7 @@ public class SinkChannelTest extends TestCase {
 	 * @tests java.nio.channels.Pipe.SinkChannel#write(ByteBuffer[])
 	 */
 	public void test_write_$LByteBuffer_Exception() throws IOException {
-		// write null ByteBuffer[]
+        // write null ByteBuffer[]
 		ByteBuffer[] nullBufArrayRef = null;
 		try {
 			sink.write(nullBufArrayRef);
@@ -246,7 +246,7 @@ public class SinkChannelTest extends TestCase {
 	 * @tests java.nio.channels.Pipe.SinkChannel#write(ByteBuffer[])
 	 */
 	public void test_write_$LByteBuffer_SinkClosed() throws IOException {
-		ByteBuffer[] bufArray = { buffer };
+        ByteBuffer[] bufArray = { buffer };
 		sink.close();
 		try {
 			sink.write(bufArray);
@@ -278,7 +278,7 @@ public class SinkChannelTest extends TestCase {
 	 * @tests java.nio.channels.Pipe.SinkChannel#write(ByteBuffer[], int, int)
 	 */
 	public void test_write_$LByteBufferII() throws IOException {
-		ByteBuffer[] bufArray = { buffer, positionedBuffer };
+        ByteBuffer[] bufArray = { buffer, positionedBuffer };
 		boolean[] sinkBlockingMode = { true, true, false, false };
 		boolean[] sourceBlockingMode = { true, false, true, false };
 		for (int i = 0; i < sinkBlockingMode.length; ++i) {

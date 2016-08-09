@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tests.api.javax.xml.parsers;
+package org.apache.harmony.tests.javax.xml.parsers;
 
 import dalvik.annotation.KnownFailure;
 import java.io.File;
@@ -36,11 +36,11 @@ import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.LexicalHandler;
 import org.xml.sax.helpers.DefaultHandler;
-import tests.api.javax.xml.parsers.SAXParserTestSupport.MyDefaultHandler;
-import tests.api.javax.xml.parsers.SAXParserTestSupport.MyHandler;
-import tests.api.org.xml.sax.support.BrokenInputStream;
-import tests.api.org.xml.sax.support.MethodLogger;
-import tests.api.org.xml.sax.support.MockHandler;
+import org.apache.harmony.tests.javax.xml.parsers.SAXParserTestSupport.MyDefaultHandler;
+import org.apache.harmony.tests.javax.xml.parsers.SAXParserTestSupport.MyHandler;
+import org.apache.harmony.tests.org.xml.sax.support.BrokenInputStream;
+import org.apache.harmony.tests.org.xml.sax.support.MethodLogger;
+import org.apache.harmony.tests.org.xml.sax.support.MockHandler;
 import tests.support.resource.Support_Resources;
 
 @SuppressWarnings("deprecation")

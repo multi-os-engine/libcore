@@ -292,4 +292,46 @@ public class OldInputStreamReaderTest extends TestCase {
             throw new RuntimeException("unexpected exception", ex);
         }
     }
+
+    /**
+     * Test for regression of a bug that dropped characters when
+     * multibyte encodings spanned buffer boundaries.
+     */
+    public void test_read_SHIFT_JIS() {
+        final byte[] suffix = {
+                (byte) 0x93, (byte) 0xa1, (byte) 0x8c, (byte) 0xb4,
+                (byte) 0x97, (byte) 0x43, (byte) 0x88, (byte) 0xea,
+                (byte) 0x98, (byte) 0x59
+        };
+        final char[] decodedSuffix = {
+                (char) 0x85e4, (char) 0x539f, (char) 0x4f51, (char) 0x4e00,
+                (char) 0x90ce
+        };
+
+        byte[] bytes = new byte[10];
+
+        System.arraycopy(suffix, 0, bytes, 0, suffix.length);
+        ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+
+        try {
+            InputStreamReader isr = new InputStreamReader(is, "SHIFT_JIS");
+            char[] chars = new char[20];
+            int amt = isr.read(chars);
+            if (amt <= 0) {
+                fail("SHIFT_JS decoding error");
+            }
+
+            for (int i = 0; i < amt; i++) {
+                char c = chars[i];
+
+                char decoded = decodedSuffix[i];
+                if (c != decoded) {
+                    fail("Found mismatched character " +
+                            (int) c + " at " + i);
+                }
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException("unexpected exception", ex);
+        }
+    }
 }
