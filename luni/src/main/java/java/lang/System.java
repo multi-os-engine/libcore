@@ -1082,9 +1082,7 @@ public final class System {
      * See {@link Runtime#loadLibrary}.
      */
     public static void loadLibrary(String libName) {
-        //Runtime.getRuntime().loadLibrary(libName, VMStack.getCallingClassLoader());
-        //MOE: dynamic loading is not enabled on iOS
-        load(libName);
+        Runtime.getRuntime().loadLibrary(libName, VMStack.getCallingClassLoader());
     }
 
     /**

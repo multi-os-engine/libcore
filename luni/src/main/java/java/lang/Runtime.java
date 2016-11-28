@@ -320,10 +320,13 @@ public class Runtime {
         load(absolutePath, VMStack.getCallingClassLoader());
     }
 
-    /*
+    /**
      * Loads the given shared library using the given ClassLoader.
+     *
+     * <p> MOE: We have made this public, because we have to access this from
+     * {@code org.moe.MOE}.
      */
-    void load(String absolutePath, ClassLoader loader) {
+    public void load(String absolutePath, ClassLoader loader) {
         if (absolutePath == null) {
             throw new NullPointerException("absolutePath == null");
         }
