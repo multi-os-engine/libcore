@@ -1,4 +1,33 @@
 /*
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * This file is available under and governed by the GNU General Public
+ * License version 2 only, as published by the Free Software Foundation.
+ * However, the following notice accompanied the original version of this
+ * file:
+ *
  * Written by Doug Lea and Josh Bloch with assistance from members of JCP
  * JSR-166 Expert Group and released to the public domain, as explained at
  * http://creativecommons.org/publicdomain/zero/1.0/
@@ -55,7 +84,7 @@ package java.util;
  * implement {@code NavigableMap}, but extensions and implementations
  * of this interface are encouraged to override these methods to return
  * {@code NavigableMap}.  Similarly,
- * {@link #keySet()} can be overridden to return {@code NavigableSet}.
+ * {@link #keySet()} can be overriden to return {@code NavigableSet}.
  *
  * @author Doug Lea
  * @author Josh Bloch
@@ -183,12 +212,18 @@ public interface NavigableMap<K,V> extends SortedMap<K,V> {
     /**
      * Returns a key-value mapping associated with the least
      * key in this map, or {@code null} if the map is empty.
+     *
+     * @return an entry with the least key,
+     *         or {@code null} if this map is empty
      */
     Map.Entry<K,V> firstEntry();
 
     /**
      * Returns a key-value mapping associated with the greatest
      * key in this map, or {@code null} if the map is empty.
+     *
+     * @return an entry with the greatest key,
+     *         or {@code null} if this map is empty
      */
     Map.Entry<K,V> lastEntry();
 
@@ -263,7 +298,7 @@ public interface NavigableMap<K,V> extends SortedMap<K,V> {
      * Returns a view of the portion of this map whose keys range from
      * {@code fromKey} to {@code toKey}.  If {@code fromKey} and
      * {@code toKey} are equal, the returned map is empty unless
-     * {@code fromExclusive} and {@code toExclusive} are both true.  The
+     * {@code fromInclusive} and {@code toInclusive} are both true.  The
      * returned map is backed by this map, so changes in the returned map are
      * reflected in this map, and vice-versa.  The returned map supports all
      * optional map operations that this map supports.
