@@ -23,6 +23,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
 import java.text.DateFormatSymbols;
+import java.time.Instant;
 import libcore.icu.ICU;
 import libcore.icu.LocaleData;
 
@@ -1405,5 +1406,98 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         minimalDaysInFirstWeek = readFields.get("minimalDaysInFirstWeek", 1);
         time = readFields.get("time", 0L);
         zone = (TimeZone) readFields.get("zone", null);
+    }
+
+    // Sugar starts here
+
+    static final int STANDALONE_MASK = 0x8000;
+
+    /**
+     * A style specifier for {@link #getDisplayName(int, int, Locale)
+     * getDisplayName} and {@link #getDisplayNames(int, int, Locale)
+     * getDisplayNames} indicating a narrow name used for format. Narrow names
+     * are typically single character strings, such as "M" for Monday.
+     *
+     * @see #NARROW_STANDALONE
+     * @see #SHORT_FORMAT
+     * @see #LONG_FORMAT
+     * @since 1.8
+     */
+    public static final int NARROW_FORMAT = 4;
+
+    /**
+     * A style specifier for {@link #getDisplayName(int, int, Locale)
+     * getDisplayName} and {@link #getDisplayNames(int, int, Locale)
+     * getDisplayNames} indicating a narrow name independently. Narrow names
+     * are typically single character strings, such as "M" for Monday.
+     *
+     * @see #NARROW_FORMAT
+     * @see #SHORT_STANDALONE
+     * @see #LONG_STANDALONE
+     * @since 1.8
+     */
+    public static final int NARROW_STANDALONE = NARROW_FORMAT | STANDALONE_MASK;
+
+    /**
+     * A style specifier for {@link #getDisplayName(int, int, Locale)
+     * getDisplayName} and {@link #getDisplayNames(int, int, Locale)
+     * getDisplayNames} indicating a short name used for format.
+     *
+     * @see #SHORT_STANDALONE
+     * @see #LONG_FORMAT
+     * @see #LONG_STANDALONE
+     * @since 1.8
+     */
+    public static final int SHORT_FORMAT = 1;
+
+    /**
+     * A style specifier for {@link #getDisplayName(int, int, Locale)
+     * getDisplayName} and {@link #getDisplayNames(int, int, Locale)
+     * getDisplayNames} indicating a long name used for format.
+     *
+     * @see #LONG_STANDALONE
+     * @see #SHORT_FORMAT
+     * @see #SHORT_STANDALONE
+     * @since 1.8
+     */
+    public static final int LONG_FORMAT = 2;
+
+    /**
+     * A style specifier for {@link #getDisplayName(int, int, Locale)
+     * getDisplayName} and {@link #getDisplayNames(int, int, Locale)
+     * getDisplayNames} indicating a short name used independently,
+     * such as a month abbreviation as calendar headers.
+     *
+     * @see #SHORT_FORMAT
+     * @see #LONG_FORMAT
+     * @see #LONG_STANDALONE
+     * @since 1.8
+     */
+    public static final int SHORT_STANDALONE = Calendar.SHORT | STANDALONE_MASK;
+
+    /**
+     * A style specifier for {@link #getDisplayName(int, int, Locale)
+     * getDisplayName} and {@link #getDisplayNames(int, int, Locale)
+     * getDisplayNames} indicating a long name used independently,
+     * such as a month name as calendar headers.
+     *
+     * @see #LONG_FORMAT
+     * @see #SHORT_FORMAT
+     * @see #SHORT_STANDALONE
+     * @since 1.8
+     */
+    public static final int LONG_STANDALONE = Calendar.LONG | STANDALONE_MASK;
+
+    /**
+     * Converts this object to an {@link Instant}.
+     * <p>
+     * The conversion creates an {@code Instant} that represents the
+     * same point on the time-line as this {@code Calendar}.
+     *
+     * @return the instant representing the same point on the time-line
+     * @since 1.8
+     */
+    public Instant toInstant() {
+        return Instant.ofEpochMilli(getTimeInMillis());
     }
 }

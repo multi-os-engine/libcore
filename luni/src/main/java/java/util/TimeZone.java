@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.time.ZoneId;
 import libcore.icu.TimeZoneNames;
 import libcore.io.IoUtils;
 import libcore.util.ZoneInfoDB;
@@ -494,4 +495,47 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * <p>Most applications should not use this method.
      */
     public abstract boolean useDaylightTime();
+
+    // Sugar starts here
+
+    /**
+     * Gets the {@code TimeZone} for the given {@code zoneId}.
+     *
+     * @param zoneId a {@link ZoneId} from which the time zone ID is obtained
+     * @return the specified {@code TimeZone}, or the GMT zone if the given ID
+     *         cannot be understood.
+     * @throws NullPointerException if {@code zoneId} is {@code null}
+     * @since 1.8
+     */
+    public static TimeZone getTimeZone(ZoneId zoneId) {
+        String tzid = zoneId.getId(); // throws an NPE if null
+        char c = tzid.charAt(0);
+        if (c == '+' || c == '-') {
+            tzid = "GMT" + tzid;
+        } else if (c == 'Z' && tzid.length() == 1) {
+            tzid = "UTC";
+        }
+        return TimeZone.getTimeZone(tzid);  // for desugar: call appropriate public TimeZone method
+    }
+
+    /**
+     * Converts this {@code TimeZone} object to a {@code ZoneId}.
+     *
+     * @return a {@code ZoneId} representing the same time zone as this
+     *         {@code TimeZone}
+     * @since 1.8
+     */
+    public ZoneId toZoneId() {
+        String id = getID();
+        // for desugar: doesn't support "old mapping", which is behind a property
+        // if (ZoneInfoFile.useOldMapping() && id.length() == 3) {
+        //     if ("EST".equals(id))
+        //         return ZoneId.of("America/New_York");
+        //     if ("MST".equals(id))
+        //         return ZoneId.of("America/Denver");
+        //     if ("HST".equals(id))
+        //         return ZoneId.of("America/Honolulu");
+        // }
+        return ZoneId.of(id, ZoneId.SHORT_IDS);
+    }
 }
