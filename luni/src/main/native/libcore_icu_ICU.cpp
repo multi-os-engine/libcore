@@ -78,7 +78,10 @@
     #include <cf_relative_days.h>
     #include <cf_number_format.h>
     #include <cf_decimal_format_symbols.h>
+
     #include <cf_currency.h>
+    std::map<std::string, cf_CurrencyCache::CacheRecord >& cf_CurrencyCache::countryToCurrencyMap = *new std::map<std::string, cf_CurrencyCache::CacheRecord >();
+
     #include <cf_mutable_string.h>
 
     #define ICU_TYPE(a) cf_##a

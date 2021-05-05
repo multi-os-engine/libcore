@@ -1236,16 +1236,21 @@ static jobject Posix_getsockoptTimeval(JNIEnv* env, jobject, jobject javaFd, jin
 }
 
 static jobject Posix_getsockoptUcred(JNIEnv* env, jobject, jobject javaFd, jint level, jint option) {
-  int fd = jniGetFDFromFileDescriptor(env, javaFd);
-  struct ucred u;
-  socklen_t size = sizeof(u);
-  memset(&u, 0, size);
-  int rc = TEMP_FAILURE_RETRY(getsockopt(fd, level, option, &u, &size));
-  if (rc == -1) {
-    throwErrnoException(env, "getsockopt");
+  #ifdef MOE
+    jniThrowException(env, "java/lang/UnsupportedOperationException", "unimplemented support for ucred on a Mac");
     return NULL;
-  }
-  return makeStructUcred(env, u);
+  #else
+    int fd = jniGetFDFromFileDescriptor(env, javaFd);
+    struct ucred u;
+    socklen_t size = sizeof(u);
+    memset(&u, 0, size);
+    int rc = TEMP_FAILURE_RETRY(getsockopt(fd, level, option, &u, &size));
+    if (rc == -1) {
+      throwErrnoException(env, "getsockopt");
+      return NULL;
+    }
+    return makeStructUcred(env, u);
+  #endif
 }
 
 static jint Posix_gettid(JNIEnv* env __unused, jobject) {
