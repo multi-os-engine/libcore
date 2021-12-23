@@ -407,11 +407,6 @@ public interface List<E> extends Collection<E> {
      * @since 1.8
      */
     default void replaceAll(UnaryOperator<E> operator) {
-        // For Desugar: SynchronizedList support.
-        if (Collections.SYNCHRONIZED_LIST.isInstance(this)) {
-            Collections.replaceAll(this, operator);
-            return;
-        }
         Objects.requireNonNull(operator);
         final ListIterator<E> li = this.listIterator();
         while (li.hasNext()) {
@@ -479,11 +474,6 @@ public interface List<E> extends Collection<E> {
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     default void sort(Comparator<? super E> c) {
-        // For Desugar: SynchronizedList support.
-        if (Collections.SYNCHRONIZED_LIST.isInstance(this)) {
-            Collections.sort0(this, c);
-            return;
-        }
         Object[] a = this.toArray();
         Arrays.sort(a, (Comparator) c);
         ListIterator<E> i = this.listIterator();

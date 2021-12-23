@@ -24,7 +24,6 @@
  */
 package java.lang;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Spliterator;
@@ -71,11 +70,6 @@ public interface Iterable<T> {
      * @since 1.8
      */
     default void forEach(Consumer<? super T> action) {
-        // For Desugar: SynchronizedCollection support.
-        if (Collections.SYNCHRONIZED_COLLECTION.isInstance(this)) {
-           Collections.forEach(this, action);
-           return;
-        }
         Objects.requireNonNull(action);
         for (T t : this) {
             action.accept(t);
