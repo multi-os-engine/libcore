@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,9 @@ import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import java.text.DateFormatSymbols;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
+import java.time.chrono.JapaneseChronology;
 import java.time.temporal.ChronoField;
+import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalField;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -106,6 +108,9 @@ class DateTimeTextProvider {
         }
     };
 
+    // Singleton instance
+    private static final DateTimeTextProvider INSTANCE = new DateTimeTextProvider();
+
     DateTimeTextProvider() {}
 
     /**
@@ -114,7 +119,7 @@ class DateTimeTextProvider {
      * @return the provider, not null
      */
     static DateTimeTextProvider getInstance() {
-        return new DateTimeTextProvider();
+        return INSTANCE;
     }
 
     /**

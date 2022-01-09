@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,7 @@ import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
+import java.util.Calendar;
 import java.util.Objects;
 
 /**
@@ -109,7 +110,7 @@ import java.util.Objects;
  * {@code JapaneseChronology.ERA_HEISEI}.<br>
  *
  * <p>
- * This is a <a href="{@docRoot}/java/lang/doc-files/ValueBased.html">value-based</a>
+ * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
  * class; use of identity-sensitive operations (including reference equality
  * ({@code ==}), identity hash code, or synchronization) on instances of
  * {@code JapaneseDate} may have unpredictable results and should be avoided.
@@ -469,7 +470,7 @@ public final class JapaneseDate
         // the desired default implementation below.  javac9's error message is:
         // error: bad type qualifier ChronoLocalDate in default super call
         // redundant interface ChronoLocalDate is extended by ChronoLocalDateImpl<JapaneseDate>
-        // return ChronoLocalDate.super.isSupported(field);
+        // return super.isSupported(field);
         if (field instanceof ChronoField) {
             return field.isDateBased();
         }

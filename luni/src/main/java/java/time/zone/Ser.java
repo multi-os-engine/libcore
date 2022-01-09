@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ final class Ser implements Externalizable {
     static final byte ZRULES = 1;
     /** Type for ZoneOffsetTransition. */
     static final byte ZOT = 2;
-    /** Type for ZoneOffsetTransition. */
+    /** Type for ZoneOffsetTransitionRule. */
     static final byte ZOTRULE = 3;
     /** For desugar: type for j.u.TimeZone-based ZoneRules */
     static final byte TZRULES = 100;
@@ -155,7 +155,7 @@ final class Ser implements Externalizable {
             case ZOTRULE:
                 ((ZoneOffsetTransitionRule) object).writeExternal(out);
                 break;
-            case TZRULES:
+            case TZRULES: // For desugar: See comment on the field.
                 ((ZoneRules) object).writeExternalTimeZone(out);
                 break;
             default:
@@ -201,7 +201,7 @@ final class Ser implements Externalizable {
                 return ZoneOffsetTransition.readExternal(in);
             case ZOTRULE:
                 return ZoneOffsetTransitionRule.readExternal(in);
-            case TZRULES:
+            case TZRULES: // For desugar: See comment on the field.
                 return ZoneRules.readExternalTimeZone(in);
             default:
                 throw new StreamCorruptedException("Unknown serialized type");

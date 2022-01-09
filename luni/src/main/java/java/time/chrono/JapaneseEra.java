@@ -74,6 +74,7 @@ import java.io.Serializable;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.Year;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalField;
@@ -154,12 +155,14 @@ public final class JapaneseEra
      */
     // public static final JapaneseEra HEISEI = new JapaneseEra(2, LocalDate.of(1989, 1, 8));
     public static final JapaneseEra HEISEI = new JapaneseEra(2, LocalDate.of(1989, 1, 8), "Heisei", "H");
+    // For desugar: Follow Android 11's implementation.
+    // Android-changed: Integrate OpenJDK support for Japanese Era Reiwa.
     /**
       * The singleton instance for the 'Reiwa' era (2019-05-01 - current)
       * which has the value 3. The end date of this era is not specified, unless
       * the Japanese Government defines it.
       */
-    private static final JapaneseEra REIWA = new JapaneseEra(3, LocalDate.of(2019, 5, 1), "Reiwa", "R");
+    public static final JapaneseEra REIWA = new JapaneseEra(3, LocalDate.of(2019, 5, 1), "Reiwa", "R");
 
     // The number of predefined JapaneseEra constants.
     // There may be a supplemental era defined by the property.
@@ -239,8 +242,8 @@ public final class JapaneseEra
     // the first day of the era
     private final transient LocalDate since;
 
-    private final transient String name;
-    private final transient String abbreviation;
+    private final transient String name; // for desugar
+    private final transient String abbreviation; // for desugar
 
     /**
      * Creates an instance.
@@ -272,28 +275,29 @@ public final class JapaneseEra
     //-----------------------------------------------------------------------
     /**
      * Obtains an instance of {@code JapaneseEra} from an {@code int} value.
-     * <ul>
-     * <li>The value {@code 1} is associated with the 'Showa' era, because
-     * it contains 1970-01-01 (ISO calendar system).</li>
-     * <li>The values {@code -1} and {@code 0} are associated with two earlier
-     * eras, Meiji and Taisho, respectively.</li>
-     * <li>A value greater than {@code 1} is associated with a later era,
-     * beginning with Heisei ({@code 2}).</li>
-     * </ul>
+      * <ul>
+      * <li>The value {@code 1} is associated with the 'Showa' era, because
+      * it contains 1970-01-01 (ISO calendar system).</li>
+      * <li>The values {@code -1} and {@code 0} are associated with two earlier
+      * eras, Meiji and Taisho, respectively.</li>
+      * <li>A value greater than {@code 1} is associated with a later era,
+      * beginning with Heisei ({@code 2}).</li>
+      * </ul>
      * <p>
-     * Every instance of {@code JapaneseEra} that is returned from the {@link #values()}
-     * method has an int value (available via {@link Era#getValue()} which is
-     * accepted by this method.
+      * Every instance of {@code JapaneseEra} that is returned from the {@link values()}
+      * method has an int value (available via {@link Era#getValue()} which is
+      * accepted by this method.
      *
      * @param japaneseEra  the era to represent
      * @return the {@code JapaneseEra} singleton, not null
      * @throws DateTimeException if the value is invalid
      */
     public static JapaneseEra of(int japaneseEra) {
-        if (japaneseEra < MEIJI.eraValue || japaneseEra + ERA_OFFSET > KNOWN_ERAS.length) {
+        int i = ordinal(japaneseEra);
+        if (i < 0 || i >= KNOWN_ERAS.length) {
             throw new DateTimeException("Invalid era: " + japaneseEra);
         }
-        return KNOWN_ERAS[ordinal(japaneseEra)];
+        return KNOWN_ERAS[i];
     }
 
     /**
@@ -345,7 +349,12 @@ public final class JapaneseEra
             Objects.requireNonNull(locale, "locale");
             return style.asNormal() == TextStyle.NARROW ? getAbbreviation() : getName();
         }
-        return Era.super.getDisplayName(style, locale);
+
+        return new DateTimeFormatterBuilder()
+            .appendText(ERA, style)
+            .toFormatter(locale)
+            .withChronology(JapaneseChronology.INSTANCE)
+            .format(this == MEIJI ? MEIJI_6_ISODATE : since);
     }
 
     //-----------------------------------------------------------------------
@@ -359,7 +368,7 @@ public final class JapaneseEra
         if (date.isBefore(MEIJI_6_ISODATE)) {
             throw new DateTimeException("JapaneseDate before Meiji 6 are not supported");
         }
-        for (int i = KNOWN_ERAS.length - 1; i >= 0; i--) {
+        for (int i = KNOWN_ERAS.length - 1; i >= 0; i--) { // for desugar: iterate zero index.
             JapaneseEra era = KNOWN_ERAS[i];
             if (date.compareTo(era.since) >= 0) {
                 return era;
@@ -448,14 +457,14 @@ public final class JapaneseEra
     }
 
     //-----------------------------------------------------------------------
-    private String getAbbreviation() {
+    String getAbbreviation() {
         // return ERA_CONFIG[ordinal(getValue())].getAbbreviation();
-        return abbreviation;
+        return abbreviation; // for desugar
     }
 
-    private String getName() {
+    String getName() {
         // return ERA_CONFIG[ordinal(getValue())].getName();
-        return name;
+        return name; // for desugar
     }
 
     // For desugar: convenience method to get the following era, or null for the last one

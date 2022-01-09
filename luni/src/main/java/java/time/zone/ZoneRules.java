@@ -314,7 +314,6 @@ public final class ZoneRules implements Serializable {
      * Creates an instance of ZoneRules that has fixed zone rules.
      *
      * @param offset  the offset this fixed zone rules is based on, not null
-     * @return the zone rules, not null
      * @see #isFixedOffset()
      */
     private ZoneRules(ZoneOffset offset) {
@@ -669,7 +668,7 @@ public final class ZoneRules implements Serializable {
      * One technique, using this method, would be:
      * <pre>
      *  ZoneOffsetTransition trans = rules.getTransition(localDT);
-     *  if (trans == null) {
+     *  if (trans != null) {
      *    // Gap or Overlap: determine what to do from transition
      *  } else {
      *    // Normal case: only one valid offset
@@ -1049,13 +1048,13 @@ public final class ZoneRules implements Serializable {
     /**
      * Gets the previous transition before the specified instant.
      * <p>
-     * This returns details of the previous transition after the specified instant.
+     * This returns details of the previous transition before the specified instant.
      * For example, if the instant represents a point where "summer" daylight saving time
      * applies, then the method will return the transition from the previous "winter" time.
      *
      * @param instant  the instant to get the previous transition after, not null, but null
      *  may be ignored if the rules have a single offset for all instants
-     * @return the previous transition after the specified instant, null if this is before the first transition
+     * @return the previous transition before the specified instant, null if this is before the first transition
      */
     public ZoneOffsetTransition previousTransition(Instant instant) {
         // For desugar: use TimeZone if given
@@ -1200,7 +1199,7 @@ public final class ZoneRules implements Serializable {
      * @return an immutable list of transition rules, not null
      */
     public List<ZoneOffsetTransitionRule> getTransitionRules() {
-        return Collections.unmodifiableList(Arrays.asList(lastRules));
+        return List.of(lastRules);
     }
 
     /**

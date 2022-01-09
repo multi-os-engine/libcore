@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,18 +66,21 @@ import java.security.PrivilegedAction;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Objects;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Collections;
 
 /**
  * Provider of time-zone rules to the system.
@@ -119,7 +122,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Providers must ensure that once a rule has been seen by the application, the
  * rule must continue to be available.
  * <p>
-*  Providers are encouraged to implement a meaningful {@code toString} method.
+ * Providers are encouraged to implement a meaningful {@code toString} method.
  * <p>
  * Many systems would like to update time-zone rules dynamically without stopping the JVM.
  * When examined in detail, this is a complex problem.
@@ -137,6 +140,11 @@ public abstract class ZoneRulesProvider {
      * The lookup from zone ID to provider.
      */
     private static final ConcurrentMap<String, ZoneRulesProvider> ZONES = new ConcurrentHashMap<>(512, 0.75f, 2);
+
+    /**
+     * The zone ID data
+     */
+    private static volatile Set<String> ZONE_IDS;
 
     static {
         // if the property java.time.zone.DefaultZoneRulesProvider is
@@ -199,10 +207,10 @@ public abstract class ZoneRulesProvider {
      * <p>
      * These IDs are the string form of a {@link ZoneId}.
      *
-     * @return a modifiable copy of the set of zone IDs, not null
+     * @return the unmodifiable set of zone IDs, not null
      */
     public static Set<String> getAvailableZoneIds() {
-        return new HashSet<>(ZONES.keySet());
+        return ZONE_IDS;
     }
 
     /**
@@ -308,7 +316,7 @@ public abstract class ZoneRulesProvider {
      * @param provider  the provider to register, not null
      * @throws ZoneRulesException if unable to complete the registration
      */
-    private static void registerProvider0(ZoneRulesProvider provider) {
+    private static synchronized void registerProvider0(ZoneRulesProvider provider) {
         for (String zoneId : provider.provideZoneIds()) {
             Objects.requireNonNull(zoneId, "zoneId");
             ZoneRulesProvider old = ZONES.putIfAbsent(zoneId, provider);
@@ -318,6 +326,8 @@ public abstract class ZoneRulesProvider {
                     ", currently loading from provider: " + provider);
             }
         }
+        Set<String> combinedSet = new HashSet<String>(ZONES.keySet());
+        ZONE_IDS = Collections.unmodifiableSet(combinedSet);
     }
 
     /**

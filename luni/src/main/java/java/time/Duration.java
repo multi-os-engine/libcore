@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,8 @@
  */
 package java.time;
 
+import static java.time.LocalTime.MINUTES_PER_HOUR;
+import static java.time.LocalTime.NANOS_PER_MILLI;
 import static java.time.LocalTime.NANOS_PER_SECOND;
 import static java.time.LocalTime.SECONDS_PER_DAY;
 import static java.time.LocalTime.SECONDS_PER_HOUR;
@@ -86,8 +88,6 @@ import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -119,7 +119,7 @@ import java.util.regex.Pattern;
  * See {@link Instant} for a discussion as to the meaning of the second and time-scales.
  *
  * <p>
- * This is a <a href="{@docRoot}/java/lang/doc-files/ValueBased.html">value-based</a>
+ * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
  * class; use of identity-sensitive operations (including reference equality
  * ({@code ==}), identity hash code, or synchronization) on instances of
  * {@code Duration} may have unpredictable results and should be avoided.
@@ -148,10 +148,12 @@ public final class Duration
     /**
      * The pattern for parsing.
      */
-    private static final Pattern PATTERN =
+    private static class Lazy {
+        static final Pattern PATTERN =
             Pattern.compile("([-+]?)P(?:([-+]?[0-9]+)D)?" +
                     "(T(?:([-+]?[0-9]+)H)?(?:([-+]?[0-9]+)M)?(?:([-+]?[0-9]+)(?:[.,]([0-9]{0,9}))?S)?)?",
                     Pattern.CASE_INSENSITIVE);
+    }
 
     /**
      * The number of seconds in the duration.
@@ -229,7 +231,7 @@ public final class Duration
      * This method allows an arbitrary number of nanoseconds to be passed in.
      * The factory will alter the values of the second and nanosecond in order
      * to ensure that the stored nanosecond is in the range 0 to 999,999,999.
-     * For example, the following will result in the exactly the same duration:
+     * For example, the following will result in exactly the same duration:
      * <pre>
      *  Duration.ofSeconds(3, 1);
      *  Duration.ofSeconds(4, -999_999_999);
@@ -359,8 +361,8 @@ public final class Duration
      * there must be at least one section after the "T".
      * The number part of each section must consist of one or more ASCII digits.
      * The number may be prefixed by the ASCII negative or positive symbol.
-     * The number of days, hours and minutes must parse to an {@code long}.
-     * The number of seconds must parse to an {@code long} with optional fraction.
+     * The number of days, hours and minutes must parse to a {@code long}.
+     * The number of seconds must parse to a {@code long} with optional fraction.
      * The decimal point may be either a dot or a comma.
      * The fractional part may have from zero to 9 digits.
      * <p>
@@ -374,9 +376,9 @@ public final class Duration
      *    "PT10H"     -- parses as "10 hours" (where an hour is 3600 seconds)
      *    "P2D"       -- parses as "2 days" (where a day is 24 hours or 86400 seconds)
      *    "P2DT3H4M"  -- parses as "2 days, 3 hours and 4 minutes"
-     *    "P-6H3M"    -- parses as "-6 hours and +3 minutes"
-     *    "-P6H3M"    -- parses as "-6 hours and -3 minutes"
-     *    "-P-6H+3M"  -- parses as "+6 hours and -3 minutes"
+     *    "PT-6H3M"    -- parses as "-6 hours and +3 minutes"
+     *    "-PT6H3M"    -- parses as "-6 hours and -3 minutes"
+     *    "-PT-6H+3M"  -- parses as "+6 hours and -3 minutes"
      * </pre>
      *
      * @param text  the text to parse, not null
@@ -385,22 +387,25 @@ public final class Duration
      */
     public static Duration parse(CharSequence text) {
         Objects.requireNonNull(text, "text");
-        Matcher matcher = PATTERN.matcher(text);
+        Matcher matcher = Lazy.PATTERN.matcher(text);
         if (matcher.matches()) {
             // check for letter T but no time sections
-            if ("T".equals(matcher.group(3)) == false) {
-                boolean negate = "-".equals(matcher.group(1));
-                String dayMatch = matcher.group(2);
-                String hourMatch = matcher.group(4);
-                String minuteMatch = matcher.group(5);
-                String secondMatch = matcher.group(6);
-                String fractionMatch = matcher.group(7);
-                if (dayMatch != null || hourMatch != null || minuteMatch != null || secondMatch != null) {
-                    long daysAsSecs = parseNumber(text, dayMatch, SECONDS_PER_DAY, "days");
-                    long hoursAsSecs = parseNumber(text, hourMatch, SECONDS_PER_HOUR, "hours");
-                    long minsAsSecs = parseNumber(text, minuteMatch, SECONDS_PER_MINUTE, "minutes");
-                    long seconds = parseNumber(text, secondMatch, 1, "seconds");
-                    int nanos = parseFraction(text,  fractionMatch, seconds < 0 ? -1 : 1);
+            if (!charMatch(text, matcher.start(3), matcher.end(3), 'T')) {
+                boolean negate = charMatch(text, matcher.start(1), matcher.end(1), '-');
+
+                int dayStart = matcher.start(2), dayEnd = matcher.end(2);
+                int hourStart = matcher.start(4), hourEnd = matcher.end(4);
+                int minuteStart = matcher.start(5), minuteEnd = matcher.end(5);
+                int secondStart = matcher.start(6), secondEnd = matcher.end(6);
+                int fractionStart = matcher.start(7), fractionEnd = matcher.end(7);
+
+                if (dayStart >= 0 || hourStart >= 0 || minuteStart >= 0 || secondStart >= 0) {
+                    long daysAsSecs = parseNumber(text, dayStart, dayEnd, SECONDS_PER_DAY, "days");
+                    long hoursAsSecs = parseNumber(text, hourStart, hourEnd, SECONDS_PER_HOUR, "hours");
+                    long minsAsSecs = parseNumber(text, minuteStart, minuteEnd, SECONDS_PER_MINUTE, "minutes");
+                    long seconds = parseNumber(text, secondStart, secondEnd, 1, "seconds");
+                    boolean negativeSecs = secondStart >= 0 && text.charAt(secondStart) == '-';
+                    int nanos = parseFraction(text, fractionStart, fractionEnd, negativeSecs ? -1 : 1);
                     try {
                         return create(negate, daysAsSecs, hoursAsSecs, minsAsSecs, seconds, nanos);
                     } catch (ArithmeticException ex) {
@@ -412,31 +417,37 @@ public final class Duration
         throw new DateTimeParseException("Text cannot be parsed to a Duration", text, 0);
     }
 
-    private static long parseNumber(CharSequence text, String parsed, int multiplier, String errorText) {
+    private static boolean charMatch(CharSequence text, int start, int end, char c) {
+        return (start >= 0 && end == start + 1 && text.charAt(start) == c);
+    }
+
+    private static long parseNumber(CharSequence text, int start, int end, int multiplier, String errorText) {
         // regex limits to [-+]?[0-9]+
-        if (parsed == null) {
+        if (start < 0 || end < 0) {
             return 0;
         }
-        // For desugar: leading + can lead to confusion so chop it off
-        if (parsed.charAt(0) == '+') {
-            parsed = parsed.substring(1);
-        }
         try {
-            long val = Long.parseLong(parsed);
+            long val = Long.parseLong(text, start, end, 10);
             return Math.multiplyExact(val, multiplier);
         } catch (NumberFormatException | ArithmeticException ex) {
             throw (DateTimeParseException) new DateTimeParseException("Text cannot be parsed to a Duration: " + errorText, text, 0).initCause(ex);
         }
     }
 
-    private static int parseFraction(CharSequence text, String parsed, int negate) {
+    private static int parseFraction(CharSequence text, int start, int end, int negate) {
         // regex limits to [0-9]{0,9}
-        if (parsed == null || parsed.length() == 0) {
+        if (start < 0 || end < 0 || end - start == 0) {
             return 0;
         }
         try {
-            parsed = (parsed + "000000000").substring(0, 9);
-            return Integer.parseInt(parsed) * negate;
+            int fraction = Integer.parseInt(text, start, end, 10);
+
+            // for number strings smaller than 9 digits, interpret as if there
+            // were trailing zeros
+            for (int i = end - start; i < 9; i++) {
+                fraction *= 10;
+            }
+            return fraction * negate;
         } catch (NumberFormatException | ArithmeticException ex) {
             throw (DateTimeParseException) new DateTimeParseException("Text cannot be parsed to a Duration: fraction", text, 0).initCause(ex);
         }
@@ -565,8 +576,7 @@ public final class Duration
      * the simple initialization in Duration.
      */
     private static class DurationUnits {
-        static final List<TemporalUnit> UNITS =
-                Collections.unmodifiableList(Arrays.<TemporalUnit>asList(SECONDS, NANOS));
+        static final List<TemporalUnit> UNITS = List.of(SECONDS, NANOS);
     }
 
     //-----------------------------------------------------------------------
@@ -964,7 +974,7 @@ public final class Duration
         if (multiplicand == 1) {
             return this;
         }
-        return create(toSeconds().multiply(BigDecimal.valueOf(multiplicand)));
+        return create(toBigDecimalSeconds().multiply(BigDecimal.valueOf(multiplicand)));
      }
 
     /**
@@ -983,8 +993,26 @@ public final class Duration
         if (divisor == 1) {
             return this;
         }
-        return create(toSeconds().divide(BigDecimal.valueOf(divisor), RoundingMode.DOWN));
+        return create(toBigDecimalSeconds().divide(BigDecimal.valueOf(divisor), RoundingMode.DOWN));
      }
+
+    /**
+     * Returns number of whole times a specified Duration occurs within this Duration.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param divisor the value to divide the duration by, positive or negative, not null
+     * @return number of whole times, rounded toward zero, a specified
+     *         {@code Duration} occurs within this Duration, may be negative
+     * @throws ArithmeticException if the divisor is zero, or if numeric overflow occurs
+     * @since 9
+     */
+    public long dividedBy(Duration divisor) {
+        Objects.requireNonNull(divisor, "divisor");
+        BigDecimal dividendBigD = toBigDecimalSeconds();
+        BigDecimal divisorBigD = divisor.toBigDecimalSeconds();
+        return dividendBigD.divideToIntegralValue(divisorBigD).longValueExact();
+    }
 
     /**
      * Converts this duration to the total length in seconds and
@@ -992,7 +1020,7 @@ public final class Duration
      *
      * @return the total length of the duration in seconds, with a scale of 9, not null
      */
-    private BigDecimal toSeconds() {
+    private BigDecimal toBigDecimalSeconds() {
         return BigDecimal.valueOf(seconds).add(BigDecimal.valueOf(nanos, 9));
     }
 
@@ -1159,6 +1187,20 @@ public final class Duration
     }
 
     /**
+     * Gets the number of seconds in this duration.
+     * <p>
+     * This returns the total number of whole seconds in the duration.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the whole seconds part of the length of the duration, positive or negative
+     * @since 9
+     */
+    public long toSeconds() {
+        return seconds;
+    }
+
+    /**
      * Converts this duration to the total length in milliseconds.
      * <p>
      * If this duration is too large to fit in a {@code long} milliseconds, then an
@@ -1172,8 +1214,16 @@ public final class Duration
      * @throws ArithmeticException if numeric overflow occurs
      */
     public long toMillis() {
-        long millis = Math.multiplyExact(seconds, 1000);
-        millis = Math.addExact(millis, nanos / 1000_000);
+        long tempSeconds = seconds;
+        long tempNanos = nanos;
+        if (tempSeconds < 0) {
+            // change the seconds and nano value to
+            // handle Long.MIN_VALUE case
+            tempSeconds = tempSeconds + 1;
+            tempNanos = tempNanos - NANOS_PER_SECOND;
+        }
+        long millis = Math.multiplyExact(tempSeconds, 1000);
+        millis = Math.addExact(millis, tempNanos / NANOS_PER_MILLI);
         return millis;
     }
 
@@ -1187,9 +1237,161 @@ public final class Duration
      * @throws ArithmeticException if numeric overflow occurs
      */
     public long toNanos() {
-        long totalNanos = Math.multiplyExact(seconds, NANOS_PER_SECOND);
-        totalNanos = Math.addExact(totalNanos, nanos);
+        long tempSeconds = seconds;
+        long tempNanos = nanos;
+        if (tempSeconds < 0) {
+            // change the seconds and nano value to
+            // handle Long.MIN_VALUE case
+            tempSeconds = tempSeconds + 1;
+            tempNanos = tempNanos - NANOS_PER_SECOND;
+        }
+        long totalNanos = Math.multiplyExact(tempSeconds, NANOS_PER_SECOND);
+        totalNanos = Math.addExact(totalNanos, tempNanos);
         return totalNanos;
+    }
+
+    /**
+     * Extracts the number of days in the duration.
+     * <p>
+     * This returns the total number of days in the duration by dividing the
+     * number of seconds by 86400.
+     * This is based on the standard definition of a day as 24 hours.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the number of days in the duration, may be negative
+     * @since 9
+     */
+    public long toDaysPart(){
+        return seconds / SECONDS_PER_DAY;
+    }
+
+    /**
+     * Extracts the number of hours part in the duration.
+     * <p>
+     * This returns the number of remaining hours when dividing {@link #toHours}
+     * by hours in a day.
+     * This is based on the standard definition of a day as 24 hours.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the number of hours part in the duration, may be negative
+     * @since 9
+     */
+    public int toHoursPart(){
+        return (int) (toHours() % 24);
+    }
+
+    /**
+     * Extracts the number of minutes part in the duration.
+     * <p>
+     * This returns the number of remaining minutes when dividing {@link #toMinutes}
+     * by minutes in an hour.
+     * This is based on the standard definition of an hour as 60 minutes.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the number of minutes parts in the duration, may be negative
+     * @since 9
+     */
+    public int toMinutesPart(){
+        return (int) (toMinutes() % MINUTES_PER_HOUR);
+    }
+
+    /**
+     * Extracts the number of seconds part in the duration.
+     * <p>
+     * This returns the remaining seconds when dividing {@link #toSeconds}
+     * by seconds in a minute.
+     * This is based on the standard definition of a minute as 60 seconds.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the number of seconds parts in the duration, may be negative
+     * @since 9
+     */
+    public int toSecondsPart(){
+        return (int) (seconds % SECONDS_PER_MINUTE);
+    }
+
+    /**
+     * Extracts the number of milliseconds part of the duration.
+     * <p>
+     * This returns the milliseconds part by dividing the number of nanoseconds by 1,000,000.
+     * The length of the duration is stored using two fields - seconds and nanoseconds.
+     * The nanoseconds part is a value from 0 to 999,999,999 that is an adjustment to
+     * the length in seconds.
+     * The total duration is defined by calling {@link #getNano()} and {@link #getSeconds()}.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the number of milliseconds part of the duration.
+     * @since 9
+     */
+    public int toMillisPart(){
+        return nanos / 1000_000;
+    }
+
+    /**
+     * Get the nanoseconds part within seconds of the duration.
+     * <p>
+     * The length of the duration is stored using two fields - seconds and nanoseconds.
+     * The nanoseconds part is a value from 0 to 999,999,999 that is an adjustment to
+     * the length in seconds.
+     * The total duration is defined by calling {@link #getNano()} and {@link #getSeconds()}.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the nanoseconds within the second part of the length of the duration, from 0 to 999,999,999
+     * @since 9
+     */
+    public int toNanosPart(){
+        return nanos;
+    }
+
+
+    //-----------------------------------------------------------------------
+    /**
+     * Returns a copy of this {@code Duration} truncated to the specified unit.
+     * <p>
+     * Truncating the duration returns a copy of the original with conceptual fields
+     * smaller than the specified unit set to zero.
+     * For example, truncating with the {@link ChronoUnit#MINUTES MINUTES} unit will
+     * round down towards zero to the nearest minute, setting the seconds and
+     * nanoseconds to zero.
+     * <p>
+     * The unit must have a {@linkplain TemporalUnit#getDuration() duration}
+     * that divides into the length of a standard day without remainder.
+     * This includes all
+     * {@linkplain ChronoUnit#isTimeBased() time-based units on {@code ChronoUnit}}
+     * and {@link ChronoUnit#DAYS DAYS}. Other ChronoUnits throw an exception.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param unit the unit to truncate to, not null
+     * @return a {@code Duration} based on this duration with the time truncated, not null
+     * @throws DateTimeException if the unit is invalid for truncation
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
+     * @since 9
+     */
+    public Duration truncatedTo(TemporalUnit unit) {
+        Objects.requireNonNull(unit, "unit");
+        if (unit == ChronoUnit.SECONDS && (seconds >= 0 || nanos == 0)) {
+            return new Duration(seconds, 0);
+        } else if (unit == ChronoUnit.NANOS) {
+            return this;
+        }
+        Duration unitDur = unit.getDuration();
+        if (unitDur.getSeconds() > LocalTime.SECONDS_PER_DAY) {
+            throw new UnsupportedTemporalTypeException("Unit is too large to be used for truncation");
+        }
+        long dur = unitDur.toNanos();
+        if ((LocalTime.NANOS_PER_DAY % dur) != 0) {
+            throw new UnsupportedTemporalTypeException("Unit must divide into a standard day without remainder");
+        }
+        long nod = (seconds % LocalTime.SECONDS_PER_DAY) * LocalTime.NANOS_PER_SECOND + nanos;
+        long result = (nod / dur) * dur;
+        return plusNanos(result - nod);
     }
 
     //-----------------------------------------------------------------------
@@ -1199,7 +1401,7 @@ public final class Duration
      * The comparison is based on the total length of the durations.
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
-     * @param otherDuration  the other duration to compare to, not null
+     * @param otherDuration the other duration to compare to, not null
      * @return the comparator value, negative if less, positive if greater
      */
     @Override
@@ -1217,7 +1419,7 @@ public final class Duration
      * <p>
      * The comparison is based on the total length of the durations.
      *
-     * @param otherDuration  the other duration, null returns false
+     * @param otherDuration the other duration, null returns false
      * @return true if the other duration is equal to this one
      */
     @Override
@@ -1250,7 +1452,7 @@ public final class Duration
      * <p>
      * The format of the returned string will be {@code PTnHnMnS}, where n is
      * the relevant hours, minutes or seconds part of the duration.
-     * Any fractional seconds are placed after a decimal point i the seconds section.
+     * Any fractional seconds are placed after a decimal point in the seconds section.
      * If a section has a zero value, it is omitted.
      * The hours, minutes and seconds will all have the same sign.
      * <p>
@@ -1271,9 +1473,13 @@ public final class Duration
         if (this == ZERO) {
             return "PT0S";
         }
-        long hours = seconds / SECONDS_PER_HOUR;
-        int minutes = (int) ((seconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
-        int secs = (int) (seconds % SECONDS_PER_MINUTE);
+        long effectiveTotalSecs = seconds;
+        if (seconds < 0 && nanos > 0) {
+            effectiveTotalSecs++;
+        }
+        long hours = effectiveTotalSecs / SECONDS_PER_HOUR;
+        int minutes = (int) ((effectiveTotalSecs % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
+        int secs = (int) (effectiveTotalSecs % SECONDS_PER_MINUTE);
         StringBuilder buf = new StringBuilder(24);
         buf.append("PT");
         if (hours != 0) {
@@ -1285,18 +1491,18 @@ public final class Duration
         if (secs == 0 && nanos == 0 && buf.length() > 2) {
             return buf.toString();
         }
-        if (secs < 0 && nanos > 0) {
-            if (secs == -1) {
+        if (seconds < 0 && nanos > 0) {
+            if (secs == 0) {
                 buf.append("-0");
             } else {
-                buf.append(secs + 1);
+                buf.append(secs);
             }
         } else {
             buf.append(secs);
         }
         if (nanos > 0) {
             int pos = buf.length();
-            if (secs < 0) {
+            if (seconds < 0) {
                 buf.append(2 * NANOS_PER_SECOND - nanos);
             } else {
                 buf.append(nanos + NANOS_PER_SECOND);
