@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ abstract class PipelineHelper<P_OUT> {
     /**
      * Returns the exact output size of the portion of the output resulting from
      * applying the pipeline stages described by this {@code PipelineHelper} to
-     * the the portion of the input described by the provided
+     * the portion of the input described by the provided
      * {@code Spliterator}, if known.  If not known or known infinite, will
      * return {@code -1}.
      *
@@ -98,7 +98,7 @@ abstract class PipelineHelper<P_OUT> {
      * @implSpec
      * The implementation behaves as if:
      * <pre>{@code
-     *     intoWrapped(wrapSink(sink), spliterator);
+     *     copyInto(wrapSink(sink), spliterator);
      * }</pre>
      *
      * @param sink the {@code Sink} to receive the results
@@ -136,8 +136,9 @@ abstract class PipelineHelper<P_OUT> {
      *
      * @param wrappedSink the destination {@code Sink}
      * @param spliterator the source {@code Spliterator}
+     * @return true if the cancellation was requested
      */
-    abstract <P_IN> void copyIntoWithCancel(Sink<P_IN> wrappedSink, Spliterator<P_IN> spliterator);
+    abstract <P_IN> boolean copyIntoWithCancel(Sink<P_IN> wrappedSink, Spliterator<P_IN> spliterator);
 
     /**
      * Takes a {@code Sink} that accepts elements of the output type of the

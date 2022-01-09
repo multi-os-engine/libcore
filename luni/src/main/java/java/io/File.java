@@ -26,6 +26,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.nio.file.Path;
+import java.nio.file.FileSystems;
 import libcore.io.DeleteOnExit;
 import libcore.io.IoUtils;
 import libcore.io.Libcore;
@@ -1168,5 +1170,51 @@ public class File implements Serializable, Comparable<File> {
         } catch (ErrnoException errnoException) {
             return 0;
         }
+    }
+
+    // -- Integration with java.nio.file --
+
+    private transient volatile Path filePath;
+
+    /**
+     * Returns a {@link Path java.nio.file.Path} object constructed from
+     * this abstract path. The resulting {@code Path} is associated with the
+     * {@link java.nio.file.FileSystems#getDefault default-filesystem}.
+     *
+     * <p> The first invocation of this method works as if invoking it were
+     * equivalent to evaluating the expression:
+     * <blockquote><pre>
+     * {@link java.nio.file.FileSystems#getDefault FileSystems.getDefault}().{@link
+     * java.nio.file.FileSystem#getPath getPath}(this.{@link #getPath getPath}());
+     * </pre></blockquote>
+     * Subsequent invocations of this method return the same {@code Path}.
+     *
+     * <p> If this abstract pathname is the empty abstract pathname then this
+     * method returns a {@code Path} that may be used to access the current
+     * user directory.
+     *
+     * @return  a {@code Path} constructed from this abstract path
+     *
+     * @throws  java.nio.file.InvalidPathException
+     *          if a {@code Path} object cannot be constructed from the abstract
+     *          path (see {@link java.nio.file.FileSystem#getPath FileSystem.getPath})
+     *
+     * @since   1.7
+     * @see Path#toFile
+     */
+    public Path toPath() {
+      // For desugar: Avoid using new internal state of java.nio.File.
+      // Path result = filePath;
+      // if (result == null) {
+      //     synchronized (this) {
+      //         result = filePath;
+      //         if (result == null) {
+      //             result = FileSystems.getDefault().getPath(path);
+      //             filePath = result;
+      //         }
+      //     }
+      // }
+      // return result;
+      return FileSystems.getDefault().getPath(getPath());
     }
 }

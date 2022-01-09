@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@
  * <p>Additional stream sources can be provided by third-party libraries using
  * <a href="package-summary.html#StreamSources">these techniques</a>.
  *
- * <h2><a name="StreamOps">Stream operations and pipelines</a></h2>
+ * <h2><a id="StreamOps">Stream operations and pipelines</a></h2>
  *
  * <p>Stream operations are divided into <em>intermediate</em> and
  * <em>terminal</em> operations, and are combined to form <em>stream
@@ -159,7 +159,7 @@
  * is a necessary, but not sufficient, condition for the processing of an infinite
  * stream to terminate normally in finite time.
  *
- * <h3>Parallelism</h3>
+ * <h3><a id="Parallelism">Parallelism</a></h3>
  *
  * <p>Processing elements with an explicit {@code for-}loop is inherently serial.
  * Streams facilitate parallel execution by reframing the computation as a pipeline of
@@ -184,15 +184,15 @@
  *
  * <p>The only difference between the serial and parallel versions of this
  * example is the creation of the initial stream, using "{@code parallelStream()}"
- * instead of "{@code stream()}".  When the terminal operation is initiated,
- * the stream pipeline is executed sequentially or in parallel depending on the
- * orientation of the stream on which it is invoked.  Whether a stream will execute in serial or
- * parallel can be determined with the {@code isParallel()} method, and the
- * orientation of a stream can be modified with the
+ * instead of "{@code stream()}". The stream pipeline is executed sequentially or
+ * in parallel depending on the mode of the stream on which the terminal operation
+ * is invoked. The sequential or parallel mode of a stream can be determined with the
+ * {@link java.util.stream.BaseStream#isParallel()} method, and the
+ * stream's mode can be modified with the
  * {@link java.util.stream.BaseStream#sequential()} and
- * {@link java.util.stream.BaseStream#parallel()} operations.  When the terminal
- * operation is initiated, the stream pipeline is executed sequentially or in
- * parallel depending on the mode of the stream on which it is invoked.
+ * {@link java.util.stream.BaseStream#parallel()} operations.
+ * The most recent sequential or parallel mode setting applies to the
+ * execution of the entire stream pipeline.
  *
  * <p>Except for operations identified as explicitly nondeterministic, such
  * as {@code findAny()}, whether a stream executes sequentially or in parallel
@@ -206,7 +206,7 @@
  * as {@link java.util.function.Function}, and are often lambda expressions or
  * method references.
  *
- * <h3><a name="NonInterference">Non-interference</a></h3>
+ * <h3><a id="NonInterference">Non-interference</a></h3>
  *
  * Streams enable you to execute possibly-parallel aggregate operations over a
  * variety of data sources, including even non-thread-safe collections such as
@@ -252,7 +252,7 @@
  * <a href="package-summary.html#StreamSources">Low-level stream
  * construction</a> for requirements for building well-behaved streams.
  *
- * <h3><a name="Statelessness">Stateless behaviors</a></h3>
+ * <h3><a id="Statelessness">Stateless behaviors</a></h3>
  *
  * Stream pipeline results may be nondeterministic or incorrect if the behavioral
  * parameters to the stream operations are <em>stateful</em>.  A stateful lambda
@@ -280,24 +280,41 @@
  * parameters to stream operations entirely; there is usually a way to
  * restructure the stream pipeline to avoid statefulness.
  *
- * <h3>Side-effects</h3>
+ * <h3><a id="SideEffects">Side-effects</a></h3>
  *
  * Side-effects in behavioral parameters to stream operations are, in general,
  * discouraged, as they can often lead to unwitting violations of the
  * statelessness requirement, as well as other thread-safety hazards.
  *
  * <p>If the behavioral parameters do have side-effects, unless explicitly
- * stated, there are no guarantees as to the
- * <a href="../concurrent/package-summary.html#MemoryVisibility"><i>visibility</i></a>
- * of those side-effects to other threads, nor are there any guarantees that
- * different operations on the "same" element within the same stream pipeline
- * are executed in the same thread.  Further, the ordering of those effects
- * may be surprising.  Even when a pipeline is constrained to produce a
- * <em>result</em> that is consistent with the encounter order of the stream
- * source (for example, {@code IntStream.range(0,5).parallel().map(x -> x*2).toArray()}
+ * stated, there are no guarantees as to:
+ * <ul>
+ *    <li>the <a href="../concurrent/package-summary.html#MemoryVisibility">
+ *    <i>visibility</i></a> of those side-effects to other threads;</li>
+ *    <li>that different operations on the "same" element within the same stream
+ *    pipeline are executed in the same thread; and</li>
+ *    <li>that behavioral parameters are always invoked, since a stream
+ *    implementation is free to elide operations (or entire stages) from a
+ *    stream pipeline if it can prove that it would not affect the result of the
+ *    computation.
+ *    </li>
+ * </ul>
+ * <p>The ordering of side-effects may be surprising.  Even when a pipeline is
+ * constrained to produce a <em>result</em> that is consistent with the
+ * encounter order of the stream source (for example,
+ * {@code IntStream.range(0,5).parallel().map(x -> x*2).toArray()}
  * must produce {@code [0, 2, 4, 6, 8]}), no guarantees are made as to the order
  * in which the mapper function is applied to individual elements, or in what
  * thread any behavioral parameter is executed for a given element.
+ *
+ * <p>The eliding of side-effects may also be surprising.  With the exception of
+ * terminal operations {@link java.util.stream.Stream#forEach forEach} and
+ * {@link java.util.stream.Stream#forEachOrdered forEachOrdered}, side-effects
+ * of behavioral parameters may not always be executed when the stream
+ * implementation can optimize away the execution of behavioral parameters
+ * without affecting the result of the computation.  (For a specific example
+ * see the API note documented on the {@link java.util.stream.Stream#count count}
+ * operation.)
  *
  * <p>Many computations where one might be tempted to use side effects can be more
  * safely and efficiently expressed without side-effects, such as using
@@ -332,7 +349,7 @@
  *               .collect(Collectors.toList());  // No side-effects!
  * }</pre>
  *
- * <h3><a name="Ordering">Ordering</a></h3>
+ * <h3><a id="Ordering">Ordering</a></h3>
  *
  * <p>Streams may or may not have a defined <em>encounter order</em>.  Whether
  * or not a stream has an encounter order depends on the source and the
@@ -371,7 +388,7 @@
  * However, most stream pipelines, such as the "sum of weight of blocks" example
  * above, still parallelize efficiently even under ordering constraints.
  *
- * <h2><a name="Reduction">Reduction operations</a></h2>
+ * <h2><a id="Reduction">Reduction operations</a></h2>
  *
  * A <em>reduction</em> operation (also called a <em>fold</em>) takes a sequence
  * of input elements and combines them into a single summary result by repeated
@@ -398,7 +415,7 @@
  * elements -- but a properly constructed reduce operation is inherently
  * parallelizable, so long as the function(s) used to process the elements
  * are <a href="package-summary.html#Associativity">associative</a> and
- * <a href="package-summary.html#NonInterfering">stateless</a>.
+ * <a href="package-summary.html#Statelessness">stateless</a>.
  * For example, given a stream of numbers for which we want to find the sum, we
  * can write:
  * <pre>{@code
@@ -468,7 +485,7 @@
  * <pre>{@code
  *     int sumOfWeights = widgets.stream()
  *                               .reduce(0,
- *                                       (sum, b) -> sum + b.getWeight())
+ *                                       (sum, b) -> sum + b.getWeight(),
  *                                       Integer::sum);
  * }</pre>
  * though the explicit map-reduce form is more readable and therefore should
@@ -476,7 +493,7 @@
  * significant work can be optimized away by combining mapping and reducing
  * into a single function.
  *
- * <h3><a name="MutableReduction">Mutable reduction</a></h3>
+ * <h3><a id="MutableReduction">Mutable reduction</a></h3>
  *
  * A <em>mutable reduction operation</em> accumulates input elements into a
  * mutable result container, such as a {@code Collection} or {@code StringBuilder},
@@ -603,7 +620,7 @@
  * but in some cases equivalence may be relaxed to account for differences in
  * order.
  *
- * <h3><a name="ConcurrentReduction">Reduction, concurrency, and ordering</a></h3>
+ * <h3><a id="ConcurrentReduction">Reduction, concurrency, and ordering</a></h3>
  *
  * With some complex reduction operations, for example a {@code collect()} that
  * produces a {@code Map}, such as:
@@ -658,7 +675,7 @@
  * We would then be constrained to implement either a sequential reduction or
  * a merge-based parallel reduction.
  *
- * <h3><a name="Associativity">Associativity</a></h3>
+ * <h3><a id="Associativity">Associativity</a></h3>
  *
  * An operator or function {@code op} is <em>associative</em> if the following
  * holds:
@@ -676,7 +693,7 @@
  * <p>Examples of associative operations include numeric addition, min, and
  * max, and string concatenation.
  *
- * <h2><a name="StreamSources">Low-level stream construction</a></h2>
+ * <h2><a id="StreamSources">Low-level stream construction</a></h2>
  *
  * So far, all the stream examples have used methods like
  * {@link java.util.Collection#stream()} or {@link java.util.Arrays#stream(Object[])}

@@ -35,10 +35,6 @@
 
 package java.util.concurrent;
 
-// BEGIN android-note
-// removed link to collections framework docs
-// END android-note
-
 /**
  * A {@link BlockingQueue} in which producers may wait for consumers
  * to receive elements.  A {@code TransferQueue} may be useful for
@@ -61,9 +57,13 @@ package java.util.concurrent;
  * with zero capacity, such as {@link SynchronousQueue}, {@code put}
  * and {@code transfer} are effectively synonymous.
  *
+ * <p>This interface is a member of the
+ * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
+ * Java Collections Framework</a>.
+ *
  * @since 1.7
  * @author Doug Lea
- * @param <E> the type of elements held in this collection
+ * @param <E> the type of elements held in this queue
  */
 public interface TransferQueue<E> extends BlockingQueue<E> {
     /**

@@ -59,4 +59,33 @@ public class URLDecoder {
     public static String decode(String s, String charsetName) throws UnsupportedEncodingException {
         return UriCodec.decode(s, true, Charset.forName(charsetName), true);
     }
+
+    /**
+     * Decodes an {@code application/x-www-form-urlencoded} string using
+     * a specific {@linkplain java.nio.charset.Charset Charset}.
+     * The supplied charset is used to determine
+     * what characters are represented by any consecutive sequences of the
+     * form "<i>{@code %xy}</i>".
+     * <p>
+     * <em><strong>Note:</strong> The <a href=
+     * "http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars">
+     * World Wide Web Consortium Recommendation</a> states that
+     * UTF-8 should be used. Not doing so may introduce
+     * incompatibilities.</em>
+     *
+     * @implNote This implementation will throw an {@link java.lang.IllegalArgumentException}
+     * when illegal strings are encountered.
+     *
+     * @param s the {@code String} to decode
+     * @param charset the given charset
+     * @return the newly decoded {@code String}
+     * @throws NullPointerException if {@code s} or {@code charset} is {@code null}
+     * @throws IllegalArgumentException if the implementation encounters illegal
+     * characters
+     * @see URLEncoder#encode(java.lang.String, java.nio.charset.Charset)
+     * @since 10
+     */
+    public static String decode(String s, Charset charset) {
+        return UriCodec.decode(s, true, charset, true);
+    }
 }

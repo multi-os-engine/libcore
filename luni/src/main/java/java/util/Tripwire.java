@@ -63,7 +63,7 @@ final class Tripwire {
      */
     static void trip(Class<?> trippingClass, String msg) {
         // for desugar: avoid dependency on sun.util.logging.PlatformLogger
-        //PlatformLogger.getLogger(trippingClass.getName()).warning(msg, trippingClass.getName());
+        // PlatformLogger.getLogger(trippingClass.getName()).warning(msg, trippingClass.getName());
         throw new UnsupportedOperationException(
                 trippingClass + " tripwire tripped but logging not supported: " + msg);
     }

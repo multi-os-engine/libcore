@@ -17,6 +17,7 @@
 
 package java.io;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
 
 /**
@@ -176,6 +177,26 @@ public class ByteArrayOutputStream extends OutputStream {
     }
 
     /**
+     * Converts the buffer's contents into a string by decoding the bytes using
+     * the specified {@link java.nio.charset.Charset charset}. The length of the new
+     * {@code String} is a function of the charset, and hence may not be equal
+     * to the length of the byte array.
+     *
+     * <p> This method always replaces malformed-input and unmappable-character
+     * sequences with the charset's default replacement string. The {@link
+     * java.nio.charset.CharsetDecoder} class should be used when more control
+     * over the decoding process is required.
+     *
+     * @param      charset  the {@linkplain java.nio.charset.Charset charset}
+     *             to be used to decode the {@code bytes}
+     * @return     String decoded from the buffer's contents.
+     * @since      10
+     */
+    public synchronized String toString(Charset charset) {
+        return new String(buf, 0, count, charset);
+    }
+
+    /**
      * Writes {@code count} bytes from the byte array {@code buffer} starting at
      * offset {@code index} to this stream.
      *
@@ -216,6 +237,22 @@ public class ByteArrayOutputStream extends OutputStream {
             expand(1);
         }
         buf[count++] = (byte) oneByte;
+    }
+
+    /**
+     * Writes the complete contents of the specified byte array
+     * to this {@code ByteArrayOutputStream}.
+     *
+     * @apiNote
+     * This method is equivalent to {@link #write(byte[],int,int)
+     * write(b, 0, b.length)}.
+     *
+     * @param   b     the data.
+     * @throws  NullPointerException if {@code b} is {@code null}.
+     * @since   11
+     */
+    public void writeBytes(byte b[]) {
+        write(b, 0, b.length);
     }
 
     /**

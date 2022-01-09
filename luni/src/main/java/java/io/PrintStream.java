@@ -19,6 +19,7 @@ package java.io;
 
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.IllegalFormatException;
@@ -33,6 +34,7 @@ import java.util.Locale;
  * has occurred in this stream.
  */
 public class PrintStream extends FilterOutputStream implements Appendable, Closeable {
+
     /**
      * indicates whether or not this PrintStream has incurred an error.
      */
@@ -44,161 +46,326 @@ public class PrintStream extends FilterOutputStream implements Appendable, Close
      */
     private boolean autoFlush;
 
-    private String encoding;
+    private Charset encoding;
 
     /**
-     * Constructs a new {@code PrintStream} with {@code out} as its target
-     * stream. By default, the new print stream does not automatically flush its
-     * contents to the target stream when a newline is encountered.
+     * requireNonNull is explicitly declared here so as not to create an extra
+     * dependency on java.util.Objects.requireNonNull. PrintStream is loaded
+     * early during system initialization.
+     */
+    private static <T> T requireNonNull(T obj, String message) {
+        if (obj == null)
+            throw new NullPointerException(message);
+        return obj;
+    }
+
+    /**
+     * Returns a charset object for the given charset name.
+     * @throws NullPointerException          is csn is null
+     * @throws UnsupportedEncodingException  if the charset is not supported
+     */
+    private static Charset toCharset(String csn)
+        throws UnsupportedEncodingException
+    {
+        requireNonNull(csn, "charsetName");
+        try {
+            return Charset.forName(csn);
+        } catch (IllegalCharsetNameException|UnsupportedCharsetException unused) {
+            // UnsupportedEncodingException should be thrown
+            throw new UnsupportedEncodingException(csn);
+        }
+    }
+
+    /* Private constructors */
+    private PrintStream(boolean autoFlush, OutputStream out) {
+        super(out);
+        this.autoFlush = autoFlush;
+    }
+
+    /* Variant of the private constructor so that the given charset name
+     * can be verified before evaluating the OutputStream argument. Used
+     * by constructors creating a FileOutputStream that also take a
+     * charset name.
+     */
+    private PrintStream(boolean autoFlush, Charset charset, OutputStream out) {
+        this(out, autoFlush, charset);
+    }
+
+    /**
+     * Creates a new print stream.  This stream will not flush automatically.
      *
-     * @param out
-     *            the target output stream.
-     * @throws NullPointerException
-     *             if {@code out} is {@code null}.
+     * @param  out        The output stream to which values and objects will be
+     *                    printed
+     *
+     * @see java.io.PrintWriter#PrintWriter(java.io.OutputStream)
      */
     public PrintStream(OutputStream out) {
-        super(out);
-        if (out == null) {
-            throw new NullPointerException("out == null");
-        }
+        this(out, false);
     }
 
     /**
-     * Constructs a new {@code PrintStream} with {@code out} as its target
-     * stream. The parameter {@code autoFlush} determines if the print stream
-     * automatically flushes its contents to the target stream when a newline is
-     * encountered.
+     * Creates a new print stream.
      *
-     * @param out
-     *            the target output stream.
-     * @param autoFlush
-     *            indicates whether to flush contents upon encountering a
-     *            newline sequence.
-     * @throws NullPointerException
-     *             if {@code out} is {@code null}.
+     * @param  out        The output stream to which values and objects will be
+     *                    printed
+     * @param  autoFlush  A boolean; if true, the output buffer will be flushed
+     *                    whenever a byte array is written, one of the
+     *                    {@code println} methods is invoked, or a newline
+     *                    character or byte ({@code '\n'}) is written
+     *
+     * @see java.io.PrintWriter#PrintWriter(java.io.OutputStream, boolean)
      */
     public PrintStream(OutputStream out, boolean autoFlush) {
+        this(autoFlush, requireNonNull(out, "Null output stream"));
+    }
+
+    /**
+     * Creates a new print stream.
+     *
+     * @param  out        The output stream to which values and objects will be
+     *                    printed
+     * @param  autoFlush  A boolean; if true, the output buffer will be flushed
+     *                    whenever a byte array is written, one of the
+     *                    {@code println} methods is invoked, or a newline
+     *                    character or byte ({@code '\n'}) is written
+     * @param  encoding   The name of a supported
+     *                    <a href="../lang/package-summary.html#charenc">
+     *                    character encoding</a>
+     *
+     * @throws  UnsupportedEncodingException
+     *          If the named encoding is not supported
+     *
+     * @since  1.4
+     */
+    public PrintStream(OutputStream out, boolean autoFlush, String encoding)
+        throws UnsupportedEncodingException
+    {
+        this(requireNonNull(out, "Null output stream"), autoFlush, toCharset(encoding));
+    }
+
+    /**
+     * Creates a new print stream, with the specified OutputStream, automatic line
+     * flushing and charset.  This convenience constructor creates the necessary
+     * intermediate {@link java.io.OutputStreamWriter OutputStreamWriter},
+     * which will encode characters using the provided charset.
+     *
+     * @param  out        The output stream to which values and objects will be
+     *                    printed
+     * @param  autoFlush  A boolean; if true, the output buffer will be flushed
+     *                    whenever a byte array is written, one of the
+     *                    {@code println} methods is invoked, or a newline
+     *                    character or byte ({@code '\n'}) is written
+     * @param  charset    A {@linkplain java.nio.charset.Charset charset}
+     *
+     * @since  10
+     */
+    public PrintStream(OutputStream out, boolean autoFlush, Charset charset) {
         super(out);
-        if (out == null) {
-            throw new NullPointerException("out == null");
-        }
         this.autoFlush = autoFlush;
+        this.encoding = charset;
     }
 
     /**
-     * Constructs a new {@code PrintStream} with {@code out} as its target
-     * stream and using the character encoding {@code charsetName} while writing. The
-     * parameter {@code autoFlush} determines if the print stream automatically
-     * flushes its contents to the target stream when a newline is encountered.
+     * Creates a new print stream, without automatic line flushing, with the
+     * specified file name.  This convenience constructor creates
+     * the necessary intermediate {@link java.io.OutputStreamWriter
+     * OutputStreamWriter}, which will encode characters using the
+     * {@linkplain java.nio.charset.Charset#defaultCharset() default charset}
+     * for this instance of the Java virtual machine.
      *
-     * @param out
-     *            the target output stream.
-     * @param autoFlush
-     *            indicates whether or not to flush contents upon encountering a
-     *            newline sequence.
-     * @param charsetName
-     *            the non-null string describing the desired character encoding.
-     * @throws NullPointerException
-     *             if {@code out} or {@code charsetName} are {@code null}.
-     * @throws UnsupportedEncodingException
-     *             if the encoding specified by {@code charsetName} is not supported.
-     */
-    public PrintStream(OutputStream out, boolean autoFlush, String charsetName)
-            throws UnsupportedEncodingException {
-        super(out);
-        if (out == null) {
-            throw new NullPointerException("out == null");
-        } else if (charsetName == null) {
-            throw new NullPointerException("charsetName == null");
-        }
-        this.autoFlush = autoFlush;
-        try {
-            if (!Charset.isSupported(charsetName)) {
-                throw new UnsupportedEncodingException(charsetName);
-            }
-        } catch (IllegalCharsetNameException e) {
-            throw new UnsupportedEncodingException(charsetName);
-        }
-        encoding = charsetName;
-    }
-
-    /**
-     * Constructs a new {@code PrintStream} with {@code file} as its target. The
-     * VM's default character set is used for character encoding.
+     * @param  fileName
+     *         The name of the file to use as the destination of this print
+     *         stream.  If the file exists, then it will be truncated to
+     *         zero size; otherwise, a new file will be created.  The output
+     *         will be written to the file and is buffered.
      *
-     * @param file
-     *            the target file. If the file already exists, its contents are
-     *            removed, otherwise a new file is created.
-     * @throws FileNotFoundException
-     *             if an error occurs while opening or creating the target file.
-     */
-    public PrintStream(File file) throws FileNotFoundException {
-        super(new FileOutputStream(file));
-    }
-
-    /**
-     * Constructs a new {@code PrintStream} with {@code file} as its target. The
-     * character set named {@code charsetName} is used for character encoding.
+     * @throws  FileNotFoundException
+     *          If the given file object does not denote an existing, writable
+     *          regular file and a new regular file of that name cannot be
+     *          created, or if some other error occurs while opening or
+     *          creating the file
      *
-     * @param file
-     *            the target file. If the file already exists, its contents are
-     *            removed, otherwise a new file is created.
-     * @param charsetName
-     *            the name of the character set used for character encoding.
-     * @throws FileNotFoundException
-     *             if an error occurs while opening or creating the target file.
-     * @throws NullPointerException
-     *             if {@code charsetName} is {@code null}.
-     * @throws UnsupportedEncodingException
-     *             if the encoding specified by {@code charsetName} is not supported.
-     */
-    public PrintStream(File file, String charsetName) throws FileNotFoundException,
-            UnsupportedEncodingException {
-        super(new FileOutputStream(file));
-        if (charsetName == null) {
-            throw new NullPointerException("charsetName == null");
-        }
-        if (!Charset.isSupported(charsetName)) {
-            throw new UnsupportedEncodingException(charsetName);
-        }
-        encoding = charsetName;
-    }
-
-    /**
-     * Constructs a new {@code PrintStream} with the file identified by
-     * {@code fileName} as its target. The VM's default character
-     * set is used for character encoding.
+     * @throws  SecurityException
+     *          If a security manager is present and {@link
+     *          SecurityManager#checkWrite checkWrite(fileName)} denies write
+     *          access to the file
      *
-     * @param fileName
-     *            the target file's name. If the file already exists, its
-     *            contents are removed, otherwise a new file is created.
-     * @throws FileNotFoundException
-     *             if an error occurs while opening or creating the target file.
+     * @since  1.5
      */
     public PrintStream(String fileName) throws FileNotFoundException {
-        this(new File(fileName));
+        this(false, new FileOutputStream(fileName));
     }
 
     /**
-     * Constructs a new {@code PrintStream} with the file identified by
-     * {@code fileName} as its target. The character set named {@code charsetName} is
-     * used for character encoding.
+     * Creates a new print stream, without automatic line flushing, with the
+     * specified file name and charset.  This convenience constructor creates
+     * the necessary intermediate {@link java.io.OutputStreamWriter
+     * OutputStreamWriter}, which will encode characters using the provided
+     * charset.
      *
-     * @param fileName
-     *            the target file's name. If the file already exists, its
-     *            contents are removed, otherwise a new file is created.
-     * @param charsetName
-     *            the name of the character set used for character encoding.
-     * @throws FileNotFoundException
-     *             if an error occurs while opening or creating the target file.
-     * @throws NullPointerException
-     *             if {@code charsetName} is {@code null}.
-     * @throws UnsupportedEncodingException
-     *             if the encoding specified by {@code charsetName} is not supported.
+     * @param  fileName
+     *         The name of the file to use as the destination of this print
+     *         stream.  If the file exists, then it will be truncated to
+     *         zero size; otherwise, a new file will be created.  The output
+     *         will be written to the file and is buffered.
+     *
+     * @param  csn
+     *         The name of a supported {@linkplain java.nio.charset.Charset
+     *         charset}
+     *
+     * @throws  FileNotFoundException
+     *          If the given file object does not denote an existing, writable
+     *          regular file and a new regular file of that name cannot be
+     *          created, or if some other error occurs while opening or
+     *          creating the file
+     *
+     * @throws  SecurityException
+     *          If a security manager is present and {@link
+     *          SecurityManager#checkWrite checkWrite(fileName)} denies write
+     *          access to the file
+     *
+     * @throws  UnsupportedEncodingException
+     *          If the named charset is not supported
+     *
+     * @since  1.5
      */
-    public PrintStream(String fileName, String charsetName)
-            throws FileNotFoundException, UnsupportedEncodingException {
-        this(new File(fileName), charsetName);
+    public PrintStream(String fileName, String csn)
+        throws FileNotFoundException, UnsupportedEncodingException
+    {
+        // ensure charset is checked before the file is opened
+        this(false, toCharset(csn), new FileOutputStream(fileName));
+    }
+
+    /**
+     * Creates a new print stream, without automatic line flushing, with the
+     * specified file name and charset.  This convenience constructor creates
+     * the necessary intermediate {@link java.io.OutputStreamWriter
+     * OutputStreamWriter}, which will encode characters using the provided
+     * charset.
+     *
+     * @param  fileName
+     *         The name of the file to use as the destination of this print
+     *         stream.  If the file exists, then it will be truncated to
+     *         zero size; otherwise, a new file will be created.  The output
+     *         will be written to the file and is buffered.
+     *
+     * @param  charset
+     *         A {@linkplain java.nio.charset.Charset charset}
+     *
+     * @throws  IOException
+     *          if an I/O error occurs while opening or creating the file
+     *
+     * @throws  SecurityException
+     *          If a security manager is present and {@link
+     *          SecurityManager#checkWrite checkWrite(fileName)} denies write
+     *          access to the file
+     *
+     * @since  10
+     */
+    public PrintStream(String fileName, Charset charset) throws IOException {
+        this(false, requireNonNull(charset, "charset"), new FileOutputStream(fileName));
+    }
+
+    /**
+     * Creates a new print stream, without automatic line flushing, with the
+     * specified file.  This convenience constructor creates the necessary
+     * intermediate {@link java.io.OutputStreamWriter OutputStreamWriter},
+     * which will encode characters using the {@linkplain
+     * java.nio.charset.Charset#defaultCharset() default charset} for this
+     * instance of the Java virtual machine.
+     *
+     * @param  file
+     *         The file to use as the destination of this print stream.  If the
+     *         file exists, then it will be truncated to zero size; otherwise,
+     *         a new file will be created.  The output will be written to the
+     *         file and is buffered.
+     *
+     * @throws  FileNotFoundException
+     *          If the given file object does not denote an existing, writable
+     *          regular file and a new regular file of that name cannot be
+     *          created, or if some other error occurs while opening or
+     *          creating the file
+     *
+     * @throws  SecurityException
+     *          If a security manager is present and {@link
+     *          SecurityManager#checkWrite checkWrite(file.getPath())}
+     *          denies write access to the file
+     *
+     * @since  1.5
+     */
+    public PrintStream(File file) throws FileNotFoundException {
+        this(false, new FileOutputStream(file));
+    }
+
+    /**
+     * Creates a new print stream, without automatic line flushing, with the
+     * specified file and charset.  This convenience constructor creates
+     * the necessary intermediate {@link java.io.OutputStreamWriter
+     * OutputStreamWriter}, which will encode characters using the provided
+     * charset.
+     *
+     * @param  file
+     *         The file to use as the destination of this print stream.  If the
+     *         file exists, then it will be truncated to zero size; otherwise,
+     *         a new file will be created.  The output will be written to the
+     *         file and is buffered.
+     *
+     * @param  csn
+     *         The name of a supported {@linkplain java.nio.charset.Charset
+     *         charset}
+     *
+     * @throws  FileNotFoundException
+     *          If the given file object does not denote an existing, writable
+     *          regular file and a new regular file of that name cannot be
+     *          created, or if some other error occurs while opening or
+     *          creating the file
+     *
+     * @throws  SecurityException
+     *          If a security manager is present and {@link
+     *          SecurityManager#checkWrite checkWrite(file.getPath())}
+     *          denies write access to the file
+     *
+     * @throws  UnsupportedEncodingException
+     *          If the named charset is not supported
+     *
+     * @since  1.5
+     */
+    public PrintStream(File file, String csn)
+        throws FileNotFoundException, UnsupportedEncodingException
+    {
+        // ensure charset is checked before the file is opened
+        this(false, toCharset(csn), new FileOutputStream(file));
+    }
+
+
+    /**
+     * Creates a new print stream, without automatic line flushing, with the
+     * specified file and charset.  This convenience constructor creates
+     * the necessary intermediate {@link java.io.OutputStreamWriter
+     * OutputStreamWriter}, which will encode characters using the provided
+     * charset.
+     *
+     * @param  file
+     *         The file to use as the destination of this print stream.  If the
+     *         file exists, then it will be truncated to zero size; otherwise,
+     *         a new file will be created.  The output will be written to the
+     *         file and is buffered.
+     *
+     * @param  charset
+     *         A {@linkplain java.nio.charset.Charset charset}
+     *
+     * @throws  IOException
+     *          if an I/O error occurs while opening or creating the file
+     *
+     * @throws  SecurityException
+     *          If a security manager is present and {@link
+     *          SecurityManager#checkWrite checkWrite(file.getPath())}
+     *          denies write access to the file
+     *
+     * @since  10
+     */
+    public PrintStream(File file, Charset charset) throws IOException {
+        this(false, requireNonNull(charset, "charset"), new FileOutputStream(file));
     }
 
     /**

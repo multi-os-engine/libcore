@@ -18,6 +18,7 @@
 package java.lang;
 
 import java.math.*;
+import java.util.Objects;
 
 /**
  * The wrapper for the primitive type {@code long}.
@@ -67,6 +68,71 @@ public final class Long extends Number implements Comparable<Long> {
      * @since 1.5
      */
     public static final int SIZE = 64;
+
+    /**
+     * Returns a string representation of the first argument as an
+     * unsigned integer value in the radix specified by the second
+     * argument.
+     *
+     * <p>If the radix is smaller than {@code Character.MIN_RADIX}
+     * or larger than {@code Character.MAX_RADIX}, then the radix
+     * {@code 10} is used instead.
+     *
+     * <p>Note that since the first argument is treated as an unsigned
+     * value, no leading sign character is printed.
+     *
+     * <p>If the magnitude is zero, it is represented by a single zero
+     * character {@code '0'} ({@code '\u005Cu0030'}); otherwise,
+     * the first character of the representation of the magnitude will
+     * not be the zero character.
+     *
+     * <p>The behavior of radixes and the characters used as digits
+     * are the same as {@link #toString(long, int) toString}.
+     *
+     * @param   i       an integer to be converted to an unsigned string.
+     * @param   radix   the radix to use in the string representation.
+     * @return  an unsigned string representation of the argument in the specified radix.
+     * @see     #toString(long, int)
+     * @since 1.8
+     */
+    public static String toUnsignedString(long i, int radix) {
+        if (i >= 0)
+            return toString(i, radix);
+        else {
+            switch (radix) {
+                case 2:
+                    return toBinaryString(i);
+
+//                case 4:
+//                    return toUnsignedString0(i, 2);
+
+                case 8:
+                    return toOctalString(i);
+
+                case 10:
+                    /*
+                     * We can get the effect of an unsigned division by 10
+                     * on a long value by first shifting right, yielding a
+                     * positive value, and then dividing by 5.  This
+                     * allows the last digit and preceding digits to be
+                     * isolated more quickly than by an initial conversion
+                     * to BigInteger.
+                     */
+                    long quot = (i >>> 1) / 5;
+                    long rem = i - quot * 10;
+                    return toString(quot) + rem;
+
+                case 16:
+                    return toHexString(i);
+
+//                case 32:
+//                    return toUnsignedString0(i, 5);
+
+                default:
+                    return toUnsignedBigInteger(i).toString(radix);
+            }
+        }
+    }
 
     /**
      * Constructs a new {@code Long} with the specified primitive long value.
@@ -315,6 +381,92 @@ public final class Long extends Number implements Comparable<Long> {
     }
 
     /**
+     * Parses the {@link CharSequence} argument as a signed {@code long} in
+     * the specified {@code radix}, beginning at the specified
+     * {@code beginIndex} and extending to {@code endIndex - 1}.
+     *
+     * <p>The method does not take steps to guard against the
+     * {@code CharSequence} being mutated while parsing.
+     *
+     * @param      s   the {@code CharSequence} containing the {@code long}
+     *                  representation to be parsed
+     * @param      beginIndex   the beginning index, inclusive.
+     * @param      endIndex     the ending index, exclusive.
+     * @param      radix   the radix to be used while parsing {@code s}.
+     * @return     the signed {@code long} represented by the subsequence in
+     *             the specified radix.
+     * @throws     NullPointerException  if {@code s} is null.
+     * @throws     IndexOutOfBoundsException  if {@code beginIndex} is
+     *             negative, or if {@code beginIndex} is greater than
+     *             {@code endIndex} or if {@code endIndex} is greater than
+     *             {@code s.length()}.
+     * @throws     NumberFormatException  if the {@code CharSequence} does not
+     *             contain a parsable {@code int} in the specified
+     *             {@code radix}, or if {@code radix} is either smaller than
+     *             {@link java.lang.Character#MIN_RADIX} or larger than
+     *             {@link java.lang.Character#MAX_RADIX}.
+     * @since  9
+     */
+    public static long parseLong(CharSequence s, int beginIndex, int endIndex, int radix)
+        throws NumberFormatException {
+        s = Objects.requireNonNull(s);
+
+        if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (radix < Character.MIN_RADIX) {
+            throw new NumberFormatException("radix " + radix +
+                " less than Character.MIN_RADIX");
+        }
+        if (radix > Character.MAX_RADIX) {
+            throw new NumberFormatException("radix " + radix +
+                " greater than Character.MAX_RADIX");
+        }
+
+        boolean negative = false;
+        int i = beginIndex;
+        long limit = -Long.MAX_VALUE;
+
+        if (i < endIndex) {
+            char firstChar = s.charAt(i);
+            if (firstChar < '0') { // Possible leading "+" or "-"
+                if (firstChar == '-') {
+                    negative = true;
+                    limit = Long.MIN_VALUE;
+                } else if (firstChar != '+') {
+                    throw NumberFormatException.forCharSequence(s, beginIndex,
+                        endIndex, i);
+                }
+                i++;
+            }
+            if (i >= endIndex) { // Cannot have lone "+", "-" or ""
+                throw NumberFormatException.forCharSequence(s, beginIndex,
+                    endIndex, i);
+            }
+            long multmin = limit / radix;
+            long result = 0;
+            while (i < endIndex) {
+                // Accumulating negatively avoids surprises near MAX_VALUE
+                int digit = Character.digit(s.charAt(i), radix);
+                if (digit < 0 || result < multmin) {
+                    throw NumberFormatException.forCharSequence(s, beginIndex,
+                        endIndex, i);
+                }
+                result *= radix;
+                if (result < limit + digit) {
+                    throw NumberFormatException.forCharSequence(s, beginIndex,
+                        endIndex, i);
+                }
+                i++;
+                result -= digit;
+            }
+            return negative ? result : -result;
+        } else {
+            throw new NumberFormatException("");
+        }
+    }
+
+    /**
      * Parses the specified string as a signed long value using the specified
      * radix. The ASCII characters \u002d ('-') and \u002b ('+') are recognized
      * as the minus and plus signs.
@@ -464,6 +616,24 @@ public final class Long extends Number implements Comparable<Long> {
      */
     public static String toString(long n) {
         return IntegralToString.longToString(n);
+    }
+
+    /**
+     * Returns a string representation of the argument as an unsigned
+     * decimal value.
+     *
+     * The argument is converted to unsigned decimal representation
+     * and returned as a string exactly as if the argument and radix
+     * 10 were given as arguments to the {@link #toUnsignedString(long,
+     * int)} method.
+     *
+     * @param   i  an integer to be converted to an unsigned string.
+     * @return  an unsigned string representation of the argument.
+     * @see     #toUnsignedString(long, int)
+     * @since 1.8
+     */
+    public static String toUnsignedString(long i) {
+        return toUnsignedString(i, 10);
     }
 
     /**
