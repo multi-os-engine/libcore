@@ -120,6 +120,71 @@ public abstract class FloatBuffer extends Buffer implements
      */
     public abstract FloatBuffer asReadOnlyBuffer();
 
+    // -- Covariant return type overrides
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final FloatBuffer position(int newPosition) {
+        super.position(newPosition);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final FloatBuffer limit(int newLimit) {
+        super.limit(newLimit);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final FloatBuffer mark() {
+        super.mark();
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final FloatBuffer reset() {
+        super.reset();
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final FloatBuffer clear() {
+        super.clear();
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final FloatBuffer flip() {
+        super.flip();
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final FloatBuffer rewind() {
+        super.rewind();
+        return this;
+    }
+
     /**
      * Compacts this float buffer.
      * <p>
@@ -167,6 +232,44 @@ public abstract class FloatBuffer extends Buffer implements
     }
 
     /**
+     * Finds and returns the relative index of the first mismatch between this
+     * buffer and a given buffer.  The index is relative to the
+     * {@link #position() position} of each buffer and will be in the range of
+     * 0 (inclusive) up to the smaller of the {@link #remaining() remaining}
+     * elements in each buffer (exclusive).
+     *
+     * <p> If the two buffers share a common prefix then the returned index is
+     * the length of the common prefix and it follows that there is a mismatch
+     * between the two buffers at that index within the respective buffers.
+     * If one buffer is a proper prefix of the other then the returned index is
+     * the smaller of the remaining elements in each buffer, and it follows that
+     * the index is only valid for the buffer with the larger number of
+     * remaining elements.
+     * Otherwise, there is no mismatch.
+     *
+     * @param  that
+     *         The byte buffer to be tested for a mismatch with this buffer
+     *
+     * @return  The relative index of the first mismatch between this and the
+     *          given buffer, otherwise -1 if no mismatch.
+     *
+     * @since 11
+     */
+    public int mismatch(FloatBuffer that) {
+        int thisPos = this.position();
+        int thisRem = this.limit() - thisPos;
+        int thatPos = that.position();
+        int thatRem = that.limit() - thatPos;
+        int length = Math.min(thisRem, thatRem);
+        if (length < 0)
+            return -1;
+        int r = BufferMismatch.mismatch(this, thisPos,
+                that, thatPos,
+                length);
+        return (r == -1 && thisRem != thatRem) ? length : r;
+    }
+
+    /**
      * Returns a duplicated buffer that shares its content with this buffer.
      * <p>
      * The duplicated buffer's position, limit, capacity and mark are the same
@@ -177,6 +280,7 @@ public abstract class FloatBuffer extends Buffer implements
      * buffer's change of content will be visible to the other. The two buffers'
      * position, limit and mark are independent.
      */
+    @Override
     public abstract FloatBuffer duplicate();
 
     /**
@@ -478,5 +582,6 @@ public abstract class FloatBuffer extends Buffer implements
      * buffer's change of content will be visible to the other. The two buffers'
      * position, limit and mark are independent.
      */
+    @Override
     public abstract FloatBuffer slice();
 }

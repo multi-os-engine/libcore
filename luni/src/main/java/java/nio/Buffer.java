@@ -205,7 +205,7 @@ public abstract class Buffer {
      *
      * @return this buffer.
      */
-    public final Buffer clear() {
+    public Buffer clear() {
         position = 0;
         mark = UNSET_MARK;
         limit = capacity;
@@ -222,7 +222,7 @@ public abstract class Buffer {
      *
      * @return this buffer.
      */
-    public final Buffer flip() {
+    public Buffer flip() {
         limit = position;
         position = 0;
         mark = UNSET_MARK;
@@ -254,6 +254,46 @@ public abstract class Buffer {
      * @since 1.6
      */
     public abstract boolean isDirect();
+
+    /**
+     * Creates a new buffer whose content is a shared subsequence of
+     * this buffer's content.
+     *
+     * <p> The content of the new buffer will start at this buffer's current
+     * position.  Changes to this buffer's content will be visible in the new
+     * buffer, and vice versa; the two buffers' position, limit, and mark
+     * values will be independent.
+     *
+     * <p> The new buffer's position will be zero, its capacity and its limit
+     * will be the number of elements remaining in this buffer, its mark will be
+     * undefined. The new buffer will be direct if, and only if, this buffer is
+     * direct, and it will be read-only if, and only if, this buffer is
+     * read-only.  </p>
+     *
+     * @return  The new buffer
+     *
+     * @since 9
+     */
+    public abstract Buffer slice();
+
+    /**
+     * Creates a new buffer that shares this buffer's content.
+     *
+     * <p> The content of the new buffer will be that of this buffer.  Changes
+     * to this buffer's content will be visible in the new buffer, and vice
+     * versa; the two buffers' position, limit, and mark values will be
+     * independent.
+     *
+     * <p> The new buffer's capacity, limit, position and mark values will be
+     * identical to those of this buffer. The new buffer will be direct if, and
+     * only if, this buffer is direct, and it will be read-only if, and only if,
+     * this buffer is read-only.  </p>
+     *
+     * @return  The new buffer
+     *
+     * @since 9
+     */
+    public abstract Buffer duplicate();
 
     /**
      * Indicates whether this buffer is read-only.
@@ -293,7 +333,7 @@ public abstract class Buffer {
      * @throws IllegalArgumentException
      *                if <code>newLimit</code> is invalid.
      */
-    public final Buffer limit(int newLimit) {
+    public Buffer limit(int newLimit) {
         if (newLimit < 0 || newLimit > capacity) {
             throw new IllegalArgumentException("Bad limit (capacity " + capacity + "): " + newLimit);
         }
@@ -314,7 +354,7 @@ public abstract class Buffer {
      *
      * @return this buffer.
      */
-    public final Buffer mark() {
+    public Buffer mark() {
         mark = position;
         return this;
     }
@@ -341,7 +381,7 @@ public abstract class Buffer {
      * @throws IllegalArgumentException
      *                if <code>newPosition</code> is invalid.
      */
-    public final Buffer position(int newPosition) {
+    public Buffer position(int newPosition) {
         positionImpl(newPosition);
         return this;
     }
@@ -374,7 +414,7 @@ public abstract class Buffer {
      * @throws InvalidMarkException
      *                if the mark is not set.
      */
-    public final Buffer reset() {
+    public Buffer reset() {
         if (mark == UNSET_MARK) {
             throw new InvalidMarkException("Mark not set");
         }
@@ -390,7 +430,7 @@ public abstract class Buffer {
      *
      * @return this buffer.
      */
-    public final Buffer rewind() {
+    public Buffer rewind() {
         position = 0;
         mark = UNSET_MARK;
         return this;
