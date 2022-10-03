@@ -18,7 +18,9 @@ package java.lang;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 /**
  * Implements a thread-local storage, that is, a variable for which each thread
@@ -529,6 +531,37 @@ public class ThreadLocal<T> {
          */
         private int next(int index) {
             return (index + 2) & mask;
+        }
+    }
+
+    /* BACKPORTED */
+
+    /**
+     * Creates a thread local variable. The initial value of the variable is
+     * determined by invoking the {@code get} method on the {@code Supplier}.
+     *
+     * @param <S> the type of the thread local's value
+     * @param supplier the supplier to be used to determine the initial value
+     * @return a new thread local variable
+     * @throws NullPointerException if the specified supplier is null
+     * @since 1.8
+     */
+    public static <S> ThreadLocal<S> withInitial(Supplier<? extends S> supplier) {
+        return new SuppliedThreadLocal<>(supplier);
+    }
+
+    /**
+     * An extension of ThreadLocal that obtains its initial value from
+     * the specified {@code Supplier}.
+     */
+    static final class SuppliedThreadLocal<T> extends ThreadLocal<T> {
+        private final Supplier<? extends T> supplier;
+        SuppliedThreadLocal(Supplier<? extends T> supplier) {
+            this.supplier = Objects.requireNonNull(supplier);
+        }
+        @Override
+        protected T initialValue() {
+            return supplier.get();
         }
     }
 }
