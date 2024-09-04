@@ -739,8 +739,8 @@ public final class System {
         VMRuntime runtime = VMRuntime.getRuntime();
         Properties p = new Properties();
 
-        String projectUrl = "http://www.android.com/";
-        String projectName = "The Android Project";
+        String projectUrl = "https://multi-os-engine.org/";
+        String projectName = "Multi-OS Engine";
 
         p.put("java.boot.class.path", runtime.bootClassPath());
         p.put("java.class.path", runtime.classPath());
@@ -760,20 +760,20 @@ public final class System {
         }
         p.put("java.home", javaHome);
 
-        p.put("java.specification.name", "Dalvik Core Library");
+        p.put("java.specification.name", "Multi-OS Engine Core Library");
         p.put("java.specification.vendor", projectName);
         p.put("java.specification.version", "0.9");
 
         p.put("java.vendor", projectName);
         p.put("java.vendor.url", projectUrl);
-        p.put("java.vm.name", "Dalvik");
-        p.put("java.vm.specification.name", "Dalvik Virtual Machine Specification");
+        p.put("java.vm.name", "Multi-OS Engine");
+        p.put("java.vm.specification.name", "Multi-OS Engine Virtual Machine Specification");
         p.put("java.vm.specification.vendor", projectName);
         p.put("java.vm.specification.version", "0.9");
         p.put("java.vm.vendor", projectName);
         p.put("java.vm.version", runtime.vmVersion());
 
-        p.put("java.runtime.name", "Android Runtime");
+        p.put("java.runtime.name", "Multi-OS Engine Runtime");
         p.put("java.runtime.version", "0.9");
         p.put("java.vm.vendor.url", projectUrl);
 
