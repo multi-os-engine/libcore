@@ -908,12 +908,8 @@ static jobject Posix_dup2(JNIEnv* env, jobject, jobject javaOldFd, jint newFd) {
 }
 
 static jobjectArray Posix_environ(JNIEnv* env, jobject) {
-#ifndef MOE
     extern char** environ; // Standard, but not in any header file.
     return toStringArray(env, environ);
-#else
-    return env->NewObjectArray(0, JniConstants::stringClass, NULL);
-#endif
 }
 
 static void Posix_execve(JNIEnv* env, jobject, jstring javaFilename, jobjectArray javaArgv, jobjectArray javaEnvp) {
