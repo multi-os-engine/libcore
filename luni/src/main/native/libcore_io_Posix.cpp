@@ -70,6 +70,10 @@
 #include <unistd.h>
 #include <memory>
 
+#ifdef MOE
+#include <sys/mount.h>
+#endif
+
 #ifndef __unused
 #define __unused __attribute__((__unused__))
 #endif
@@ -1021,6 +1025,15 @@ static jobject Posix_fstatvfs(JNIEnv* env, jobject, jobject javaFd) {
         throwErrnoException(env, "fstatvfs");
         return NULL;
     }
+#ifdef MOE
+    struct statfs sf;
+    rc = TEMP_FAILURE_RETRY(fstatfs(fd, &sf));
+    if (rc == -1) {
+        throwErrnoException(env, "fstatfs");
+        return NULL;
+    }
+    sb.f_bsize = sf.f_bsize;
+#endif
     return makeStructStatVfs(env, sb);
 }
 
@@ -2141,6 +2154,15 @@ static jobject Posix_statvfs(JNIEnv* env, jobject, jstring javaPath) {
         throwErrnoException(env, "statvfs");
         return NULL;
     }
+#ifdef MOE
+    struct statfs sf;
+    rc = TEMP_FAILURE_RETRY(statfs(path.c_str(), &sf));
+    if (rc == -1) {
+        throwErrnoException(env, "statfs");
+        return NULL;
+    }
+    sb.f_bsize = sf.f_bsize;
+#endif
     return makeStructStatVfs(env, sb);
 }
 
