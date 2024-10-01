@@ -87,7 +87,6 @@ public final class System {
     private static final String LINE_SEPARATOR = "\n";
     private static final String FILE_SEPARATOR = "/";
 
-    private static final Properties unchangeableSystemProperties;
     private static Properties systemProperties;
 
     /**
@@ -110,7 +109,6 @@ public final class System {
         err = new PrintStream(new FileOutputStream(FileDescriptor.err));
         out = new PrintStream(new FileOutputStream(FileDescriptor.out));
         in = new BufferedInputStream(new FileInputStream(FileDescriptor.in));
-        unchangeableSystemProperties = initUnchangeableSystemProperties();
         systemProperties = createSystemProperties();
 
         addLegacyLocaleSystemProperties();
@@ -120,9 +118,9 @@ public final class System {
         final String locale = getProperty("user.locale", "");
         if (!locale.isEmpty()) {
             Locale l = Locale.forLanguageTag(locale);
-            setUnchangeableSystemProperty("user.language", l.getLanguage());
-            setUnchangeableSystemProperty("user.region", l.getCountry());
-            setUnchangeableSystemProperty("user.variant", l.getVariant());
+            setProperty("user.language", l.getLanguage());
+            setProperty("user.region", l.getCountry());
+            setProperty("user.variant", l.getVariant());
         } else {
             // If "user.locale" isn't set we fall back to our old defaults of
             // language="en" and region="US" (if unset) and don't attempt to set it.
@@ -132,11 +130,11 @@ public final class System {
             final String region = getProperty("user.region", "");
 
             if (language.isEmpty()) {
-                setUnchangeableSystemProperty("user.language", "en");
+                setProperty("user.language", "en");
             }
 
             if (region.isEmpty()) {
-                setUnchangeableSystemProperty("user.region", "US");
+                setProperty("user.region", "US");
             }
         }
     }
@@ -735,7 +733,7 @@ public final class System {
         return systemProperties;
     }
 
-    private static Properties initUnchangeableSystemProperties() {
+    private static Properties createSystemProperties() {
         VMRuntime runtime = VMRuntime.getRuntime();
         Properties p = new Properties();
 
@@ -826,47 +824,14 @@ public final class System {
         p.put("line.separator", LINE_SEPARATOR);
         p.put("path.separator", PATH_SEPARATOR);
 
-        return p;
-    }
 
-    /**
-     * Inits an unchangeable system property with the given value.
-     *
-     * This is called from native code when the environment needs to change under native
-     * bridge emulation.
-     *
-     * @hide also visible for tests.
-     */
-    public static void setUnchangeableSystemProperty(String name, String value) {
-        checkPropertyName(name);
-        unchangeableSystemProperties.put(name, value);
-    }
-
-    private static void setDefaultChangeableProperties(Properties p) {
-        // On Android, each app gets its own temporary directory.
-        // (See android.app.ActivityThread.) This is just a fallback default,
-        // useful only on the host.
-        // We check first if the property has not been set already: note that it
-        // can only be set from the command line through the '-Djava.io.tmpdir=' option.
-        if (!unchangeableSystemProperties.containsKey("java.io.tmpdir")) {
-           p.put("java.io.tmpdir", "/tmp");
+        if (!p.containsKey("java.io.tmpdir")) {
+            p.put("java.io.tmpdir", "/tmp");
         }
-
-        // Android has always had an empty "user.home" (see docs for getProperty).
-        // This is not useful for normal android apps which need to use android specific
-        // APIs such as {@code Context.getFilesDir} and {@code Context.getCacheDir} but
-        // we make it changeable for backward compatibility, so that they can change it
-        // to a writeable location if required.
-        // We check first if the property has not been set already: note that it
-        // can only be set from the command line through the '-Duser.home=' option.
-        if (!unchangeableSystemProperties.containsKey("user.home")) {
+        if (!p.containsKey("user.home")) {
             p.put("user.home", "");
         }
-    }
 
-    private static Properties createSystemProperties() {
-        Properties p = new PropertiesWithNonOverrideableDefaults(unchangeableSystemProperties);
-        setDefaultChangeableProperties(p);
         return p;
     }
 
@@ -965,8 +930,7 @@ public final class System {
      *
      * </table>
      *
-     * <p> All of the above properties except for {@code user.home} and {@code java.io.tmpdir}
-     * <b>cannot be modified</b>. Any attempt to change them will be a no-op.
+     * <p> All of the above properties can be modified.
      *
      * @param propertyName
      *            the name of the system property to look up.
@@ -987,9 +951,7 @@ public final class System {
     }
 
     /**
-     * Sets the value of a particular system property. Most system properties
-     * are read only and cannot be cleared or modified. See {@link #getProperty} for a
-     * list of such properties.
+     * Gets the system property indicated by the specified key.
      *
      * @return the old value of the property or {@code null} if the property
      *         didn't exist.
@@ -1000,9 +962,7 @@ public final class System {
     }
 
     /**
-     * Removes a specific system property. Most system properties
-     * are read only and cannot be cleared or modified. See {@link #getProperty} for a
-     * list of such properties.
+     * Removes the system property indicated by the specified key.
      *
      * @return the property value or {@code null} if the property didn't exist.
      * @throws NullPointerException
@@ -1164,21 +1124,16 @@ public final class System {
     }
 
     /**
-     * Attempts to set all system properties. Copies all properties from
-     * {@code p} and discards system properties that are read only and cannot
-     * be modified. See {@link #getProperty} for a list of such properties.
+     * The argument becomes the current set of system properties for use
+     * by the {@link #getProperty(String)} method. If the argument is
+     * <code>null</code>, then the current set of system properties is
+     * forgotten.
      */
-    public static void setProperties(Properties p) {
-        PropertiesWithNonOverrideableDefaults userProperties =
-                new PropertiesWithNonOverrideableDefaults(unchangeableSystemProperties);
-        if (p != null) {
-            userProperties.putAll(p);
-        } else {
-            // setProperties(null) is documented to restore defaults.
-            setDefaultChangeableProperties(userProperties);
+    public static void setProperties(Properties props) {
+        if (props == null) {
+            props = createSystemProperties();
         }
-
-        systemProperties = userProperties;
+        systemProperties = props;
     }
 
     /**
@@ -1214,37 +1169,6 @@ public final class System {
      * Used to set System.err, System.in, and System.out.
      */
     private static native void setFieldImpl(String field, String signature, Object stream);
-
-    /**
-     * A properties class that prohibits changes to any of the properties
-     * contained in its defaults.
-     */
-    static final class PropertiesWithNonOverrideableDefaults extends Properties {
-        PropertiesWithNonOverrideableDefaults(Properties defaults) {
-            super(defaults);
-        }
-
-        @Override
-        public Object put(Object key, Object value) {
-            if (defaults.containsKey(key)) {
-                logE("Ignoring attempt to set property \"" + key +
-                        "\" to value \"" + value + "\".");
-                return defaults.get(key);
-            }
-
-            return super.put(key, value);
-        }
-
-        @Override
-        public Object remove(Object key) {
-            if (defaults.containsKey(key)) {
-                logE("Ignoring attempt to remove property \"" + key + "\".");
-                return null;
-            }
-
-            return super.remove(key);
-        }
-    }
 
     /**
      * The unmodifiable environment variables map. System.getenv() specifies
