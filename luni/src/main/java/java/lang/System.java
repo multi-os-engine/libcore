@@ -951,6 +951,13 @@ public final class System {
     }
 
     /**
+     * This can be called by native code and is kept for backwards compatibility
+     */
+    public static void setUnchangeableSystemProperty(String name, String value) {
+        setProperty(name, value);
+    }
+
+    /**
      * Gets the system property indicated by the specified key.
      *
      * @return the old value of the property or {@code null} if the property
